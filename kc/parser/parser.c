@@ -3,29 +3,31 @@
 #define memdup(src, size) memcpy(malloc((size)), (src), (size))
 #define dup(src) memdup((src), sizeof(*(src)))
 
-#define error(fmt, ...) do { \
-    fprintf(stderr, "%d:%d " fmt "\n", line(), col(), ## __VA_ARGS__); \
+#define error(p, fmt, ...) do { \
+    fprintf(stderr, "%d:%d " fmt "\n", line(p), col(p), ## __VA_ARGS__); \
     void *buf[1000]; \
     int n = backtrace(buf, 1000); \
     backtrace_symbols_fd(buf, n, 2); \
     exit(1); \
 } while (0)
 
-expr_t *parse_declarator(expr_t **type);
-decl_t *parse_decl(void);
-expr_t *parse_expr(void);
-expr_t *parse_type(void);
-stmt_t *parse_stmt(void);
+typedef struct {
+    scanner_t scanner;
+    int tok;
+    char *lit;
+} parser_t;
+
+static expr_t *parse_declarator(parser_t *p, expr_t **type_ptr);
+static decl_t *parse_decl(parser_t *p);
+static expr_t *parse_expr(parser_t *p);
+static expr_t *parse_type(parser_t *p);
+static stmt_t *parse_stmt(parser_t *p);
 
 static slice_t types = {.size=sizeof(char *)};
-void *nil_ptr = NULL;
-static int tok;
-static char *lit;
-static scanner_t _scanner = {};
-scanner_t *scanner = &_scanner;
+static void *nil_ptr = NULL;
 
-bool is_type(void) {
-    switch (tok) {
+static bool is_type(parser_t *p) {
+    switch (p->tok) {
     case token_CONST:
     case token_ENUM:
     case token_EXTERN:
@@ -35,7 +37,7 @@ bool is_type(void) {
         return true;
     case token_IDENT:
         for (int i = 0; i < len(types); i++) {
-            if (!strcmp(*(char **)get_ptr(types, i), lit)) {
+            if (!strcmp(*(char **)get_ptr(types, i), p->lit)) {
                 return true;
             }
         }
@@ -44,20 +46,20 @@ bool is_type(void) {
     }
 }
 
-static int line(void)
+static int line(parser_t *p)
 {
     int n = 1;
-    for (int i = 0; i < scanner->offset; i++)
-        if (scanner->src[i] == '\n')
+    for (int i = 0; i < p->scanner.offset; i++)
+        if (p->scanner.src[i] == '\n')
             n++;
     return n;
 }
 
-static int col(void)
+static int col(parser_t *p)
 {
     int n = 1;
-    for (int i = 0; i < scanner->offset; i++) {
-        if (scanner->src[i] == '\n')
+    for (int i = 0; i < p->scanner.offset; i++) {
+        if (p->scanner.src[i] == '\n')
             n = 1;
         else
             n++;
@@ -65,83 +67,83 @@ static int col(void)
     return n;
 }
 
-static void next(void) {
-    tok = scanner_scan(scanner, &lit);
+static void next(parser_t *p) {
+    p->tok = scanner_scan(&p->scanner, &p->lit);
 }
 
-void append_type(char *st) {
+static void append_type(char *st) {
     types = append(types, &st);
 }
 
-bool accept(int tok0) {
-    if (tok == tok0) {
-        next();
+static bool accept(parser_t *p, int tok0) {
+    if (p->tok == tok0) {
+        next(p);
         return true;
     }
     return false;
 }
 
-void expect(int tok0) {
-    if (tok != tok0) {
-        char *s = lit;
+static void expect(parser_t *p, int tok0) {
+    if (p->tok != tok0) {
+        char *s = p->lit;
         if (!*s)
-            s = token_string(tok);
-        error("expected `%s`, got %s", token_string(tok0), s);
+            s = token_string(p->tok);
+        error(p, "expected `%s`, got %s", token_string(tok0), s);
         exit(1);
     }
-    next();
+    next(p);
 }
 
-expr_t *parse_ident(void)
+static expr_t *parse_ident(parser_t *p)
 {
     expr_t *expr = NULL;
-    switch (tok) {
+    switch (p->tok) {
     case token_IDENT:
         expr = malloc(sizeof(*expr));
         expr->type = ast_EXPR_IDENT;
-        expr->ident.name = strdup(lit);
+        expr->ident.name = strdup(p->lit);
         break;
     default:
-        expect(token_IDENT);
+        expect(p, token_IDENT);
         break;
     }
-    next();
+    next(p);
     return expr;
 }
 
-expr_t *parse_primary_expr(void)
+static expr_t *parse_primary_expr(parser_t *p)
 {
     expr_t *x = NULL;
-    switch (tok) {
+    switch (p->tok) {
     case token_IDENT:
-        x = parse_ident();
+        x = parse_ident(p);
         break;
     case token_INT:
         x = malloc(sizeof(*x));
         x->type = ast_EXPR_BASIC_LIT;
-        x->basic_lit.kind = tok;
-        x->basic_lit.value = strdup(lit);
-        next();
+        x->basic_lit.kind = p->tok;
+        x->basic_lit.value = strdup(p->lit);
+        next(p);
         break;
     default:
-        error("bad expr: %s: %s", token_string(tok), lit);
+        error(p, "bad expr: %s: %s", token_string(p->tok), p->lit);
         break;
     }
     return x;
 }
 
-expr_t *parse_call_expr(expr_t *func) {
+static expr_t *parse_call_expr(parser_t *p, expr_t *func) {
     slice_t args = {.size = sizeof(expr_t *)};
-    expect(token_LPAREN);
-    while (tok != token_RPAREN) {
-        expr_t *x = parse_expr();
+    expect(p, token_LPAREN);
+    while (p->tok != token_RPAREN) {
+        expr_t *x = parse_expr(p);
         args = append(args, &x);
-        if (!accept(token_COMMA)) {
+        if (!accept(p, token_COMMA)) {
             args = append(args, &nil_ptr);
             break;
         }
     }
-    expect(token_RPAREN);
+    expect(p, token_RPAREN);
     expr_t call = {
         .type = ast_EXPR_CALL,
         .call = {
@@ -152,30 +154,30 @@ expr_t *parse_call_expr(expr_t *func) {
     return dup(&call);
 }
 
-expr_t *parse_postfix_expr(void)
+static expr_t *parse_postfix_expr(parser_t *p)
 {
-    expr_t *x = parse_primary_expr();
+    expr_t *x = parse_primary_expr(p);
     for (;;) {
         expr_t *y;
-        switch (tok) {
+        switch (p->tok) {
         case token_LPAREN:
-            x = parse_call_expr(x);
+            x = parse_call_expr(p, x);
             break;
         case token_LBRACK:
-            next();
+            next(p);
             y = malloc(sizeof(*y));
             y->type = ast_EXPR_INDEX;
             y->index.x = x;
-            y->index.index = parse_expr();
+            y->index.index = parse_expr(p);
             x = y;
-            expect(token_RBRACK);
+            expect(p, token_RBRACK);
             break;
         case token_PERIOD:
-            next();
+            next(p);
             y = malloc(sizeof(*y));
             y->type = ast_EXPR_SELECTOR;
             y->selector.x = x;
-            y->selector.sel = parse_ident();
+            y->selector.sel = parse_ident(p);
             x = y;
             break;
         case token_INC:
@@ -183,9 +185,9 @@ expr_t *parse_postfix_expr(void)
             y = malloc(sizeof(*y));
             y->type = ast_EXPR_INCDEC;
             y->incdec.x = x;
-            y->incdec.tok = tok;
+            y->incdec.tok = p->tok;
             x = y;
-            next();
+            next(p);
             break;
         default:
             goto done;
@@ -195,10 +197,10 @@ done:
     return x;
 }
 
-expr_t *parse_unary_expr(void)
+static expr_t *parse_unary_expr(parser_t *p)
 {
     expr_t *x;
-    switch (tok) {
+    switch (p->tok) {
     case token_ADD:
     case token_AND:
     case token_MUL:
@@ -206,22 +208,22 @@ expr_t *parse_unary_expr(void)
     case token_SUB:
         x = malloc(sizeof(*x));
         x->type = ast_EXPR_UNARY;
-        x->unary.op = tok;
-        next();
-        x->unary.x = parse_unary_expr(); // TODO: parse_cast_expr
+        x->unary.op = p->tok;
+        next(p);
+        x->unary.x = parse_unary_expr(p); // TODO: parse_cast_expr
         break;
     default:
-        x = parse_postfix_expr();
+        x = parse_postfix_expr(p);
         break;
     }
     return x;
 }
 
-expr_t *parse_expr(void)
+static expr_t *parse_expr(parser_t *p)
 {
-    expr_t *x = parse_unary_expr();
+    expr_t *x = parse_unary_expr(p);
     expr_t *y;
-    switch (tok) {
+    switch (p->tok) {
     case token_ADD:
     case token_ADD_ASSIGN:
     case token_ASSIGN:
@@ -239,18 +241,18 @@ expr_t *parse_expr(void)
         y = malloc(sizeof(*y));
         y->type = ast_EXPR_BINARY;
         y->binary.x = x;
-        y->binary.op = tok;
-        next();
-        y->binary.y = parse_expr();
+        y->binary.op = p->tok;
+        next(p);
+        y->binary.y = parse_expr(p);
         x = y;
         break;
     }
     return x;
 }
 
-field_t *parse_field(void) {
-    expr_t *type = parse_type();
-    expr_t *name = parse_declarator(&type);
+static field_t *parse_field(parser_t *p) {
+    expr_t *type = parse_type(p);
+    expr_t *name = parse_declarator(p, &type);
     field_t field = {
         .type = type,
         .name = name,
@@ -258,27 +260,28 @@ field_t *parse_field(void) {
     return dup(&field);
 }
 
-expr_t *parse_struct_or_union(int keyword)
+static expr_t *parse_struct_or_union(parser_t *p)
 {
+    int keyword = p->tok;
     expr_t *name = NULL;
-    expect(keyword);
-    if (tok == token_IDENT) {
-        name = parse_ident();
+    expect(p, keyword);
+    if (p->tok == token_IDENT) {
+        name = parse_ident(p);
     }
     field_t **fields = NULL;
-    if (accept(token_LBRACE)) {
+    if (accept(p, token_LBRACE)) {
         slice_t slice = {.size = sizeof(field_t *)};
         for (;;) {
-            field_t *field = parse_field();
-            expect(token_SEMICOLON);
+            field_t *field = parse_field(p);
+            expect(p, token_SEMICOLON);
             slice = append(slice, &field);
-            if (tok == token_RBRACE) {
+            if (p->tok == token_RBRACE) {
                 slice = append(slice, &nil_ptr);
                 break;
             }
         }
         fields = slice.array;
-        expect(token_RBRACE);
+        expect(p, token_RBRACE);
     }
     // TODO assert name or fields
     expr_t x = {
@@ -292,34 +295,34 @@ expr_t *parse_struct_or_union(int keyword)
     return dup(&x);
 }
 
-expr_t *parse_enum(void)
+static expr_t *parse_enum(parser_t *p)
 {
     expr_t *name = NULL;
     slice_t enums = {.size=sizeof(enumerator_t *)};
     int cap = 0;
     int len = 0;
-    expect(token_ENUM);
-    if (tok == token_IDENT) {
-        name = parse_ident();
+    expect(p, token_ENUM);
+    if (p->tok == token_IDENT) {
+        name = parse_ident(p);
     }
-    expect(token_LBRACE);
+    expect(p, token_LBRACE);
     for (;;) {
         enumerator_t *enumerator = malloc(sizeof(*enumerator));
-        enumerator->name = parse_ident();
+        enumerator->name = parse_ident(p);
         enumerator->value = NULL;
-        if (tok == token_ASSIGN) {
-            next();
-            enumerator->value = parse_expr();
+        if (p->tok == token_ASSIGN) {
+            next(p);
+            enumerator->value = parse_expr(p);
         }
-        expect(token_COMMA);
+        expect(p, token_COMMA);
         enums = append(enums, &enumerator);
-        if (tok == token_RBRACE) {
+        if (p->tok == token_RBRACE) {
             enumerator = NULL;
             enums = append(enums, &enumerator);
             break;
         }
     }
-    expect(token_RBRACE);
+    expect(p, token_RBRACE);
     expr_t *x = malloc(sizeof(*x));
     x->type = ast_TYPE_ENUM;
     x->enum_.name = name;
@@ -327,66 +330,66 @@ expr_t *parse_enum(void)
     return x;
 }
 
-expr_t *parse_type(void)
+static expr_t *parse_type(parser_t *p)
 {
     expr_t *x = NULL;
-    switch (tok) {
+    switch (p->tok) {
     case token_STRUCT:
     case token_UNION:
-        x = parse_struct_or_union(tok);
+        x = parse_struct_or_union(p);
         break;
     case token_ENUM:
-        x = parse_enum();
+        x = parse_enum(p);
         break;
     case token_IDENT:
-        x = parse_ident();
+        x = parse_ident(p);
         break;
     default:
-        error("expected type, got %s", *lit ? lit : token_string(tok));
+        error(p, "expected type, got %s", *p->lit ? p->lit : token_string(p->tok));
         break;
     }
     return x;
 }
 
-stmt_t *parse_compound_stmt(void)
+static stmt_t *parse_compound_stmt(parser_t *p)
 {
     stmt_t *stmt = NULL;
     slice_t stmts = {.size = sizeof(stmt_t *)};
-    expect(token_LBRACE);
-    while (tok != token_RBRACE) {
-        stmt = parse_stmt();
+    expect(p, token_LBRACE);
+    while (p->tok != token_RBRACE) {
+        stmt = parse_stmt(p);
         stmts = append(stmts, &stmt);
     }
     stmts = append(stmts, &nil_ptr);
-    expect(token_RBRACE);
+    expect(p, token_RBRACE);
     stmt = malloc(sizeof(*stmt));
     stmt->type = ast_STMT_BLOCK;
     stmt->block.stmts = stmts.array;
     return stmt;
 }
 
-stmt_t *parse_return_stmt(void)
+static stmt_t *parse_return_stmt(parser_t *p)
 {
     expr_t *x = NULL;
-    expect(token_RETURN);
-    if (tok != token_SEMICOLON)
-        x = parse_expr();
-    expect(token_SEMICOLON);
+    expect(p, token_RETURN);
+    if (p->tok != token_SEMICOLON)
+        x = parse_expr(p);
+    expect(p, token_SEMICOLON);
     stmt_t *stmt = malloc(sizeof(*stmt));
     stmt->type = ast_STMT_RETURN;
     stmt->return_.x = x;
     return stmt;
 }
 
-stmt_t *parse_if_stmt(void) {
-    expect(token_IF);
-    expect(token_LPAREN);
-    expr_t *cond = parse_expr();
-    expect(token_RPAREN);
-    stmt_t *body = parse_compound_stmt();
+static stmt_t *parse_if_stmt(parser_t *p) {
+    expect(p, token_IF);
+    expect(p, token_LPAREN);
+    expr_t *cond = parse_expr(p);
+    expect(p, token_RPAREN);
+    stmt_t *body = parse_compound_stmt(p);
     stmt_t *else_ = NULL;
-    if (accept(token_ELSE)) {
-        else_ = parse_stmt();
+    if (accept(p, token_ELSE)) {
+        else_ = parse_stmt(p);
     }
     stmt_t stmt = {
         .type = ast_STMT_IF,
@@ -399,13 +402,13 @@ stmt_t *parse_if_stmt(void) {
     return dup(&stmt);
 }
 
-stmt_t *parse_while_stmt(void)
+static stmt_t *parse_while_stmt(parser_t *p)
 {
-    expect(token_WHILE);
-    expect(token_LPAREN);
-    expr_t *cond = parse_expr();
-    expect(token_RPAREN);
-    stmt_t *body = parse_stmt();
+    expect(p, token_WHILE);
+    expect(p, token_LPAREN);
+    expr_t *cond = parse_expr(p);
+    expect(p, token_RPAREN);
+    stmt_t *body = parse_stmt(p);
     stmt_t stmt = {
         .type = ast_STMT_WHILE,
         .while_ = {
@@ -416,61 +419,61 @@ stmt_t *parse_while_stmt(void)
     return dup(&stmt);
 }
 
-stmt_t *parse_stmt(void)
+static stmt_t *parse_stmt(parser_t *p)
 {
-    if (is_type()) {
+    if (is_type(p)) {
         stmt_t stmt = {
             .type = ast_STMT_DECL,
-            .decl = parse_decl(),
+            .decl = parse_decl(p),
         };
         return dup(&stmt);
     }
-    switch (tok) {
+    switch (p->tok) {
     case token_LBRACE:
-        return parse_compound_stmt();
+        return parse_compound_stmt(p);
     case token_IF:
-        return parse_if_stmt();
+        return parse_if_stmt(p);
     case token_WHILE:
-        return parse_while_stmt();
+        return parse_while_stmt(p);
     case token_RETURN:
-        return parse_return_stmt();
+        return parse_return_stmt(p);
     default:
         {
             stmt_t stmt = {
                 .type = ast_STMT_EXPR,
                 .expr.x = NULL,
             };
-            if (tok != token_SEMICOLON) {
-                stmt.expr.x = parse_expr();
+            if (p->tok != token_SEMICOLON) {
+                stmt.expr.x = parse_expr(p);
             }
-            expect(token_SEMICOLON);
+            expect(p, token_SEMICOLON);
             return dup(&stmt);
         }
     }
 }
 
-expr_t *parse_const_expr(void)
+static expr_t *parse_const_expr(parser_t *p)
 {
-    return parse_expr(); // TODO change
+    return parse_expr(p); // TODO change
 }
 
-field_t **parse_parameter_type_list(void) {
-    if (tok == token_IDENT && !strcmp(lit, "void")) {
-        next();
+static field_t **parse_parameter_type_list(parser_t *p) {
+    if (p->tok == token_IDENT && !strcmp(p->lit, "void")) {
+        next(p);
         return NULL;
     }
     slice_t params = {.size=sizeof(field_t *)};
-    while (tok != token_RPAREN) {
-        if (accept(token_ELLIPSIS)) {
+    while (p->tok != token_RPAREN) {
+        if (accept(p, token_ELLIPSIS)) {
             field_t *param = malloc(sizeof(*param));
             param->type = NULL;
             param->name = NULL;
             params = append(params, &param);
             break;
         }
-        field_t *param = parse_field();
+        field_t *param = parse_field(p);
         params = append(params, &param);
-        if (!accept(token_COMMA)) {
+        if (!accept(p, token_COMMA)) {
             break;
         }
     }
@@ -480,9 +483,8 @@ field_t **parse_parameter_type_list(void) {
     return params.array;
 }
 
-expr_t *parse_declarator(expr_t **type_ptr)
-{
-    while (accept(token_MUL)) {
+static expr_t *parse_declarator(parser_t *p, expr_t **type_ptr) {
+    while (accept(p, token_MUL)) {
         expr_t type = {
             .type = ast_TYPE_PTR,
             .ptr = {
@@ -492,35 +494,35 @@ expr_t *parse_declarator(expr_t **type_ptr)
         *type_ptr = dup(&type);
     }
     expr_t *name = NULL;
-    if (tok == token_IDENT) {
-        name = parse_ident();
+    if (p->tok == token_IDENT) {
+        name = parse_ident(p);
     }
-    switch (tok) {
+    switch (p->tok) {
     case token_LBRACK:
         {
-            expect(token_LBRACK);
+            expect(p, token_LBRACK);
             expr_t type = {
                 .type = ast_TYPE_ARRAY,
                 .array = {
                     .elt = *type_ptr,
-                    .len = parse_const_expr(),
+                    .len = parse_const_expr(p),
                 },
             };
-            expect(token_RBRACK);
+            expect(p, token_RBRACK);
             *type_ptr = dup(&type);
         }
         break;
     case token_LPAREN:
         {
-            expect(token_LPAREN);
+            expect(p, token_LPAREN);
             expr_t type = {
                 .type = ast_TYPE_FUNC,
                 .func = {
                     .result = *type_ptr,
-                    .params = parse_parameter_type_list(),
+                    .params = parse_parameter_type_list(p),
                 },
             };
-            expect(token_RPAREN);
+            expect(p, token_RPAREN);
             *type_ptr = dup(&type);
         }
         break;
@@ -528,9 +530,9 @@ expr_t *parse_declarator(expr_t **type_ptr)
     return name;
 }
 
-spec_t *parse_typedef_spec(void) {
-    expr_t *type = parse_type();
-    expr_t *ident = parse_ident();
+static spec_t *parse_typedef_spec(parser_t *p) {
+    expr_t *type = parse_type(p);
+    expr_t *ident = parse_ident(p);
     spec_t spec = {
         .type = ast_SPEC_TYPEDEF,
         .typedef_.name = ident,
@@ -540,25 +542,25 @@ spec_t *parse_typedef_spec(void) {
     return dup(&spec);
 }
 
-decl_t *parse_gen_decl(int keyword, spec_t *(*f)(void)) {
-    expect(keyword);
-    spec_t *spec = f();
-    expect(token_SEMICOLON);
+static decl_t *parse_gen_decl(parser_t *p, int keyword, spec_t *(*f)(parser_t *p)) {
+    expect(p, keyword);
+    spec_t *spec = f(p);
+    expect(p, token_SEMICOLON);
     decl_t *decl = malloc(sizeof(*decl));
     decl->type = ast_DECL_GEN;
     decl->gen.spec = spec;
     return decl;
 }
 
-decl_t *parse_decl(void) {
-    if (tok == token_TYPEDEF) {
-        return parse_gen_decl(tok, parse_typedef_spec);
+static decl_t *parse_decl(parser_t *p) {
+    if (p->tok == token_TYPEDEF) {
+        return parse_gen_decl(p, p->tok, parse_typedef_spec);
     }
-    expr_t *type = parse_type();
-    expr_t *name = parse_declarator(&type);
+    expr_t *type = parse_type(p);
+    expr_t *name = parse_declarator(p, &type);
     expr_t *value = NULL;
-    if (tok == token_LBRACE) {
-        stmt_t *body = parse_compound_stmt();
+    if (p->tok == token_LBRACE) {
+        stmt_t *body = parse_compound_stmt(p);
         decl_t decl = {
             .type = ast_DECL_FUNC,
             .func = {
@@ -569,10 +571,10 @@ decl_t *parse_decl(void) {
         };
         return dup(&decl);
     }
-    if (accept(token_ASSIGN)) {
-        value = parse_expr();
+    if (accept(p, token_ASSIGN)) {
+        value = parse_expr(p);
     }
-    expect(token_SEMICOLON);
+    expect(p, token_SEMICOLON);
     spec_t spec = {
         .type = ast_SPEC_VALUE,
         .value = {
@@ -588,7 +590,7 @@ decl_t *parse_decl(void) {
     return dup(&decl);
 }
 
-decl_t **parse_file(void) {
+static decl_t **parse_file(parser_t *p) {
     slice_t decls = {.size = sizeof(decl_t *)};
     append_type("FILE");
     append_type("bool");
@@ -598,14 +600,22 @@ decl_t **parse_file(void) {
     append_type("size_t");
     append_type("va_list");
     append_type("void");
-    scanner_init(scanner, scanner->src);
-    next();
-    while (tok != token_EOF) {
-        decl_t *decl = parse_decl();
+    next(p);
+    while (p->tok != token_EOF) {
+        decl_t *decl = parse_decl(p);
         if (!decl)
             break;
         decls = append(decls, &decl);
     }
     decls = append(decls, &nil_ptr);
     return decls.array;
+}
+
+extern decl_t **parser_parse_file(char *filename) {
+    char *src = read_file(filename);
+    parser_t parser = {};
+    scanner_init(&parser.scanner, src);
+    decl_t **decls = parse_file(&parser);
+    free(src);
+    return decls;
 }
