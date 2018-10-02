@@ -1,6 +1,7 @@
 CFLAGS=-I.
 
-main: builtin/builtin.o io/ioutil/ioutil.o kc/token/token.o kc/scanner/scanner.o kc/parser/parser.o emit/emit.o main.o
+main: builtin/builtin.o io/ioutil/ioutil.o kc/token/token.o kc/scanner/scanner.o kc/parser/parser.o emit/emit.o cmd/compile/main.o
+	cc -o main $+
 
 test: main
 	./main kc/ast/ast.h
@@ -19,4 +20,4 @@ kc/parser/parser.o: builtin/builtin.h kc/ast/ast.h kc/parser/parser.h kc/scanner
 
 emit/emit.o: builtin/builtin.h kc/ast/ast.h
 
-main.o: builtin/builtin.h kc/ast/ast.h kc/parser/parser.h kc/scanner/scanner.h io/ioutil/ioutil.h
+cmd/compile/main.o: builtin/builtin.h kc/ast/ast.h kc/parser/parser.h kc/scanner/scanner.h io/ioutil/ioutil.h
