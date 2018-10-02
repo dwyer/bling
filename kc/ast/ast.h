@@ -10,6 +10,7 @@ typedef enum {
     ast_EXPR_BASIC_LIT,
     ast_EXPR_BINARY,
     ast_EXPR_CALL,
+    ast_EXPR_COMPOUND,
     ast_EXPR_IDENT,
     ast_EXPR_INCDEC,
     ast_EXPR_INDEX,
@@ -25,6 +26,7 @@ typedef enum {
     ast_STMT_DECL,
     ast_STMT_EXPR,
     ast_STMT_IF,
+    ast_STMT_JUMP,
     ast_STMT_RETURN,
     ast_STMT_SWITCH,
     ast_STMT_WHILE,
@@ -96,6 +98,10 @@ struct expr {
         } call;
 
         struct {
+            expr_t **list;
+        } compound;
+
+        struct {
             expr_t *name;
             enumerator_t **enumerators;
         } enum_;
@@ -165,6 +171,11 @@ struct stmt {
             stmt_t *body;
             stmt_t *else_;
         } if_;
+
+        struct {
+            int keyword;
+            expr_t *label;
+        } jump;
 
         struct {
             expr_t *x;

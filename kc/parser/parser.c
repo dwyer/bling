@@ -573,6 +573,32 @@ static decl_t *parse_gen_decl(parser_t *p, int keyword, spec_t *(*f)(parser_t *p
     return decl;
 }
 
+static expr_t *parse_init_expr(parser_t *p) {
+    if (accept(p, token_LBRACE)) {
+        slice_t sl = {.size = sizeof(expr_t *)};
+        while (p->tok != token_RBRACE) {
+            expr_t *init = parse_init_expr(p);
+            sl = append(sl, &init);
+            if (!accept(p, token_COMMA)) {
+                break;
+            }
+        }
+        sl = append(sl, &nil_ptr);
+        expr_t **exprs = sl.array;
+        accept(p, token_COMMA);
+        expect(p, token_RBRACE);
+        expr_t expr = {
+            .type = ast_EXPR_COMPOUND,
+            .compound = {
+                .list = exprs,
+            },
+        };
+        return dup(&expr);
+    } else {
+        return parse_expr(p);
+    }
+}
+
 static decl_t *parse_decl(parser_t *p) {
     if (p->tok == token_TYPEDEF) {
         return parse_gen_decl(p, p->tok, parse_typedef_spec);
@@ -598,7 +624,7 @@ static decl_t *parse_decl(parser_t *p) {
         return dup(&decl);
     }
     if (accept(p, token_ASSIGN)) {
-        value = parse_expr(p);
+        value = parse_init_expr(p);
     }
     expect(p, token_SEMICOLON);
     spec_t spec = {
