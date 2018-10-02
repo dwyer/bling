@@ -122,6 +122,13 @@ static expr_t *parse_primary_expr(parser_t *p) {
         x->basic_lit.value = strdup(p->lit);
         next(p);
         break;
+    case token_LPAREN:
+        expect(p, token_LPAREN);
+        x = malloc(sizeof(*x));
+        x->type = ast_EXPR_PAREN;
+        x->paren.x = parse_expr(p);
+        expect(p, token_RPAREN);
+        break;
     default:
         error(p, "bad expr: %s: %s", token_string(p->tok), p->lit);
         break;
@@ -168,13 +175,18 @@ static expr_t *parse_postfix_expr(parser_t *p) {
             x = y;
             expect(p, token_RBRACK);
             break;
+        case token_ARROW:
         case token_PERIOD:
-            next(p);
-            y = malloc(sizeof(*y));
-            y->type = ast_EXPR_SELECTOR;
-            y->selector.x = x;
-            y->selector.sel = parse_ident(p);
-            x = y;
+            {
+                token_t tok = p->tok;
+                next(p);
+                y = malloc(sizeof(*y));
+                y->type = ast_EXPR_SELECTOR;
+                y->selector.x = x;
+                y->selector.tok = tok;
+                y->selector.sel = parse_ident(p);
+                x = y;
+            }
             break;
         case token_INC:
         case token_DEC:
@@ -226,10 +238,13 @@ static expr_t *parse_expr(parser_t *p) {
     case token_EQUAL:
     case token_GT:
     case token_GT_EQUAL:
+    case token_LAND:
+    case token_LOR:
     case token_LT:
     case token_LT_EQUAL:
     case token_MUL:
     case token_MUL_ASSIGN:
+    case token_NOT_EQUAL:
     case token_SUB:
     case token_SUB_ASSIGN:
         y = malloc(sizeof(*y));
@@ -394,11 +409,19 @@ static stmt_t *parse_if_stmt(parser_t *p) {
 static stmt_t *parse_for_stmt(parser_t *p) {
     expect(p, token_FOR);
     expect(p, token_LPAREN);
-    stmt_t *init = parse_stmt(p);
-    /* expect(p, token_SEMICOLON); */
-    expr_t *cond = parse_expr(p);
+    stmt_t *init = NULL;
+    if (!accept(p, token_SEMICOLON)) {
+        init = parse_stmt(p);
+    }
+    expr_t *cond = NULL;
+    if (p->tok != token_SEMICOLON) {
+        cond = parse_expr(p);
+    }
     expect(p, token_SEMICOLON);
-    expr_t *post = parse_expr(p);
+    expr_t *post = NULL;
+    if (p->tok != token_RPAREN) {
+        post = parse_expr(p);
+    }
     expect(p, token_RPAREN);
     stmt_t *body = parse_stmt(p);
     stmt_t stmt = {
@@ -462,6 +485,23 @@ static stmt_t *parse_case_stmt(parser_t *p) {
     return dup(&stmt);
 }
 
+static stmt_t *parse_jump_stmt(parser_t *p, token_t keyword) {
+    expect(p, keyword);
+    expr_t *label = NULL;
+    if (keyword == token_GOTO) {
+        label = parse_ident(p);
+    }
+    expect(p, token_SEMICOLON);
+    stmt_t stmt = {
+        .type = ast_STMT_JUMP,
+        .jump = {
+            .keyword = keyword,
+            .label = label,
+        },
+    };
+    return dup(&stmt);
+}
+
 static stmt_t *parse_stmt(parser_t *p) {
     if (is_type(p)) {
         stmt_t stmt = {
@@ -471,6 +511,10 @@ static stmt_t *parse_stmt(parser_t *p) {
         return dup(&stmt);
     }
     switch (p->tok) {
+    case token_BREAK:
+    case token_CONTINUE:
+    case token_GOTO:
+        return parse_jump_stmt(p, p->tok);
     case token_LBRACE:
         return parse_compound_stmt(p);
     case token_CASE:
@@ -487,13 +531,23 @@ static stmt_t *parse_stmt(parser_t *p) {
     case token_RETURN:
         return parse_return_stmt(p);
     }
+    expr_t *x = NULL;
+    if (p->tok != token_SEMICOLON) {
+        x = parse_expr(p);
+    }
+    if (x && x->type == ast_EXPR_IDENT) {
+        if (accept(p, token_COLON)) {
+            stmt_t stmt = {
+                .type = ast_STMT_LABEL,
+                .label.label = x,
+            };
+            return dup(&stmt);
+        }
+    }
     stmt_t stmt = {
         .type = ast_STMT_EXPR,
-        .expr.x = NULL,
+        .expr.x = x,
     };
-    if (p->tok != token_SEMICOLON) {
-        stmt.expr.x = parse_expr(p);
-    }
     expect(p, token_SEMICOLON);
     return dup(&stmt);
 }

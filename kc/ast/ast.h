@@ -1,4 +1,6 @@
 #pragma once
+#include "builtin/builtin.h"
+#include "kc/token/token.h"
 
 typedef enum {
 
@@ -14,6 +16,7 @@ typedef enum {
     ast_EXPR_IDENT,
     ast_EXPR_INCDEC,
     ast_EXPR_INDEX,
+    ast_EXPR_PAREN,
     ast_EXPR_UNARY,
     ast_EXPR_SELECTOR,
     ast_EXPR_INIT_DECL,
@@ -28,6 +31,7 @@ typedef enum {
     ast_STMT_FOR,
     ast_STMT_IF,
     ast_STMT_JUMP,
+    ast_STMT_LABEL,
     ast_STMT_RETURN,
     ast_STMT_SWITCH,
     ast_STMT_WHILE,
@@ -83,12 +87,12 @@ struct expr {
         } array;
 
         struct {
-            int kind;
+            token_t kind;
             char *value;
         } basic_lit;
 
         struct {
-            int op;
+            token_t op;
             expr_t *x;
             expr_t *y;
         } binary;
@@ -118,7 +122,7 @@ struct expr {
 
         struct {
             expr_t *x;
-            int tok;
+            token_t tok;
         } incdec;
 
         struct {
@@ -127,22 +131,27 @@ struct expr {
         } index;
 
         struct {
+            expr_t *x;
+        } paren;
+
+        struct {
             expr_t *type;
         } ptr;
 
         struct {
             expr_t *x;
+            token_t tok;
             expr_t *sel;
         } selector;
 
         struct {
-            int tok;
+            token_t tok;
             expr_t *name;
             field_t **fields;
         } struct_;
 
         struct {
-            int op;
+            token_t op;
             expr_t *x;
         } unary;
 
@@ -181,9 +190,13 @@ struct stmt {
         } if_;
 
         struct {
-            int keyword;
+            token_t keyword;
             expr_t *label;
         } jump;
+
+        struct {
+            expr_t *label;
+        } label;
 
         struct {
             expr_t *x;

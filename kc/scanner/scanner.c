@@ -72,8 +72,9 @@ static char *scan_rune(scanner_t *s) {
     int n = 0;
     bool escape = false;
     for (;;) {
-        if (n > 0 && s->ch == '\'' && !escape)
+        if (n > 0 && s->ch == '\'' && !escape) {
             break;
+        }
         escape = s->ch == '\\' && !escape;
         next(s);
         n++;
@@ -87,8 +88,9 @@ static char *scan_string(scanner_t *s) {
     int n = 0;
     bool escape = false;
     for (;;) {
-        if (n > 0 && s->ch == '"' && !escape)
+        if (n > 0 && s->ch == '"' && !escape) {
             break;
+        }
         escape = s->ch == '\\' && !escape;
         next(s);
         n++;
@@ -134,10 +136,18 @@ scan_again:
         } else {
             tok = switch2(s, token_DIV, token_DIV_ASSIGN);
         }
-    } else {
-        int ch0 = s->ch;
+    } else if (s->ch == '-') {
         next(s);
-        switch (ch0) {
+        if (s->ch == '>') {
+            next(s);
+            tok = token_ARROW;
+        } else {
+            tok = switch3(s, token_SUB, token_SUB_ASSIGN, '-', token_DEC);
+        }
+    } else {
+        int ch = s->ch;
+        next(s);
+        switch (ch) {
             // structure
         case '\0': tok = token_EOF; break;
         case '#': skip_line(s); goto scan_again; break;
@@ -155,7 +165,6 @@ scan_again:
         case '&': tok = switch3(s, token_AND, token_AND_ASSIGN, '&', token_LAND); break;
         case '*': tok = switch2(s, token_MUL, token_MUL_ASSIGN); break;
         case '+': tok = switch3(s, token_ADD, token_ADD_ASSIGN, '+', token_INC); break;
-        case '-': tok = switch3(s, token_SUB, token_SUB_ASSIGN, '-', token_DEC); break;
         case '<': tok = switch2(s, token_LT, token_LT_EQUAL); break;
         case '=': tok = switch2(s, token_ASSIGN, token_EQUAL); break;
         case '>': tok = switch2(s, token_GT, token_GT_EQUAL); break;
