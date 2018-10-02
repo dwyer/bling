@@ -26,7 +26,9 @@ commands = [
 
 def call(cmd):
     print(' '.join(cmd))
-    subprocess.call(cmd)
+    res = subprocess.check_call(cmd)
+    if res:
+        exit(res)
 
 def remove(names):
     call(['rm', '-f'] + names)

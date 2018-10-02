@@ -47,6 +47,6 @@ char *token_string(token_t tok) {
     case token_TYPE_NAME: return "$TYPE";
     case token_IDENT: return "$IDENT";
 
-    default: log("unknown token: %d", tok); return "???";
+    default: print("unknown token: %d", tok); return "???";
     }
 }

@@ -1,5 +1,28 @@
 #include "builtin/builtin.h"
 
+static void vprint(char *fmt, va_list ap) {
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+}
+
+void print(char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vprint(fmt, ap);
+    va_end(ap);
+}
+
+void panic(char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vprint(fmt, ap);
+    va_end(ap);
+    void *buf[1024];
+    int n = backtrace(buf, 1024);
+    backtrace_symbols_fd(buf, n, 2);
+    exit(1);
+}
+
 int len(slice_t s) {
     return s.len;
 }

@@ -4,6 +4,9 @@
 #include "kc/scanner/scanner.h"
 #include "kc/token/token.h"
 
+#define memdup(src, size) memcpy(malloc((size)), (src), (size))
+#define dup(src) memdup((src), sizeof(*(src)))
+
 #define error(fmt, ...) do { \
     fprintf(stderr, "%d:%d " fmt "\n", line(), col(), ## __VA_ARGS__); \
     void *buf[1000]; \
@@ -142,7 +145,7 @@ expr_t *parse_call_expr(expr_t *func) {
             .args = args.array,
         },
     };
-    return copy(&call);
+    return dup(&call);
 }
 
 expr_t *parse_postfix_expr(void)
@@ -248,7 +251,7 @@ field_t *parse_field(void) {
         .type = type,
         .name = name,
     };
-    return copy(&field);
+    return dup(&field);
 }
 
 expr_t *parse_struct_or_union(int keyword)
@@ -282,7 +285,7 @@ expr_t *parse_struct_or_union(int keyword)
             .fields = fields,
         },
     };
-    return copy(&x);
+    return dup(&x);
 }
 
 expr_t *parse_enum(void)
@@ -389,7 +392,7 @@ stmt_t *parse_if_stmt(void) {
             .else_ = else_,
         },
     };
-    return copy(&stmt);
+    return dup(&stmt);
 }
 
 stmt_t *parse_while_stmt(void)
@@ -406,7 +409,7 @@ stmt_t *parse_while_stmt(void)
             .body = body,
         },
     };
-    return copy(&stmt);
+    return dup(&stmt);
 }
 
 stmt_t *parse_stmt(void)
@@ -416,7 +419,7 @@ stmt_t *parse_stmt(void)
             .type = ast_STMT_DECL,
             .decl = parse_decl(),
         };
-        return copy(&stmt);
+        return dup(&stmt);
     }
     switch (tok) {
     case token_LBRACE:
@@ -437,7 +440,7 @@ stmt_t *parse_stmt(void)
                 stmt.expr.x = parse_expr();
             }
             expect(token_SEMICOLON);
-            return copy(&stmt);
+            return dup(&stmt);
         }
     }
 }
@@ -475,7 +478,7 @@ expr_t *parse_declarator(expr_t **type_ptr)
                 .type = *type_ptr,
             }
         };
-        *type_ptr = copy(&type);
+        *type_ptr = dup(&type);
     }
     expr_t *name = NULL;
     if (tok == token_IDENT) {
@@ -493,7 +496,7 @@ expr_t *parse_declarator(expr_t **type_ptr)
                 },
             };
             expect(token_RBRACK);
-            *type_ptr = copy(&type);
+            *type_ptr = dup(&type);
         }
         break;
     case token_LPAREN:
@@ -507,7 +510,7 @@ expr_t *parse_declarator(expr_t **type_ptr)
                 },
             };
             expect(token_RPAREN);
-            *type_ptr = copy(&type);
+            *type_ptr = dup(&type);
         }
         break;
     }
@@ -523,7 +526,7 @@ spec_t *parse_typedef_spec(void) {
         .typedef_.type = type,
     };
     types = append(types, &ident->ident.name);
-    return copy(&spec);
+    return dup(&spec);
 }
 
 decl_t *parse_gen_decl(int keyword, spec_t *(*f)(void)) {
@@ -553,7 +556,7 @@ decl_t *parse_decl(void) {
                 .body = body,
             },
         };
-        return copy(&decl);
+        return dup(&decl);
     }
     if (accept(token_ASSIGN)) {
         value = parse_expr();
@@ -569,9 +572,9 @@ decl_t *parse_decl(void) {
     };
     decl_t decl = {
         .type = ast_DECL_GEN,
-        .gen.spec = copy(&spec),
+        .gen.spec = dup(&spec),
     };
-    return copy(&decl);
+    return dup(&decl);
 }
 
 decl_t **parse_file(void) {
@@ -594,4 +597,3 @@ decl_t **parse_file(void) {
     decls = append(decls, &nil_ptr);
     return decls.array;
 }
-
