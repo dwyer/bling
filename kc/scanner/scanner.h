@@ -1,6 +1,5 @@
 #pragma once
-
-#include "kc.h"
+#include "builtin/builtin.h"
 
 typedef struct {
     char *src;

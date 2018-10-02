@@ -1,4 +1,4 @@
-#include "kc.h"
+#include "builtin/builtin.h"
 #include "io/ioutil/ioutil.h"
 
 #include "kc/scanner/scanner.h"

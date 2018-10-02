@@ -1,8 +1,8 @@
-#include "kc.h"
-
-#include "kc/token/token.h"
-#include "kc/scanner/scanner.h"
+#include "builtin/builtin.h"
 #include "kc/ast/ast.h"
+#include "kc/parser/parser.h"
+#include "kc/scanner/scanner.h"
+#include "kc/token/token.h"
 
 #define error(fmt, ...) do { \
     fprintf(stderr, "%d:%d " fmt "\n", line(), col(), ## __VA_ARGS__); \

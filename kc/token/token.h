@@ -1,5 +1,5 @@
 #pragma once
-#include "kc.h"
+#include "builtin/builtin.h"
 
 typedef enum {
     token_ILLEGAL = 0,

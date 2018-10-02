@@ -1,4 +1,4 @@
-#include "kc.h"
+#include "builtin/builtin.h"
 
 int len(slice_t s) {
     return s.len;

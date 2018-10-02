@@ -1,5 +1,5 @@
 #pragma once
-#include "kc.h"
+#include "builtin/builtin.h"
 #include "kc/ast/ast.h"
 
 void emit_decl(decl_t *decl);
