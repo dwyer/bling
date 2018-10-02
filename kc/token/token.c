@@ -42,9 +42,22 @@ extern char *token_string(token_t tok) {
     case token_SUB: return "-";
     case token_SUB_ASSIGN: return "-=";
 
+    case token_BREAK: return "break";
+    case token_CONST: return "const";
+    case token_CONTINUE: return "continue";
+    case token_ELSE: return "else";
+    case token_ENUM: return "enum";
+    case token_EXTERN: return "extern";
+    case token_FOR: return "for";
+    case token_GOTO: return "goto";
+    case token_IF: return "if";
+    case token_RETURN: return "return";
+    case token_STATIC: return "static";
     case token_STRUCT: return "struct";
+    case token_SWITCH: return "switch";
     case token_TYPEDEF: return "typedef";
     case token_UNION: return "union";
+    case token_WHILE: return "which";
 
     case token_CHAR: return "$CHAR";
     case token_IDENT: return "$IDENT";
@@ -56,8 +69,12 @@ extern char *token_string(token_t tok) {
 }
 
 extern int token_lookup(char *ident) {
+    if (!strcmp(ident, "break"))
+        return token_BREAK;
     if (!strcmp(ident, "const"))
         return token_CONST;
+    if (!strcmp(ident, "continue"))
+        return token_CONTINUE;
     if (!strcmp(ident, "else"))
         return token_ELSE;
     if (!strcmp(ident, "enum"))
@@ -66,6 +83,8 @@ extern int token_lookup(char *ident) {
         return token_EXTERN;
     if (!strcmp(ident, "for"))
         return token_FOR;
+    if (!strcmp(ident, "goto"))
+        return token_GOTO;
     if (!strcmp(ident, "if"))
         return token_IF;
     if (!strcmp(ident, "static"))

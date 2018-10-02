@@ -20,7 +20,7 @@ static void emit_tabs(emitter_t *e) {
 
 static void emit_field(emitter_t *e, field_t *field) {
     if (field->type == NULL && field->name == NULL) {
-        emit_printf(e, "%s", token_string(token_ELLIPSIS));
+        emit_printf(e, "...");
     } else {
         emit_type(e, field->type, field->name);
     }
@@ -82,61 +82,8 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         emit_expr(e, expr->unary.x);
         break;
 
-    case ast_TYPE_ARRAY:
-        emit_expr(e, expr->array.elt);
-        emit_printf(e, "[");
-        emit_expr(e, expr->array.len);
-        emit_printf(e, "]");
-        break;
-
-    case ast_TYPE_ENUM:
-        emit_printf(e, "enum ");
-        if (expr->enum_.name) {
-            emit_expr(e, expr->enum_.name);
-            emit_printf(e, " ");
-        }
-        emit_printf(e, "{\n");
-        for (enumerator_t **enumerators = expr->enum_.enumerators;
-                enumerators && *enumerators; enumerators++) {
-            enumerator_t *enumerator = *enumerators;
-            emit_printf(e, "\t");
-            emit_expr(e, enumerator->name);
-            if (enumerator->value) {
-                emit_printf(e, " = ");
-                emit_expr(e, enumerator->value);
-            }
-            emit_printf(e, ",\n");
-        }
-        emit_printf(e, "}");
-        break;
-
-    case ast_TYPE_PTR:
-        emit_expr(e, expr->ptr.type);
-        emit_printf(e, "*");
-        break;
-
-    case ast_TYPE_STRUCT:
-        emit_printf(e, "%s", token_string(expr->struct_.tok));
-        if (expr->struct_.name) {
-            emit_printf(e, " ");
-            emit_expr(e, expr->struct_.name);
-        }
-        if (expr->struct_.fields) {
-            emit_printf(e, " {\n");
-            e->indent++;
-            for (field_t **fields = expr->struct_.fields; fields && *fields; fields++) {
-                emit_tabs(e);
-                emit_field(e, *fields);
-                emit_printf(e, ";\n");
-            }
-            e->indent--;
-            emit_tabs(e);
-            emit_printf(e, "}");
-        }
-        break;
-
     default:
-        emit_printf(e, "/* UNKNOWN EXPR */");
+        emit_printf(e, "/* [UNKNOWN EXPR] */");
         break;
     }
 }
@@ -194,7 +141,7 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         break;
 
     default:
-        emit_printf(e, "/* UNKNOWN STMT */;");
+        emit_printf(e, "/* [UNKNOWN STMT] */;");
         break;
     }
 }
@@ -204,9 +151,7 @@ static void emit_spec(emitter_t *e, spec_t *spec) {
 
     case ast_SPEC_TYPEDEF:
         emit_printf(e, "typedef ");
-        emit_expr(e, spec->typedef_.type);
-        emit_printf(e, " ");
-        emit_expr(e, spec->typedef_.name);
+        emit_type(e, spec->typedef_.type, spec->typedef_.name);
         emit_printf(e, ";");
         break;
 
@@ -220,23 +165,24 @@ static void emit_spec(emitter_t *e, spec_t *spec) {
         break;
 
     default:
-        emit_printf(e, "/* UNKNOWN SPEC */");
+        emit_printf(e, "/* [UNKNOWN SPEC] */");
         break;
 
     }
 }
 
 static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
-    if (type->type == ast_TYPE_FUNC) {
-        emit_expr(e, type->func.result);
-    } else {
-        emit_expr(e, type);
-    }
-    if (name) {
-        emit_printf(e, " ");
-        emit_expr(e, name);
-    }
-    if (type->type == ast_TYPE_FUNC) {
+    switch (type->type) {
+    case ast_TYPE_ARRAY:
+        emit_type(e, type->array.elt, name);
+        emit_printf(e, "[");
+        emit_expr(e, type->array.len);
+        emit_printf(e, "]");
+        name = NULL;
+        break;
+
+    case ast_TYPE_FUNC:
+        emit_type(e, type->func.result, name);
         emit_printf(e, "(");
         for (field_t **params = type->func.params; params && *params; ) {
             emit_field(e, *params);
@@ -246,6 +192,72 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
             }
         }
         emit_printf(e, ")");
+        name = NULL;
+        break;
+
+    case ast_TYPE_ENUM:
+        emit_printf(e, "enum");
+        if (type->enum_.name) {
+            emit_printf(e, " ");
+            emit_expr(e, type->enum_.name);
+        }
+        if (type->enum_.enumerators) {
+            emit_printf(e, " {\n");
+            e->indent++;
+            for (enumerator_t **enumerators = type->enum_.enumerators;
+                    enumerators && *enumerators; enumerators++) {
+                enumerator_t *enumerator = *enumerators;
+                emit_tabs(e);
+                emit_expr(e, enumerator->name);
+                if (enumerator->value) {
+                    emit_printf(e, " = ");
+                    emit_expr(e, enumerator->value);
+                }
+                emit_printf(e, ",\n");
+            }
+            e->indent--;
+            emit_tabs(e);
+            emit_printf(e, "}");
+        }
+        break;
+
+    case ast_TYPE_PTR:
+        emit_type(e, type->ptr.type, NULL);
+        emit_printf(e, "*");
+        break;
+
+    case ast_TYPE_STRUCT:
+        emit_printf(e, "%s", token_string(type->struct_.tok));
+        if (type->struct_.name) {
+            emit_printf(e, " ");
+            emit_expr(e, type->struct_.name);
+        }
+        if (type->struct_.fields) {
+            emit_printf(e, " {\n");
+            e->indent++;
+            for (field_t **fields = type->struct_.fields; fields && *fields;
+                    fields++) {
+                emit_tabs(e);
+                emit_field(e, *fields);
+                emit_printf(e, ";\n");
+            }
+            e->indent--;
+            emit_tabs(e);
+            emit_printf(e, "}");
+        }
+        break;
+
+    case ast_EXPR_IDENT:
+        emit_expr(e, type);
+        break;
+
+    default:
+        emit_printf(e, "/* [UNKNOWN TYPE] */");
+    }
+
+    if (name) {
+        emit_printf(e, " ");
+        emit_expr(e, name);
     }
 }
 
@@ -267,7 +279,7 @@ static void emit_decl(emitter_t *e, decl_t *decl) {
         break;
 
     default:
-        emit_printf(e, "/* UNKNOWN DECL */");
+        emit_printf(e, "/* [UNKNOWN DECL] */");
         break;
     }
 }

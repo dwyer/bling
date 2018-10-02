@@ -12,6 +12,7 @@ typedef struct {
     char *lit;
 } parser_t;
 
+static expr_t *parse_const_expr(parser_t *p);
 static expr_t *parse_declarator(parser_t *p, expr_t **type_ptr);
 static decl_t *parse_decl(parser_t *p);
 static expr_t *parse_expr(parser_t *p);
@@ -41,8 +42,7 @@ static bool is_type(parser_t *p) {
     }
 }
 
-static int line(parser_t *p)
-{
+static int line(parser_t *p) {
     int n = 1;
     for (int i = 0; i < p->scanner.offset; i++)
         if (p->scanner.src[i] == '\n')
@@ -50,8 +50,7 @@ static int line(parser_t *p)
     return n;
 }
 
-static int col(parser_t *p)
-{
+static int col(parser_t *p) {
     int n = 1;
     for (int i = 0; i < p->scanner.offset; i++) {
         if (p->scanner.src[i] == '\n')
@@ -90,8 +89,7 @@ static void expect(parser_t *p, int tok0) {
     next(p);
 }
 
-static expr_t *parse_ident(parser_t *p)
-{
+static expr_t *parse_ident(parser_t *p) {
     expr_t *expr = NULL;
     switch (p->tok) {
     case token_IDENT:
@@ -107,8 +105,7 @@ static expr_t *parse_ident(parser_t *p)
     return expr;
 }
 
-static expr_t *parse_primary_expr(parser_t *p)
-{
+static expr_t *parse_primary_expr(parser_t *p) {
     expr_t *x = NULL;
     switch (p->tok) {
     case token_IDENT:
@@ -152,8 +149,7 @@ static expr_t *parse_call_expr(parser_t *p, expr_t *func) {
     return dup(&call);
 }
 
-static expr_t *parse_postfix_expr(parser_t *p)
-{
+static expr_t *parse_postfix_expr(parser_t *p) {
     expr_t *x = parse_primary_expr(p);
     for (;;) {
         expr_t *y;
@@ -195,8 +191,7 @@ done:
     return x;
 }
 
-static expr_t *parse_unary_expr(parser_t *p)
-{
+static expr_t *parse_unary_expr(parser_t *p) {
     expr_t *x;
     switch (p->tok) {
     case token_ADD:
@@ -217,8 +212,7 @@ static expr_t *parse_unary_expr(parser_t *p)
     return x;
 }
 
-static expr_t *parse_expr(parser_t *p)
-{
+static expr_t *parse_expr(parser_t *p) {
     expr_t *x = parse_unary_expr(p);
     expr_t *y;
     switch (p->tok) {
@@ -258,8 +252,7 @@ static field_t *parse_field(parser_t *p) {
     return dup(&field);
 }
 
-static expr_t *parse_struct_or_union(parser_t *p)
-{
+static expr_t *parse_struct_or_union(parser_t *p) {
     int keyword = p->tok;
     expr_t *name = NULL;
     expect(p, keyword);
@@ -293,8 +286,7 @@ static expr_t *parse_struct_or_union(parser_t *p)
     return dup(&x);
 }
 
-static expr_t *parse_enum(parser_t *p)
-{
+static expr_t *parse_enum(parser_t *p) {
     expr_t *name = NULL;
     slice_t enums = {.size=sizeof(enumerator_t *)};
     int cap = 0;
@@ -310,7 +302,7 @@ static expr_t *parse_enum(parser_t *p)
         enumerator->value = NULL;
         if (p->tok == token_ASSIGN) {
             next(p);
-            enumerator->value = parse_expr(p);
+            enumerator->value = parse_const_expr(p);
         }
         expect(p, token_COMMA);
         enums = append(enums, &enumerator);
@@ -328,8 +320,7 @@ static expr_t *parse_enum(parser_t *p)
     return x;
 }
 
-static expr_t *parse_type(parser_t *p)
-{
+static expr_t *parse_type(parser_t *p) {
     expr_t *x = NULL;
     switch (p->tok) {
     case token_STRUCT:
@@ -349,8 +340,7 @@ static expr_t *parse_type(parser_t *p)
     return x;
 }
 
-static stmt_t *parse_compound_stmt(parser_t *p)
-{
+static stmt_t *parse_compound_stmt(parser_t *p) {
     stmt_t *stmt = NULL;
     slice_t stmts = {.size = sizeof(stmt_t *)};
     expect(p, token_LBRACE);
@@ -366,8 +356,7 @@ static stmt_t *parse_compound_stmt(parser_t *p)
     return stmt;
 }
 
-static stmt_t *parse_return_stmt(parser_t *p)
-{
+static stmt_t *parse_return_stmt(parser_t *p) {
     expr_t *x = NULL;
     expect(p, token_RETURN);
     if (p->tok != token_SEMICOLON)
@@ -400,8 +389,7 @@ static stmt_t *parse_if_stmt(parser_t *p) {
     return dup(&stmt);
 }
 
-static stmt_t *parse_while_stmt(parser_t *p)
-{
+static stmt_t *parse_while_stmt(parser_t *p) {
     expect(p, token_WHILE);
     expect(p, token_LPAREN);
     expr_t *cond = parse_expr(p);
@@ -417,8 +405,7 @@ static stmt_t *parse_while_stmt(parser_t *p)
     return dup(&stmt);
 }
 
-static stmt_t *parse_stmt(parser_t *p)
-{
+static stmt_t *parse_stmt(parser_t *p) {
     if (is_type(p)) {
         stmt_t stmt = {
             .type = ast_STMT_DECL,
@@ -450,8 +437,7 @@ static stmt_t *parse_stmt(parser_t *p)
     }
 }
 
-static expr_t *parse_const_expr(parser_t *p)
-{
+static expr_t *parse_const_expr(parser_t *p) {
     return parse_expr(p); // TODO change
 }
 
