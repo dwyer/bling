@@ -18,6 +18,10 @@ static void emit_tabs(emitter_t *e) {
     }
 }
 
+static void emit_token(emitter_t *e, token_t tok) {
+    emit_printf(e, "%s", token_string(tok));
+}
+
 static void emit_field(emitter_t *e, field_t *field) {
     if (field->type == NULL && field->name == NULL) {
         emit_printf(e, "...");
@@ -38,7 +42,9 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
 
     case ast_EXPR_BINARY:
         emit_expr(e, expr->binary.x);
-        emit_printf(e, " %s ", token_string(expr->binary.op));
+        emit_printf(e, " ");
+        emit_token(e, expr->binary.op);
+        emit_printf(e, " ");
         emit_expr(e, expr->binary.y);
         break;
 
@@ -81,17 +87,23 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
 
     case ast_EXPR_INCDEC:
         emit_expr(e, expr->incdec.x);
-        emit_printf(e, "%s", token_string(expr->incdec.tok));
+        emit_token(e, expr->incdec.tok);
+        break;
+
+    case ast_EXPR_PAREN:
+        emit_printf(e, "(");
+        emit_expr(e, expr->paren.x);
+        emit_printf(e, ")");
         break;
 
     case ast_EXPR_SELECTOR:
         emit_expr(e, expr->selector.x);
-        emit_printf(e, ".");
+        emit_token(e, expr->selector.tok);
         emit_expr(e, expr->selector.sel);
         break;
 
     case ast_EXPR_UNARY:
-        emit_printf(e, "%s", token_string(expr->unary.op));
+        emit_token(e, expr->unary.op);
         emit_expr(e, expr->unary.x);
         break;
 
@@ -108,13 +120,34 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         emit_printf(e, "{\n");
         e->indent++;
         for (stmt_t **stmts = stmt->block.stmts; stmts && *stmts; stmts++) {
-            emit_tabs(e);
+            switch ((*stmts)->type) {
+            case ast_STMT_LABEL:
+                break;
+            case ast_STMT_CASE:
+                e->indent--;
+                emit_tabs(e);
+                e->indent++;
+                break;
+            default:
+                emit_tabs(e);
+                break;
+            }
             emit_stmt(e, *stmts);
             emit_printf(e, "\n");
         }
         e->indent--;
         emit_tabs(e);
         emit_printf(e, "}");
+        break;
+
+    case ast_STMT_CASE:
+        if (stmt->case_.expr) {
+            emit_printf(e, "case ");
+            emit_expr(e, stmt->case_.expr);
+        } else {
+            emit_printf(e, "default");
+        }
+        emit_printf(e, ":");
         break;
 
     case ast_STMT_DECL:
@@ -156,6 +189,20 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         }
         break;
 
+    case ast_STMT_JUMP:
+        emit_token(e, stmt->jump.keyword);
+        if (stmt->jump.label) {
+            emit_printf(e, " ");
+            emit_expr(e, stmt->jump.label);
+        }
+        emit_printf(e, ";");
+        break;
+
+    case ast_STMT_LABEL:
+        emit_expr(e, stmt->label.label);
+        emit_printf(e, ":");
+        break;
+
     case ast_STMT_RETURN:
         emit_printf(e, "return");
         if (stmt->return_.x) {
@@ -163,6 +210,13 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
             emit_expr(e, stmt->return_.x);
         }
         emit_printf(e, ";");
+        break;
+
+    case ast_STMT_SWITCH:
+        emit_printf(e, "switch (");
+        emit_expr(e, stmt->switch_.tag);
+        emit_printf(e, ") ");
+        emit_stmt(e, stmt->switch_.body);
         break;
 
     case ast_STMT_WHILE:
@@ -259,7 +313,7 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
         break;
 
     case ast_TYPE_STRUCT:
-        emit_printf(e, "%s", token_string(type->struct_.tok));
+        emit_token(e, type->struct_.tok);
         if (type->struct_.name) {
             emit_printf(e, " ");
             emit_expr(e, type->struct_.name);
