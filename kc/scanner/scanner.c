@@ -1,5 +1,5 @@
-#include "scanner.h"
-#include "token.h"
+#include "kc/scanner/scanner.h"
+#include "kc/token/token.h"
 
 char *src;
 int rd_offset;

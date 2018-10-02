@@ -1,5 +1,5 @@
-#include "emit.h"
-#include "token.h"
+#include "emit/emit.h"
+#include "kc/token/token.h"
 
 static int emit_indent = 0;
 FILE *emit_fp = NULL;
@@ -262,5 +262,13 @@ void emit_decl(decl_t *decl)
     default:
         emit_printf("/* UNKNOWN DECL */");
         break;
+    }
+}
+
+void emit_decls(decl_t **decls) {
+    while (decls && *decls) {
+        emit_decl(*decls);
+        emit_printf("\n\n");
+        decls++;
     }
 }

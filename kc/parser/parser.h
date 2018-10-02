@@ -1,5 +1,5 @@
 #include "kc.h"
 
-#include "ast.h"
+#include "kc/ast/ast.h"
 
 extern decl_t **parse_file(void);

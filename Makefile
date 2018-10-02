@@ -1,19 +1,22 @@
-main: builtin.o util.o token.o scanner.o parser.o emit.o main.o
+CFLAGS=-I.
+
+main: builtin.o io/ioutil/ioutil.o kc/token/token.o kc/scanner/scanner.o kc/parser/parser.o emit/emit.o main.o
 
 test: main
-	./main ast.h
+	./main kc/ast/ast.h
 
 clean:
-	$(RM) main *.o
+	$(RM) main
+	find * -name \*.o -delete
 
 builtin.o: kc.h
 
-util.o: kc.h util.h
+io/ioutil/ioutil.o: kc.h io/ioutil/ioutil.h
 
-token.o: kc.h token.h
-scanner.o: kc.h scanner.h token.h
-parser.o: kc.h ast.h parser.h scanner.h token.h
+kc/token/token.o: kc.h kc/token/token.h
+kc/scanner/scanner.o: kc.h kc/scanner/scanner.h kc/token/token.h
+kc/parser/parser.o: kc.h kc/ast/ast.h kc/parser/parser.h kc/scanner/scanner.h kc/token/token.h
 
-emit.o: kc.h ast.h
+emit/emit.o: kc.h kc/ast/ast.h
 
-main.o: kc.h ast.h parser.h scanner.h util.h
+main.o: kc.h kc/ast/ast.h kc/parser/parser.h kc/scanner/scanner.h io/ioutil/ioutil.h

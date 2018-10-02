@@ -1,7 +1,9 @@
-#include "util.h"
+#include "kc.h"
+#include "io/ioutil/ioutil.h"
 
-#include "scanner.h"
-#include "parser.h"
+#include "kc/scanner/scanner.h"
+#include "kc/parser/parser.h"
+#include "emit/emit.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -9,6 +11,7 @@ int main(int argc, char *argv[]) {
     }
     src = read_file(argv[1]);
     decl_t **decls = parse_file();
+    emit_decls(decls);
     free(decls);
     free(src);
     return 0;

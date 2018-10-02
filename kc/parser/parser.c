@@ -1,10 +1,8 @@
 #include "kc.h"
 
-#include "token.h"
-
-#include "scanner.h"
-#include "ast.h"
-#include "emit.h"
+#include "kc/token/token.h"
+#include "kc/scanner/scanner.h"
+#include "kc/ast/ast.h"
 
 #define error(fmt, ...) do { \
     fprintf(stderr, "%d:%d " fmt "\n", line(), col(), ## __VA_ARGS__); \
@@ -592,8 +590,6 @@ decl_t **parse_file(void) {
         if (!decl)
             break;
         decls = append(decls, &decl);
-        emit_decl(decl);
-        printf("\n\n");
     }
     decls = append(decls, &nil_ptr);
     return decls.array;
