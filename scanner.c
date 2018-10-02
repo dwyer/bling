@@ -1,12 +1,14 @@
+#include "scanner.h"
+#include "token.h"
+
+slice_t types = {.size=sizeof(char *)};
 char *src;
-int rd_offset = 0;
-int offset = 0;
+int rd_offset;
+int offset;
 int ch;
 char lit[BUFSIZ];
 int tok;
 bool is_type;
-
-slice_t types = {.size=sizeof(char *)};
 
 bool contains(slice_t types, char *s) {
     for (int i = 0; i < len(types); i++) {
@@ -80,7 +82,6 @@ int isletter(int ch) {
 
 void scan(void)
 {
-    static int i = 0;
     offset = rd_offset;
     skip_whitespace();
     tok = token_ILLEGAL;
@@ -178,11 +179,6 @@ void scan(void)
                   break;
         }
     }
-    /* if (*lit) */
-    /*     fprintf(stderr, "%d: %s\n", i, lit); */
-    /* else */
-    /*     fprintf(stderr, "%d: %s\n", i, token_string(tok)); */
-    i++;
     switch (tok) {
     case token_CONST:
     case token_ENUM:

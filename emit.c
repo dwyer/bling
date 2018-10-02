@@ -1,12 +1,12 @@
-void emit_decl(decl_t *decl);
-void emit_expr(expr_t *expr);
-void emit_type(expr_t *type, expr_t *name);
+#include "emit.h"
+#include "token.h"
 
-int emit_indent = 0;
+static int emit_indent = 0;
 FILE *emit_fp = NULL;
+
 #define emit_printf(fmt, ...) fprintf(emit_fp ? emit_fp : stdout, fmt, ##__VA_ARGS__)
 
-void emit_tabs(void) {
+static void emit_tabs(void) {
     for (int i = 0; i < emit_indent; i++) {
         emit_printf("\t");
     }
@@ -19,7 +19,7 @@ void emit_field(field_t *field) {
 void emit_expr(expr_t *expr)
 {
     if (!expr) {
-        error("emit_expr: expr is NULL");
+        panic("emit_expr: expr is NULL");
     }
     switch (expr->type) {
 

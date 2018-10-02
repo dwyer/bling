@@ -1,3 +1,5 @@
+#pragma once
+
 typedef enum {
 
     ast_NODE_ILLEGAL = 0,

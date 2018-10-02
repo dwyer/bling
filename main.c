@@ -1,11 +1,11 @@
 #include "kc.h"
+
+#include "token.h"
 #include "util.h"
 
-#include "token.c"
-#include "ast.c"
-#include "scanner.c"
-
-#include "emit.c"
+#include "scanner.h"
+#include "ast.h"
+#include "emit.h"
 
 expr_t *parse_declarator(expr_t **type);
 decl_t *parse_decl(void);
