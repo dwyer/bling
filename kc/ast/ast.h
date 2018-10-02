@@ -25,6 +25,7 @@ typedef enum {
     ast_STMT_CASE,
     ast_STMT_DECL,
     ast_STMT_EXPR,
+    ast_STMT_FOR,
     ast_STMT_IF,
     ast_STMT_JUMP,
     ast_STMT_RETURN,
@@ -165,6 +166,13 @@ struct stmt {
         struct {
             expr_t *x;
         } expr;
+
+        struct {
+            stmt_t *init;
+            expr_t *cond;
+            expr_t *post;
+            stmt_t *body;
+        } for_;
 
         struct {
             expr_t *cond;

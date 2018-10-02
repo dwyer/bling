@@ -391,6 +391,28 @@ static stmt_t *parse_if_stmt(parser_t *p) {
     return dup(&stmt);
 }
 
+static stmt_t *parse_for_stmt(parser_t *p) {
+    expect(p, token_FOR);
+    expect(p, token_LPAREN);
+    stmt_t *init = parse_stmt(p);
+    /* expect(p, token_SEMICOLON); */
+    expr_t *cond = parse_expr(p);
+    expect(p, token_SEMICOLON);
+    expr_t *post = parse_expr(p);
+    expect(p, token_RPAREN);
+    stmt_t *body = parse_stmt(p);
+    stmt_t stmt = {
+        .type = ast_STMT_FOR,
+        .for_ = {
+            .init = init,
+            .cond = cond,
+            .post = post,
+            .body = body,
+        },
+    };
+    return dup(&stmt);
+}
+
 static stmt_t *parse_while_stmt(parser_t *p) {
     expect(p, token_WHILE);
     expect(p, token_LPAREN);
@@ -454,6 +476,8 @@ static stmt_t *parse_stmt(parser_t *p) {
     case token_CASE:
     case token_DEFAULT:
         return parse_case_stmt(p);
+    case token_FOR:
+        return parse_for_stmt(p);
     case token_IF:
         return parse_if_stmt(p);
     case token_SWITCH:
