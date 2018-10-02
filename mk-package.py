@@ -10,6 +10,8 @@ import subprocess
 import sys
 
 INCLUDE_PATH = os.path.dirname(os.path.abspath(__file__))
+CFLAGS = ['-g', '-I', INCLUDE_PATH]
+LDFLAGS = ['-g']
 
 packages = [
     'builtin',
@@ -43,7 +45,7 @@ def compile_package(path):
     for name in c_files:
         obj = os.path.splitext(name)[0] + '.o'
         objs.append(obj)
-        call(['cc', '-I', INCLUDE_PATH, '-c', '-o', obj, name])
+        call(['cc'] + CFLAGS + ['-c', '-o', obj, name])
     return objs
 
 def compile_packages():
@@ -55,7 +57,7 @@ def compile_packages():
 def compile_command(name, objs):
     path = os.path.join('cmd', name)
     cmd_objs = compile_package(path)
-    call(['cc', '-o', name] + objs + cmd_objs)
+    call(['cc'] + LDFLAGS + ['-o', name] + objs + cmd_objs)
     return cmd_objs
 
 objs = compile_packages()

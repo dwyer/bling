@@ -21,10 +21,12 @@ typedef enum {
     ast_SPEC_VALUE,
 
     ast_STMT_BLOCK,
+    ast_STMT_CASE,
     ast_STMT_DECL,
     ast_STMT_EXPR,
     ast_STMT_IF,
     ast_STMT_RETURN,
+    ast_STMT_SWITCH,
     ast_STMT_WHILE,
 
     ast_TYPE_ARRAY,
@@ -148,6 +150,10 @@ struct stmt {
             stmt_t **stmts;
         } block;
 
+        struct {
+            expr_t *expr;
+        } case_;
+
         decl_t *decl;
 
         struct {
@@ -163,6 +169,11 @@ struct stmt {
         struct {
             expr_t *x;
         } return_;
+
+        struct {
+            expr_t *tag;
+            stmt_t *body;
+        } switch_;
 
         struct {
             expr_t *cond;

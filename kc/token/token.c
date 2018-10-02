@@ -69,37 +69,59 @@ extern char *token_string(token_t tok) {
 }
 
 extern int token_lookup(char *ident) {
-    if (!strcmp(ident, "break"))
+    if (!strcmp(ident, "break")) {
         return token_BREAK;
-    if (!strcmp(ident, "const"))
+    }
+    if (!strcmp(ident, "case")) {
+        return token_CASE;
+    }
+    if (!strcmp(ident, "const")) {
         return token_CONST;
-    if (!strcmp(ident, "continue"))
+    }
+    if (!strcmp(ident, "continue")) {
         return token_CONTINUE;
-    if (!strcmp(ident, "else"))
+    }
+    if (!strcmp(ident, "default")) {
+        return token_DEFAULT;
+    }
+    if (!strcmp(ident, "else")) {
         return token_ELSE;
-    if (!strcmp(ident, "enum"))
+    }
+    if (!strcmp(ident, "enum")) {
         return token_ENUM;
-    if (!strcmp(ident, "extern"))
+    }
+    if (!strcmp(ident, "extern")) {
         return token_EXTERN;
-    if (!strcmp(ident, "for"))
+    }
+    if (!strcmp(ident, "for")) {
         return token_FOR;
-    if (!strcmp(ident, "goto"))
+    }
+    if (!strcmp(ident, "goto")) {
         return token_GOTO;
-    if (!strcmp(ident, "if"))
+    }
+    if (!strcmp(ident, "if")) {
         return token_IF;
-    if (!strcmp(ident, "static"))
+    }
+    if (!strcmp(ident, "static")) {
         return token_STATIC;
-    if (!strcmp(ident, "struct"))
+    }
+    if (!strcmp(ident, "struct")) {
         return token_STRUCT;
-    if (!strcmp(ident, "switch"))
+    }
+    if (!strcmp(ident, "switch")) {
         return token_SWITCH;
-    if (!strcmp(ident, "typedef"))
+    }
+    if (!strcmp(ident, "typedef")) {
         return token_TYPEDEF;
-    if (!strcmp(ident, "union"))
+    }
+    if (!strcmp(ident, "union")) {
         return token_UNION;
-    if (!strcmp(ident, "while"))
+    }
+    if (!strcmp(ident, "while")) {
         return token_WHILE;
-    if (!strcmp(ident, "return"))
+    }
+    if (!strcmp(ident, "return")) {
         return token_RETURN;
+    }
     return token_IDENT;
 }

@@ -4,12 +4,13 @@
 #define dup(src) memdup((src), sizeof(*(src)))
 
 #define error(p, fmt, ...) \
-    panic("%d:%d " fmt "\n", line(p), col(p), ## __VA_ARGS__);
+    panic("%s:%d:%d " fmt "\n", p->filename, line(p), col(p), ## __VA_ARGS__);
 
 typedef struct {
     scanner_t scanner;
     int tok;
     char *lit;
+    char *filename;
 } parser_t;
 
 static expr_t *parse_const_expr(parser_t *p);
@@ -78,12 +79,13 @@ static bool accept(parser_t *p, int tok0) {
     return false;
 }
 
-static void expect(parser_t *p, int tok0) {
-    if (p->tok != tok0) {
-        char *s = p->lit;
-        if (!*s)
-            s = token_string(p->tok);
-        error(p, "expected `%s`, got %s", token_string(tok0), s);
+static void expect(parser_t *p, int tok) {
+    if (p->tok != tok) {
+        char *lit = p->lit;
+        if (lit == NULL) {
+            lit = token_string(p->tok);
+        }
+        error(p, "expected `%s`, got `%s`", token_string(tok), lit);
         exit(1);
     }
     next(p);
@@ -405,6 +407,39 @@ static stmt_t *parse_while_stmt(parser_t *p) {
     return dup(&stmt);
 }
 
+static stmt_t *parse_switch_stmt(parser_t *p) {
+    expect(p, token_SWITCH);
+    expect(p, token_LPAREN);
+    expr_t *tag = parse_expr(p);
+    expect(p, token_RPAREN);
+    stmt_t *body = parse_compound_stmt(p);
+    stmt_t stmt = {
+        .type = ast_STMT_SWITCH,
+        .switch_ = {
+            .tag = tag,
+            .body = body,
+        },
+    };
+    return dup(&stmt);
+}
+
+static stmt_t *parse_case_stmt(parser_t *p) {
+    expr_t *expr = NULL;
+    if (accept(p, token_CASE)) {
+        expr = parse_expr(p);
+    } else {
+        expect(p, token_DEFAULT);
+    }
+    expect(p, token_COLON);
+    stmt_t stmt = {
+        .type = ast_STMT_CASE,
+        .case_ = {
+            .expr = expr,
+        },
+    };
+    return dup(&stmt);
+}
+
 static stmt_t *parse_stmt(parser_t *p) {
     if (is_type(p)) {
         stmt_t stmt = {
@@ -416,25 +451,27 @@ static stmt_t *parse_stmt(parser_t *p) {
     switch (p->tok) {
     case token_LBRACE:
         return parse_compound_stmt(p);
+    case token_CASE:
+    case token_DEFAULT:
+        return parse_case_stmt(p);
     case token_IF:
         return parse_if_stmt(p);
+    case token_SWITCH:
+        return parse_switch_stmt(p);
     case token_WHILE:
         return parse_while_stmt(p);
     case token_RETURN:
         return parse_return_stmt(p);
-    default:
-        {
-            stmt_t stmt = {
-                .type = ast_STMT_EXPR,
-                .expr.x = NULL,
-            };
-            if (p->tok != token_SEMICOLON) {
-                stmt.expr.x = parse_expr(p);
-            }
-            expect(p, token_SEMICOLON);
-            return dup(&stmt);
-        }
     }
+    stmt_t stmt = {
+        .type = ast_STMT_EXPR,
+        .expr.x = NULL,
+    };
+    if (p->tok != token_SEMICOLON) {
+        stmt.expr.x = parse_expr(p);
+    }
+    expect(p, token_SEMICOLON);
+    return dup(&stmt);
 }
 
 static expr_t *parse_const_expr(parser_t *p) {
@@ -602,7 +639,7 @@ static file_t *parse_file(parser_t *p) {
 
 extern file_t *parser_parse_file(char *filename) {
     char *src = ioutil_read_file(filename);
-    parser_t parser = {};
+    parser_t parser = {.filename=filename};
     scanner_init(&parser.scanner, src);
     file_t *file = parse_file(&parser);
     free(src);

@@ -12,8 +12,10 @@ typedef enum {
     token_STRING,
 
     token_BREAK,
+    token_CASE,
     token_CONST,
     token_CONTINUE,
+    token_DEFAULT,
     token_ELSE,
     token_ENUM,
     token_EXTERN,
