@@ -6,7 +6,6 @@ typedef struct {
     int rd_offset;
     int offset;
     int ch;
-    char lit[BUFSIZ];
 } scanner_t;
 
 extern int scanner_scan(scanner_t *s, char **lit);

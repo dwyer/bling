@@ -68,6 +68,7 @@ static int col(parser_t *p)
 }
 
 static void next(parser_t *p) {
+    free(p->lit);
     p->tok = scanner_scan(&p->scanner, &p->lit);
 }
 
@@ -118,7 +119,9 @@ static expr_t *parse_primary_expr(parser_t *p)
     case token_IDENT:
         x = parse_ident(p);
         break;
+    case token_CHAR:
     case token_INT:
+    case token_STRING:
         x = malloc(sizeof(*x));
         x->type = ast_EXPR_BASIC_LIT;
         x->basic_lit.kind = p->tok;
@@ -345,7 +348,7 @@ static expr_t *parse_type(parser_t *p)
         x = parse_ident(p);
         break;
     default:
-        error(p, "expected type, got %s", *p->lit ? p->lit : token_string(p->tok));
+        error(p, "expected type, got %s", p->lit ? p->lit : token_string(p->tok));
         break;
     }
     return x;

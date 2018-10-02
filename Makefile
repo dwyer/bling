@@ -6,7 +6,7 @@ compile:
 	./mk-package.py
 
 test: compile
-	./$< builtin/builtin.h
+	./$< num.c
 
 clean:
 	$(RM) compile

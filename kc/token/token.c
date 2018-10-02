@@ -43,10 +43,13 @@ extern char *token_string(token_t tok) {
     case token_SUB_ASSIGN: return "-=";
 
     case token_STRUCT: return "struct";
-    case token_UNION: return "union";
     case token_TYPEDEF: return "typedef";
-    case token_TYPE_NAME: return "$TYPE";
+    case token_UNION: return "union";
+
+    case token_CHAR: return "$CHAR";
     case token_IDENT: return "$IDENT";
+    case token_STRING: return "$STRING";
+    case token_TYPE_NAME: return "$TYPE";
 
     default: print("unknown token: %d", tok); return "???";
     }

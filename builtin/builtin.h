@@ -12,14 +12,14 @@
 #define false 0
 #define true 1
 
+typedef int bool;
+
 typedef struct {
     void *array;
     int len;
     int cap;
     size_t size;
 } slice_t;
-
-typedef int bool;
 
 int len(slice_t s);
 int cap(slice_t s);
