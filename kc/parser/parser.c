@@ -1,8 +1,4 @@
-#include "builtin/builtin.h"
-#include "kc/ast/ast.h"
 #include "kc/parser/parser.h"
-#include "kc/scanner/scanner.h"
-#include "kc/token/token.h"
 
 #define memdup(src, size) memcpy(malloc((size)), (src), (size))
 #define dup(src) memdup((src), sizeof(*(src)))
@@ -23,6 +19,10 @@ stmt_t *parse_stmt(void);
 
 static slice_t types = {.size=sizeof(char *)};
 void *nil_ptr = NULL;
+static int tok;
+static char *lit;
+static scanner_t _scanner = {};
+scanner_t *scanner = &_scanner;
 
 bool is_type(void) {
     switch (tok) {
@@ -47,8 +47,8 @@ bool is_type(void) {
 static int line(void)
 {
     int n = 1;
-    for (int i = 0; i < offset; i++)
-        if (src[i] == '\n')
+    for (int i = 0; i < scanner->offset; i++)
+        if (scanner->src[i] == '\n')
             n++;
     return n;
 }
@@ -56,13 +56,17 @@ static int line(void)
 static int col(void)
 {
     int n = 1;
-    for (int i = 0; i < offset; i++) {
-        if (src[i] == '\n')
+    for (int i = 0; i < scanner->offset; i++) {
+        if (scanner->src[i] == '\n')
             n = 1;
         else
             n++;
     }
     return n;
+}
+
+static void parse_next(void) {
+    tok = scan(scanner, &lit);
 }
 
 void append_type(char *st) {
@@ -71,7 +75,7 @@ void append_type(char *st) {
 
 bool accept(int tok0) {
     if (tok == tok0) {
-        scan();
+        parse_next();
         return true;
     }
     return false;
@@ -85,7 +89,7 @@ void expect(int tok0) {
         error("expected `%s`, got %s", token_string(tok0), s);
         exit(1);
     }
-    scan();
+    parse_next();
 }
 
 expr_t *parse_ident(void)
@@ -101,7 +105,7 @@ expr_t *parse_ident(void)
         expect(token_IDENT);
         break;
     }
-    scan();
+    parse_next();
     return expr;
 }
 
@@ -117,7 +121,7 @@ expr_t *parse_primary_expr(void)
         x->type = ast_EXPR_BASIC_LIT;
         x->basic_lit.kind = tok;
         x->basic_lit.value = strdup(lit);
-        scan();
+        parse_next();
         break;
     default:
         error("bad expr: %s: %s", token_string(tok), lit);
@@ -158,7 +162,7 @@ expr_t *parse_postfix_expr(void)
             x = parse_call_expr(x);
             break;
         case token_LBRACK:
-            scan();
+            parse_next();
             y = malloc(sizeof(*y));
             y->type = ast_EXPR_INDEX;
             y->index.x = x;
@@ -167,7 +171,7 @@ expr_t *parse_postfix_expr(void)
             expect(token_RBRACK);
             break;
         case token_PERIOD:
-            scan();
+            parse_next();
             y = malloc(sizeof(*y));
             y->type = ast_EXPR_SELECTOR;
             y->selector.x = x;
@@ -181,7 +185,7 @@ expr_t *parse_postfix_expr(void)
             y->incdec.x = x;
             y->incdec.tok = tok;
             x = y;
-            scan();
+            parse_next();
             break;
         default:
             goto done;
@@ -203,7 +207,7 @@ expr_t *parse_unary_expr(void)
         x = malloc(sizeof(*x));
         x->type = ast_EXPR_UNARY;
         x->unary.op = tok;
-        scan();
+        parse_next();
         x->unary.x = parse_unary_expr(); // TODO: parse_cast_expr
         break;
     default:
@@ -236,7 +240,7 @@ expr_t *parse_expr(void)
         y->type = ast_EXPR_BINARY;
         y->binary.x = x;
         y->binary.op = tok;
-        scan();
+        parse_next();
         y->binary.y = parse_expr();
         x = y;
         break;
@@ -304,7 +308,7 @@ expr_t *parse_enum(void)
         enumerator->name = parse_ident();
         enumerator->value = NULL;
         if (tok == token_ASSIGN) {
-            scan();
+            parse_next();
             enumerator->value = parse_expr();
         }
         expect(token_COMMA);
@@ -452,7 +456,7 @@ expr_t *parse_const_expr(void)
 
 field_t **parse_parameter_type_list(void) {
     if (tok == token_IDENT && !strcmp(lit, "void")) {
-        scan();
+        parse_next();
         return NULL;
     }
     slice_t params = {.size=sizeof(field_t *)};
@@ -594,8 +598,8 @@ decl_t **parse_file(void) {
     append_type("size_t");
     append_type("va_list");
     append_type("void");
-    next();
-    scan();
+    next(scanner);
+    parse_next();
     while (tok != token_EOF) {
         decl_t *decl = parse_decl();
         if (!decl)

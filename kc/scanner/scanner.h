@@ -7,15 +7,7 @@ typedef struct {
     int offset;
     int ch;
     char lit[BUFSIZ];
-    int tok;
 } scanner_t;
 
-extern char *src;
-extern int rd_offset;
-extern int offset;
-extern int ch;
-extern char lit[BUFSIZ];
-extern int tok;
-
-void next(void);
-void scan(void);
+void next(scanner_t *s);
+int scan(scanner_t *s, char **lit);
