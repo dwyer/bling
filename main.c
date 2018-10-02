@@ -541,7 +541,10 @@ decl_t **parse_file(void) {
     return decls.array;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        error("usage: main SOURCE_FILE");
+    }
     append_type("FILE");
     append_type("bool");
     append_type("char");
@@ -549,10 +552,11 @@ int main() {
     append_type("int");
     append_type("size_t");
     append_type("void");
-    src = read_file("ast.c");
+    src = read_file(argv[1]);
     next();
     scan();
-    parse_file();
+    decl_t **decls = parse_file();
+    free(decls);
     free(src);
     return 0;
 }

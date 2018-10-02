@@ -1,7 +1,7 @@
 main: builtin.c main.c util.c
 
 test: main
-	./main
+	./main ast.c
 
 clean:
 	$(RM) main *.o
