@@ -28,6 +28,7 @@ typedef enum {
     token_ARROW,
     token_COLON,
     token_COMMA,
+    token_ELLIPSIS,
     token_EOF,
     token_LBRACE,
     token_LBRACK,

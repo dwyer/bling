@@ -109,23 +109,41 @@ void scan(void)
         lit[n] = '\0';
         tok = token_STRING;
         next();
+    } else if (ch == '.') {
+        next();
+        if (ch == '.') {
+            next();
+            if (ch == '.') {
+                next();
+                tok = token_ELLIPSIS;
+            }
+        } else {
+            tok = token_PERIOD;
+        }
+    } else if (ch == '/') {
+        next();
+        if (ch == '/') {
+            skip_line();
+            scan();
+        } else {
+            tok = switch2(token_DIV, token_DIV_ASSIGN);
+        }
     } else {
         int ch0 = ch;
         next();
         switch (ch0) {
             // structure
+        case '\0': tok = token_EOF; break;
         case '#': skip_line(); scan(); break;
         case '(': tok = token_LPAREN; break;
         case ')': tok = token_RPAREN; break;
         case ',': tok = token_COMMA; break;
-        case '.': tok = token_PERIOD; break;
         case ':': tok = token_COLON; break;
         case ';': tok = token_SEMICOLON; break;
         case '[': tok = token_LBRACK; break;
         case ']': tok = token_RBRACK; break;
         case '{': tok = token_LBRACE; break;
         case '}': tok = token_RBRACE; break;
-        case '\0': tok = token_EOF; break;
                    // operators
         case '!': tok = switch2(token_NOT, token_NOT_EQUAL); break;
         case '&': tok = switch3(token_AND, token_AND_ASSIGN, '&', token_LAND); break;
@@ -136,14 +154,6 @@ void scan(void)
         case '=': tok = switch2(token_ASSIGN, token_EQUAL); break;
         case '>': tok = switch2(token_GT, token_GT_EQUAL); break;
         case '|': tok = switch3(token_OR, token_OR_ASSIGN, '|', token_LOR); break;
-        case '/':
-                  if (ch == '/') {
-                      skip_line();
-                      scan();
-                  } else {
-                      tok = switch2(token_DIV, token_DIV_ASSIGN);
-                  }
-                  break;
         }
     }
 }

@@ -6,7 +6,7 @@ compile:
 	./mk-package.py
 
 test: compile
-	./$< kc/ast/ast.h
+	./$< builtin/builtin.h
 
 clean:
 	$(RM) compile

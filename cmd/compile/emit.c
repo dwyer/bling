@@ -4,7 +4,12 @@
 static int emit_indent = 0;
 FILE *emit_fp = NULL;
 
-#define emit_printf(fmt, ...) fprintf(emit_fp ? emit_fp : stdout, fmt, ##__VA_ARGS__)
+static void emit_printf(char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(emit_fp ? emit_fp : stdout, fmt, ap);
+    va_end(ap);
+}
 
 static void emit_tabs(void) {
     for (int i = 0; i < emit_indent; i++) {
@@ -13,7 +18,11 @@ static void emit_tabs(void) {
 }
 
 void emit_field(field_t *field) {
-    emit_type(field->type, field->name);
+    if (field->type == NULL && field->name == NULL) {
+        emit_printf("%s", token_string(token_ELLIPSIS));
+    } else {
+        emit_type(field->type, field->name);
+    }
 }
 
 void emit_expr(expr_t *expr)

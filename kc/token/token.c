@@ -6,6 +6,7 @@ char *token_string(token_t tok) {
     case token_ARROW: return "->";
     case token_COLON: return ":";
     case token_COMMA: return ",";
+    case token_ELLIPSIS: return "...";
     case token_EOF: return "EOF";
     case token_LBRACE: return "{";
     case token_LBRACK: return "[";

@@ -457,6 +457,13 @@ field_t **parse_parameter_type_list(void) {
     }
     slice_t params = {.size=sizeof(field_t *)};
     while (tok != token_RPAREN) {
+        if (accept(token_ELLIPSIS)) {
+            field_t *param = malloc(sizeof(*param));
+            param->type = NULL;
+            param->name = NULL;
+            params = append(params, &param);
+            break;
+        }
         field_t *param = parse_field();
         params = append(params, &param);
         if (!accept(token_COMMA)) {
@@ -585,6 +592,7 @@ decl_t **parse_file(void) {
     append_type("float");
     append_type("int");
     append_type("size_t");
+    append_type("va_list");
     append_type("void");
     next();
     scan();
