@@ -9,12 +9,15 @@ char *ioutil_read_file(char *filename) {
         .size = sizeof(char),
         .cap = 8,
     };
-    int ch;
-    while ((ch = fgetc(fp)) != EOF) {
+    for (;;) {
+        int ch = fgetc(fp);
+        if (ch == EOF) {
+            ch = '\0';
+            str = append(str, &ch);
+            break;
+        }
         str = append(str, &ch);
     }
-    ch = '\0';
-    str = append(str, &ch);
     fclose(fp);
     return str.array;
 }

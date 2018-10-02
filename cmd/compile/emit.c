@@ -1,283 +1,280 @@
 #include "cmd/compile/emit.h"
 #include "kc/token/token.h"
 
-static int emit_indent = 0;
-FILE *emit_fp = NULL;
+static void emit_decl(emitter_t *e, decl_t *decl);
+static void emit_expr(emitter_t *e, expr_t *expr);
+static void emit_type(emitter_t *e, expr_t *type, expr_t *name);
 
-static void emit_printf(char *fmt, ...) {
+static void emit_printf(emitter_t *e, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    vfprintf(emit_fp ? emit_fp : stdout, fmt, ap);
+    vfprintf(e->fp, fmt, ap);
     va_end(ap);
 }
 
-static void emit_tabs(void) {
-    for (int i = 0; i < emit_indent; i++) {
-        emit_printf("\t");
+static void emit_tabs(emitter_t *e) {
+    for (int i = 0; i < e->indent; i++) {
+        emit_printf(e, "\t");
     }
 }
 
-void emit_field(field_t *field) {
+static void emit_field(emitter_t *e, field_t *field) {
     if (field->type == NULL && field->name == NULL) {
-        emit_printf("%s", token_string(token_ELLIPSIS));
+        emit_printf(e, "%s", token_string(token_ELLIPSIS));
     } else {
-        emit_type(field->type, field->name);
+        emit_type(e, field->type, field->name);
     }
 }
 
-void emit_expr(expr_t *expr)
-{
+static void emit_expr(emitter_t *e, expr_t *expr) {
     if (!expr) {
         panic("emit_expr: expr is NULL");
     }
     switch (expr->type) {
 
     case ast_EXPR_BASIC_LIT:
-        emit_printf("%s", expr->basic_lit.value);
+        emit_printf(e, "%s", expr->basic_lit.value);
         break;
 
     case ast_EXPR_BINARY:
-        emit_expr(expr->binary.x);
-        emit_printf(" %s ", token_string(expr->binary.op));
-        emit_expr(expr->binary.y);
+        emit_expr(e, expr->binary.x);
+        emit_printf(e, " %s ", token_string(expr->binary.op));
+        emit_expr(e, expr->binary.y);
         break;
 
     case ast_EXPR_CALL:
-        emit_expr(expr->call.func);
-        emit_printf("(");
+        emit_expr(e, expr->call.func);
+        emit_printf(e, "(");
         for (expr_t **args = expr->call.args; args && *args; ) {
-            emit_expr(*args);
+            emit_expr(e, *args);
             args++;
             if (*args) {
-                emit_printf(", ");
+                emit_printf(e, ", ");
             }
         }
-        emit_printf(")");
+        emit_printf(e, ")");
         break;
 
     case ast_EXPR_IDENT:
-        emit_printf("%s", expr->ident.name);
+        emit_printf(e, "%s", expr->ident.name);
         break;
 
     case ast_EXPR_INDEX:
-        emit_expr(expr->index.x);
-        emit_printf("[");
-        emit_expr(expr->index.index);
-        emit_printf("]");
+        emit_expr(e, expr->index.x);
+        emit_printf(e, "[");
+        emit_expr(e, expr->index.index);
+        emit_printf(e, "]");
         break;
 
     case ast_EXPR_INCDEC:
-        emit_expr(expr->incdec.x);
-        emit_printf("%s", token_string(expr->incdec.tok));
+        emit_expr(e, expr->incdec.x);
+        emit_printf(e, "%s", token_string(expr->incdec.tok));
         break;
 
     case ast_EXPR_SELECTOR:
-        emit_expr(expr->selector.x);
-        emit_printf(".");
-        emit_expr(expr->selector.sel);
+        emit_expr(e, expr->selector.x);
+        emit_printf(e, ".");
+        emit_expr(e, expr->selector.sel);
         break;
 
     case ast_EXPR_UNARY:
-        emit_printf("%s", token_string(expr->unary.op));
-        emit_expr(expr->unary.x);
+        emit_printf(e, "%s", token_string(expr->unary.op));
+        emit_expr(e, expr->unary.x);
         break;
 
     case ast_TYPE_ARRAY:
-        emit_expr(expr->array.elt);
-        emit_printf("[");
-        emit_expr(expr->array.len);
-        emit_printf("]");
+        emit_expr(e, expr->array.elt);
+        emit_printf(e, "[");
+        emit_expr(e, expr->array.len);
+        emit_printf(e, "]");
         break;
 
     case ast_TYPE_ENUM:
-        emit_printf("enum ");
+        emit_printf(e, "enum ");
         if (expr->enum_.name) {
-            emit_expr(expr->enum_.name);
-            emit_printf(" ");
+            emit_expr(e, expr->enum_.name);
+            emit_printf(e, " ");
         }
-        emit_printf("{\n");
+        emit_printf(e, "{\n");
         for (enumerator_t **enumerators = expr->enum_.enumerators;
                 enumerators && *enumerators; enumerators++) {
             enumerator_t *enumerator = *enumerators;
-            emit_printf("\t");
-            emit_expr(enumerator->name);
+            emit_printf(e, "\t");
+            emit_expr(e, enumerator->name);
             if (enumerator->value) {
-                emit_printf(" = ");
-                emit_expr(enumerator->value);
+                emit_printf(e, " = ");
+                emit_expr(e, enumerator->value);
             }
-            emit_printf(",\n");
+            emit_printf(e, ",\n");
         }
-        emit_printf("}");
+        emit_printf(e, "}");
         break;
 
     case ast_TYPE_PTR:
-        emit_expr(expr->ptr.type);
-        emit_printf("*");
+        emit_expr(e, expr->ptr.type);
+        emit_printf(e, "*");
         break;
 
     case ast_TYPE_STRUCT:
-        emit_printf("%s", token_string(expr->struct_.tok));
+        emit_printf(e, "%s", token_string(expr->struct_.tok));
         if (expr->struct_.name) {
-            emit_printf(" ");
-            emit_expr(expr->struct_.name);
+            emit_printf(e, " ");
+            emit_expr(e, expr->struct_.name);
         }
         if (expr->struct_.fields) {
-            emit_printf(" {\n");
-            emit_indent++;
+            emit_printf(e, " {\n");
+            e->indent++;
             for (field_t **fields = expr->struct_.fields; fields && *fields; fields++) {
-                emit_tabs();
-                emit_field(*fields);
-                emit_printf(";\n");
+                emit_tabs(e);
+                emit_field(e, *fields);
+                emit_printf(e, ";\n");
             }
-            emit_indent--;
-            emit_tabs();
-            emit_printf("}");
+            e->indent--;
+            emit_tabs(e);
+            emit_printf(e, "}");
         }
         break;
 
     default:
-        emit_printf("/* UNKNOWN EXPR */");
+        emit_printf(e, "/* UNKNOWN EXPR */");
         break;
     }
 }
 
-void emit_stmt(stmt_t *stmt)
-{
+static void emit_stmt(emitter_t *e, stmt_t *stmt) {
     switch (stmt->type) {
 
     case ast_STMT_BLOCK:
-        emit_printf("{\n");
-        emit_indent++;
+        emit_printf(e, "{\n");
+        e->indent++;
         for (stmt_t **stmts = stmt->block.stmts; stmts && *stmts; stmts++) {
-            emit_tabs();
-            emit_stmt(*stmts);
-            emit_printf("\n");
+            emit_tabs(e);
+            emit_stmt(e, *stmts);
+            emit_printf(e, "\n");
         }
-        emit_indent--;
-        emit_tabs();
-        emit_printf("}");
+        e->indent--;
+        emit_tabs(e);
+        emit_printf(e, "}");
         break;
 
     case ast_STMT_DECL:
-        emit_decl(stmt->decl);
+        emit_decl(e, stmt->decl);
         break;
 
     case ast_STMT_EXPR:
-        emit_expr(stmt->expr.x);
-        emit_printf(";");
+        emit_expr(e, stmt->expr.x);
+        emit_printf(e, ";");
         break;
 
     case ast_STMT_IF:
-        emit_printf("if (");
-        emit_expr(stmt->if_.cond);
-        emit_printf(") ");
-        emit_stmt(stmt->if_.body);
+        emit_printf(e, "if (");
+        emit_expr(e, stmt->if_.cond);
+        emit_printf(e, ") ");
+        emit_stmt(e, stmt->if_.body);
         if (stmt->if_.else_) {
-            emit_printf(" else ");
-            emit_stmt(stmt->if_.else_);
+            emit_printf(e, " else ");
+            emit_stmt(e, stmt->if_.else_);
         }
         break;
 
     case ast_STMT_RETURN:
-        emit_printf("return");
+        emit_printf(e, "return");
         if (stmt->return_.x) {
-            emit_printf(" ");
-            emit_expr(stmt->return_.x);
+            emit_printf(e, " ");
+            emit_expr(e, stmt->return_.x);
         }
-        emit_printf(";");
+        emit_printf(e, ";");
         break;
 
     case ast_STMT_WHILE:
-        emit_printf("while (");
-        emit_expr(stmt->while_.cond);
-        emit_printf(") ");
-        emit_stmt(stmt->if_.body);
+        emit_printf(e, "while (");
+        emit_expr(e, stmt->while_.cond);
+        emit_printf(e, ") ");
+        emit_stmt(e, stmt->if_.body);
         break;
 
     default:
-        emit_printf("/* UNKNOWN STMT */;");
+        emit_printf(e, "/* UNKNOWN STMT */;");
         break;
     }
 }
 
-void emit_spec(spec_t *spec) {
+static void emit_spec(emitter_t *e, spec_t *spec) {
     switch (spec->type) {
 
     case ast_SPEC_TYPEDEF:
-        emit_printf("typedef ");
-        emit_expr(spec->typedef_.type);
-        emit_printf(" ");
-        emit_expr(spec->typedef_.name);
-        emit_printf(";");
+        emit_printf(e, "typedef ");
+        emit_expr(e, spec->typedef_.type);
+        emit_printf(e, " ");
+        emit_expr(e, spec->typedef_.name);
+        emit_printf(e, ";");
         break;
 
     case ast_SPEC_VALUE:
-        emit_type(spec->value.type, spec->value.name);
+        emit_type(e, spec->value.type, spec->value.name);
         if (spec->value.value) {
-            emit_printf(" = ");
-            emit_expr(spec->value.value);
+            emit_printf(e, " = ");
+            emit_expr(e, spec->value.value);
         }
-        emit_printf(";");
+        emit_printf(e, ";");
         break;
 
     default:
-        emit_printf("/* UNKNOWN SPEC */");
+        emit_printf(e, "/* UNKNOWN SPEC */");
         break;
 
     }
 }
 
-void emit_type(expr_t *type, expr_t *name) {
+static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
     if (type->type == ast_TYPE_FUNC) {
-        emit_expr(type->func.result);
+        emit_expr(e, type->func.result);
     } else {
-        emit_expr(type);
+        emit_expr(e, type);
     }
     if (name) {
-        emit_printf(" ");
-        emit_expr(name);
+        emit_printf(e, " ");
+        emit_expr(e, name);
     }
     if (type->type == ast_TYPE_FUNC) {
-        emit_printf("(");
+        emit_printf(e, "(");
         for (field_t **params = type->func.params; params && *params; ) {
-            emit_field(*params);
+            emit_field(e, *params);
             params++;
             if (*params != NULL) {
-                emit_printf(", ");
+                emit_printf(e, ", ");
             }
         }
-        emit_printf(")");
+        emit_printf(e, ")");
     }
 }
 
-void emit_decl(decl_t *decl)
-{
+static void emit_decl(emitter_t *e, decl_t *decl) {
     switch (decl->type) {
 
     case ast_DECL_FUNC:
-        emit_type(decl->func.type, decl->func.name);
-        emit_printf(" ");
+        emit_type(e, decl->func.type, decl->func.name);
+        emit_printf(e, " ");
         if (decl->func.body) {
-            emit_stmt(decl->func.body);
+            emit_stmt(e, decl->func.body);
         } else {
-            emit_printf(";");
+            emit_printf(e, ";");
         }
         break;
 
     case ast_DECL_GEN:
-        emit_spec(decl->gen.spec);
+        emit_spec(e, decl->gen.spec);
         break;
 
     default:
-        emit_printf("/* UNKNOWN DECL */");
+        emit_printf(e, "/* UNKNOWN DECL */");
         break;
     }
 }
 
-void emit_decls(decl_t **decls) {
-    while (decls && *decls) {
-        emit_decl(*decls);
-        emit_printf("\n\n");
-        decls++;
+extern void emitter_emit_file(emitter_t *e, file_t *file) {
+    for (decl_t **decls = file->decls; decls && *decls; decls++) {
+        emit_decl(e, *decls);
+        emit_printf(e, "\n\n");
     }
 }

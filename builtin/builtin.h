@@ -21,9 +21,9 @@ typedef struct {
     size_t size;
 } slice_t;
 
-int len(slice_t s);
-int cap(slice_t s);
-void *get_ptr(slice_t s, int index);
-slice_t append(slice_t s, void *obj);
-void print(char *fmt, ...);
-void panic(char *fmt, ...);
+extern int len(slice_t s);
+extern int cap(slice_t s);
+extern void *get_ptr(slice_t s, int index);
+extern slice_t append(slice_t s, void *obj);
+extern void print(char *fmt, ...);
+extern void panic(char *fmt, ...);

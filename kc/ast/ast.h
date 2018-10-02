@@ -189,3 +189,20 @@ struct spec {
 
     };
 };
+
+typedef struct scope scope_t;
+
+struct scope {
+    scope_t *outer;
+};
+
+typedef struct {
+    expr_t *name;
+    decl_t **decls;
+    scope_t *scope;
+} file_t;
+
+typedef struct {
+    char *name;
+    scope_t *scope;
+} package_t;

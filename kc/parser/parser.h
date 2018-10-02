@@ -5,4 +5,4 @@
 #include "kc/scanner/scanner.h"
 #include "kc/token/token.h"
 
-extern decl_t **parser_parse_file(char *filename);
+extern file_t *parser_parse_file(char *filename);

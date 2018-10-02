@@ -3,13 +3,8 @@
 #define memdup(src, size) memcpy(malloc((size)), (src), (size))
 #define dup(src) memdup((src), sizeof(*(src)))
 
-#define error(p, fmt, ...) do { \
-    fprintf(stderr, "%d:%d " fmt "\n", line(p), col(p), ## __VA_ARGS__); \
-    void *buf[1000]; \
-    int n = backtrace(buf, 1000); \
-    backtrace_symbols_fd(buf, n, 2); \
-    exit(1); \
-} while (0)
+#define error(p, fmt, ...) \
+    panic("%d:%d " fmt "\n", line(p), col(p), ## __VA_ARGS__);
 
 typedef struct {
     scanner_t scanner;
@@ -559,6 +554,11 @@ static decl_t *parse_decl(parser_t *p) {
     if (p->tok == token_TYPEDEF) {
         return parse_gen_decl(p, p->tok, parse_typedef_spec);
     }
+    switch (p->tok) {
+    case token_EXTERN:
+    case token_STATIC:
+        next(p);
+    }
     expr_t *type = parse_type(p);
     expr_t *name = parse_declarator(p, &type);
     expr_t *value = NULL;
@@ -593,10 +593,9 @@ static decl_t *parse_decl(parser_t *p) {
     return dup(&decl);
 }
 
-static decl_t **parse_file(parser_t *p) {
+static file_t *parse_file(parser_t *p) {
     slice_t decls = {.size = sizeof(decl_t *)};
     append_type("FILE");
-    append_type("bool");
     append_type("char");
     append_type("float");
     append_type("int");
@@ -606,19 +605,20 @@ static decl_t **parse_file(parser_t *p) {
     next(p);
     while (p->tok != token_EOF) {
         decl_t *decl = parse_decl(p);
-        if (!decl)
-            break;
         decls = append(decls, &decl);
     }
     decls = append(decls, &nil_ptr);
-    return decls.array;
+    file_t file = {
+        .decls = decls.array,
+    };
+    return dup(&file);
 }
 
-extern decl_t **parser_parse_file(char *filename) {
+extern file_t *parser_parse_file(char *filename) {
     char *src = ioutil_read_file(filename);
     parser_t parser = {};
     scanner_init(&parser.scanner, src);
-    decl_t **decls = parse_file(&parser);
+    file_t *file = parse_file(&parser);
     free(src);
-    return decls;
+    return file;
 }

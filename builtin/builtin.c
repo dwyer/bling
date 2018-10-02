@@ -5,14 +5,14 @@ static void vprint(char *fmt, va_list ap) {
     fprintf(stderr, "\n");
 }
 
-void print(char *fmt, ...) {
+extern void print(char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vprint(fmt, ap);
     va_end(ap);
 }
 
-void panic(char *fmt, ...) {
+extern void panic(char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vprint(fmt, ap);
@@ -23,19 +23,19 @@ void panic(char *fmt, ...) {
     exit(1);
 }
 
-int len(slice_t s) {
+extern int len(slice_t s) {
     return s.len;
 }
 
-int cap(slice_t s) {
-    return s.len;
+extern int cap(slice_t s) {
+    return s.cap;
 }
 
-void *get_ptr(slice_t s, int index) {
+extern void *get_ptr(slice_t s, int index) {
     return &s.array[index * s.size];
 }
 
-slice_t append(slice_t s, void *obj) {
+extern slice_t append(slice_t s, void *obj) {
     bool resize = false;
     if (s.cap == 0) {
         s.cap = 1;
