@@ -65,8 +65,8 @@ static int col(void)
     return n;
 }
 
-static void parse_next(void) {
-    tok = scan(scanner, &lit);
+static void next(void) {
+    tok = scanner_scan(scanner, &lit);
 }
 
 void append_type(char *st) {
@@ -75,7 +75,7 @@ void append_type(char *st) {
 
 bool accept(int tok0) {
     if (tok == tok0) {
-        parse_next();
+        next();
         return true;
     }
     return false;
@@ -89,7 +89,7 @@ void expect(int tok0) {
         error("expected `%s`, got %s", token_string(tok0), s);
         exit(1);
     }
-    parse_next();
+    next();
 }
 
 expr_t *parse_ident(void)
@@ -105,7 +105,7 @@ expr_t *parse_ident(void)
         expect(token_IDENT);
         break;
     }
-    parse_next();
+    next();
     return expr;
 }
 
@@ -121,7 +121,7 @@ expr_t *parse_primary_expr(void)
         x->type = ast_EXPR_BASIC_LIT;
         x->basic_lit.kind = tok;
         x->basic_lit.value = strdup(lit);
-        parse_next();
+        next();
         break;
     default:
         error("bad expr: %s: %s", token_string(tok), lit);
@@ -162,7 +162,7 @@ expr_t *parse_postfix_expr(void)
             x = parse_call_expr(x);
             break;
         case token_LBRACK:
-            parse_next();
+            next();
             y = malloc(sizeof(*y));
             y->type = ast_EXPR_INDEX;
             y->index.x = x;
@@ -171,7 +171,7 @@ expr_t *parse_postfix_expr(void)
             expect(token_RBRACK);
             break;
         case token_PERIOD:
-            parse_next();
+            next();
             y = malloc(sizeof(*y));
             y->type = ast_EXPR_SELECTOR;
             y->selector.x = x;
@@ -185,7 +185,7 @@ expr_t *parse_postfix_expr(void)
             y->incdec.x = x;
             y->incdec.tok = tok;
             x = y;
-            parse_next();
+            next();
             break;
         default:
             goto done;
@@ -207,7 +207,7 @@ expr_t *parse_unary_expr(void)
         x = malloc(sizeof(*x));
         x->type = ast_EXPR_UNARY;
         x->unary.op = tok;
-        parse_next();
+        next();
         x->unary.x = parse_unary_expr(); // TODO: parse_cast_expr
         break;
     default:
@@ -240,7 +240,7 @@ expr_t *parse_expr(void)
         y->type = ast_EXPR_BINARY;
         y->binary.x = x;
         y->binary.op = tok;
-        parse_next();
+        next();
         y->binary.y = parse_expr();
         x = y;
         break;
@@ -308,7 +308,7 @@ expr_t *parse_enum(void)
         enumerator->name = parse_ident();
         enumerator->value = NULL;
         if (tok == token_ASSIGN) {
-            parse_next();
+            next();
             enumerator->value = parse_expr();
         }
         expect(token_COMMA);
@@ -456,7 +456,7 @@ expr_t *parse_const_expr(void)
 
 field_t **parse_parameter_type_list(void) {
     if (tok == token_IDENT && !strcmp(lit, "void")) {
-        parse_next();
+        next();
         return NULL;
     }
     slice_t params = {.size=sizeof(field_t *)};
@@ -598,8 +598,8 @@ decl_t **parse_file(void) {
     append_type("size_t");
     append_type("va_list");
     append_type("void");
-    next(scanner);
-    parse_next();
+    scanner_init(scanner, scanner->src);
+    next();
     while (tok != token_EOF) {
         decl_t *decl = parse_decl();
         if (!decl)

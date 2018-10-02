@@ -9,5 +9,5 @@ typedef struct {
     char lit[BUFSIZ];
 } scanner_t;
 
-void next(scanner_t *s);
-int scan(scanner_t *s, char **lit);
+int scanner_scan(scanner_t *s, char **lit);
+void scanner_init(scanner_t *s, char *src);

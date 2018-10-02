@@ -38,7 +38,7 @@ bool isletter(int ch) {
     return ch == '_' || isalpha(ch);
 }
 
-int scan(scanner_t *s, char **lit) {
+int scanner_scan(scanner_t *s, char **lit) {
     int tok;
 scan_again:
     tok = token_ILLEGAL;
@@ -151,8 +151,9 @@ scan_again:
     return tok;
 }
 
-void scan_init(scanner_t *s) {
-    s->src = NULL;
+void scanner_init(scanner_t *s, char *src) {
+    s->src = src;
     s->rd_offset = 0;
     s->offset = 0;
+    next(s);
 }
