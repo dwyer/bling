@@ -7,6 +7,9 @@ from __future__ import unicode_literals
 
 import os
 import subprocess
+import sys
+
+INCLUDE_PATH = os.path.dirname(os.path.abspath(__file__))
 
 packages = [
     'builtin',
@@ -15,11 +18,10 @@ packages = [
     'kc/scanner',
     'kc/parser',
     'io/ioutil',
-    'emit',
 ]
 
 commands = [
-    'cmd/compile',
+    'compile',
 ]
 
 def call(cmd):
@@ -39,16 +41,22 @@ def compile_package(path):
     for name in c_files:
         obj = os.path.splitext(name)[0] + '.o'
         objs.append(obj)
-        call(['cc', '-I.', '-c', '-o', obj, name])
+        call(['cc', '-I', INCLUDE_PATH, '-c', '-o', obj, name])
     return objs
 
-objs = []
+def compile_packages():
+    objs = []
+    for path in packages:
+        objs.extend(compile_package(path))
+    return objs
 
-for path in packages:
-    objs.extend(compile_package(path))
-
-for path in commands:
+def compile_command(name, objs):
+    path = os.path.join('cmd', name)
     cmd_objs = compile_package(path)
-    call(['cc', '-o', 'main'] + objs + cmd_objs)
-    remove(cmd_objs)
+    call(['cc', '-o', name] + objs + cmd_objs)
+    return cmd_objs
+
+objs = compile_packages()
+for name in commands:
+    remove(compile_command(name, objs))
 remove(objs)
