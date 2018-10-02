@@ -1,32 +1,11 @@
-#include <ctype.h>
-#include <execinfo.h> // backtrace
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#define package(name)
-
-#include "slice.c"
-#include "util.c"
+#include "kc.h"
+#include "util.h"
 
 #include "token.c"
 #include "ast.c"
 #include "scanner.c"
 
-#define log(fmt, ...) fprintf(stderr, "%d:%d " fmt "\n", line(), col(), ## __VA_ARGS__);
-#define error(fmt, ...) do { \
-    fprintf(stderr, "%d:%d " fmt "\n", line(), col(), ## __VA_ARGS__); \
-    void *buf[1000]; \
-    int n = backtrace(buf, 1000); \
-    backtrace_symbols_fd(buf, n, 2); \
-    exit(1); \
-} while (0)
-
 #include "emit.c"
-
-#define memdup(src, size) memcpy(malloc((size)), (src), (size))
-#define copy(src) memdup((src), sizeof(*(src)))
 
 expr_t *parse_declarator(expr_t **type);
 decl_t *parse_decl(void);
@@ -548,15 +527,18 @@ decl_t *parse_decl(void) {
     return copy(&decl);
 }
 
-void parse(void) {
-    int i = 0;
+decl_t **parse_file(void) {
+    slice_t decls = {.size = sizeof(decl_t *)};
     while (tok != token_EOF) {
         decl_t *decl = parse_decl();
         if (!decl)
             break;
+        decls = append(decls, &decl);
         emit_decl(decl);
         printf("\n\n");
     }
+    decls = append(decls, &nil);
+    return decls.array;
 }
 
 int main() {
@@ -567,12 +549,10 @@ int main() {
     append_type("int");
     append_type("size_t");
     append_type("void");
-    FILE *fp = fopen("ast.c", "r");
-    src = readall(fp);
-    fclose(fp);
+    src = read_file("ast.c");
     next();
     scan();
-    parse();
+    parse_file();
     free(src);
     return 0;
 }

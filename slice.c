@@ -1,9 +1,4 @@
-typedef struct {
-    void *array;
-    int len;
-    int cap;
-    size_t size;
-} slice_t;
+#include "kc.h"
 
 int len(slice_t s) {
     return s.len;

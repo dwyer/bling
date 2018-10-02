@@ -1,7 +1,3 @@
-#pragma package ast
-
-package(ast);
-
 typedef enum {
 
     ast_NODE_ILLEGAL = 0,
