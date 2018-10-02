@@ -1,7 +1,5 @@
 #include "kc.h"
 
-package(ioutil);
-
 char *read_file(char *filename) {
     FILE *fp = fopen(filename, "r");
     slice_t str = {

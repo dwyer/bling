@@ -1,4 +1,4 @@
-main: main.c slice.c util.c
+main: builtin.c main.c util.c
 
 test: main
 	./main
