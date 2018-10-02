@@ -55,6 +55,19 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         emit_printf(e, ")");
         break;
 
+    case ast_EXPR_COMPOUND:
+        emit_printf(e, "{\n");
+        e->indent++;
+        for (expr_t **exprs = expr->compound.list; exprs && *exprs; exprs++) {
+            emit_tabs(e);
+            emit_expr(e, *exprs);
+            emit_printf(e, ",\n");
+        }
+        e->indent--;
+        emit_tabs(e);
+        emit_printf(e, "}");
+        break;
+
     case ast_EXPR_IDENT:
         emit_printf(e, "%s", expr->ident.name);
         break;
@@ -111,6 +124,25 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
     case ast_STMT_EXPR:
         emit_expr(e, stmt->expr.x);
         emit_printf(e, ";");
+        break;
+
+    case ast_STMT_FOR:
+        emit_printf(e, "for (");
+        if (stmt->for_.init) {
+            emit_stmt(e, stmt->for_.init);
+            emit_printf(e, " ");
+        } else {
+            emit_printf(e, "; ");
+        }
+        if (stmt->for_.cond) {
+            emit_expr(e, stmt->for_.cond);
+        }
+        emit_printf(e, "; ");
+        if (stmt->for_.post) {
+            emit_expr(e, stmt->for_.post);
+        }
+        emit_printf(e, ") ");
+        emit_stmt(e, stmt->for_.body);
         break;
 
     case ast_STMT_IF:
