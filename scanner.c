@@ -1,44 +1,12 @@
 #include "scanner.h"
 #include "token.h"
 
-slice_t types = {.size=sizeof(char *)};
 char *src;
 int rd_offset;
 int offset;
 int ch;
 char lit[BUFSIZ];
 int tok;
-bool is_type;
-
-bool contains(slice_t types, char *s) {
-    for (int i = 0; i < len(types); i++) {
-        if (!strcmp(*(char **)get_ptr(types, i), lit)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-int line(void)
-{
-    int n = 1;
-    for (int i = 0; i < offset; i++)
-        if (src[i] == '\n')
-            n++;
-    return n;
-}
-
-int col(void)
-{
-    int n = 1;
-    for (int i = 0; i < offset; i++) {
-        if (src[i] == '\n')
-            n = 1;
-        else
-            n++;
-    }
-    return n;
-}
 
 void next(void)
 {
@@ -85,7 +53,6 @@ void scan(void)
     offset = rd_offset;
     skip_whitespace();
     tok = token_ILLEGAL;
-    is_type = false;
     lit[0] = '\0';
     if (isletter(ch)) {
         int n = 0;
@@ -178,22 +145,6 @@ void scan(void)
                   }
                   break;
         }
-    }
-    switch (tok) {
-    case token_CONST:
-    case token_ENUM:
-    case token_EXTERN:
-    case token_STATIC:
-    case token_STRUCT:
-    case token_UNION:
-        is_type = true;
-        break;
-    case token_IDENT:
-        is_type = contains(types, lit);
-        break;
-    default:
-        is_type = false;
-        break;
     }
 }
 

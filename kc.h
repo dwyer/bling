@@ -20,14 +20,6 @@
     exit(1); \
 } while (0)
 
-#define error(fmt, ...) do { \
-    fprintf(stderr, "%d:%d " fmt "\n", line(), col(), ## __VA_ARGS__); \
-    void *buf[1000]; \
-    int n = backtrace(buf, 1000); \
-    backtrace_symbols_fd(buf, n, 2); \
-    exit(1); \
-} while (0)
-
 #define memdup(src, size) memcpy(malloc((size)), (src), (size))
 #define copy(src) memdup((src), sizeof(*(src)))
 
