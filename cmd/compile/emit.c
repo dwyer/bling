@@ -1,4 +1,4 @@
-#include "emit/emit.h"
+#include "cmd/compile/emit.h"
 #include "kc/token/token.h"
 
 static int emit_indent = 0;

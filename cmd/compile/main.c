@@ -3,7 +3,7 @@
 
 #include "kc/scanner/scanner.h"
 #include "kc/parser/parser.h"
-#include "emit/emit.h"
+#include "cmd/compile/emit.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
