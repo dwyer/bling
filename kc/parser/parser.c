@@ -612,7 +612,7 @@ static decl_t **parse_file(parser_t *p) {
 }
 
 extern decl_t **parser_parse_file(char *filename) {
-    char *src = read_file(filename);
+    char *src = ioutil_read_file(filename);
     parser_t parser = {};
     scanner_init(&parser.scanner, src);
     decl_t **decls = parse_file(&parser);

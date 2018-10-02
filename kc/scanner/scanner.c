@@ -1,24 +1,32 @@
 #include "kc/scanner/scanner.h"
 #include "kc/token/token.h"
 
-void next(scanner_t *s) {
+static void next(scanner_t *s) {
     s->ch = s->src[s->rd_offset];
     s->rd_offset++;
 }
 
-void skip_whitespace(scanner_t *s) {
+static void skip_whitespace(scanner_t *s) {
     while (s->ch == ' ' || s->ch == '\n' || s->ch == '\t') {
         next(s);
     }
 }
 
-void skip_line(scanner_t *s) {
+static void skip_line(scanner_t *s) {
     while (s->ch && s->ch != '\n') {
         next(s);
     }
 }
 
-int switch3(scanner_t *s, int tok0, int tok1, int ch2, int tok2) {
+static bool is_letter(int ch) {
+    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_';
+}
+
+static bool is_digit(int ch) {
+    return '0' <= ch && ch <= '9';
+}
+
+static int switch3(scanner_t *s, int tok0, int tok1, int ch2, int tok2) {
     if (s->ch == '=') {
         next(s);
         return tok1;
@@ -30,76 +38,76 @@ int switch3(scanner_t *s, int tok0, int tok1, int ch2, int tok2) {
     return tok0;
 }
 
-int switch2(scanner_t *s, int tok0, int tok1) {
+static int switch2(scanner_t *s, int tok0, int tok1) {
     return switch3(s, tok0, tok1, '\0', token_ILLEGAL);
 }
 
-bool isletter(int ch) {
-    return ch == '_' || isalpha(ch);
+static char *scan_ident(scanner_t *s) {
+    int n = 0;
+    while (is_letter(s->ch) || is_digit(s->ch)) {
+        s->lit[n++] = s->ch;
+        next(s);
+    }
+    s->lit[n] = '\0';
+    return s->lit;
 }
 
-int scanner_scan(scanner_t *s, char **lit) {
+static int scan_number(scanner_t *s, char **litp) {
+    int n = 0;
+    while (is_digit(s->ch)) {
+        (*litp)[n++] = s->ch;
+        next(s);
+    }
+    (*litp)[n] = '\0';
+    return token_INT;
+}
+
+static void scan_rune(scanner_t *s) {
+    int n = 0;
+    int escape = 0;
+    while (1) {
+        s->lit[n++] = s->ch;
+        if (n > 1 && s->ch == '\'' && !escape)
+            break;
+        escape = s->ch == '\\' && !escape;
+        next(s);
+    }
+    s->lit[n] = '\0';
+    next(s);
+}
+
+static void scan_string(scanner_t *s) {
+    int n = 0;
+    int escape = 0;
+    for (;;) {
+        s->lit[n++] = s->ch;
+        if (n > 1 && s->ch == '"' && !escape)
+            break;
+        escape = s->ch == '\\' && !escape;
+        next(s);
+    }
+    s->lit[n] = '\0';
+    next(s);
+}
+
+extern int scanner_scan(scanner_t *s, char **lit) {
     int tok;
 scan_again:
     tok = token_ILLEGAL;
     s->offset = s->rd_offset;
     skip_whitespace(s);
     s->lit[0] = '\0';
-    if (isletter(s->ch)) {
-        int n = 0;
-        while (isletter(s->ch) || isdigit(s->ch)) {
-            s->lit[n++] = s->ch;
-            next(s);
-        }
-        s->lit[n] = '\0';
-        if (!strcmp(s->lit, "const")) tok = token_CONST;
-        else if (!strcmp(s->lit, "else")) tok = token_ELSE;
-        else if (!strcmp(s->lit, "enum")) tok = token_ENUM;
-        else if (!strcmp(s->lit, "extern")) tok = token_EXTERN;
-        else if (!strcmp(s->lit, "for")) tok = token_FOR;
-        else if (!strcmp(s->lit, "if")) tok = token_IF;
-        else if (!strcmp(s->lit, "static")) tok = token_STATIC;
-        else if (!strcmp(s->lit, "struct")) tok = token_STRUCT;
-        else if (!strcmp(s->lit, "switch")) tok = token_SWITCH;
-        else if (!strcmp(s->lit, "typedef")) tok = token_TYPEDEF;
-        else if (!strcmp(s->lit, "union")) tok = token_UNION;
-        else if (!strcmp(s->lit, "while")) tok = token_WHILE;
-        else if (!strcmp(s->lit, "return")) tok = token_RETURN;
-        else tok = token_IDENT;
-    } else if (isdigit(s->ch)) {
-        int n = 0;
-        while (isdigit(s->ch)) {
-            s->lit[n++] = s->ch;
-            next(s);
-        }
-        s->lit[n] = '\0';
-        tok = token_INT;
+    if (is_letter(s->ch)) {
+        *lit = scan_ident(s);
+        tok = token_lookup(*lit);
+    } else if (is_digit(s->ch)) {
+        tok = scan_number(s, lit);
     } else if (s->ch == '\'') {
-        int n = 0;
-        int escape = 0;
-        while (1) {
-            s->lit[n++] = s->ch;
-            if (n > 1 && s->ch == '\'' && !escape)
-                break;
-            escape = s->ch == '\\' && !escape;
-            next(s);
-        }
-        s->lit[n] = '\0';
+        scan_rune(s);
         tok = token_CHAR;
-        next(s);
     } else if (s->ch == '"') {
-        int n = 0;
-        int escape = 0;
-        for (;;) {
-            s->lit[n++] = s->ch;
-            if (n > 1 && s->ch == '"' && !escape)
-                break;
-            escape = s->ch == '\\' && !escape;
-            next(s);
-        }
-        s->lit[n] = '\0';
+        scan_string(s);
         tok = token_STRING;
-        next(s);
     } else if (s->ch == '.') {
         next(s);
         if (s->ch == '.') {
@@ -151,7 +159,7 @@ scan_again:
     return tok;
 }
 
-void scanner_init(scanner_t *s, char *src) {
+extern void scanner_init(scanner_t *s, char *src) {
     s->src = src;
     s->rd_offset = 0;
     s->offset = 0;

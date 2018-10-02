@@ -1,6 +1,6 @@
 #include "token.h"
 
-char *token_string(token_t tok) {
+extern char *token_string(token_t tok) {
     switch (tok) {
 
     case token_ARROW: return "->";
@@ -50,4 +50,34 @@ char *token_string(token_t tok) {
 
     default: print("unknown token: %d", tok); return "???";
     }
+}
+
+extern int token_lookup(char *ident) {
+    if (!strcmp(ident, "const"))
+        return token_CONST;
+    if (!strcmp(ident, "else"))
+        return token_ELSE;
+    if (!strcmp(ident, "enum"))
+        return token_ENUM;
+    if (!strcmp(ident, "extern"))
+        return token_EXTERN;
+    if (!strcmp(ident, "for"))
+        return token_FOR;
+    if (!strcmp(ident, "if"))
+        return token_IF;
+    if (!strcmp(ident, "static"))
+        return token_STATIC;
+    if (!strcmp(ident, "struct"))
+        return token_STRUCT;
+    if (!strcmp(ident, "switch"))
+        return token_SWITCH;
+    if (!strcmp(ident, "typedef"))
+        return token_TYPEDEF;
+    if (!strcmp(ident, "union"))
+        return token_UNION;
+    if (!strcmp(ident, "while"))
+        return token_WHILE;
+    if (!strcmp(ident, "return"))
+        return token_RETURN;
+    return token_IDENT;
 }

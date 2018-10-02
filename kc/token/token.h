@@ -66,4 +66,5 @@ typedef enum {
     token_SUB_ASSIGN,
 } token_t;
 
-char *token_string(token_t tok);
+extern char *token_string(token_t tok);
+extern int token_lookup(char *ident);

@@ -1,4 +1,4 @@
 #pragma once
 #include "builtin/builtin.h"
 
-char *read_file(char *filename);
+char *ioutil_read_file(char *filename);

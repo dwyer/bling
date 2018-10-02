@@ -1,6 +1,6 @@
 #include "io/ioutil/ioutil.h"
 
-char *read_file(char *filename) {
+char *ioutil_read_file(char *filename) {
     FILE *fp = fopen(filename, "r");
     if (!fp) {
         panic("couldn't open file: %s", filename);
