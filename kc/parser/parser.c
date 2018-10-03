@@ -507,17 +507,11 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
         list = append(list, &clause);
     }
     expect(p, token_RBRACE);
-    stmt_t body = {
-        .type = ast_STMT_BLOCK,
-        .block = {
-            .stmts = list.array,
-        },
-    };
     stmt_t stmt = {
         .type = ast_STMT_SWITCH,
         .switch_ = {
             .tag = tag,
-            .body = dup(&body),
+            .stmts = list.array,
         },
     };
     return dup(&stmt);

@@ -123,11 +123,6 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
             switch ((*stmts)->type) {
             case ast_STMT_LABEL:
                 break;
-            case ast_STMT_CASE:
-                e->indent--;
-                emit_tabs(e);
-                e->indent++;
-                break;
             default:
                 emit_tabs(e);
                 break;
@@ -148,11 +143,13 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
             emit_printf(e, "default");
         }
         emit_printf(e, ":\n");
+        e->indent++;
         for (stmt_t **stmts = stmt->case_.stmts; stmts && *stmts; stmts++) {
             emit_tabs(e);
             emit_stmt(e, *stmts);
             emit_printf(e, "\n");
         }
+        e->indent--;
         break;
 
     case ast_STMT_DECL:
@@ -220,15 +217,20 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
     case ast_STMT_SWITCH:
         emit_printf(e, "switch (");
         emit_expr(e, stmt->switch_.tag);
-        emit_printf(e, ") ");
-        emit_stmt(e, stmt->switch_.body);
+        emit_printf(e, ") {\n");
+        for (stmt_t **stmts = stmt->switch_.stmts; stmts && *stmts; stmts++) {
+            emit_tabs(e);
+            emit_stmt(e, *stmts);
+        }
+        emit_tabs(e);
+        emit_printf(e, "}");
         break;
 
     case ast_STMT_WHILE:
         emit_printf(e, "while (");
         emit_expr(e, stmt->while_.cond);
-        emit_printf(e, ") ");
-        emit_stmt(e, stmt->if_.body);
+        emit_printf(e, ") {");
+        emit_stmt(e, stmt->while_.body);
         break;
 
     default:

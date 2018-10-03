@@ -205,8 +205,7 @@ struct stmt {
 
         struct {
             expr_t *tag;
-            stmt_t *body;
-            stmt_t *clauses;
+            stmt_t **stmts;
         } switch_;
 
         struct {
