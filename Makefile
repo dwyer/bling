@@ -9,7 +9,8 @@ test: compile
 	./$< builtin/builtin.h builtin/builtin.c \
 	    kc/token/token.h kc/token/token.c \
 	    kc/ast/ast.h \
-	    kc/scanner/scanner.h kc/scanner/scanner.c
+	    kc/scanner/scanner.h kc/scanner/scanner.c \
+	    io/ioutil/ioutil.h io/ioutil/ioutil.c \
 
 clean:
 	$(RM) compile

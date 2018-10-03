@@ -682,22 +682,36 @@ static decl_t *parse_gen_decl(parser_t *p, int keyword, spec_t *(*f)(parser_t *p
 
 static expr_t *parse_init_expr(parser_t *p) {
     if (accept(p, token_LBRACE)) {
-        slice_t sl = {.size = sizeof(expr_t *)};
+        slice_t list = {.size = sizeof(expr_t *)};
         while (p->tok != token_RBRACE) {
-            expr_t *init = parse_init_expr(p);
-            sl = append(sl, &init);
+            expr_t *init = NULL;
+            if (accept(p, token_PERIOD)) {
+                expr_t *key = parse_ident(p);
+                expect(p, token_ASSIGN);
+                expr_t *value = parse_init_expr(p);
+                expr_t x = {
+                    .type = ast_EXPR_KEYED,
+                    .keyed = {
+                        .key = key,
+                        .init = value,
+                    },
+                };
+                init = dup(&x);
+            } else {
+                init = parse_init_expr(p);
+            }
+            list = append(list, &init);
             if (!accept(p, token_COMMA)) {
                 break;
             }
         }
-        sl = append(sl, &nil_ptr);
-        expr_t **exprs = sl.array;
+        list = append(list, &nil_ptr);
         accept(p, token_COMMA);
         expect(p, token_RBRACE);
         expr_t expr = {
             .type = ast_EXPR_COMPOUND,
             .compound = {
-                .list = exprs,
+                .list = list.array,
             },
         };
         return dup(&expr);

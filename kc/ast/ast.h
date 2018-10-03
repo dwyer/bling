@@ -16,6 +16,7 @@ typedef enum {
     ast_EXPR_IDENT,
     ast_EXPR_INCDEC,
     ast_EXPR_INDEX,
+    ast_EXPR_KEYED,
     ast_EXPR_PAREN,
     ast_EXPR_UNARY,
     ast_EXPR_SELECTOR,
@@ -129,6 +130,11 @@ struct expr {
             expr_t *x;
             expr_t *index;
         } index;
+
+        struct {
+            expr_t *key;
+            expr_t *init;
+        } keyed;
 
         struct {
             expr_t *x;

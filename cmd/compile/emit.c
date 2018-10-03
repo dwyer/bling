@@ -90,6 +90,13 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         emit_token(e, expr->incdec.tok);
         break;
 
+    case ast_EXPR_KEYED:
+        emit_printf(e, ".");
+        emit_expr(e, expr->keyed.key);
+        emit_printf(e, " = ");
+        emit_expr(e, expr->keyed.init);
+        break;
+
     case ast_EXPR_PAREN:
         emit_printf(e, "(");
         emit_expr(e, expr->paren.x);
