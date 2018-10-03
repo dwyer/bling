@@ -147,7 +147,12 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         } else {
             emit_printf(e, "default");
         }
-        emit_printf(e, ":");
+        emit_printf(e, ":\n");
+        for (stmt_t **stmts = stmt->case_.stmts; stmts && *stmts; stmts++) {
+            emit_tabs(e);
+            emit_stmt(e, *stmts);
+            emit_printf(e, "\n");
+        }
         break;
 
     case ast_STMT_DECL:

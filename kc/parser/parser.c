@@ -3,9 +3,6 @@
 #define memdup(src, size) memcpy(malloc((size)), (src), (size))
 #define dup(src) memdup((src), sizeof(*(src)))
 
-#define error(p, fmt, ...) \
-    panic("%s:%d:%d " fmt "\n", p->filename, line(p), col(p), ## __VA_ARGS__);
-
 typedef struct {
     scanner_t scanner;
     int tok;
@@ -43,23 +40,33 @@ static bool is_type(parser_t *p) {
     }
 }
 
-static int line(parser_t *p) {
-    int n = 1;
-    for (int i = 0; i < p->scanner.offset; i++)
-        if (p->scanner.src[i] == '\n')
-            n++;
-    return n;
-}
-
-static int col(parser_t *p) {
-    int n = 1;
+static void error(parser_t *p, char *fmt, ...) {
+    int line = 1;
+    int col = 1;
+    int line_offset = 0;
     for (int i = 0; i < p->scanner.offset; i++) {
-        if (p->scanner.src[i] == '\n')
-            n = 1;
-        else
-            n++;
+        if (p->scanner.src[i] == '\n') {
+            line++;
+            line_offset = i + 1;
+            col = 1;
+        } else {
+            col++;
+        }
     }
-    return n;
+    fprintf(stderr, "%s:%d:%d: ", p->filename, line, col);
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    fputc('\n', stderr);
+    for (int i = line_offset; ; i++) {
+        int ch = p->scanner.src[i];
+        fputc(ch, stderr);
+        if (!ch || ch == '\n') {
+            break;
+        }
+    }
+    fputc('\n', stderr);
 }
 
 static void next(parser_t *p) {
@@ -452,22 +459,6 @@ static stmt_t *parse_while_stmt(parser_t *p) {
     return dup(&stmt);
 }
 
-static stmt_t *parse_switch_stmt(parser_t *p) {
-    expect(p, token_SWITCH);
-    expect(p, token_LPAREN);
-    expr_t *tag = parse_expr(p);
-    expect(p, token_RPAREN);
-    stmt_t *body = parse_compound_stmt(p);
-    stmt_t stmt = {
-        .type = ast_STMT_SWITCH,
-        .switch_ = {
-            .tag = tag,
-            .body = body,
-        },
-    };
-    return dup(&stmt);
-}
-
 static stmt_t *parse_case_stmt(parser_t *p) {
     expr_t *expr = NULL;
     if (accept(p, token_CASE)) {
@@ -476,10 +467,57 @@ static stmt_t *parse_case_stmt(parser_t *p) {
         expect(p, token_DEFAULT);
     }
     expect(p, token_COLON);
+    slice_t list = {.size = sizeof(stmt_t *)};
+    bool loop = true;
+    while (loop) {
+        switch (p->tok) {
+        case token_CASE:
+        case token_DEFAULT:
+        case token_RBRACE:
+            loop = false;
+            break;
+        default:
+            break;
+        }
+        if (loop) {
+            stmt_t *stmt = parse_stmt(p);
+            list = append(list, &stmt);
+        }
+    }
+    list = append(list, &nil_ptr);
     stmt_t stmt = {
         .type = ast_STMT_CASE,
         .case_ = {
             .expr = expr,
+            .stmts = list.array,
+        },
+    };
+    return dup(&stmt);
+}
+
+static stmt_t *parse_switch_stmt(parser_t *p) {
+    expect(p, token_SWITCH);
+    expect(p, token_LPAREN);
+    expr_t *tag = parse_expr(p);
+    expect(p, token_RPAREN);
+    expect(p, token_LBRACE);
+    slice_t list = {.size = sizeof(stmt_t *)};
+    while (p->tok == token_CASE || p->tok == token_DEFAULT) {
+        stmt_t *clause = parse_case_stmt(p);
+        list = append(list, &clause);
+    }
+    expect(p, token_RBRACE);
+    stmt_t body = {
+        .type = ast_STMT_BLOCK,
+        .block = {
+            .stmts = list.array,
+        },
+    };
+    stmt_t stmt = {
+        .type = ast_STMT_SWITCH,
+        .switch_ = {
+            .tag = tag,
+            .body = dup(&body),
         },
     };
     return dup(&stmt);
@@ -517,9 +555,6 @@ static stmt_t *parse_stmt(parser_t *p) {
         return parse_jump_stmt(p, p->tok);
     case token_LBRACE:
         return parse_compound_stmt(p);
-    case token_CASE:
-    case token_DEFAULT:
-        return parse_case_stmt(p);
     case token_FOR:
         return parse_for_stmt(p);
     case token_IF:

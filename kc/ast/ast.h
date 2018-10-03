@@ -168,6 +168,7 @@ struct stmt {
 
         struct {
             expr_t *expr;
+            stmt_t **stmts;
         } case_;
 
         decl_t *decl;
@@ -205,6 +206,7 @@ struct stmt {
         struct {
             expr_t *tag;
             stmt_t *body;
+            stmt_t *clauses;
         } switch_;
 
         struct {
