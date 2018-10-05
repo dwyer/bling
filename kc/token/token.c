@@ -1,6 +1,6 @@
 #include "token.h"
 
-#define num_tokens 59
+#define num_tokens 60
 
 static struct {
     int tok;
@@ -19,6 +19,7 @@ static struct {
     {token_GOTO, "goto"},
     {token_IF, "if"},
     {token_RETURN, "return"},
+    {token_SIZEOF, "sizeof"},
     {token_STATIC, "static"},
     {token_STRUCT, "struct"},
     {token_SWITCH, "switch"},
@@ -82,7 +83,7 @@ extern char *token_string(token_t tok) {
 }
 
 extern int token_lookup(char *ident) {
-    for (int i = 0; i < 18; i++) {
+    for (int i = 0; i < 19; i++) {
         if (!strcmp(ident, tokens[i].s)) {
             return tokens[i].tok;
         }

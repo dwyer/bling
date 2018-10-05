@@ -11,6 +11,7 @@ test: compile
 	    kc/ast/ast.h \
 	    kc/scanner/scanner.h kc/scanner/scanner.c \
 	    io/ioutil/ioutil.h io/ioutil/ioutil.c \
+	    kc/parser/parser.h kc/parser/parser.c
 
 clean:
 	$(RM) compile

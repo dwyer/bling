@@ -23,6 +23,7 @@ typedef enum {
     token_GOTO,
     token_IF,
     token_RETURN,
+    token_SIZEOF,
     token_STATIC,
     token_STRUCT,
     token_SWITCH,

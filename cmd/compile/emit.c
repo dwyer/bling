@@ -61,6 +61,13 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         emit_printf(e, ")");
         break;
 
+    case ast_EXPR_CAST:
+        emit_printf(e, "(");
+        emit_expr(e, expr->cast.type);
+        emit_printf(e, ")");
+        emit_expr(e, expr->cast.expr);
+        break;
+
     case ast_EXPR_COMPOUND:
         emit_printf(e, "{\n");
         e->indent++;
@@ -90,11 +97,11 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         emit_token(e, expr->incdec.tok);
         break;
 
-    case ast_EXPR_KEYED:
+    case ast_EXPR_KEY_VALUE:
         emit_printf(e, ".");
-        emit_expr(e, expr->keyed.key);
+        emit_expr(e, expr->key_value.key);
         emit_printf(e, " = ");
-        emit_expr(e, expr->keyed.init);
+        emit_expr(e, expr->key_value.value);
         break;
 
     case ast_EXPR_PAREN:
@@ -109,9 +116,19 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         emit_expr(e, expr->selector.sel);
         break;
 
+    case ast_EXPR_SIZEOF:
+        emit_printf(e, "sizeof(");
+        emit_expr(e, expr->sizeof_.x);
+        emit_printf(e, ")");
+        break;
+
     case ast_EXPR_UNARY:
         emit_token(e, expr->unary.op);
         emit_expr(e, expr->unary.x);
+        break;
+
+    case ast_TYPE_NAME:
+        emit_type(e, expr->type_name.type, NULL);
         break;
 
     default:
