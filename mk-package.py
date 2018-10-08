@@ -15,6 +15,7 @@ LDFLAGS = ['-g']
 
 packages = [
     'builtin',
+    'runtime',
     'kc/token',
     'kc/ast',
     'kc/scanner',

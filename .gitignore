@@ -1,2 +1,4 @@
 *.dSYM
+*.o
 compile
+t8.shakespeare.txt

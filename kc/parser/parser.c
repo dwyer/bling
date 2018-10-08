@@ -37,8 +37,14 @@ static decl_t *parse_decl(parser_t *p);
 
 static field_t *parse_field(parser_t *p);
 
-static slice_t types = {.size=sizeof(char *)};
+static const desc_t str_desc = {.size = sizeof(char *)};
+static slice_t types = {.desc = &str_desc};
 static void *nil_ptr = NULL;
+
+static const desc_t expr_desc = {.size = sizeof(expr_t *)};
+static const desc_t decl_desc = {.size = sizeof(decl_t *)};
+static const desc_t stmt_desc = {.size = sizeof(stmt_t *)};
+static const desc_t field_desc = {.size = sizeof(field_t *)};
 
 static bool is_type(parser_t *p) {
     switch (p->tok) {
@@ -200,7 +206,7 @@ static expr_t *postfix_expression(parser_t *p) {
             break;
         case token_LPAREN:
             {
-                slice_t args = {.size = sizeof(expr_t *)};
+                slice_t args = {.desc = &expr_desc};
                 expect(p, token_LPAREN);
                 // argument_expression_list
                 //         : assignment_expression
@@ -641,6 +647,10 @@ static decl_t *parse_decl(parser_t *p) {
     case token_STATIC:
         next(p);
     }
+    switch (p->tok) {
+    case token_CONST:
+        next(p);
+    }
     expr_t *type = type_specifier(p);
     expr_t *name = declarator(p, &type);
     expr_t *value = NULL;
@@ -761,7 +771,7 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
         //         : struct_declaration
         //         | struct_declaration_list struct_declaration
         //         ;
-        slice_t slice = {.size = sizeof(field_t *)};
+        slice_t slice = {.desc = &field_desc};
         for (;;) {
             // struct_declaration
             //         : specifier_qualifier_list struct_declarator_list ';'
@@ -819,7 +829,8 @@ static expr_t *enum_specifier(parser_t *p) {
     enumerator_t **enums = NULL;
     if (accept(p, token_LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
-        slice_t list = {.size=sizeof(enumerator_t *)};
+        desc_t enumerator_desc = {.size=sizeof(enumerator_t *)};
+        slice_t list = {.desc=&enumerator_desc};
         for (;;) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             enumerator_t *enumerator = malloc(sizeof(*enumerator));
@@ -953,10 +964,6 @@ static expr_t *pointer(parser_t *p, expr_t *type) {
 
 
 static field_t **parameter_type_list(parser_t *p) {
-    if (p->tok == token_IDENT && !strcmp(p->lit, "void")) {
-        next(p);
-        return NULL;
-    }
     // parameter_type_list
     //         : parameter_list
     //         | parameter_list ',' ELLIPSIS
@@ -965,7 +972,7 @@ static field_t **parameter_type_list(parser_t *p) {
     //         : parameter_declaration
     //         | parameter_list ',' parameter_declaration
     //         ;
-    slice_t params = {.size=sizeof(field_t *)};
+    slice_t params = {.desc = &field_desc};
     while (p->tok != token_RPAREN) {
         // parameter_declaration
         //         : declaration_specifiers declarator
@@ -1049,7 +1056,7 @@ static expr_t *initializer(parser_t *p) {
     //         : designation? initializer
     //         | initializer_list ',' designation? initializer
     //         ;
-    slice_t list = {.size = sizeof(expr_t *)};
+    slice_t list = {.desc = &expr_desc};
     while (p->tok != token_RBRACE && p->tok != token_EOF) {
         expr_t *value = NULL;
         // designation : designator_list '=' ;
@@ -1163,7 +1170,7 @@ static stmt_t *compound_statement(parser_t *p) {
     //         | '{' statement_list '}'
     //         ;
     stmt_t *stmt = NULL;
-    slice_t stmts = {.size = sizeof(stmt_t *)};
+    slice_t stmts = {.desc = &stmt_desc};
     expect(p, token_LBRACE);
     // statement_list
     //         : statement
@@ -1213,7 +1220,7 @@ static stmt_t *switch_statement(parser_t *p) {
     expr_t *tag = expression(p);
     expect(p, token_RPAREN);
     expect(p, token_LBRACE);
-    slice_t clauses = {.size = sizeof(stmt_t *)};
+    slice_t clauses = {.desc = &stmt_desc};
     while (p->tok == token_CASE || p->tok == token_DEFAULT) {
         // case_statement
         //         | CASE constant_expression ':' statement+
@@ -1226,7 +1233,7 @@ static stmt_t *switch_statement(parser_t *p) {
             expect(p, token_DEFAULT);
         }
         expect(p, token_COLON);
-        slice_t stmts = {.size = sizeof(stmt_t *)};
+        slice_t stmts = {.desc = &stmt_desc};
         bool loop = true;
         while (loop) {
             switch (p->tok) {
@@ -1364,6 +1371,7 @@ static stmt_t *return_statement(parser_t *p) {
 }
 
 static field_t *parse_field(parser_t *p) {
+    accept(p, token_CONST);
     expr_t *type = type_specifier(p);
     expr_t *name = declarator(p, &type);
     field_t field = {
@@ -1391,8 +1399,9 @@ static field_t *parse_field(parser_t *p) {
 //         ;
 
 static file_t *parse_file(parser_t *p) {
-    slice_t decls = {.size = sizeof(decl_t *)};
+    slice_t decls = {.desc = &decl_desc};
     append_type("FILE");
+    append_type("bool");
     append_type("char");
     append_type("float");
     append_type("int");

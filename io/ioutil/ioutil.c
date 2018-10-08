@@ -5,10 +5,8 @@ char *ioutil_read_file(char *filename) {
     if (!fp) {
         panic("couldn't open file: %s", filename);
     }
-    slice_t str = {
-        .size = sizeof(char),
-        .cap = 8,
-    };
+    desc_t desc = {.size = sizeof(char)};
+    slice_t str = {.desc = &desc, .cap = 8};
     for (;;) {
         int ch = fgetc(fp);
         if (ch == EOF) {

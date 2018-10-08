@@ -32,7 +32,7 @@ extern int cap(slice_t s) {
 }
 
 extern void *get_ptr(slice_t s, int index) {
-    return &s.array[index * s.size];
+    return &s.array[index * s.desc->size];
 }
 
 extern slice_t append(slice_t s, void *obj) {
@@ -49,9 +49,20 @@ extern slice_t append(slice_t s, void *obj) {
         resize = true;
     }
     if (resize) {
-        s.array = realloc(s.array, s.cap * s.size);
+        s.array = realloc(s.array, s.cap * s.desc->size);
     }
-    memcpy(&s.array[s.len * s.size], obj, s.size);
+    memcpy(&s.array[s.len * s.desc->size], obj, s.desc->size);
     s.len++;
     return s;
+}
+
+extern slice_t make_slice(const desc_t *desc, int len, int cap) {
+    slice_t slice = slice_init(desc);
+    return slice;
+}
+
+extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc) {
+    map_t map;
+    map_init(&map, key_desc, val_desc);
+    return map;
 }

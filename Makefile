@@ -6,11 +6,12 @@ compile:
 	./mk-package.py
 
 test: compile
-	./$< builtin/builtin.h builtin/builtin.c \
+	./$< runtime/runtime.h \
+	    builtin/builtin.h builtin/builtin.c \
+	    io/ioutil/ioutil.h io/ioutil/ioutil.c \
 	    kc/token/token.h kc/token/token.c \
 	    kc/ast/ast.h \
 	    kc/scanner/scanner.h kc/scanner/scanner.c \
-	    io/ioutil/ioutil.h io/ioutil/ioutil.c \
 	    kc/parser/parser.h kc/parser/parser.c
 
 clean:
