@@ -1,6 +1,6 @@
 #include "token.h"
 
-#define num_tokens 60
+#define num_tokens 69
 
 static struct {
     int tok;
@@ -36,6 +36,7 @@ static struct {
     {token_LBRACK, "["},
     {token_LPAREN, "("},
     {token_PERIOD, "."},
+    {token_QUESTION_MARK, "?"},
     {token_RBRACE, "}"},
     {token_RBRACK, "]"},
     {token_RPAREN, ")"},
@@ -57,14 +58,22 @@ static struct {
     {token_LOR, "||"},
     {token_LT, "<"},
     {token_LT_EQUAL, "<="},
+    {token_MOD, "*"},
+    {token_MOD_ASSIGN, "*="},
     {token_MUL, "*"},
     {token_MUL_ASSIGN, "*="},
     {token_NOT, "!"},
     {token_NOT_EQUAL, "!="},
     {token_OR, "|"},
     {token_OR_ASSIGN, "|="},
+    {token_SHL, "<<"},
+    {token_SHL_ASSIGN, "<<="},
+    {token_SHR, ">>"},
+    {token_SHR_ASSIGN, ">>="},
     {token_SUB, "-"},
     {token_SUB_ASSIGN, "-="},
+    {token_XOR, "^"},
+    {token_XOR_ASSIGN, "^="},
 
     {token_CHAR, "$CHAR"},
     {token_IDENT, "$IDENT"},

@@ -14,6 +14,7 @@ typedef enum {
     ast_EXPR_CALL,
     ast_EXPR_CAST,
     ast_EXPR_COMPOUND,
+    ast_EXPR_COND,
     ast_EXPR_IDENT,
     ast_EXPR_INCDEC,
     ast_EXPR_INDEX,
@@ -114,6 +115,12 @@ struct expr {
         struct {
             expr_t **list;
         } compound;
+
+        struct {
+            expr_t *condition;
+            expr_t *consequence;
+            expr_t *alternative;
+        } conditional;
 
         struct {
             expr_t *name;

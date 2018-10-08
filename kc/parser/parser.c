@@ -334,9 +334,14 @@ static expr_t *cast_expression(parser_t *p) {
             };
             return dup(&y);
         } else {
-            expr_t *x = expression(p);
+            expr_t x = {
+                .type = ast_EXPR_PAREN,
+                .paren = {
+                    .x = expression(p),
+                },
+            };
             expect(p, token_RPAREN);
-            return x;
+            return dup(&x);
         }
     }
     return unary_expression(p);
@@ -365,6 +370,7 @@ static expr_t *multiplicative_expression(parser_t *p) {
     for (;;) {
         token_t op;
         switch (p->tok) {
+        case token_MOD:
         case token_MUL:
         case token_DIV:
             op = p->tok;
@@ -404,7 +410,20 @@ static expr_t *shift_expression(parser_t *p) {
     //         | shift_expression LEFT_OP additive_expression
     //         | shift_expression RIGHT_OP additive_expression
     //         ;
-    return additive_expression(p);
+    expr_t *x = additive_expression(p);
+    for (;;) {
+        token_t op;
+        switch (p->tok) {
+        case token_SHL:
+        case token_SHR:
+            op = p->tok;
+            next(p);
+            x = _binary_expression(p, x, op, additive_expression(p));
+            break;
+        default:
+            return x;
+        }
+    }
 }
 
 static expr_t *relational_expression(parser_t *p) {
@@ -476,8 +495,7 @@ static expr_t *exclusive_or_expression(parser_t *p) {
     //         : and_expression
     //         | exclusive_or_expression '^' and_expression
     //         ;
-    // TODO return _single_bin_expr(p, token_XOR, and_expression);
-    return and_expression(p);
+    return _single_bin_expr(p, token_XOR, and_expression);
 }
 
 static expr_t *inclusive_or_expression(parser_t *p) {
@@ -509,7 +527,22 @@ static expr_t *conditional_expression(parser_t *p) {
     //         : logical_or_expression
     //         | logical_or_expression '?' expression ':' conditional_expression
     //         ;
-    return logical_or_expression(p);
+    expr_t *x = logical_or_expression(p);
+    if (accept(p, token_QUESTION_MARK)) {
+        expr_t *consequence = expression(p);
+        expect(p, token_COLON);
+        expr_t *alternative = conditional_expression(p);
+        expr_t conditional = {
+            .type = ast_EXPR_COND,
+            .conditional = {
+                .condition = x,
+                .consequence = consequence,
+                .alternative = alternative,
+            },
+        };
+        x = dup(&conditional);
+    }
+    return x;
 }
 
 static expr_t *assignment_expression(parser_t *p) {
@@ -524,6 +557,7 @@ static expr_t *assignment_expression(parser_t *p) {
     case token_DIV_ASSIGN:
     case token_MUL_ASSIGN:
     case token_SUB_ASSIGN:
+    case token_XOR_ASSIGN:
         {
             token_t op = p->tok;
             next(p);
@@ -552,8 +586,12 @@ static token_t assignment_operator(parser_t *p) {
     case token_ADD_ASSIGN:
     case token_ASSIGN:
     case token_DIV_ASSIGN:
+    case token_MOD_ASSIGN:
     case token_MUL_ASSIGN:
+    case token_SHL_ASSIGN:
+    case token_SHR_ASSIGN:
     case token_SUB_ASSIGN:
+    case token_XOR_ASSIGN:
         return p->tok;
     default:
         return token_ILLEGAL;
@@ -1007,9 +1045,19 @@ static expr_t *initializer(parser_t *p) {
     if (!accept(p, token_LBRACE)) {
         return assignment_expression(p);
     }
+    // initializer_list
+    //         : designation? initializer
+    //         | initializer_list ',' designation? initializer
+    //         ;
     slice_t list = {.size = sizeof(expr_t *)};
     while (p->tok != token_RBRACE && p->tok != token_EOF) {
         expr_t *value = NULL;
+        // designation : designator_list '=' ;
+        // designator_list
+        //         : designator
+        //         | designator_list designator
+        //         ;
+        // designator : '.' identifier
         if (accept(p, token_PERIOD)) {
             expr_t *key = identifier(p);
             expect(p, token_ASSIGN);
@@ -1030,7 +1078,6 @@ static expr_t *initializer(parser_t *p) {
         }
     }
     list = append(list, &nil_ptr);
-    accept(p, token_COMMA);
     expect(p, token_RBRACE);
     expr_t expr = {
         .type = ast_EXPR_COMPOUND,
@@ -1040,11 +1087,6 @@ static expr_t *initializer(parser_t *p) {
     };
     return dup(&expr);
 }
-
-// initializer_list
-//         : initializer
-//         | initializer_list ',' initializer
-//         ;
 
 // statement
 //         : declaration

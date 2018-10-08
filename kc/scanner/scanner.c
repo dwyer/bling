@@ -156,12 +156,14 @@ scan_again:
         case ',': tok = token_COMMA; break;
         case ':': tok = token_COLON; break;
         case ';': tok = token_SEMICOLON; break;
+        case '?': tok = token_QUESTION_MARK; break;
         case '[': tok = token_LBRACK; break;
         case ']': tok = token_RBRACK; break;
         case '{': tok = token_LBRACE; break;
         case '}': tok = token_RBRACE; break;
                    // operators
         case '!': tok = switch2(s, token_NOT, token_NOT_EQUAL); break;
+        case '%': tok = switch2(s, token_MOD, token_MOD_ASSIGN); break;
         case '&': tok = switch3(s, token_AND, token_AND_ASSIGN, '&', token_LAND); break;
         case '*': tok = switch2(s, token_MUL, token_MUL_ASSIGN); break;
         case '+': tok = switch3(s, token_ADD, token_ADD_ASSIGN, '+', token_INC); break;
