@@ -27,6 +27,8 @@ commands = [
     'compile',
 ]
 
+tests = ['map']
+
 def call(cmd):
     print(' '.join(cmd))
     res = subprocess.check_call(cmd)
@@ -61,7 +63,15 @@ def compile_command(name, objs):
     call(['cc'] + LDFLAGS + ['-o', name] + objs + cmd_objs)
     return cmd_objs
 
+def compile_test(name, objs):
+    path = os.path.join('tests', name)
+    cmd_objs = compile_package(path)
+    call(['cc'] + LDFLAGS + ['-o', name] + objs + cmd_objs)
+    return cmd_objs
+
 objs = compile_packages()
 for name in commands:
     remove(compile_command(name, objs))
+for name in tests:
+    remove(compile_test(name, objs))
 remove(objs)

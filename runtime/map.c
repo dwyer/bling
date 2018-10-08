@@ -30,10 +30,9 @@ static const desc_t pair_desc = {
 
 extern void map_init(map_t *m, const void *key_desc, const void *val_desc) {
     m->len = 0;
-    m->pairs = slice_init(&pair_desc);
+    m->pairs = slice_init(&pair_desc, 8, 0);
     m->key_desc = key_desc;
     m->val_desc = val_desc;
-    slice_set_len(&m->pairs, 8);
 }
 
 extern void map_deinit(map_t *m) {
@@ -101,30 +100,26 @@ extern void map_set(map_t *m, const void *key, const void *val) {
     float load_factor = (float)map_len(m) / map_cap(m);
     if (load_factor >= max_load_factor) {
         int new_cap = map_cap(m) * 2;
-        slice_t pairs = slice_init(&pair_desc);
-        while (slice_len(&m->pairs)) {
-            pair_t p;
-            slice_pop(&m->pairs, &p);
-            if (p.key)
-                slice_append(&pairs, &p);
-        }
-        assert(map_cap(m) == 0);
-        slice_set_len(&m->pairs, new_cap);
+        slice_t pairs = m->pairs;
+        m->pairs = slice_init(m->pairs.desc, new_cap, 0);
         m->len = 0;
         for (int i = 0; i < slice_len(&pairs); ++i) {
             pair_t *p = slice_ref(&pairs, i);
-            set_unsafe(m, p->key, p->val);
+            if (p->key) {
+                set_unsafe(m, p->key, p->val);
+            }
         }
         slice_deinit(&pairs);
     }
 }
 
 extern slice_t map_keys(const map_t *m) {
-    slice_t keys = slice_init(m->key_desc);
+    slice_t keys = slice_init(m->key_desc, 0, 0);
     for (int i = 0; i < slice_len(&m->pairs); i++) {
         pair_t *p = slice_ref(&m->pairs, i);
-        if (p->key)
+        if (p->key) {
             slice_append(&keys, p->key);
+        }
     }
     return keys;
 }

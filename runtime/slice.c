@@ -3,13 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern slice_t slice_init(const desc_t *desc) {
+extern slice_t slice_init(const desc_t *desc, int len, int cap) {
     slice_t s = {
         .len = 0,
         .cap = 0,
         .array = NULL,
         .desc = desc,
     };
+    slice_set_len(&s, len);
     return s;
 }
 
@@ -82,9 +83,4 @@ extern void slice_set(slice_t *s, int i, const void *x) {
 extern void slice_append(slice_t *s, const void *x) {
     slice_set_len(s, s->len + 1);
     slice_set(s, s->len - 1, x);
-}
-
-extern void slice_pop(slice_t *s, void *dst) {
-    desc_cpy(s->desc, dst, slice_ref(s, slice_len(s) - 1));
-    s->len--;
 }

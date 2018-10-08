@@ -36,29 +36,12 @@ extern void *get_ptr(slice_t s, int index) {
 }
 
 extern slice_t append(slice_t s, void *obj) {
-    bool resize = false;
-    if (s.cap == 0) {
-        s.cap = 1;
-        resize = true;
-    } else if (s.cap <= s.len) {
-        while (s.cap <= s.len) {
-            s.cap *= 2;
-        }
-        resize = true;
-    } else if (s.array == NULL) {
-        resize = true;
-    }
-    if (resize) {
-        s.array = realloc(s.array, s.cap * s.desc->size);
-    }
-    memcpy(&s.array[s.len * s.desc->size], obj, s.desc->size);
-    s.len++;
+    slice_append(&s, obj);
     return s;
 }
 
 extern slice_t make_slice(const desc_t *desc, int len, int cap) {
-    slice_t slice = slice_init(desc);
-    return slice;
+    return slice_init(desc, len, cap);
 }
 
 extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc) {

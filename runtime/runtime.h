@@ -38,7 +38,7 @@ extern void desc_cpy(const desc_t *d, void *dst, const void *src);
 extern int desc_cmp(const desc_t *d, const void *a, const void *b);
 extern uint32_t desc_hash(const desc_t *d, const void *a);
 
-extern slice_t slice_init(const desc_t *desc);
+extern slice_t slice_init(const desc_t *desc, int len, int cap);
 extern void slice_deinit(slice_t *s);
 
 extern int slice_len(const slice_t *s);
@@ -49,7 +49,6 @@ extern void slice_get(const slice_t *s, int i, void *dst);
 extern void slice_set_len(slice_t *s, int len);
 extern void slice_set(slice_t *s, int i, const void *x);
 extern void slice_append(slice_t *s, const void *x);
-extern void slice_pop(slice_t *s, void *dst);
 
 extern void map_init(map_t *m, const void *key_desc, const void *val_desc);
 extern void map_deinit(map_t *m);

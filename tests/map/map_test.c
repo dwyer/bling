@@ -6,7 +6,7 @@
 #include <string.h> // strtok
 #include <time.h> // clock
 
-#include "builtin.h"
+#include "builtin/builtin.h"
 
 static void slugify(char *s) {
     int i = 0;
@@ -48,7 +48,7 @@ static void test_shakespeare(void) {
     fclose(fp);
     printf("most common words in Shakespeare:\n");
     slice_t keys = map_keys(&m);
-    for (int i = 0; i < len(&keys); ++i) {
+    for (int i = 0; i < slice_len(&keys); ++i) {
         char *key;
         int val;
         slice_get(&keys, i, &key);
