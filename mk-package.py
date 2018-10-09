@@ -27,7 +27,7 @@ commands = [
     'compile',
 ]
 
-tests = ['map']
+tests = ['test_map']
 
 def call(cmd):
     print(' '.join(cmd))

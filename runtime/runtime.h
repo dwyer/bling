@@ -12,7 +12,6 @@
 
 typedef struct {
     size_t size;
-    void (*init)(void *);
     void (*deinit)(void *);
     void *(*cpy)(void *, const void *);
     int (*cmp)(const void *, const void *);

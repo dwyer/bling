@@ -39,7 +39,7 @@ extern void slice_get(const slice_t *s, int i, void *dst) {
     memcpy(dst, slice_ref(s, i), s->desc->size);
 }
 
-extern void set_cap(slice_t *s, int cap) {
+static void slice_set_cap(slice_t *s, int cap) {
     s->cap = cap;
     s->array = realloc(s->array, s->cap * s->desc->size);
 }
@@ -56,7 +56,7 @@ static void set_len(slice_t *s, int len) {
         grow = true;
     }
     if (s->array == NULL || grow) {
-        set_cap(s, cap);
+        slice_set_cap(s, cap);
     }
     s->len = len;
 }
@@ -66,13 +66,7 @@ extern void slice_set_len(slice_t *s, int len) {
     set_len(s, len);
     int diff = len - old;
     if (diff > 0) {
-        if (s->desc->init) {
-            for (int i = old; i < s->len; i++) {
-                s->desc->init(slice_ref(s, i));
-            }
-        } else {
-            memset(slice_ref(s, old), 0, diff * s->desc->size);
-        }
+        memset(slice_ref(s, old), 0, diff * s->desc->size);
     }
 }
 
@@ -81,6 +75,6 @@ extern void slice_set(slice_t *s, int i, const void *x) {
 }
 
 extern void slice_append(slice_t *s, const void *x) {
-    slice_set_len(s, s->len + 1);
+    set_len(s, s->len + 1);
     slice_set(s, s->len - 1, x);
 }

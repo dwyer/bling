@@ -7,13 +7,6 @@ static void *memdup(const void *src, size_t size) {
     return memcpy(malloc(size), src, size);
 }
 
-extern void desc_init(const desc_t *d, void *x) {
-    if (d->init)
-        d->init(x);
-    else
-        memset(x, 0, d->size);
-}
-
 extern void desc_deinit(const desc_t *d, void *x) {
     if (d->deinit)
         d->deinit(x);
