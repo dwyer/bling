@@ -267,6 +267,7 @@ typedef struct scope scope_t;
 
 struct scope {
     scope_t *outer;
+    slice_t types;
 };
 
 typedef struct {

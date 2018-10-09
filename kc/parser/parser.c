@@ -9,6 +9,7 @@ typedef struct {
     token_t tok;
     char *lit;
     char *filename;
+    scope_t *pkg_scope;
 } parser_t;
 
 static expr_t *cast_expression(parser_t *p);
@@ -39,7 +40,6 @@ static decl_t *parse_decl(parser_t *p);
 static field_t *parse_field(parser_t *p);
 
 static const desc_t str_desc = {.size = sizeof(char *)};
-static slice_t types = {.desc = &str_desc};
 static void *nil_ptr = NULL;
 
 static const desc_t expr_desc = {.size = sizeof(expr_t *)};
@@ -57,8 +57,8 @@ static bool is_type(parser_t *p) {
     case token_UNION:
         return true;
     case token_IDENT:
-        for (int i = 0; i < len(types); i++) {
-            if (!strcmp(*(char **)get_ptr(types, i), p->lit)) {
+        for (int i = 0; i < len(p->pkg_scope->types); i++) {
+            if (!strcmp(*(char **)get_ptr(p->pkg_scope->types, i), p->lit)) {
                 return true;
             }
         }
@@ -101,8 +101,8 @@ static void next(parser_t *p) {
     p->tok = scanner_scan(&p->scanner, &p->lit);
 }
 
-static void append_type(char *st) {
-    types = append(types, &st);
+static void append_type(parser_t *p, char *st) {
+    p->pkg_scope->types = append(p->pkg_scope->types, &st);
 }
 
 static bool accept(parser_t *p, token_t tok0) {
@@ -631,7 +631,8 @@ static decl_t *parse_decl(parser_t *p) {
         expr_t *type = type_specifier(p);
         expr_t *ident = declarator(p, &type);
         expect(p, token_SEMICOLON);
-        types = append(types, &ident->ident.name);
+        p->pkg_scope->types = append(p->pkg_scope->types, &ident->ident.name);
+        append_type(p, ident->ident.name);
         spec_t spec = {
             .type = ast_SPEC_TYPEDEF,
             .typedef_ = {
@@ -1411,14 +1412,14 @@ static field_t *parse_field(parser_t *p) {
 
 static file_t *parse_file(parser_t *p) {
     slice_t decls = {.desc = &decl_desc};
-    append_type("FILE");
-    append_type("bool");
-    append_type("char");
-    append_type("float");
-    append_type("int");
-    append_type("size_t");
-    append_type("va_list");
-    append_type("void");
+    append_type(p, "FILE");
+    append_type(p, "bool");
+    append_type(p, "char");
+    append_type(p, "float");
+    append_type(p, "int");
+    append_type(p, "size_t");
+    append_type(p, "va_list");
+    append_type(p, "void");
     next(p);
     while (p->tok != token_EOF) {
         decl_t *decl = parse_decl(p);
@@ -1431,9 +1432,12 @@ static file_t *parse_file(parser_t *p) {
     return dup(&file);
 }
 
-extern file_t *parser_parse_file(char *filename) {
+extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {
     char *src = ioutil_read_file(filename);
-    parser_t parser = {.filename=filename};
+    parser_t parser = {
+        .filename = filename,
+        .pkg_scope = pkg_scope,
+    };
     scanner_init(&parser.scanner, src);
     file_t *file = parse_file(&parser);
     free(src);
