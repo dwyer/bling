@@ -12,8 +12,8 @@
 
 typedef struct {
     size_t size;
-    void (*deinit)(void *);
-    void *(*cpy)(void *, const void *);
+    bool is_ptr;
+    void (*dup)(const void *);
     int (*cmp)(const void *, const void *);
     int (*hash)(const void *);
 } desc_t;
@@ -32,8 +32,6 @@ typedef struct {
     const desc_t *val_desc;
 } map_t;
 
-extern void desc_deinit(const desc_t *d, void *x);
-extern void desc_cpy(const desc_t *d, void *dst, const void *src);
 extern int desc_cmp(const desc_t *d, const void *a, const void *b);
 extern uint32_t desc_hash(const desc_t *d, const void *a);
 
@@ -49,11 +47,16 @@ extern void slice_set_len(slice_t *s, int len);
 extern void slice_set(slice_t *s, int i, const void *x);
 extern void slice_append(slice_t *s, const void *x);
 
+typedef enum {
+    map_status_ok = 1,
+} map_status_t;
+
 extern map_t map_init(const void *key_desc, const void *val_desc);
 extern void map_deinit(map_t *m);
 extern int map_len(const map_t *m);
 extern int map_cap(const map_t *m);
 extern int map_get(const map_t *m, const void *key, void *val);
+extern bool map_has_key(map_t *m, const void *key);
 extern void map_set(map_t *m, const void *key, const void *val);
 
 extern const desc_t desc_int;

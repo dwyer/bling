@@ -6,34 +6,18 @@ const desc_t desc_int = {
     .size = sizeof(int),
 };
 
-static int strpcmp(const void **sp, const void **tp) {
-    return strcmp(*sp, *tp);
-}
-
-static char **strpcpy(char **dstp, const char **srcp) {
-    *dstp = strdup(*srcp);
-    return dstp;
-}
-
-static unsigned int strphash(const char **sp) {
+static unsigned int strphash(const char *s) {
     // http://www.cse.yorku.ca/~oz/hash.html
     unsigned int hash = 5381;
-    const char *s = *sp;
     int ch;
     while ((ch = *s++))
         hash = ((hash << 5) + hash) + ch;
     return hash;
 }
 
-static void pfree(void **p) {
-    if (p && *p)
-        free(*p);
-}
-
 const desc_t desc_str = {
     .size = sizeof(char *),
-    .cpy = (void *)strpcpy,
-    .cmp = (void *)strpcmp,
+    .is_ptr = true,
+    .cmp = (void *)strcmp,
     .hash = (void *)strphash,
-    .deinit = (void *)pfree,
 };

@@ -15,11 +15,6 @@ extern slice_t slice_init(const desc_t *desc, int len, int cap) {
 }
 
 extern void slice_deinit(slice_t *s) {
-    if (s->desc->deinit) {
-        for (int i = 0; i < slice_len(s); i++) {
-            s->desc->deinit(slice_ref(s, i));
-        }
-    }
     free(s->array);
 }
 
@@ -71,7 +66,7 @@ extern void slice_set_len(slice_t *s, int len) {
 }
 
 extern void slice_set(slice_t *s, int i, const void *x) {
-    desc_cpy(s->desc, slice_ref(s, i), x);
+    memcpy(slice_ref(s, i), x, s->desc->size);
 }
 
 extern void slice_append(slice_t *s, const void *x) {

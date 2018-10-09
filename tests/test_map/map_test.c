@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h> // rand
-#include <limits.h> // INT_MAX
 #include <assert.h> // assert
 #include <ctype.h> // isspace
 #include <string.h> // strtok
@@ -40,6 +39,8 @@ static void test_shakespeare(void) {
                 int val = 0;
                 map_get(&m, &key, &val);
                 ++val;
+                if (!map_has_key(&m, &key))
+                    key = strdup(key);
                 map_set(&m, &key, &val);
             }
         } while ((key = strtok(NULL, sep)));

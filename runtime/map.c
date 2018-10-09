@@ -12,17 +12,10 @@ typedef struct {
     void *key, *val;
 } pair_t;
 
-static void pair_deinit(pair_t *p) {
-    free(p->key);
-    free(p->val);
-}
-
-static const desc_t pair_desc = {
-    .size = sizeof(pair_t),
-    .deinit = (void *)pair_deinit,
-};
-
 extern map_t map_init(const void *key_desc, const void *val_desc) {
+    static const desc_t pair_desc = {
+        .size = sizeof(pair_t),
+    };
     map_t m = {
         .len = 0,
         .pairs = slice_init(&pair_desc, default_cap, 0),
@@ -35,8 +28,6 @@ extern map_t map_init(const void *key_desc, const void *val_desc) {
 extern void map_deinit(map_t *m) {
     for (int i = 0; i < slice_len(&m->pairs); i++) {
         pair_t *p = slice_ref(&m->pairs, i);
-        desc_deinit(m->key_desc, p->key);
-        desc_deinit(m->val_desc, p->val);
     }
     slice_deinit(&m->pairs);
 }
@@ -49,7 +40,7 @@ extern int map_cap(const map_t *m) {
     return slice_len(&m->pairs);
 }
 
-static void *pair_ref(const map_t *m, const void *key) {
+static pair_t *pair_ref(const map_t *m, const void *key) {
     unsigned int hash = desc_hash(m->key_desc, key) % map_cap(m);
     ++map_lookups;
     for (int i = 0; i < slice_len(&m->pairs); i++) {
@@ -72,29 +63,26 @@ static void set_unsafe(map_t *m, const void *key, const void *val) {
     if (p->key == NULL) {
         p->key = malloc(m->key_desc->size);
         p->val = malloc(m->val_desc->size);
-        desc_cpy(m->key_desc, p->key, key);
-        desc_cpy(m->val_desc, p->val, val);
+        memcpy(p->key, key, m->key_desc->size);
+        memcpy(p->val, val, m->val_desc->size);
         m->len++;
     } else {
-        desc_deinit(m->val_desc, p->val);
-        desc_cpy(m->val_desc, p->val, val);
+        memcpy(p->val, val, m->val_desc->size);
     }
 }
 
-static void *val_ref(const map_t *m, const void *key) {
+extern bool map_has_key(map_t *m, const void *key) {
     pair_t *p = pair_ref(m, key);
-    if (p)
-        return p->val;
-    return NULL;
+    return p->key;
 }
 
 extern int map_get(const map_t *m, const void *key, void *val) {
-    void *ref = val_ref(m, key);
-    if (ref) {
-        memcpy(val, ref, m->val_desc->size);
-        return 0;
+    pair_t *p = pair_ref(m, key);
+    if (p->val) {
+        memcpy(val, p->val, m->val_desc->size);
+        return 1;
     }
-    return 1;
+    return 0;
 }
 
 extern void map_set(map_t *m, const void *key, const void *val) {
@@ -109,8 +97,6 @@ extern void map_set(map_t *m, const void *key, const void *val) {
             pair_t *p = slice_ref(&pairs, i);
             if (p->key) {
                 set_unsafe(m, p->key, p->val);
-                desc_deinit(m->key_desc, p->key);
-                desc_deinit(m->val_desc, p->val);
             }
         }
         slice_deinit(&pairs);
