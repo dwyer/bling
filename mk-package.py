@@ -36,7 +36,7 @@ def call(cmd):
         exit(res)
 
 def remove(names):
-    call(['rm', '-f'] + names)
+    pass # call(['rm', '-f'] + names)
 
 def get_files(path, ext=None):
     return [os.path.join(path, name) for name in os.listdir(path)

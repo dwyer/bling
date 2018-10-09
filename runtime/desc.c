@@ -8,7 +8,7 @@ static void *memdup(const void *src, size_t size) {
 }
 
 extern void desc_deinit(const desc_t *d, void *x) {
-    if (d->deinit)
+    if (d->deinit && x)
         d->deinit(x);
 }
 

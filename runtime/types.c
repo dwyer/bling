@@ -25,9 +25,15 @@ static unsigned int strphash(const char **sp) {
     return hash;
 }
 
+static void pfree(void **p) {
+    if (p && *p)
+        free(*p);
+}
+
 const desc_t desc_str = {
     .size = sizeof(char *),
     .cpy = (void *)strpcpy,
     .cmp = (void *)strpcmp,
     .hash = (void *)strphash,
+    .deinit = (void *)pfree,
 };

@@ -627,20 +627,20 @@ static decl_t *parse_decl(parser_t *p) {
         expect(p, keyword);
         expr_t *type = type_specifier(p);
         expr_t *ident = declarator(p, &type);
-        spec_t tmp = {
+        expect(p, token_SEMICOLON);
+        types = append(types, &ident->ident.name);
+        spec_t spec = {
             .type = ast_SPEC_TYPEDEF,
             .typedef_ = {
                 .name = ident,
                 .type = type,
             },
         };
-        types = append(types, &ident->ident.name);
-        spec_t *spec = dup(&tmp);
-        expect(p, token_SEMICOLON);
-        decl_t *decl = malloc(sizeof(*decl));
-        decl->type = ast_DECL_GEN;
-        decl->gen.spec = spec;
-        return decl;
+        decl_t decl = {
+            .type = ast_DECL_GEN,
+            .gen = {.spec = dup(&spec)},
+        };
+        return dup(&decl);
     }
     switch (p->tok) {
     case token_EXTERN:

@@ -46,6 +46,7 @@ static void test_shakespeare(void) {
         } while ((key = strtok(NULL, sep)));
     }
     fclose(fp);
+    free(line);
     printf("most common words in Shakespeare:\n");
     slice_t keys = map_keys(&m);
     for (int i = 0; i < slice_len(&keys); ++i) {
@@ -57,6 +58,7 @@ static void test_shakespeare(void) {
             printf("\t%s (%d uses)\n", key, val);
         }
     }
+    slice_deinit(&keys);
     map_deinit(&m);
 }
 
@@ -87,7 +89,7 @@ static void test_ints(void) {
 
 int main() {
     clock_t start = clock();
-    /* test_ints(); */
+    test_ints();
     test_shakespeare();
     printf("%f secs\n", (float)(clock() - start) / CLOCKS_PER_SEC);
     printf("map_lookups: %d\n", map_lookups);

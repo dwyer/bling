@@ -1,12 +1,7 @@
 #include "runtime.h"
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <assert.h>
-#include <stdio.h>
-
 static const float max_load_factor = 0.65;
+static const int default_cap = 8;
 
 int map_misses = 0;
 int map_hits = 0;
@@ -17,25 +12,29 @@ typedef struct {
     void *key, *val;
 } pair_t;
 
-static void pair_deinit(void *p) {
-    pair_t *pp = p;
-    free(pp->key);
-    free(pp->val);
+static void pair_deinit(pair_t *p) {
+    free(p->key);
+    free(p->val);
 }
 
 static const desc_t pair_desc = {
     .size = sizeof(pair_t),
-    .deinit = pair_deinit,
+    .deinit = (void *)pair_deinit,
 };
 
 extern void map_init(map_t *m, const void *key_desc, const void *val_desc) {
     m->len = 0;
-    m->pairs = slice_init(&pair_desc, 8, 0);
+    m->pairs = slice_init(&pair_desc, default_cap, 0);
     m->key_desc = key_desc;
     m->val_desc = val_desc;
 }
 
 extern void map_deinit(map_t *m) {
+    for (int i = 0; i < slice_len(&m->pairs); i++) {
+        pair_t *p = slice_ref(&m->pairs, i);
+        desc_deinit(m->key_desc, p->key);
+        desc_deinit(m->val_desc, p->val);
+    }
     slice_deinit(&m->pairs);
 }
 
@@ -107,6 +106,8 @@ extern void map_set(map_t *m, const void *key, const void *val) {
             pair_t *p = slice_ref(&pairs, i);
             if (p->key) {
                 set_unsafe(m, p->key, p->val);
+                desc_deinit(m->key_desc, p->key);
+                desc_deinit(m->val_desc, p->val);
             }
         }
         slice_deinit(&pairs);
@@ -114,7 +115,7 @@ extern void map_set(map_t *m, const void *key, const void *val) {
 }
 
 extern slice_t map_keys(const map_t *m) {
-    slice_t keys = slice_init(m->key_desc, 0, 0);
+    slice_t keys = slice_init(m->key_desc, 0, m->len);
     for (int i = 0; i < slice_len(&m->pairs); i++) {
         pair_t *p = slice_ref(&m->pairs, i);
         if (p->key) {
