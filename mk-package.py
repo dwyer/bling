@@ -10,7 +10,8 @@ import subprocess
 import sys
 
 INCLUDE_PATH = os.path.dirname(os.path.abspath(__file__))
-CFLAGS = ['-g', '-I', INCLUDE_PATH]
+CFLAGS = ['-g', '-I', INCLUDE_PATH,
+          '-Wno-c++11-compat-deprecated-writable-strings']
 LDFLAGS = ['-g']
 
 packages = [
@@ -44,7 +45,7 @@ def get_files(path, ext=None):
 
 def compile_package(path):
     objs = []
-    c_files = get_files(path, '.c')
+    c_files = get_files(path, '.cc')
     for name in c_files:
         obj = os.path.splitext(name)[0] + '.o'
         objs.append(obj)

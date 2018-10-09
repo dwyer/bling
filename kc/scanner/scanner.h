@@ -1,5 +1,6 @@
 #pragma once
 #include "builtin/builtin.h"
+#include "kc/token/token.h"
 
 typedef struct {
     char *src;
@@ -8,5 +9,5 @@ typedef struct {
     int ch;
 } scanner_t;
 
-extern int scanner_scan(scanner_t *s, char **lit);
+extern token_t scanner_scan(scanner_t *s, char **lit);
 extern void scanner_init(scanner_t *s, char *src);

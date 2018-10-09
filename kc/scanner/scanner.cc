@@ -27,7 +27,7 @@ static bool is_digit(int ch) {
     return '0' <= ch && ch <= '9';
 }
 
-static int switch3(scanner_t *s, int tok0, int tok1, int ch2, int tok2) {
+static token_t switch3(scanner_t *s, token_t tok0, token_t tok1, int ch2, token_t tok2) {
     if (s->ch == '=') {
         next(s);
         return tok1;
@@ -39,13 +39,13 @@ static int switch3(scanner_t *s, int tok0, int tok1, int ch2, int tok2) {
     return tok0;
 }
 
-static int switch2(scanner_t *s, int tok0, int tok1) {
+static token_t switch2(scanner_t *s, token_t tok0, token_t tok1) {
     return switch3(s, tok0, tok1, '\0', token_ILLEGAL);
 }
 
 static char *make_string_slice(scanner_t *s, int start, int end) {
     size_t len = end - start + 1;
-    char *lit = malloc(len);
+    char *lit = (char *)malloc(len);
     strlcpy(lit, &s->src[start], len);
     return lit;
 }
@@ -58,7 +58,7 @@ static char *scan_ident(scanner_t *s) {
     return make_string_slice(s, offs, s->offset);
 }
 
-static char *scan_number(scanner_t *s, int *tokp) {
+static char *scan_number(scanner_t *s, token_t *tokp) {
     int offs = s->offset;
     while (is_digit(s->ch)) {
         next(s);
@@ -99,8 +99,8 @@ static char *scan_string(scanner_t *s) {
     return make_string_slice(s, offs, s->offset);
 }
 
-extern int scanner_scan(scanner_t *s, char **lit) {
-    int tok;
+extern token_t scanner_scan(scanner_t *s, char **lit) {
+    token_t tok;
 scan_again:
     tok = token_ILLEGAL;
     skip_whitespace(s);

@@ -82,4 +82,4 @@ typedef enum {
 } token_t;
 
 extern char *token_string(token_t tok);
-extern int token_lookup(char *ident);
+extern token_t token_lookup(char *ident);

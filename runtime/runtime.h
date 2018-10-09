@@ -51,7 +51,7 @@ typedef enum {
     map_status_ok = 1,
 } map_status_t;
 
-extern map_t map_init(const void *key_desc, const void *val_desc);
+extern map_t map_init(const desc_t *key_desc, const desc_t *val_desc);
 extern void map_deinit(map_t *m);
 extern int map_len(const map_t *m);
 extern int map_cap(const map_t *m);

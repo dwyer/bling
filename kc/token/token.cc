@@ -3,7 +3,7 @@
 #define num_tokens 69
 
 static struct {
-    int tok;
+    token_t tok;
     char *s;
 } tokens[num_tokens] = {
 
@@ -91,7 +91,7 @@ extern char *token_string(token_t tok) {
     return "???";
 }
 
-extern int token_lookup(char *ident) {
+extern token_t token_lookup(char *ident) {
     for (int i = 0; i < 19; i++) {
         if (!strcmp(ident, tokens[i].s)) {
             return tokens[i].tok;

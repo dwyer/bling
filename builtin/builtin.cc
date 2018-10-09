@@ -32,7 +32,7 @@ extern int cap(slice_t s) {
 }
 
 extern void *get_ptr(slice_t s, int index) {
-    return &s.array[index * s.desc->size];
+    return slice_ref(&s, index);
 }
 
 extern slice_t append(slice_t s, void *obj) {

@@ -27,7 +27,7 @@ extern int slice_cap(const slice_t *s) {
 }
 
 extern void *slice_ref(const slice_t *s, int i) {
-    return &s->array[i * s->desc->size];
+    return (void *)&((char *)s->array)[i * s->desc->size];
 }
 
 extern void slice_get(const slice_t *s, int i, void *dst) {

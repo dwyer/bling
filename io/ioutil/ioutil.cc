@@ -17,5 +17,5 @@ char *ioutil_read_file(char *filename) {
         str = append(str, &ch);
     }
     fclose(fp);
-    return str.array;
+    return (char *)str.array;
 }
