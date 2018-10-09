@@ -49,13 +49,12 @@ extern void slice_set_len(slice_t *s, int len);
 extern void slice_set(slice_t *s, int i, const void *x);
 extern void slice_append(slice_t *s, const void *x);
 
-extern void map_init(map_t *m, const void *key_desc, const void *val_desc);
+extern map_t map_init(const void *key_desc, const void *val_desc);
 extern void map_deinit(map_t *m);
 extern int map_len(const map_t *m);
 extern int map_cap(const map_t *m);
 extern int map_get(const map_t *m, const void *key, void *val);
 extern void map_set(map_t *m, const void *key, const void *val);
-extern slice_t map_keys(const map_t *m);
 
 extern const desc_t desc_int;
 extern const desc_t desc_str;
@@ -64,3 +63,11 @@ extern int map_hits;
 extern int map_misses;
 extern int map_lookups;
 extern int map_iters;
+
+typedef struct {
+    const map_t *_map;
+    int _idx;
+} map_iter_t;
+
+extern map_iter_t map_iter(const map_t *m);
+extern int map_iter_next(map_iter_t *m, void *key, void *val);

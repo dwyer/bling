@@ -45,7 +45,5 @@ extern slice_t make_slice(const desc_t *desc, int len, int cap) {
 }
 
 extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc) {
-    map_t map;
-    map_init(&map, key_desc, val_desc);
-    return map;
+    return map_init(key_desc, val_desc);
 }

@@ -22,11 +22,14 @@ static const desc_t pair_desc = {
     .deinit = (void *)pair_deinit,
 };
 
-extern void map_init(map_t *m, const void *key_desc, const void *val_desc) {
-    m->len = 0;
-    m->pairs = slice_init(&pair_desc, default_cap, 0);
-    m->key_desc = key_desc;
-    m->val_desc = val_desc;
+extern map_t map_init(const void *key_desc, const void *val_desc) {
+    map_t m = {
+        .len = 0,
+        .pairs = slice_init(&pair_desc, default_cap, 0),
+        .key_desc = key_desc,
+        .val_desc = val_desc,
+    };
+    return m;
 }
 
 extern void map_deinit(map_t *m) {
@@ -114,13 +117,20 @@ extern void map_set(map_t *m, const void *key, const void *val) {
     }
 }
 
-extern slice_t map_keys(const map_t *m) {
-    slice_t keys = slice_init(m->key_desc, 0, m->len);
-    for (int i = 0; i < slice_len(&m->pairs); i++) {
-        pair_t *p = slice_ref(&m->pairs, i);
+extern map_iter_t map_iter(const map_t *m) {
+    map_iter_t iter = {._map = m};
+    return iter;
+}
+
+extern int map_iter_next(map_iter_t *m, void *key, void *val) {
+    while (m->_idx < slice_len(&m->_map->pairs)) {
+        pair_t *p = slice_ref(&m->_map->pairs, m->_idx);
+        m->_idx++;
         if (p->key) {
-            slice_append(&keys, p->key);
+            if (key) memcpy(key, p->key, m->_map->key_desc->size);
+            if (val) memcpy(val, p->val, m->_map->val_desc->size);
+            return 1;
         }
     }
-    return keys;
+    return 0;
 }

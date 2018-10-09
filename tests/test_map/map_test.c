@@ -25,8 +25,7 @@ static void slugify(char *s) {
 }
 
 static void test_shakespeare(void) {
-    map_t m;
-    map_init(&m, &desc_str, &desc_int);
+    map_t m = map_init(&desc_str, &desc_int);
     FILE *fp = fopen("t8.shakespeare.txt", "r");
     char *line = NULL;
     size_t line_len = 0;
@@ -48,25 +47,21 @@ static void test_shakespeare(void) {
     fclose(fp);
     free(line);
     printf("most common words in Shakespeare:\n");
-    slice_t keys = map_keys(&m);
-    for (int i = 0; i < slice_len(&keys); ++i) {
-        char *key;
-        int val;
-        slice_get(&keys, i, &key);
-        map_get(&m, &key, &val);
+    map_iter_t it = map_iter(&m);
+    char *key;
+    int val;
+    while (map_iter_next(&it, &key, &val)) {
         if (val > 4000) {
             printf("\t%s (%d uses)\n", key, val);
         }
     }
-    slice_deinit(&keys);
     map_deinit(&m);
 }
 
 static void test_ints(void) {
     const int num_iters = 1024;
     static int elts[num_iters];
-    map_t m;
-    map_init(&m, &desc_int, &desc_int);
+    map_t m = map_init(&desc_int, &desc_int);
     srand(0);
     for (int i = 0; i < num_iters; i++) {
         int key = rand() % num_iters;
@@ -74,15 +69,11 @@ static void test_ints(void) {
         map_set(&m, &key, &elts[key]);
     }
     int total = 0;
-    slice_t keys = map_keys(&m);
-    for (int i = 0; i < slice_len(&keys); i++) {
-        int key, val;
-        slice_get(&keys, i, &key);
-        assert(!map_get(&m, &key, &val));
+    int key, val;
+    for (map_iter_t it = map_iter(&m); map_iter_next(&it, &key, &val); ) {
         assert(val == elts[key]);
         total += val;
     }
-    slice_deinit(&keys);
     map_deinit(&m);
     assert(total == num_iters);
 }
