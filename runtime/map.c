@@ -41,11 +41,11 @@ extern int map_cap(const map_t *m) {
 }
 
 static pair_t *pair_ref(const map_t *m, const void *key) {
-    unsigned int hash = desc_hash(m->key_desc, key) % map_cap(m);
+    uintptr_t hash = desc_hash(m->key_desc, key) % map_cap(m);
     ++map_lookups;
     for (int i = 0; i < slice_len(&m->pairs); i++) {
         ++map_iters;
-        unsigned int idx = (hash + i) % map_cap(m);
+        int idx = (hash + i) % map_cap(m);
         pair_t *p = slice_ref(&m->pairs, idx);
         if (!p->key || !desc_cmp(m->key_desc, key, p->key)) {
             if (!i)
@@ -73,7 +73,7 @@ static void set_unsafe(map_t *m, const void *key, const void *val) {
 
 extern bool map_has_key(map_t *m, const void *key) {
     pair_t *p = pair_ref(m, key);
-    return p->key;
+    return p->key != NULL;
 }
 
 extern int map_get(const map_t *m, const void *key, void *val) {

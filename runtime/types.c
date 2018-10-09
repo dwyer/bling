@@ -6,9 +6,9 @@ const desc_t desc_int = {
     .size = sizeof(int),
 };
 
-static unsigned int strphash(const char *s) {
+static uintptr_t djb2(const char *s) {
     // http://www.cse.yorku.ca/~oz/hash.html
-    unsigned int hash = 5381;
+    uintptr_t hash = 5381;
     int ch;
     while ((ch = *s++))
         hash = ((hash << 5) + hash) + ch;
@@ -18,6 +18,7 @@ static unsigned int strphash(const char *s) {
 const desc_t desc_str = {
     .size = sizeof(char *),
     .is_ptr = true,
+    .dup = (void *)strdup,
     .cmp = (void *)strcmp,
-    .hash = (void *)strphash,
+    .hash = (void *)djb2,
 };

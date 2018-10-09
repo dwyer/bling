@@ -15,7 +15,7 @@ typedef struct {
     bool is_ptr;
     void (*dup)(const void *);
     int (*cmp)(const void *, const void *);
-    int (*hash)(const void *);
+    uintptr_t (*hash)(const void *);
 } desc_t;
 
 typedef struct {
@@ -33,7 +33,7 @@ typedef struct {
 } map_t;
 
 extern int desc_cmp(const desc_t *d, const void *a, const void *b);
-extern uint32_t desc_hash(const desc_t *d, const void *a);
+extern uintptr_t desc_hash(const desc_t *d, const void *a);
 
 extern slice_t slice_init(const desc_t *desc, int len, int cap);
 extern void slice_deinit(slice_t *s);

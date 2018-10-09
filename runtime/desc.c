@@ -14,7 +14,7 @@ extern int desc_cmp(const desc_t *d, const void *a, const void *b) {
     return memcmp(a, b, d->size);
 }
 
-extern uint32_t desc_hash(const desc_t *d, const void *p) {
+extern uintptr_t desc_hash(const desc_t *d, const void *p) {
     if (d->hash) {
         if (d->is_ptr) {
             p = *(void **)p;
