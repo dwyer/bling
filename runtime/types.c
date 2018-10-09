@@ -17,7 +17,6 @@ static uintptr_t djb2(const char *s) {
 
 const desc_t desc_str = {
     .size = sizeof(char *),
-    .is_ptr = true,
     .dup = (void *)strdup,
     .cmp = (void *)strcmp,
     .hash = (void *)djb2,

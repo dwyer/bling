@@ -58,13 +58,19 @@ static pair_t *pair_ref(const map_t *m, const void *key) {
     return NULL;
 }
 
+static void *memdup(const void *src, size_t size) {
+    return memcpy(malloc(size), src, size);
+}
+
 static void set_unsafe(map_t *m, const void *key, const void *val) {
     pair_t *p = pair_ref(m, key);
     if (p->key == NULL) {
-        p->key = malloc(m->key_desc->size);
-        p->val = malloc(m->val_desc->size);
-        memcpy(p->key, key, m->key_desc->size);
-        memcpy(p->val, val, m->val_desc->size);
+        if (m->key_desc->dup) {
+            p->key = m->key_desc->dup(key);
+        } else {
+            p->key = memdup(key, m->key_desc->size);
+        }
+        p->val = memdup(val, m->val_desc->size);
         m->len++;
     } else {
         memcpy(p->val, val, m->val_desc->size);
@@ -113,8 +119,16 @@ extern int map_iter_next(map_iter_t *m, void *key, void *val) {
         pair_t *p = slice_ref(&m->_map->pairs, m->_idx);
         m->_idx++;
         if (p->key) {
-            if (key) memcpy(key, p->key, m->_map->key_desc->size);
-            if (val) memcpy(val, p->val, m->_map->val_desc->size);
+            if (key) {
+                if (m->_map->key_desc->dup) {
+                    *(void **)key = p->key;
+                } else {
+                    memcpy(key, p->key, m->_map->key_desc->size);
+                }
+            }
+            if (val) {
+                memcpy(val, p->val, m->_map->val_desc->size);
+            }
             return 1;
         }
     }

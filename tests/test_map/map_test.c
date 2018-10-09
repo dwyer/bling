@@ -37,11 +37,11 @@ static void test_shakespeare(void) {
         do {
             if (key && *key && !isspace(*key)) {
                 int val = 0;
-                map_get(&m, &key, &val);
+                map_get(&m, key, &val);
                 ++val;
-                if (!map_has_key(&m, &key))
+                if (!map_has_key(&m, key))
                     key = strdup(key);
-                map_set(&m, &key, &val);
+                map_set(&m, key, &val);
             }
         } while ((key = strtok(NULL, sep)));
     }

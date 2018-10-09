@@ -13,7 +13,7 @@
 typedef struct {
     size_t size;
     bool is_ptr;
-    void (*dup)(const void *);
+    void *(*dup)(const void *);
     int (*cmp)(const void *, const void *);
     uintptr_t (*hash)(const void *);
 } desc_t;
