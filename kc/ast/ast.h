@@ -270,6 +270,10 @@ struct scope {
     slice_t types;
 };
 
+extern scope_t *scope_new(scope_t *outer);
+extern void scope_insert_type(scope_t *s, char *type);
+extern int scope_lookup_type(scope_t *s, char *name);
+
 typedef struct {
     expr_t *name;
     decl_t **decls;
@@ -279,4 +283,5 @@ typedef struct {
 typedef struct {
     char *name;
     scope_t *scope;
+    slice_t files;
 } package_t;

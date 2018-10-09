@@ -253,7 +253,7 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
     case ast_STMT_WHILE:
         emit_printf(e, "while (");
         emit_expr(e, stmt->while_.cond);
-        emit_printf(e, ") {");
+        emit_printf(e, ") ");
         emit_stmt(e, stmt->while_.body);
         break;
 

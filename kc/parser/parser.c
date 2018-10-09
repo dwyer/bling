@@ -57,11 +57,7 @@ static bool is_type(parser_t *p) {
     case token_UNION:
         return true;
     case token_IDENT:
-        for (int i = 0; i < len(p->pkg_scope->types); i++) {
-            if (!strcmp(*(char **)get_ptr(p->pkg_scope->types, i), p->lit)) {
-                return true;
-            }
-        }
+        return scope_lookup_type(p->pkg_scope, p->lit);
     default:
         return false;
     }
@@ -99,10 +95,6 @@ static void error(parser_t *p, char *fmt, ...) {
 static void next(parser_t *p) {
     free(p->lit);
     p->tok = scanner_scan(&p->scanner, &p->lit);
-}
-
-static void append_type(parser_t *p, char *st) {
-    p->pkg_scope->types = append(p->pkg_scope->types, &st);
 }
 
 static bool accept(parser_t *p, token_t tok0) {
@@ -631,8 +623,7 @@ static decl_t *parse_decl(parser_t *p) {
         expr_t *type = type_specifier(p);
         expr_t *ident = declarator(p, &type);
         expect(p, token_SEMICOLON);
-        p->pkg_scope->types = append(p->pkg_scope->types, &ident->ident.name);
-        append_type(p, ident->ident.name);
+        scope_insert_type(p->pkg_scope, ident->ident.name);
         spec_t spec = {
             .type = ast_SPEC_TYPEDEF,
             .typedef_ = {
@@ -1412,14 +1403,6 @@ static field_t *parse_field(parser_t *p) {
 
 static file_t *parse_file(parser_t *p) {
     slice_t decls = {.desc = &decl_desc};
-    append_type(p, "FILE");
-    append_type(p, "bool");
-    append_type(p, "char");
-    append_type(p, "float");
-    append_type(p, "int");
-    append_type(p, "size_t");
-    append_type(p, "va_list");
-    append_type(p, "void");
     next(p);
     while (p->tok != token_EOF) {
         decl_t *decl = parse_decl(p);
