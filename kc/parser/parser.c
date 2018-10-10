@@ -1422,12 +1422,20 @@ static field_t *parse_field(parser_t *p) {
 
 static file_t *parse_file(parser_t *p) {
     slice_t decls = {.desc = &decl_desc};
+    expr_t *name = NULL;
+    if (accept(p, token_PACKAGE)) {
+        expect(p, token_LPAREN);
+        name = identifier(p);
+        expect(p, token_RPAREN);
+        expect(p, token_SEMICOLON);
+    }
     while (p->tok != token_EOF) {
         decl_t *decl = parse_decl(p);
         decls = append(decls, &decl);
     }
     decls = append(decls, &nil_ptr);
     file_t file = {
+        .name = name,
         .decls = (decl_t **)decls.array,
     };
     return dup(&file);

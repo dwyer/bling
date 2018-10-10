@@ -1,6 +1,8 @@
 #pragma once
 #include "builtin/builtin.h"
 
+$package(token);
+
 typedef enum {
     token_ILLEGAL = 0,
 
@@ -20,15 +22,20 @@ typedef enum {
     token_ENUM,
     token_EXTERN,
     token_FOR,
+    token_FUNC,
     token_GOTO,
     token_IF,
+    token_IMPORT,
+    token_PACKAGE,
     token_RETURN,
     token_SIZEOF,
     token_STATIC,
     token_STRUCT,
     token_SWITCH,
+    token_TYPE,
     token_TYPEDEF,
     token_UNION,
+    token_VAR,
     token_WHILE,
 
     token_ARROW,

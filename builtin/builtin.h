@@ -1,7 +1,7 @@
 #pragma once
 
-#define import(...)
-#define package(_)
+#define $import(...)
+#define $package(_)
 
 #include "runtime/runtime.h"
 
