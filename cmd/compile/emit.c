@@ -293,7 +293,9 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
     case ast_TYPE_ARRAY:
         emit_type(e, type->array.elt, name);
         emit_printf(e, "[");
-        emit_expr(e, type->array.len);
+        if (type->array.len) {
+            emit_expr(e, type->array.len);
+        }
         emit_printf(e, "]");
         name = NULL;
         break;
