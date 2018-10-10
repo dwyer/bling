@@ -263,16 +263,26 @@ struct spec {
     };
 };
 
+typedef enum {
+    obj_kind_BAD,
+    obj_kind_TYPE,
+} obj_kind_t;
+
+typedef struct {
+    obj_kind_t kind;
+    char *name;
+} object_t;
+
 typedef struct scope scope_t;
 
 struct scope {
     scope_t *outer;
-    slice_t types;
+    map_t objects;
 };
 
 extern scope_t *scope_new(scope_t *outer);
-extern void scope_insert_type(scope_t *s, char *type);
-extern int scope_lookup_type(scope_t *s, char *name);
+extern object_t *scope_insert(scope_t *s, object_t *obj);
+extern object_t *scope_lookup(scope_t *s, char *name);
 
 typedef struct {
     expr_t *name;

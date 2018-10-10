@@ -1,21 +1,27 @@
 #include "kc/ast/ast.h"
 
+static const desc_t _object_desc = {
+    .size = sizeof(object_t),
+};
+
 extern scope_t *scope_new(scope_t *outer) {
     scope_t *s = malloc(sizeof(*s));
     s->outer = outer;
-    s->types = make_slice(&desc_str, 0, 0);
+    s->objects = make_map(&desc_str, &_object_desc);
     return s;
 }
 
-extern void scope_insert_type(scope_t *s, char *name) {
-    s->types = append(s->types, &name);
+extern object_t *scope_insert(scope_t *s, object_t *obj) {
+    object_t *alt = NULL;
+    map_get(&s->objects, obj->name, &obj);
+    if (alt == NULL) {
+        map_set(&s->objects, obj->name, &obj);
+    }
+    return alt;
 }
 
-extern int scope_lookup_type(scope_t *s, char *name) {
-    for (int i = 0; i < len(s->types); i++) {
-        if (!strcmp(*(char **)get_ptr(s->types, i), name)) {
-            return 1;
-        }
-    }
-    return 0;
+extern object_t *scope_lookup(scope_t *s, char *name) {
+    object_t *obj = NULL;
+    map_get(&s->objects, name, &obj);
+    return obj;
 }

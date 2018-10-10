@@ -1,5 +1,4 @@
 #include "kc/parser/parser.h"
-
 #define memdup(src, size) memcpy(malloc((size)), (src), (size))
 #define dup(src) (typeof((src)))memdup((src), sizeof(*(src)))
 #define alloc(T) (T *)malloc(sizeof(T))
@@ -47,6 +46,19 @@ static const desc_t decl_desc = {.size = sizeof(decl_t *)};
 static const desc_t stmt_desc = {.size = sizeof(stmt_t *)};
 static const desc_t field_desc = {.size = sizeof(field_t *)};
 
+static void declare_type(scope_t *s, char *name) {
+    object_t obj = {
+        .kind = obj_kind_TYPE,
+        .name = name,
+    };
+    scope_insert(s, dup(&obj));
+}
+
+static int lookup_type(scope_t *s, char *name) {
+    object_t *obj = scope_lookup(s, name);
+    return obj && obj->kind == obj_kind_TYPE;
+}
+
 static bool is_type(parser_t *p) {
     switch (p->tok) {
     case token_CONST:
@@ -57,7 +69,7 @@ static bool is_type(parser_t *p) {
     case token_UNION:
         return true;
     case token_IDENT:
-        return scope_lookup_type(p->pkg_scope, p->lit);
+        return lookup_type(p->pkg_scope, p->lit);
     default:
         return false;
     }
@@ -623,7 +635,7 @@ static decl_t *parse_decl(parser_t *p) {
         expr_t *type = type_specifier(p);
         expr_t *ident = declarator(p, &type);
         expect(p, token_SEMICOLON);
-        scope_insert_type(p->pkg_scope, ident->ident.name);
+        declare_type(p->pkg_scope, ident->ident.name);
         spec_t spec = {
             .type = ast_SPEC_TYPEDEF,
             .typedef_ = {
