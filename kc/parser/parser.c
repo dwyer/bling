@@ -11,6 +11,15 @@ typedef struct {
     scope_t *pkg_scope;
 } parser_t;
 
+static void next(parser_t *p);
+
+static void init(parser_t *p, char *filename, char *src) {
+    p->filename = filename;
+    p->lit = NULL;
+    scanner_init(&p->scanner, src);
+    next(p);
+}
+
 static expr_t *cast_expression(parser_t *p);
 static expr_t *expression(parser_t *p);
 static expr_t *constant_expression(parser_t *p);
@@ -46,17 +55,12 @@ static const desc_t decl_desc = {.size = sizeof(decl_t *)};
 static const desc_t stmt_desc = {.size = sizeof(stmt_t *)};
 static const desc_t field_desc = {.size = sizeof(field_t *)};
 
-static void declare_type(scope_t *s, char *name) {
+static void declare(parser_t *p, scope_t *s, obj_kind_t kind, char *name) {
     object_t obj = {
-        .kind = obj_kind_TYPE,
+        .kind = kind,
         .name = name,
     };
     scope_insert(s, dup(&obj));
-}
-
-static int lookup_type(scope_t *s, char *name) {
-    object_t *obj = scope_lookup(s, name);
-    return obj && obj->kind == obj_kind_TYPE;
 }
 
 static bool is_type(parser_t *p) {
@@ -69,7 +73,10 @@ static bool is_type(parser_t *p) {
     case token_UNION:
         return true;
     case token_IDENT:
-        return lookup_type(p->pkg_scope, p->lit);
+        {
+            object_t *obj = scope_lookup(p->pkg_scope, p->lit);
+            return obj && obj->kind == obj_kind_TYPE;
+        }
     default:
         return false;
     }
@@ -635,7 +642,7 @@ static decl_t *parse_decl(parser_t *p) {
         expr_t *type = type_specifier(p);
         expr_t *ident = declarator(p, &type);
         expect(p, token_SEMICOLON);
-        declare_type(p->pkg_scope, ident->ident.name);
+        declare(p, p->pkg_scope, obj_kind_TYPE, ident->ident.name);
         spec_t spec = {
             .type = ast_SPEC_TYPEDEF,
             .typedef_ = {
@@ -1415,7 +1422,6 @@ static field_t *parse_field(parser_t *p) {
 
 static file_t *parse_file(parser_t *p) {
     slice_t decls = {.desc = &decl_desc};
-    next(p);
     while (p->tok != token_EOF) {
         decl_t *decl = parse_decl(p);
         decls = append(decls, &decl);
@@ -1429,12 +1435,10 @@ static file_t *parse_file(parser_t *p) {
 
 extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {
     char *src = ioutil_read_file(filename);
-    parser_t parser = {
-        .filename = filename,
-        .pkg_scope = pkg_scope,
-    };
-    scanner_init(&parser.scanner, src);
-    file_t *file = parse_file(&parser);
+    parser_t p;
+    init(&p, filename, src);
+    p.pkg_scope = pkg_scope;
+    file_t *file = parse_file(&p);
     free(src);
     return file;
 }

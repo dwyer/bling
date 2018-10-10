@@ -5,14 +5,18 @@
 #include "cmd/compile/emit.h"
 
 static char *types[] = {
-    "FILE",
-    "bool",
+    // native types
     "char",
     "float",
     "int",
+    "void",
+
+    // libc types
+    "FILE",
+    "bool",
     "size_t",
     "va_list",
-    "void",
+
     NULL,
 };
 
