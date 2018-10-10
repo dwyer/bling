@@ -1,6 +1,6 @@
 #pragma once
 #include "builtin/builtin.h"
-#include "kc/token/token.h"
+#include "subc/token/token.h"
 
 typedef enum {
 

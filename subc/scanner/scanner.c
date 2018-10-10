@@ -1,5 +1,5 @@
-#include "kc/scanner/scanner.h"
-#include "kc/token/token.h"
+#include "subc/scanner/scanner.h"
+#include "subc/token/token.h"
 
 static void next(scanner_t *s) {
     s->offset = s->rd_offset;

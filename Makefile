@@ -9,10 +9,10 @@ test: compile
 	./$< runtime/runtime.h \
 	    builtin/builtin.h builtin/builtin.c \
 	    io/ioutil/ioutil.h io/ioutil/ioutil.c \
-	    kc/token/token.h kc/token/token.c \
-	    kc/ast/ast.h \
-	    kc/scanner/scanner.h kc/scanner/scanner.c \
-	    kc/parser/parser.h kc/parser/parser.c
+	    subc/token/token.h subc/token/token.c \
+	    subc/ast/ast.h \
+	    subc/scanner/scanner.h subc/scanner/scanner.c \
+	    subc/parser/parser.h subc/parser/parser.c
 
 clean:
 	$(RM) compile

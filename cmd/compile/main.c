@@ -1,7 +1,7 @@
 #include "builtin/builtin.h"
 
-#include "kc/scanner/scanner.h"
-#include "kc/parser/parser.h"
+#include "subc/scanner/scanner.h"
+#include "subc/parser/parser.h"
 #include "cmd/compile/emit.h"
 
 static char *types[] = {

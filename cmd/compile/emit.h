@@ -1,6 +1,6 @@
 #pragma once
 #include "builtin/builtin.h"
-#include "kc/ast/ast.h"
+#include "subc/ast/ast.h"
 
 typedef struct {
     FILE *fp;

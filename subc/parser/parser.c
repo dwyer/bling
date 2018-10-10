@@ -1,4 +1,4 @@
-#include "kc/parser/parser.h"
+#include "subc/parser/parser.h"
 #define memdup(src, size) memcpy(malloc((size)), (src), (size))
 #define dup(src) (typeof((src)))memdup((src), sizeof(*(src)))
 #define alloc(T) (T *)malloc(sizeof(T))

@@ -1,4 +1,4 @@
-#include "kc/ast/ast.h"
+#include "subc/ast/ast.h"
 
 static const desc_t _object_desc = {
     .size = sizeof(object_t),

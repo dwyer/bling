@@ -16,10 +16,10 @@ LDFLAGS = ['-g']
 packages = [
     'builtin',
     'runtime',
-    'kc/token',
-    'kc/ast',
-    'kc/scanner',
-    'kc/parser',
+    'subc/token',
+    'subc/ast',
+    'subc/scanner',
+    'subc/parser',
     'io/ioutil',
 ]
 

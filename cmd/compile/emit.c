@@ -1,5 +1,5 @@
 #include "cmd/compile/emit.h"
-#include "kc/token/token.h"
+#include "subc/token/token.h"
 
 static void emit_decl(emitter_t *e, decl_t *decl);
 static void emit_expr(emitter_t *e, expr_t *expr);
