@@ -60,10 +60,22 @@ static char *scan_ident(scanner_t *s) {
 
 static char *scan_number(scanner_t *s, token_t *tokp) {
     int offs = s->offset;
-    while (is_digit(s->ch)) {
+    bool is_float = false;
+    while (is_digit(s->ch) || s->ch == '.') {
+        if (s->ch == '.') {
+            if (!is_float) {
+                is_float = true;
+            } else {
+                // TODO error
+            }
+        }
         next(s);
     }
-    *tokp = token_INT;
+    if (is_float) {
+        *tokp = token_FLOAT;
+    } else {
+        *tokp = token_INT;
+    }
     return make_string_slice(s, offs, s->offset);
 }
 

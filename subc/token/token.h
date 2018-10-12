@@ -10,6 +10,7 @@ typedef enum {
     token_TYPE_NAME,
 
     token_CHAR,
+    token_FLOAT,
     token_INT,
     token_STRING,
 

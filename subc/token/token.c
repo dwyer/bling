@@ -5,6 +5,7 @@ extern char *token_string(token_t tok) {
     case token_ILLEGAL: return "ILLEGAL";
 
     case token_CHAR: return "CHAR";
+    case token_FLOAT: return "FLOAT";
     case token_IDENT: return "IDENT";
     case token_INT: return "INT";
     case token_STRING: return "STRING";

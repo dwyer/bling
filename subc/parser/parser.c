@@ -177,6 +177,7 @@ static expr_t *primary_expression(parser_t *p) {
     case token_IDENT:
         return identifier(p);
     case token_CHAR:
+    case token_FLOAT:
     case token_INT:
     case token_STRING:
         {
