@@ -123,6 +123,7 @@ static void error(parser_t *p, char *fmt, ...) {
         }
     }
     fputc('\n', stderr);
+    panic("panicing");
     exit(1);
 }
 
@@ -257,6 +258,9 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                     }
                 }
                 expect(p, token_RPAREN);
+                if (x->type == ast_EXPR_IDENT) {
+                    print("calling %s", x->ident.name);
+                }
                 expr_t call = {
                     .type = ast_EXPR_CALL,
                     .call = {
@@ -418,6 +422,7 @@ static expr_t *multiplicative_expression(parser_t *p) {
         case token_MUL:
         case token_DIV:
             op = p->tok;
+            next(p);
             x = _binary_expression(p, x, op, cast_expression(p));
             break;
         default:

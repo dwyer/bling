@@ -9,7 +9,8 @@ int map_lookups = 0;
 int map_iters = 0;
 
 typedef struct {
-    void *key, *val;
+    void *key;
+    void *val;
 } pair_t;
 
 extern map_t map_init(const desc_t *key_desc, const desc_t *val_desc) {
@@ -42,16 +43,17 @@ extern int map_cap(const map_t *m) {
 
 static pair_t *pair_ref(const map_t *m, const void *key) {
     uintptr_t hash = desc_hash(m->key_desc, key) % map_cap(m);
-    ++map_lookups;
+    map_lookups++;
     for (int i = 0; i < slice_len(&m->pairs); i++) {
-        ++map_iters;
+        map_iters++;
         int idx = (hash + i) % map_cap(m);
         pair_t *p = (pair_t *)slice_ref(&m->pairs, idx);
         if (!p->key || !desc_cmp(m->key_desc, key, p->key)) {
-            if (!i)
-                ++map_hits;
-            else
-                ++map_misses;
+            if (!i) {
+                map_hits++;
+            } else {
+                map_misses++;
+            }
             return p;
         }
     }
@@ -99,7 +101,7 @@ extern void map_set(map_t *m, const void *key, const void *val) {
         slice_t pairs = m->pairs;
         m->pairs = slice_init(m->pairs.desc, new_cap, 0);
         m->len = 0;
-        for (int i = 0; i < slice_len(&pairs); ++i) {
+        for (int i = 0; i < slice_len(&pairs); i++) {
             pair_t *p = (pair_t *)slice_ref(&pairs, i);
             if (p->key) {
                 set_unsafe(m, p->key, p->val);

@@ -69,8 +69,8 @@ extern char *token_string(token_t tok) {
     case token_LOR: return "||";
     case token_LT: return "<";
     case token_LT_EQUAL: return "<=";
-    case token_MOD: return "*";
-    case token_MOD_ASSIGN: return "*=";
+    case token_MOD: return "%";
+    case token_MOD_ASSIGN: return "%=";
     case token_MUL: return "*";
     case token_MUL_ASSIGN: return "*=";
     case token_NOT: return "!";
