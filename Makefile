@@ -13,7 +13,7 @@ test: compile
 	    subc/ast/ast.h \
 	    subc/scanner/scanner.h subc/scanner/scanner.c \
 	    subc/parser/parser.h subc/parser/parser.c \
-	    runtime/slice.c
+	    runtime/desc.c runtime/slice.c runtime/map.c
 
 clean:
 	$(RM) compile

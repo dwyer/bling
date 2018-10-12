@@ -28,6 +28,7 @@ typedef enum {
     token_IMPORT,
     token_PACKAGE,
     token_RETURN,
+    token_SIGNED,
     token_SIZEOF,
     token_STATIC,
     token_STRUCT,
@@ -35,6 +36,7 @@ typedef enum {
     token_TYPE,
     token_TYPEDEF,
     token_UNION,
+    token_UNSIGNED,
     token_VAR,
     token_WHILE,
 

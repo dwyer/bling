@@ -15,6 +15,7 @@ static char *types[] = {
     "FILE",
     "bool",
     "size_t",
+    "uintptr_t",
     "va_list",
 
     NULL,

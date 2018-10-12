@@ -25,6 +25,7 @@ extern char *token_string(token_t tok) {
     case token_IMPORT: return "$import";
     case token_PACKAGE: return "$package";
     case token_RETURN: return "return";
+    case token_SIGNED: return "signed";
     case token_SIZEOF: return "sizeof";
     case token_STATIC: return "static";
     case token_STRUCT: return "struct";
@@ -32,6 +33,7 @@ extern char *token_string(token_t tok) {
     case token_TYPE: return "$type";
     case token_TYPEDEF: return "typedef";
     case token_UNION: return "union";
+    case token_UNSIGNED: return "unsigned";
     case token_VAR: return "$var";
     case token_WHILE: return "while";
 

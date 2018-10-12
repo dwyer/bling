@@ -21,8 +21,8 @@ extern uintptr_t desc_hash(const desc_t *d, const void *p) {
         }
         return d->hash(p);
     }
-    unsigned hash = 0;
-    int size = min(d->size, sizeof(unsigned int));
+    uintptr_t hash = 0;
+    int size = min(d->size, sizeof(uintptr_t));
     memcpy(&hash, p, size);
     return hash;
 }

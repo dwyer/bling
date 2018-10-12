@@ -80,9 +80,11 @@ static bool is_type(parser_t *p) {
     case token_CONST:
     case token_ENUM:
     case token_EXTERN:
+    case token_SIGNED:
     case token_STATIC:
     case token_STRUCT:
     case token_UNION:
+    case token_UNSIGNED:
         return true;
     case token_IDENT:
         {
@@ -774,6 +776,10 @@ static expr_t *type_specifier(parser_t *p) {
     //         ;
     expr_t *x = NULL;
     switch (p->tok) {
+    case token_SIGNED:
+    case token_UNSIGNED:
+        error(p, "`%s` is not supported in subc", token_string(p->tok));
+        break;
     case token_STRUCT:
     case token_UNION:
         x = struct_or_union_specifier(p);
