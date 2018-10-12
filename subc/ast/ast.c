@@ -11,6 +11,10 @@ extern scope_t *scope_new(scope_t *outer) {
     return s;
 }
 
+extern void scope_deinit(scope_t *s) {
+    map_deinit(&s->objects);
+}
+
 extern object_t *scope_insert(scope_t *s, object_t *obj) {
     object_t *alt = NULL;
     map_get(&s->objects, obj->name, &obj);

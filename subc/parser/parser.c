@@ -8,6 +8,7 @@ typedef struct {
     token_t tok;
     char *lit;
     char *filename;
+    scope_t *top_scope;
     scope_t *pkg_scope;
 } parser_t;
 
@@ -18,6 +19,25 @@ static void init(parser_t *p, char *filename, char *src) {
     p->lit = NULL;
     scanner_init(&p->scanner, src);
     next(p);
+}
+
+static void open_scope(parser_t *p) {
+    p->top_scope = scope_new(p->top_scope);
+}
+
+static void close_scope(parser_t *p) {
+    scope_t *top = p->top_scope;
+    p->top_scope = top->outer;
+    scope_deinit(top);
+    free(top);
+}
+
+static void declare(parser_t *p, scope_t *s, obj_kind_t kind, char *name) {
+    object_t obj = {
+        .kind = kind,
+        .name = name,
+    };
+    scope_insert(s, dup(&obj));
 }
 
 static expr_t *cast_expression(parser_t *p);
@@ -54,14 +74,6 @@ static const desc_t expr_desc = {.size = sizeof(expr_t *)};
 static const desc_t decl_desc = {.size = sizeof(decl_t *)};
 static const desc_t stmt_desc = {.size = sizeof(stmt_t *)};
 static const desc_t field_desc = {.size = sizeof(field_t *)};
-
-static void declare(parser_t *p, scope_t *s, obj_kind_t kind, char *name) {
-    object_t obj = {
-        .kind = kind,
-        .name = name,
-    };
-    scope_insert(s, dup(&obj));
-}
 
 static bool is_type(parser_t *p) {
     switch (p->tok) {
@@ -109,6 +121,7 @@ static void error(parser_t *p, char *fmt, ...) {
         }
     }
     fputc('\n', stderr);
+    exit(1);
 }
 
 static void next(parser_t *p) {
@@ -131,7 +144,6 @@ static void expect(parser_t *p, token_t tok) {
             lit = token_string(p->tok);
         }
         error(p, "expected `%s`, got `%s`", token_string(tok), lit);
-        exit(1);
     }
     next(p);
 }

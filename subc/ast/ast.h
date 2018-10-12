@@ -281,6 +281,7 @@ struct scope {
 };
 
 extern scope_t *scope_new(scope_t *outer);
+extern void scope_deinit(scope_t *s);
 extern object_t *scope_insert(scope_t *s, object_t *obj);
 extern object_t *scope_lookup(scope_t *s, char *name);
 
