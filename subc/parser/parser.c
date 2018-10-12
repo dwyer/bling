@@ -159,35 +159,42 @@ static expr_t *primary_expression(parser_t *p) {
     //         | STRING_LITERAL
     //         | '(' expression ')'
     //         ;
-    expr_t *x = NULL;
     switch (p->tok) {
     case token_IDENT:
-        x = identifier(p);
-        break;
+        return identifier(p);
     case token_CHAR:
     case token_INT:
     case token_STRING:
-        x = alloc(expr_t);
-        x->type = ast_EXPR_BASIC_LIT;
-        x->basic_lit.kind = p->tok;
-        x->basic_lit.value = strdup(p->lit);
-        next(p);
-        break;
+        {
+            expr_t x = {
+                .type = ast_EXPR_BASIC_LIT,
+                .basic_lit = {
+                    .kind = p->tok,
+                    .value = strdup(p->lit),
+                },
+            };
+            next(p);
+            return dup(&x);
+        }
     case token_LPAREN:
-        expect(p, token_LPAREN);
-        x = alloc(expr_t);
-        x->type = ast_EXPR_PAREN;
-        x->paren.x = expression(p);
-        expect(p, token_RPAREN);
-        break;
+        {
+            expect(p, token_LPAREN);
+            expr_t x = {
+                .type = ast_EXPR_PAREN,
+                .paren = {
+                    .x = expression(p),
+                },
+            };
+            expect(p, token_RPAREN);
+            return dup(&x);
+        }
     default:
         error(p, "bad expr: %s: %s", token_string(p->tok), p->lit);
-        break;
+        return NULL;
     }
-    return x;
 }
 
-static expr_t *postfix_expression(parser_t *p) {
+static expr_t *postfix_expression(parser_t *p, expr_t *x) {
     // postfix_expression
     //         : primary_expression
     //         | postfix_expression '[' expression ']'
@@ -198,7 +205,9 @@ static expr_t *postfix_expression(parser_t *p) {
     //         | postfix_expression INC_OP
     //         | postfix_expression DEC_OP
     //         ;
-    expr_t *x = primary_expression(p);
+    if (x == NULL) {
+        x = primary_expression(p);
+    }
     for (;;) {
         expr_t *y;
         switch (p->tok) {
@@ -284,8 +293,6 @@ done:
 static expr_t *unary_expression(parser_t *p) {
     // unary_expression
     //         : postfix_expression
-    //         | INC_OP unary_expression
-    //         | DEC_OP unary_expression
     //         | unary_operator cast_expression
     //         | SIZEOF unary_expression
     //         | SIZEOF '(' type_name ')'
@@ -326,8 +333,12 @@ static expr_t *unary_expression(parser_t *p) {
         }
         expect(p, token_RPAREN);
         break;
+    case token_DEC:
+    case token_INC:
+        error(p, "unary `%s` not supported in subc", token_string(p->tok));
+        break;
     default:
-        x = postfix_expression(p);
+        x = postfix_expression(p, NULL);
         break;
     }
     return x;
@@ -359,7 +370,7 @@ static expr_t *cast_expression(parser_t *p) {
                 },
             };
             expect(p, token_RPAREN);
-            return dup(&x);
+            return postfix_expression(p, dup(&x));
         }
     }
     return unary_expression(p);
@@ -1047,8 +1058,7 @@ static expr_t *abstract_declarator(parser_t *p, expr_t *type) {
     //         : '(' abstract_declarator ')'
     //         | '(' parameter_type_list ')'
     //         | '(' ')'
-    //         | '[' constant_expression ']'
-    //         | '[' ']'
+    //         | '[' constant_expression? ']'
     //         | direct_abstract_declarator '[' constant_expression ']'
     //         | direct_abstract_declarator '[' ']'
     //         | direct_abstract_declarator '(' parameter_type_list ')'
@@ -1066,8 +1076,7 @@ static expr_t *abstract_declarator(parser_t *p, expr_t *type) {
 static expr_t *initializer(parser_t *p) {
     // initializer
     //         : assignment_expression
-    //         | '{' initializer_list '}'
-    //         | '{' initializer_list ',' '}'
+    //         | '{' initializer_list ','? '}'
     //         ;
     if (!accept(p, token_LBRACE)) {
         return assignment_expression(p);
@@ -1080,10 +1089,7 @@ static expr_t *initializer(parser_t *p) {
     while (p->tok != token_RBRACE && p->tok != token_EOF) {
         expr_t *value = NULL;
         // designation : designator_list '=' ;
-        // designator_list
-        //         : designator
-        //         | designator_list designator
-        //         ;
+        // designator_list : designator+ ;
         // designator : '.' identifier
         if (accept(p, token_PERIOD)) {
             expr_t *key = identifier(p);
@@ -1174,10 +1180,7 @@ static stmt_t *statement(parser_t *p) {
             return dup(&stmt);
         }
     }
-    // expression_statement
-    //         : ';'
-    //         | expression ';'
-    //         ;
+    // expression_statement : expression? ';' ;
     stmt_t stmt = {
         .type = ast_STMT_EXPR,
         .expr = {.x = x},
@@ -1187,17 +1190,11 @@ static stmt_t *statement(parser_t *p) {
 }
 
 static stmt_t *compound_statement(parser_t *p) {
-    // compound_statement
-    //         : '{' '}'
-    //         | '{' statement_list '}'
-    //         ;
+    // compound_statement : '{' statement_list? '}' ;
     stmt_t *stmt = NULL;
     slice_t stmts = {.desc = &stmt_desc};
     expect(p, token_LBRACE);
-    // statement_list
-    //         : statement
-    //         | statement_list statement
-    //         ;
+    // statement_list : statement+ ;
     while (p->tok != token_RBRACE) {
         stmt = statement(p);
         stmts = append(stmts, &stmt);
@@ -1212,17 +1209,28 @@ static stmt_t *compound_statement(parser_t *p) {
 
 static stmt_t *if_statement(parser_t *p) {
     // if_statement
-    //         : IF '(' expression ')' statement
-    //         | IF '(' expression ')' statement ELSE statement
+    //         : IF '(' expression ')' compound_statement
+    //         | IF '(' expression ')' compound_statement ELSE compound_statement
+    //         | IF '(' expression ')' compound_statement ELSE if_statement
     //         ;
     expect(p, token_IF);
     expect(p, token_LPAREN);
     expr_t *cond = expression(p);
     expect(p, token_RPAREN);
+    if (p->tok != token_LBRACE) {
+        error(p, "`if` must be followed by a compound_statement");
+    }
     stmt_t *body = compound_statement(p);
     stmt_t *else_ = NULL;
     if (accept(p, token_ELSE)) {
-        else_ = statement(p);
+        if (p->tok == token_IF) {
+            else_ = if_statement(p);
+        } else if (p->tok == token_LBRACE) {
+            else_ = compound_statement(p);
+        } else {
+            error(p, "`else` must be followed by an if_statement or compound_statement");
+            else_ = compound_statement(p);
+        }
     }
     stmt_t stmt = {
         .type = ast_STMT_IF,

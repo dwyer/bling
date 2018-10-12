@@ -9,9 +9,15 @@ import os
 import subprocess
 import sys
 
+DEBUG = True
+
 INCLUDE_PATH = os.path.dirname(os.path.abspath(__file__))
-CFLAGS = ['-g', '-I', INCLUDE_PATH]
-LDFLAGS = ['-g']
+CFLAGS = ['-I', INCLUDE_PATH]
+LDFLAGS = []
+
+if DEBUG:
+    CFLAGS.append('-g')
+    LDFLAGS.append('-g')
 
 packages = [
     'builtin',

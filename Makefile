@@ -12,7 +12,8 @@ test: compile
 	    subc/token/token.h subc/token/token.c \
 	    subc/ast/ast.h \
 	    subc/scanner/scanner.h subc/scanner/scanner.c \
-	    subc/parser/parser.h subc/parser/parser.c
+	    subc/parser/parser.h subc/parser/parser.c \
+	    runtime/slice.c
 
 clean:
 	$(RM) compile
