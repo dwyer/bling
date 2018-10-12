@@ -93,3 +93,11 @@ typedef enum {
 
 extern char *token_string(token_t tok);
 extern token_t token_lookup(char *ident);
+
+enum {
+    token_lowest_prec = 0,
+    token_unary_prec = 11,
+    token_highest_prec = 12,
+};
+
+extern int token_precedence(token_t op);

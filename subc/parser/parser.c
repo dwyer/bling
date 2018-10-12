@@ -395,7 +395,7 @@ static expr_t *cast_expression(parser_t *p) {
     return unary_expression(p);
 }
 
-static expr_t *_binary_expression(parser_t *p, expr_t *x, token_t op, expr_t *y) {
+static expr_t *_binary_expression(expr_t *x, token_t op, expr_t *y) {
     expr_t z = {
         .type = ast_EXPR_BINARY,
         .binary = {
@@ -407,180 +407,29 @@ static expr_t *_binary_expression(parser_t *p, expr_t *x, token_t op, expr_t *y)
     return dup(&z);
 }
 
-static expr_t *multiplicative_expression(parser_t *p) {
-    // multiplicative_expression
-    //         : cast_expression
-    //         | multiplicative_expression '*' cast_expression
-    //         | multiplicative_expression '/' cast_expression
-    //         | multiplicative_expression '%' cast_expression
-    //         ;
+static expr_t *binary_expression(parser_t *p, int prec1) {
     expr_t *x = cast_expression(p);
     for (;;) {
-        token_t op;
-        switch (p->tok) {
-        case token_MOD:
-        case token_MUL:
-        case token_DIV:
-            op = p->tok;
-            next(p);
-            x = _binary_expression(p, x, op, cast_expression(p));
-            break;
-        default:
+        token_t op = p->tok;
+        int oprec = token_precedence(op);
+        if (oprec < prec1) {
             return x;
         }
+        expect(p, op);
+        x = _binary_expression(x, op, binary_expression(p, oprec+1));
     }
 }
 
-static expr_t *additive_expression(parser_t *p) {
-    // additive_expression
-    //         : multiplicative_expression
-    //         | additive_expression '+' multiplicative_expression
-    //         | additive_expression '-' multiplicative_expression
+static expr_t *ternary_expression(parser_t *p) {
+    // ternary_expression
+    //         : binary_expression
+    //         | binary_expression '?' expression ':' ternary_expression
     //         ;
-    expr_t *x = multiplicative_expression(p);
-    for (;;) {
-        token_t op;
-        switch (p->tok) {
-        case token_ADD:
-        case token_SUB:
-            op = p->tok;
-            next(p);
-            x = _binary_expression(p, x, op, multiplicative_expression(p));
-            break;
-        default:
-            return x;
-        }
-    }
-}
-
-static expr_t *shift_expression(parser_t *p) {
-    // shift_expression
-    //         : additive_expression
-    //         | shift_expression LEFT_OP additive_expression
-    //         | shift_expression RIGHT_OP additive_expression
-    //         ;
-    expr_t *x = additive_expression(p);
-    for (;;) {
-        token_t op;
-        switch (p->tok) {
-        case token_SHL:
-        case token_SHR:
-            op = p->tok;
-            next(p);
-            x = _binary_expression(p, x, op, additive_expression(p));
-            break;
-        default:
-            return x;
-        }
-    }
-}
-
-static expr_t *relational_expression(parser_t *p) {
-    // relational_expression
-    //         : shift_expression
-    //         | relational_expression '<' shift_expression
-    //         | relational_expression '>' shift_expression
-    //         | relational_expression LE_OP shift_expression
-    //         | relational_expression GE_OP shift_expression
-    //         ;
-    expr_t *x = shift_expression(p);
-    for (;;) {
-        token_t op;
-        switch (p->tok) {
-        case token_GT:
-        case token_GT_EQUAL:
-        case token_LT:
-        case token_LT_EQUAL:
-            op = p->tok;
-            next(p);
-            x = _binary_expression(p, x, op, shift_expression(p));
-            break;
-        default:
-            return x;
-        }
-    }
-}
-
-static expr_t *equality_expression(parser_t *p) {
-    // equality_expression
-    //         : relational_expression
-    //         | equality_expression EQ_OP relational_expression
-    //         | equality_expression NE_OP relational_expression
-    //         ;
-    expr_t *x = relational_expression(p);
-    for (;;) {
-        token_t op;
-        switch (p->tok) {
-        case token_EQUAL:
-        case token_NOT_EQUAL:
-            op = p->tok;
-            next(p);
-            x = _binary_expression(p, x, op, relational_expression(p));
-            break;
-        default:
-            return x;
-        }
-    }
-}
-
-static expr_t *_single_bin_expr(parser_t *p, token_t op, expr_t *(*f)(parser_t *)) {
-    expr_t *x = f(p);
-    while (accept(p, op)) {
-        x = _binary_expression(p, x, op, f(p));
-    }
-    return x;
-}
-
-static expr_t *and_expression(parser_t *p) {
-    // and_expression
-    //         : equality_expression
-    //         | and_expression '&' equality_expression
-    //         ;
-    return _single_bin_expr(p, token_AND, equality_expression);
-}
-
-static expr_t *exclusive_or_expression(parser_t *p) {
-    // exclusive_or_expression
-    //         : and_expression
-    //         | exclusive_or_expression '^' and_expression
-    //         ;
-    return _single_bin_expr(p, token_XOR, and_expression);
-}
-
-static expr_t *inclusive_or_expression(parser_t *p) {
-    // inclusive_or_expression
-    //         : exclusive_or_expression
-    //         | inclusive_or_expression '|' exclusive_or_expression
-    //         ;
-    return _single_bin_expr(p, token_OR, exclusive_or_expression);
-}
-
-static expr_t *logical_and_expression(parser_t *p) {
-    // logical_and_expression
-    //         : inclusive_or_expression
-    //         | logical_and_expression AND_OP inclusive_or_expression
-    //         ;
-    return _single_bin_expr(p, token_LAND, inclusive_or_expression);
-}
-
-static expr_t *logical_or_expression(parser_t *p) {
-    // logical_or_expression
-    //         : logical_and_expression
-    //         | logical_or_expression OR_OP logical_and_expression
-    //         ;
-    return _single_bin_expr(p, token_LOR, logical_and_expression);
-}
-
-static expr_t *conditional_expression(parser_t *p) {
-    // conditional_expression
-    //         : logical_or_expression
-    //         | logical_or_expression '?' expression ':' conditional_expression
-    //         ;
-    expr_t *x = logical_or_expression(p);
+    expr_t *x = binary_expression(p, token_lowest_prec + 1);
     if (accept(p, token_QUESTION_MARK)) {
         expr_t *consequence = expression(p);
         expect(p, token_COLON);
-        expr_t *alternative = conditional_expression(p);
+        expr_t *alternative = ternary_expression(p);
         expr_t conditional = {
             .type = ast_EXPR_COND,
             .conditional = {
@@ -596,10 +445,10 @@ static expr_t *conditional_expression(parser_t *p) {
 
 static expr_t *assignment_expression(parser_t *p) {
     // assignment_expression
-    //         : conditional_expression
+    //         : ternary_expression
     //         | unary_expression assignment_operator assignment_expression
     //         ;
-    expr_t *x = conditional_expression(p);
+    expr_t *x = ternary_expression(p);
     switch (p->tok) {
     case token_ADD_ASSIGN:
     case token_ASSIGN:
@@ -610,7 +459,7 @@ static expr_t *assignment_expression(parser_t *p) {
         {
             token_t op = p->tok;
             next(p);
-            x = _binary_expression(p, x, op, assignment_expression(p));
+            x = _binary_expression(x, op, assignment_expression(p));
         }
         break;
     default:
@@ -658,8 +507,8 @@ static expr_t *expression(parser_t *p) {
 }
 
 static expr_t *constant_expression(parser_t *p) {
-    // constant_expression : conditional_expression ;
-    return conditional_expression(p);
+    // constant_expression : ternary_expression ;
+    return ternary_expression(p);
 }
 
 static decl_t *parse_decl(parser_t *p) {

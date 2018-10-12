@@ -98,3 +98,38 @@ extern token_t token_lookup(char *ident) {
     }
     return token_IDENT;
 }
+
+extern int token_precedence(token_t op) {
+    switch (op) {
+    case token_MOD:
+    case token_MUL:
+    case token_DIV:
+        return 10;
+    case token_ADD:
+    case token_SUB:
+        return 9;
+    case token_SHL:
+    case token_SHR:
+        return 8;
+    case token_GT:
+    case token_GT_EQUAL:
+    case token_LT:
+    case token_LT_EQUAL:
+        return 7;
+    case token_EQUAL:
+    case token_NOT_EQUAL:
+        return 6;
+    case token_AND:
+        return 5;
+    case token_XOR:
+        return 4;
+    case token_OR:
+        return 3;
+    case token_LAND:
+        return 2;
+    case token_LOR:
+        return 1;
+    default:
+        return token_lowest_prec;
+    }
+}
