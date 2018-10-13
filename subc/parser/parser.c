@@ -80,6 +80,7 @@ static bool is_type(parser_t *p) {
     case token_CONST:
     case token_ENUM:
     case token_EXTERN:
+    case token_MUL:
     case token_SIGNED:
     case token_STATIC:
     case token_STRUCT:
@@ -929,19 +930,45 @@ static expr_t *abstract_declarator(parser_t *p, expr_t *type) {
     }
     // direct_abstract_declarator
     //         : '(' abstract_declarator ')'
-    //         | '(' parameter_type_list ')'
-    //         | '(' ')'
-    //         | '[' constant_expression? ']'
-    //         | direct_abstract_declarator '[' constant_expression ']'
-    //         | direct_abstract_declarator '[' ']'
-    //         | direct_abstract_declarator '(' parameter_type_list ')'
-    //         | direct_abstract_declarator '(' ')'
+    //         | direct_abstract_declarator? '[' constant_expression? ']'
+    //         | direct_abstract_declarator? '(' parameter_type_list? ')'
     //         ;
+    if (accept(p, token_LPAREN)) {
+        type = abstract_declarator(p, type);
+        expect(p, token_RPAREN);
+    }
     for (;;) {
-        if (accept(p, token_LPAREN)) {
+        if (accept(p, token_LBRACK)) {
+            expr_t *len = NULL;
+            if (p->tok != token_RBRACK) {
+                len = constant_expression(p);
+            }
+            expr_t t = {
+                .type = ast_TYPE_ARRAY,
+                .array = {
+                    .elt = type,
+                    .len = len,
+                },
+            };
+            expect(p, token_RBRACK);
+            type = dup(&t);
+        } else if (accept(p, token_LPAREN)) {
+            field_t **params = NULL;
+            if (p->tok != token_RPAREN) {
+                params = parameter_type_list(p);
+            }
+            expr_t t = {
+                .type = ast_TYPE_FUNC,
+                .func = {
+                    .result = type,
+                    .params = params,
+                },
+            };
             expect(p, token_RPAREN);
+            type = dup(&t);
+        } else {
+            break;
         }
-        break;
     }
     return type;
 }
