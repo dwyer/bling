@@ -18,13 +18,8 @@ struct_declaration
 	;
 
 struct_declarator_list
-	: struct_declarator
-	| struct_declarator_list ',' struct_declarator
+	: struct_declarator (',' struct_declarator)*
 	;
-
-specifier_qualifier_list : (type_qualifier | type_specifier)+ ;
-
-declaration_specifiers : (storage_class_specifier | type_qualifier | type_specifier)+ ;
 
 struct_declarator
 	: declarator
@@ -32,9 +27,12 @@ struct_declarator
 	| declarator ':' constant_expression
 	;
 
+specifier_qualifier_list : type_qualifier? type_specifier ;
+
+declaration_specifiers : storage_class_specifier? type_qualifier? type_specifier ;
+
 enumerator
-	: IDENTIFIER
-	| IDENTIFIER '=' constant_expression
+	: IDENTIFIER ('=' constant_expression)?
 	;
 
 enumerator_list : enumerator | enumerator_list ',' enumerator ;
@@ -44,8 +42,6 @@ enum_specifier
 	| ENUM IDENTIFIER '{' enumerator_list '}'
 	| ENUM IDENTIFIER
 	;
-
-declarator : pointer? direct_declarator ;
 
 parameter_declaration
 	: declaration_specifiers (declarator | abstract_declarator)?
@@ -67,24 +63,21 @@ direct_declarator
 	| direct_declarator '(' parameter_type_list? ')'
 	;
 
-identifier_list
-	: IDENTIFIER
-	| identifier_list ',' IDENTIFIER
-	;
+declarator : pointer? direct_declarator ;
 
 type_name
 	: specifier_qualifier_list abstract_declarator?
-	;
-
-abstract_declarator
-	: pointer direct_abstract_declarator?
-	| pointer? direct_abstract_declarator
 	;
 
 direct_abstract_declarator
 	: '(' abstract_declarator ')'
 	| direct_abstract_declarator? '[' constant_expression? ']'
 	| direct_abstract_declarator? '(' parameter_type_list? ')'
+	;
+
+abstract_declarator
+	: pointer direct_abstract_declarator?
+	| pointer? direct_abstract_declarator
 	;
 
 initializer_list
@@ -114,10 +107,7 @@ function_definition
 	: declaration_specifiers declarator compound_statement
 	;
 
-external_declaration
-	: declaration
-	| function_definition
-	;
+external_declaration : declaration | function_definition ;
 
 translation_unit
 	: external_declaration+

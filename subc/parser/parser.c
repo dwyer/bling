@@ -14,6 +14,14 @@ typedef struct {
 
 static void next(parser_t *p);
 
+static void *slice_to_nil_array(slice_t s) {
+    if (len(s)) {
+        void *nil = NULL;
+        s = append(s, &nil);
+    }
+    return s.array;
+}
+
 static void init(parser_t *p, char *filename, char *src) {
     p->filename = filename;
     p->lit = NULL;
@@ -68,7 +76,6 @@ static decl_t *declaration(parser_t *p, bool is_external);
 static field_t *parse_field(parser_t *p);
 
 static const desc_t str_desc = {.size = sizeof(char *)};
-static void *nil_ptr = NULL;
 
 static const desc_t expr_desc = {.size = sizeof(expr_t *)};
 static const desc_t decl_desc = {.size = sizeof(decl_t *)};
@@ -253,7 +260,6 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                     expr_t *x = expression(p);
                     args = append(args, &x);
                     if (!accept(p, token_COMMA)) {
-                        args = append(args, &nil_ptr);
                         break;
                     }
                 }
@@ -262,7 +268,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                     .type = ast_EXPR_CALL,
                     .call = {
                         .func = x,
-                        .args = (expr_t **)args.array,
+                        .args = slice_to_nil_array(args),
                     },
                 };
                 x = dup(&call);
@@ -545,11 +551,10 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
             expect(p, token_SEMICOLON);
             slice = append(slice, &field);
             if (p->tok == token_RBRACE) {
-                slice = append(slice, &nil_ptr);
                 break;
             }
         }
-        fields = (field_t **)slice.array;
+        fields = slice_to_nil_array(slice);
         expect(p, token_RBRACE);
     }
     // TODO assert name or fields
@@ -597,11 +602,10 @@ static expr_t *enum_specifier(parser_t *p) {
             }
             list = append(list, &enumerator);
             if (!accept(p, token_COMMA) || p->tok == token_RBRACE) {
-                list = append(list, &nil_ptr);
                 break;
             }
         }
-        enums = (enumerator_t **)list.array;
+        enums = slice_to_nil_array(list);
         expect(p, token_RBRACE);
     }
     expr_t x = {
@@ -724,10 +728,7 @@ static field_t **parameter_type_list(parser_t *p) {
             break;
         }
     }
-    if (len(params)) {
-        params = append(params, &nil_ptr);
-    }
-    return (field_t **)params.array;
+    return slice_to_nil_array(params);
 }
 
 static expr_t *type_name(parser_t *p) {
@@ -837,12 +838,11 @@ static expr_t *initializer(parser_t *p) {
             break;
         }
     }
-    list = append(list, &nil_ptr);
     expect(p, token_RBRACE);
     expr_t expr = {
         .type = ast_EXPR_COMPOUND,
         .compound = {
-            .list = (expr_t **)list.array,
+            .list = slice_to_nil_array(list),
         },
     };
     return dup(&expr);
@@ -926,11 +926,10 @@ static stmt_t *compound_statement(parser_t *p) {
         stmt = statement(p);
         stmts = append(stmts, &stmt);
     }
-    stmts = append(stmts, &nil_ptr);
     expect(p, token_RBRACE);
     stmt = alloc(stmt_t);
     stmt->type = ast_STMT_BLOCK;
-    stmt->block.stmts = (stmt_t **)stmts.array;
+    stmt->block.stmts = slice_to_nil_array(stmts);
     return stmt;
 }
 
@@ -1007,26 +1006,22 @@ static stmt_t *switch_statement(parser_t *p) {
                 stmts = append(stmts, &stmt);
             }
         }
-        stmts = append(stmts, &nil_ptr);
         stmt_t stmt = {
             .type = ast_STMT_CASE,
             .case_ = {
                 .expr = expr,
-                .stmts = (stmt_t **)stmts.array,
+                .stmts = slice_to_nil_array(stmts),
             },
         };
         stmt_t *clause = dup(&stmt);
         clauses = append(clauses, &clause);
-    }
-    if (len(clauses)) {
-        clauses = append(clauses, &nil_ptr);
     }
     expect(p, token_RBRACE);
     stmt_t stmt = {
         .type = ast_STMT_SWITCH,
         .switch_ = {
             .tag = tag,
-            .stmts = (stmt_t **)clauses.array,
+            .stmts = slice_to_nil_array(clauses),
         },
     };
     return dup(&stmt);
@@ -1283,10 +1278,9 @@ static file_t *parse_file(parser_t *p) {
         decl_t *decl = declaration(p, true);
         decls = append(decls, &decl);
     }
-    decls = append(decls, &nil_ptr);
     file_t file = {
         .name = name,
-        .decls = (decl_t **)decls.array,
+        .decls = slice_to_nil_array(decls),
     };
     return dup(&file);
 }
