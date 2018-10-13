@@ -20,27 +20,38 @@ static void skip_line(scanner_t *s) {
 }
 
 static bool is_letter(int ch) {
-    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_' || ch == '$';
+    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_'
+        || ch == '$';
 }
 
 static bool is_digit(int ch) {
     return '0' <= ch && ch <= '9';
 }
 
-static token_t switch3(scanner_t *s, token_t tok0, token_t tok1, int ch2, token_t tok2) {
+static token_t switch4(scanner_t *s, token_t tok0, token_t tok1, int ch2,
+        token_t tok2, token_t tok3) {
     if (s->ch == '=') {
         next(s);
         return tok1;
     }
-    if (s->ch && s->ch == ch2) {
+    if (ch2 && tok2 && s->ch == ch2) {
         next(s);
+        if (tok3 && s->ch == '=') {
+            next(s);
+            return tok3;
+        }
         return tok2;
     }
     return tok0;
 }
 
+static token_t switch3(scanner_t *s, token_t tok0, token_t tok1, int ch2,
+        token_t tok2) {
+    return switch4(s, tok0, tok1, ch2, tok2, token_ILLEGAL);
+}
+
 static token_t switch2(scanner_t *s, token_t tok0, token_t tok1) {
-    return switch3(s, tok0, tok1, '\0', token_ILLEGAL);
+    return switch4(s, tok0, tok1, '\0', token_ILLEGAL, token_ILLEGAL);
 }
 
 static char *make_string_slice(scanner_t *s, int start, int end) {
@@ -161,28 +172,71 @@ scan_again:
         next(s);
         switch (ch) {
             // structure
-        case '\0': tok = token_EOF; break;
-        case '#': skip_line(s); goto scan_again; break;
-        case '(': tok = token_LPAREN; break;
-        case ')': tok = token_RPAREN; break;
-        case ',': tok = token_COMMA; break;
-        case ':': tok = token_COLON; break;
-        case ';': tok = token_SEMICOLON; break;
-        case '?': tok = token_QUESTION_MARK; break;
-        case '[': tok = token_LBRACK; break;
-        case ']': tok = token_RBRACK; break;
-        case '{': tok = token_LBRACE; break;
-        case '}': tok = token_RBRACE; break;
-                   // operators
-        case '!': tok = switch2(s, token_NOT, token_NOT_EQUAL); break;
-        case '%': tok = switch2(s, token_MOD, token_MOD_ASSIGN); break;
-        case '&': tok = switch3(s, token_AND, token_AND_ASSIGN, '&', token_LAND); break;
-        case '*': tok = switch2(s, token_MUL, token_MUL_ASSIGN); break;
-        case '+': tok = switch3(s, token_ADD, token_ADD_ASSIGN, '+', token_INC); break;
-        case '<': tok = switch2(s, token_LT, token_LT_EQUAL); break;
-        case '=': tok = switch2(s, token_ASSIGN, token_EQUAL); break;
-        case '>': tok = switch2(s, token_GT, token_GT_EQUAL); break;
-        case '|': tok = switch3(s, token_OR, token_OR_ASSIGN, '|', token_LOR); break;
+        case '\0':
+            tok = token_EOF;
+            break;
+        case '#':
+            skip_line(s);
+            goto scan_again;
+            break;
+        case '(':
+            tok = token_LPAREN;
+            break;
+        case ')':
+            tok = token_RPAREN;
+            break;
+        case ',':
+            tok = token_COMMA;
+            break;
+        case ':':
+            tok = token_COLON;
+            break;
+        case ';':
+            tok = token_SEMICOLON;
+            break;
+        case '?':
+            tok = token_QUESTION_MARK;
+            break;
+        case '[':
+            tok = token_LBRACK;
+            break;
+        case ']':
+            tok = token_RBRACK;
+            break;
+        case '{':
+            tok = token_LBRACE;
+            break;
+        case '}':
+            tok = token_RBRACE;
+            break;
+            // operators
+        case '!':
+            tok = switch2(s, token_NOT, token_NOT_EQUAL);
+            break;
+        case '%':
+            tok = switch2(s, token_MOD, token_MOD_ASSIGN);
+            break;
+        case '&':
+            tok = switch3(s, token_AND, token_AND_ASSIGN, '&', token_LAND);
+            break;
+        case '*':
+            tok = switch2(s, token_MUL, token_MUL_ASSIGN);
+            break;
+        case '+':
+            tok = switch3(s, token_ADD, token_ADD_ASSIGN, '+', token_INC);
+            break;
+        case '<':
+            tok = switch4(s, token_LT, token_LT_EQUAL, '<', token_SHL, token_SHL_ASSIGN);
+            break;
+        case '=':
+            tok = switch2(s, token_ASSIGN, token_EQUAL);
+            break;
+        case '>':
+            tok = switch4(s, token_GT, token_GT_EQUAL, '>', token_SHR, token_SHR_ASSIGN);
+            break;
+        case '|':
+            tok = switch3(s, token_OR, token_OR_ASSIGN, '|', token_LOR);
+            break;
         }
     }
     return tok;

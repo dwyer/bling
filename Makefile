@@ -7,13 +7,13 @@ compile:
 
 test: compile
 	./$< runtime/runtime.h \
+	    runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \
 	    builtin/builtin.h builtin/builtin.c \
 	    io/ioutil/ioutil.h io/ioutil/ioutil.c \
 	    subc/token/token.h subc/token/token.c \
 	    subc/ast/ast.h \
 	    subc/scanner/scanner.h subc/scanner/scanner.c \
 	    subc/parser/parser.h subc/parser/parser.c \
-	    runtime/desc.c runtime/slice.c runtime/map.c
 
 clean:
 	$(RM) compile

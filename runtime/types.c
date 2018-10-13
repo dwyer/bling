@@ -9,9 +9,12 @@ const desc_t desc_int = {
 static uintptr_t djb2(const char *s) {
     // http://www.cse.yorku.ca/~oz/hash.html
     uintptr_t hash = 5381;
-    int ch;
-    while ((ch = *s++))
+    int ch = *s;
+    while (ch) {
         hash = ((hash << 5) + hash) + ch;
+        s++;
+        ch = *s;
+    }
     return hash;
 }
 

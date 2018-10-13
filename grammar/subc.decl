@@ -1,0 +1,124 @@
+storage_class_specifier : TYPEDEF | EXTERN | STATIC | AUTO | REGISTER ;
+
+type_qualifier : CONST | VOLATILE ;
+
+type_specifier : VOID | CHAR | SHORT | INT | LONG | FLOAT | DOUBLE | SIGNED
+	| UNSIGNED | struct_or_union_specifier | enum_specifier | TYPE_NAME ;
+
+pointer : '*' type_qualifier+ pointer?  ;
+
+struct_or_union_specifier
+	: (STRUCT | UNION) IDENTIFIER '{' struct_declaration+ '}'
+	| (STRUCT | UNION) IDENTIFIER
+	| (STRUCT | UNION) '{' struct_declaration+ '}'
+	;
+
+struct_declaration
+	: specifier_qualifier_list struct_declarator_list ';'
+	;
+
+struct_declarator_list
+	: struct_declarator
+	| struct_declarator_list ',' struct_declarator
+	;
+
+specifier_qualifier_list : (type_qualifier | type_specifier)+ ;
+
+declaration_specifiers : (storage_class_specifier | type_qualifier | type_specifier)+ ;
+
+struct_declarator
+	: declarator
+	| ':' constant_expression
+	| declarator ':' constant_expression
+	;
+
+enumerator
+	: IDENTIFIER
+	| IDENTIFIER '=' constant_expression
+	;
+
+enumerator_list : enumerator | enumerator_list ',' enumerator ;
+
+enum_specifier
+	: ENUM '{' enumerator_list '}'
+	| ENUM IDENTIFIER '{' enumerator_list '}'
+	| ENUM IDENTIFIER
+	;
+
+declarator : pointer? direct_declarator ;
+
+parameter_declaration
+	: declaration_specifiers (declarator | abstract_declarator)?
+
+parameter_list
+	: parameter_declaration
+	| parameter_list ',' parameter_declaration
+	;
+
+parameter_type_list
+	: parameter_list
+	| parameter_list ',' ELLIPSIS
+	;
+
+direct_declarator
+	: IDENTIFIER
+	| '(' declarator ')'
+	| direct_declarator '[' constant_expression? ']'
+	| direct_declarator '(' parameter_type_list? ')'
+	;
+
+identifier_list
+	: IDENTIFIER
+	| identifier_list ',' IDENTIFIER
+	;
+
+type_name
+	: specifier_qualifier_list abstract_declarator?
+	;
+
+abstract_declarator
+	: pointer direct_abstract_declarator?
+	| pointer? direct_abstract_declarator
+	;
+
+direct_abstract_declarator
+	: '(' abstract_declarator ')'
+	| direct_abstract_declarator? '[' constant_expression? ']'
+	| direct_abstract_declarator? '(' parameter_type_list? ')'
+	;
+
+initializer_list
+	: initializer
+	| initializer_list ',' initializer
+	;
+
+initializer
+	: assignment_expression
+	| '{' initializer_list '}'
+	| '{' initializer_list ',' '}'
+	;
+
+init_declarator
+        : declarator ('=' initializer)? ;
+
+init_declarator_list
+	: init_declarator
+	| init_declarator_list ',' init_declarator
+	;
+
+declaration
+	| declaration_specifiers init_declarator_list? ';'
+	;
+
+function_definition
+	: declaration_specifiers declarator compound_statement
+	;
+
+external_declaration
+	: declaration
+	| function_definition
+	;
+
+translation_unit
+	: external_declaration+
+	;

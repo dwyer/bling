@@ -63,7 +63,7 @@ static stmt_t *for_statement(parser_t *p);
 static stmt_t *jump_statement(parser_t *p, token_t keyword);
 static stmt_t *return_statement(parser_t *p);
 
-static decl_t *parse_decl(parser_t *p);
+static decl_t *declaration(parser_t *p, bool is_external);
 
 static field_t *parse_field(parser_t *p);
 
@@ -258,9 +258,6 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                     }
                 }
                 expect(p, token_RPAREN);
-                if (x->type == ast_EXPR_IDENT) {
-                    print("calling %s", x->ident.name);
-                }
                 expr_t call = {
                     .type = ast_EXPR_CALL,
                     .call = {
@@ -511,151 +508,6 @@ static expr_t *constant_expression(parser_t *p) {
     return ternary_expression(p);
 }
 
-static decl_t *parse_decl(parser_t *p) {
-    // declaration
-    //         : declaration_specifiers ';'
-    //         | declaration_specifiers init_declarator_list ';'
-    //         ;
-    if (p->tok == token_TYPEDEF) {
-        token_t keyword = p->tok;
-        expect(p, keyword);
-        expr_t *type = type_specifier(p);
-        expr_t *ident = declarator(p, &type);
-        expect(p, token_SEMICOLON);
-        declare(p, p->pkg_scope, obj_kind_TYPE, ident->ident.name);
-        spec_t spec = {
-            .type = ast_SPEC_TYPEDEF,
-            .typedef_ = {
-                .name = ident,
-                .type = type,
-            },
-        };
-        decl_t decl = {
-            .type = ast_DECL_GEN,
-            .gen = {.spec = dup(&spec)},
-        };
-        return dup(&decl);
-    }
-    switch (p->tok) {
-    case token_EXTERN:
-    case token_STATIC:
-        next(p);
-        break;
-    default:
-        break;
-    }
-    switch (p->tok) {
-    case token_CONST:
-        next(p);
-        break;
-    default:
-        break;
-    }
-    expr_t *type = type_specifier(p);
-    expr_t *name = declarator(p, &type);
-    expr_t *value = NULL;
-    if (p->tok == token_LBRACE) {
-        stmt_t *body = compound_statement(p);
-        decl_t decl = {
-            .type = ast_DECL_FUNC,
-            .func = {
-                .type = type,
-                .name = name,
-                .body = body,
-            },
-        };
-        return dup(&decl);
-    }
-    if (accept(p, token_ASSIGN)) {
-        value = initializer(p);
-    }
-    expect(p, token_SEMICOLON);
-    spec_t spec = {
-        .type = ast_SPEC_VALUE,
-        .value = {
-            .type = type,
-            .name = name,
-            .value = value,
-        },
-    };
-    decl_t decl = {
-        .type = ast_DECL_GEN,
-        .gen = {
-            .spec = dup(&spec),
-        },
-    };
-    return dup(&decl);
-}
-
-// declaration_specifiers
-//         : storage_class_specifier
-//         | storage_class_specifier declaration_specifiers
-//         | type_specifier
-//         | type_specifier declaration_specifiers
-//         | type_qualifier
-//         | type_qualifier declaration_specifiers
-//         ;
-
-// init_declarator_list
-//         : init_declarator
-//         | init_declarator_list ',' init_declarator
-//         ;
-
-// init_declarator
-//         : declarator
-//         | declarator '=' initializer
-//         ;
-
-// storage_class_specifier
-//         : TYPEDEF
-//         | EXTERN
-//         | STATIC
-//         | AUTO
-//         | REGISTER
-//         ;
-
-static expr_t *type_specifier(parser_t *p) {
-    // type_specifier
-    //         : VOID
-    //         | CHAR
-    //         | SHORT
-    //         | INT
-    //         | LONG
-    //         | FLOAT
-    //         | DOUBLE
-    //         | SIGNED
-    //         | UNSIGNED
-    //         | struct_or_union_specifier
-    //         | enum_specifier
-    //         | TYPE_NAME
-    //         ;
-    expr_t *x = NULL;
-    switch (p->tok) {
-    case token_SIGNED:
-    case token_UNSIGNED:
-        error(p, "`%s` is not supported in subc", token_string(p->tok));
-        break;
-    case token_STRUCT:
-    case token_UNION:
-        x = struct_or_union_specifier(p);
-        break;
-    case token_ENUM:
-        x = enum_specifier(p);
-        break;
-    case token_IDENT:
-        x = identifier(p);
-        break;
-    default:
-        if (p->lit) {
-            error(p, "expected type, got %s", p->lit);
-        } else {
-            error(p, "expected type, got %s", token_string(p->tok));
-        }
-        break;
-    }
-    return x;
-}
-
 static expr_t *struct_or_union_specifier(parser_t *p) {
     // struct_or_union_specifier
     //         : struct_or_union IDENTIFIER
@@ -762,22 +614,6 @@ static expr_t *enum_specifier(parser_t *p) {
     return dup(&x);
 }
 
-static expr_t *type_qualifier(parser_t *p, expr_t *type) {
-    // type_qualifier
-    //         : CONST
-    //         | VOLATILE
-    //         ;
-    switch (p->tok) {
-    case token_CONST:
-        next(p);
-        break;
-    default:
-        break;
-    }
-    return type;
-}
-
-
 static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
     // declarator
     //         : pointer direct_declarator
@@ -844,17 +680,9 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
 }
 
 static expr_t *pointer(parser_t *p, expr_t *type) {
-    // pointer
-    //         : '*'
-    //         | '*' pointer
-    //         | '*' type_qualifier_list
-    //         | '*' type_qualifier_list pointer
-    //         ;
+    // pointer : '*' type_qualifier_list? pointer? ;
     while (accept(p, token_MUL)) {
-        // type_qualifier_list
-        //         : type_qualifier
-        //         | type_qualifier_list type_qualifier
-        //         ;
+        // type_qualifier_list : type_qualifier+ ;
         expr_t x = {
             .type = ast_TYPE_PTR,
             .ptr = {
@@ -929,19 +757,45 @@ static expr_t *abstract_declarator(parser_t *p, expr_t *type) {
     }
     // direct_abstract_declarator
     //         : '(' abstract_declarator ')'
-    //         | '(' parameter_type_list ')'
-    //         | '(' ')'
-    //         | '[' constant_expression? ']'
-    //         | direct_abstract_declarator '[' constant_expression ']'
-    //         | direct_abstract_declarator '[' ']'
-    //         | direct_abstract_declarator '(' parameter_type_list ')'
-    //         | direct_abstract_declarator '(' ')'
+    //         | direct_abstract_declarator? '[' constant_expression? ']'
+    //         | direct_abstract_declarator? '(' parameter_type_list? ')'
     //         ;
+    if (accept(p, token_LPAREN)) {
+        type = abstract_declarator(p, type);
+        expect(p, token_RPAREN);
+    }
     for (;;) {
-        if (accept(p, token_LPAREN)) {
+        if (accept(p, token_LBRACK)) {
+            expr_t *len = NULL;
+            if (p->tok != token_RBRACK) {
+                len = constant_expression(p);
+            }
+            expr_t t = {
+                .type = ast_TYPE_ARRAY,
+                .array = {
+                    .elt = type,
+                    .len = len,
+                },
+            };
+            expect(p, token_RBRACK);
+            type = dup(&t);
+        } else if (accept(p, token_LPAREN)) {
+            field_t **params = NULL;
+            if (p->tok != token_RPAREN) {
+                params = parameter_type_list(p);
+            }
+            expr_t t = {
+                .type = ast_TYPE_FUNC,
+                .func = {
+                    .result = type,
+                    .params = params,
+                },
+            };
             expect(p, token_RPAREN);
+            type = dup(&t);
+        } else {
+            break;
         }
-        break;
     }
     return type;
 }
@@ -1009,7 +863,7 @@ static stmt_t *statement(parser_t *p) {
     if (is_type(p)) {
         stmt_t stmt = {
             .type = ast_STMT_DECL,
-            .decl = parse_decl(p),
+            .decl = declaration(p, false),
         };
         return dup(&stmt);
     }
@@ -1229,11 +1083,6 @@ static stmt_t *for_statement(parser_t *p) {
     return dup(&stmt);
 }
 
-// declaration_list
-//         : declaration
-//         | declaration_list declaration
-//         ;
-
 static stmt_t *jump_statement(parser_t *p, token_t keyword) {
     // jump_statement
     //         : GOTO IDENTIFIER ';'
@@ -1284,22 +1133,139 @@ static field_t *parse_field(parser_t *p) {
     return dup(&field);
 }
 
-// translation_unit
-//         : external_declaration
-//         | translation_unit external_declaration
-//         ;
+static expr_t *type_specifier(parser_t *p) {
+    // type_specifier
+    //         : VOID
+    //         | CHAR
+    //         | SHORT
+    //         | INT
+    //         | LONG
+    //         | FLOAT
+    //         | DOUBLE
+    //         | SIGNED
+    //         | UNSIGNED
+    //         | struct_or_union_specifier
+    //         | enum_specifier
+    //         | TYPE_NAME
+    //         ;
+    expr_t *x = NULL;
+    switch (p->tok) {
+    case token_SIGNED:
+    case token_UNSIGNED:
+        error(p, "`%s` is not supported in subc", token_string(p->tok));
+        break;
+    case token_STRUCT:
+    case token_UNION:
+        x = struct_or_union_specifier(p);
+        break;
+    case token_ENUM:
+        x = enum_specifier(p);
+        break;
+    case token_IDENT:
+        x = identifier(p);
+        break;
+    default:
+        if (p->lit) {
+            error(p, "expected type, got %s", p->lit);
+        } else {
+            error(p, "expected type, got %s", token_string(p->tok));
+        }
+        break;
+    }
+    return x;
+}
 
-// external_declaration
-//         : function_definition
-//         | declaration
-//         ;
+static expr_t *declaration_specifiers(parser_t *p) {
+    // declaration_specifiers
+    //         : storage_class_specifier? type_qualifier? type_specifier
+    //         ;
+    // storage_class_specifier : TYPEDEF | EXTERN | STATIC | AUTO | REGISTER ;
+    switch (p->tok) {
+    case token_EXTERN:
+    case token_STATIC:
+        next(p);
+        break;
+    default:
+        break;
+    }
+    // type_qualifier : CONST | VOLATILE ;
+    switch (p->tok) {
+    case token_CONST:
+        next(p);
+        break;
+    default:
+        break;
+    }
+    return type_specifier(p);
+}
 
-// function_definition
-//         : declaration_specifiers declarator declaration_list compound_statement
-//         | declaration_specifiers declarator compound_statement
-//         | declarator declaration_list compound_statement
-//         | declarator compound_statement
-//         ;
+static decl_t *declaration(parser_t *p, bool is_external) {
+    // declaration : declaration_specifiers init_declarator_list ';' ;
+    if (p->tok == token_TYPEDEF) {
+        token_t keyword = p->tok;
+        expect(p, keyword);
+        expr_t *type = type_specifier(p);
+        expr_t *ident = declarator(p, &type);
+        expect(p, token_SEMICOLON);
+        declare(p, p->pkg_scope, obj_kind_TYPE, ident->ident.name);
+        spec_t spec = {
+            .type = ast_SPEC_TYPEDEF,
+            .typedef_ = {
+                .name = ident,
+                .type = type,
+            },
+        };
+        decl_t decl = {
+            .type = ast_DECL_GEN,
+            .gen = {.spec = dup(&spec)},
+        };
+        return dup(&decl);
+    }
+    expr_t *type = declaration_specifiers(p);
+    expr_t *name = declarator(p, &type);
+    expr_t *value = NULL;
+    if (is_external && p->tok == token_LBRACE) {
+        // function_definition
+        //         : declaration_specifiers declarator compound_statement ;
+        stmt_t *body = compound_statement(p);
+        decl_t decl = {
+            .type = ast_DECL_FUNC,
+            .func = {
+                .type = type,
+                .name = name,
+                .body = body,
+            },
+        };
+        return dup(&decl);
+    }
+    // init_declarator_list
+    //         : init_declarator
+    //         | init_declarator_list ',' init_declarator
+    //         ;
+    // init_declarator
+    //         : declarator
+    //         | declarator '=' initializer
+    //         ;
+    if (accept(p, token_ASSIGN)) {
+        value = initializer(p);
+    }
+    expect(p, token_SEMICOLON);
+    spec_t spec = {
+        .type = ast_SPEC_VALUE,
+        .value = {
+            .type = type,
+            .name = name,
+            .value = value,
+        },
+    };
+    decl_t decl = {
+        .type = ast_DECL_GEN,
+        .gen = {
+            .spec = dup(&spec),
+        },
+    };
+    return dup(&decl);
+}
 
 static file_t *parse_file(parser_t *p) {
     slice_t decls = {.desc = &decl_desc};
@@ -1311,7 +1277,10 @@ static file_t *parse_file(parser_t *p) {
         expect(p, token_SEMICOLON);
     }
     while (p->tok != token_EOF) {
-        decl_t *decl = parse_decl(p);
+        // translation_unit
+        //         : external_declaration+
+        //         ;
+        decl_t *decl = declaration(p, true);
         decls = append(decls, &decl);
     }
     decls = append(decls, &nil_ptr);
