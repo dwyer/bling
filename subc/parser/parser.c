@@ -61,7 +61,7 @@ static field_t **parameter_type_list(parser_t *p);
 static expr_t *type_name(parser_t *p);
 
 static expr_t *declarator(parser_t *p, expr_t **type_ptr);
-static expr_t *abstract_declarator(parser_t *p, expr_t *type);
+static field_t *abstract_declarator(parser_t *p, expr_t *type);
 
 static stmt_t *statement(parser_t *p);
 static stmt_t *compound_statement(parser_t *p);
@@ -724,7 +724,8 @@ static expr_t *type_name(parser_t *p) {
     //         | specifier_qualifier_list abstract_declarator
     //         ;
     expr_t *type = specifier_qualifier_list(p);
-    type = abstract_declarator(p, type);
+    field_t *declarator = abstract_declarator(p, type);
+    type = declarator->type;
     expr_t x = {
         .type = ast_TYPE_NAME,
         .type_name = {
@@ -734,7 +735,7 @@ static expr_t *type_name(parser_t *p) {
     return dup(&x);
 }
 
-static expr_t *abstract_declarator(parser_t *p, expr_t *type) {
+static field_t *abstract_declarator(parser_t *p, expr_t *type) {
     // abstract_declarator
     //         : pointer? direct_abstract_declarator?
     //         ;
@@ -747,7 +748,8 @@ static expr_t *abstract_declarator(parser_t *p, expr_t *type) {
     //         | direct_abstract_declarator? '(' parameter_type_list? ')'
     //         ;
     if (accept(p, token_LPAREN)) {
-        type = abstract_declarator(p, type);
+        field_t *declarator = abstract_declarator(p, type);
+        type = declarator->type;
         expect(p, token_RPAREN);
     }
     for (;;) {
@@ -783,7 +785,10 @@ static expr_t *abstract_declarator(parser_t *p, expr_t *type) {
             break;
         }
     }
-    return type;
+    field_t declarator = {
+        .type = type,
+    };
+    return dup(&declarator);
 }
 
 static expr_t *initializer(parser_t *p) {
