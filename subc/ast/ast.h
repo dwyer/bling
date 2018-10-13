@@ -32,13 +32,12 @@ typedef enum {
     ast_STMT_CASE,
     ast_STMT_DECL,
     ast_STMT_EXPR,
-    ast_STMT_FOR,
     ast_STMT_IF,
+    ast_STMT_ITER,
     ast_STMT_JUMP,
     ast_STMT_LABEL,
     ast_STMT_RETURN,
     ast_STMT_SWITCH,
-    ast_STMT_WHILE,
 
     ast_TYPE_ARRAY,
     ast_TYPE_ENUM,
@@ -207,11 +206,12 @@ struct stmt {
         } expr;
 
         struct {
+            token_t kind;
             stmt_t *init;
             expr_t *cond;
             expr_t *post;
             stmt_t *body;
-        } for_;
+        } iter;
 
         struct {
             expr_t *cond;
@@ -236,11 +236,6 @@ struct stmt {
             expr_t *tag;
             stmt_t **stmts;
         } switch_;
-
-        struct {
-            expr_t *cond;
-            stmt_t *body;
-        } while_;
 
     };
 };

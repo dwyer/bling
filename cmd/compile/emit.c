@@ -185,25 +185,6 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         emit_printf(e, ";");
         break;
 
-    case ast_STMT_FOR:
-        emit_printf(e, "for (");
-        if (stmt->for_.init) {
-            emit_stmt(e, stmt->for_.init);
-            emit_printf(e, " ");
-        } else {
-            emit_printf(e, "; ");
-        }
-        if (stmt->for_.cond) {
-            emit_expr(e, stmt->for_.cond);
-        }
-        emit_printf(e, "; ");
-        if (stmt->for_.post) {
-            emit_expr(e, stmt->for_.post);
-        }
-        emit_printf(e, ") ");
-        emit_stmt(e, stmt->for_.body);
-        break;
-
     case ast_STMT_IF:
         emit_printf(e, "if (");
         emit_expr(e, stmt->if_.cond);
@@ -213,6 +194,29 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
             emit_printf(e, " else ");
             emit_stmt(e, stmt->if_.else_);
         }
+        break;
+
+    case ast_STMT_ITER:
+        emit_printf(e, "%s (", token_string(stmt->iter.kind));
+        if (stmt->iter.kind == token_FOR) {
+            if (stmt->iter.init) {
+                emit_stmt(e, stmt->iter.init);
+                emit_printf(e, " ");
+            } else {
+                emit_printf(e, "; ");
+            }
+        }
+        if (stmt->iter.cond) {
+            emit_expr(e, stmt->iter.cond);
+        }
+        if (stmt->iter.kind == token_FOR) {
+            emit_printf(e, "; ");
+            if (stmt->iter.post) {
+                emit_expr(e, stmt->iter.post);
+            }
+        }
+        emit_printf(e, ") ");
+        emit_stmt(e, stmt->iter.body);
         break;
 
     case ast_STMT_JUMP:
@@ -248,13 +252,6 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         }
         emit_tabs(e);
         emit_printf(e, "}");
-        break;
-
-    case ast_STMT_WHILE:
-        emit_printf(e, "while (");
-        emit_expr(e, stmt->while_.cond);
-        emit_printf(e, ") ");
-        emit_stmt(e, stmt->while_.body);
         break;
 
     default:

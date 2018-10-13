@@ -65,12 +65,6 @@ static expr_t *abstract_declarator(parser_t *p, expr_t *type);
 
 static stmt_t *statement(parser_t *p);
 static stmt_t *compound_statement(parser_t *p);
-static stmt_t *if_statement(parser_t *p);
-static stmt_t *switch_statement(parser_t *p);
-static stmt_t *while_statement(parser_t *p);
-static stmt_t *for_statement(parser_t *p);
-static stmt_t *jump_statement(parser_t *p, token_t keyword);
-static stmt_t *return_statement(parser_t *p);
 
 static expr_t *specifier_qualifier_list(parser_t *p);
 static expr_t *declaration_specifiers(parser_t *p, bool is_top);
@@ -224,12 +218,11 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
     // postfix_expression
     //         : primary_expression
     //         | postfix_expression '[' expression ']'
-    //         | postfix_expression '(' ')'
-    //         | postfix_expression '(' argument_expression_list ')'
+    //         | postfix_expression '(' argument_expression_list? ')'
     //         | postfix_expression '.' IDENTIFIER
-    //         | postfix_expression PTR_OP IDENTIFIER
-    //         | postfix_expression INC_OP
-    //         | postfix_expression DEC_OP
+    //         | postfix_expression '*' IDENTIFIER
+    //         | postfix_expression '++'
+    //         | postfix_expression '--'
     //         ;
     if (x == NULL) {
         x = primary_expression(p);
@@ -695,11 +688,10 @@ static expr_t *pointer(parser_t *p, expr_t *type) {
     return type;
 }
 
-
 static field_t **parameter_type_list(parser_t *p) {
     // parameter_type_list
     //         : parameter_list
-    //         | parameter_list ',' ELLIPSIS
+    //         | parameter_list ',' '...'
     //         ;
     // parameter_list
     //         : parameter_declaration
@@ -744,9 +736,7 @@ static expr_t *type_name(parser_t *p) {
 
 static expr_t *abstract_declarator(parser_t *p, expr_t *type) {
     // abstract_declarator
-    //         : pointer
-    //         | pointer direct_abstract_declarator
-    //         | direct_abstract_declarator
+    //         : pointer? direct_abstract_declarator?
     //         ;
     if (p->tok == token_MUL) {
         type = pointer(p, type);
@@ -843,18 +833,19 @@ static expr_t *initializer(parser_t *p) {
     return dup(&expr);
 }
 
-// statement
-//         : declaration
-//         | labeled_statement
-//         | compound_statement
-//         | expression_statement
-//         | if_statement
-//         | switch_statement
-//         | while_statement
-//         | for_statement
-//         | jump_statement
-//         ;
 static stmt_t *statement(parser_t *p) {
+    // statement
+    //         : declaration
+    //         | compound_statement
+    //         | if_statement
+    //         | switch_statement
+    //         | while_statement
+    //         | for_statement
+    //         | jump_statement
+    //         | labeled_statement
+    //         | expression_statement
+    //         ;
+
     if (is_type(p)) {
         stmt_t stmt = {
             .type = ast_STMT_DECL,
@@ -862,26 +853,195 @@ static stmt_t *statement(parser_t *p) {
         };
         return dup(&stmt);
     }
+
+    if (accept(p, token_FOR)) {
+        // for_statement
+        //         | FOR '(' simple_statement? ';' expression? ';' expression? ')' 
+        //              compound_statement ;
+        expect(p, token_LPAREN);
+        stmt_t *init = NULL;
+        if (!accept(p, token_SEMICOLON)) {
+            init = statement(p);
+        }
+        expr_t *cond = NULL;
+        if (p->tok != token_SEMICOLON) {
+            cond = expression(p);
+        }
+        expect(p, token_SEMICOLON);
+        expr_t *post = NULL;
+        if (p->tok != token_RPAREN) {
+            post = expression(p);
+        }
+        expect(p, token_RPAREN);
+        stmt_t *body = compound_statement(p);
+        stmt_t stmt = {
+            .type = ast_STMT_ITER,
+            .iter = {
+                .kind = token_FOR,
+                .init = init,
+                .cond = cond,
+                .post = post,
+                .body = body,
+            },
+        };
+        return dup(&stmt);
+    }
+
+    if (accept(p, token_IF)) {
+        // if_statement
+        //         : IF '(' expression ')' compound_statement
+        //         | IF '(' expression ')' compound_statement ELSE compound_statement
+        //         | IF '(' expression ')' compound_statement ELSE if_statement
+        //         ;
+        expect(p, token_LPAREN);
+        expr_t *cond = expression(p);
+        expect(p, token_RPAREN);
+        if (p->tok != token_LBRACE) {
+            error(p, "`if` must be followed by a compound_statement");
+        }
+        stmt_t *body = compound_statement(p);
+        stmt_t *else_ = NULL;
+        if (accept(p, token_ELSE)) {
+            if (p->tok == token_IF) {
+                else_ = statement(p);
+            } else if (p->tok == token_LBRACE) {
+                else_ = compound_statement(p);
+            } else {
+                error(p, "`else` must be followed by an if_statement or compound_statement");
+            }
+        }
+        stmt_t stmt = {
+            .type = ast_STMT_IF,
+            .if_ = {
+                .cond = cond,
+                .body = body,
+                .else_ = else_,
+            },
+        };
+        return dup(&stmt);
+    }
+
+    if (accept(p, token_RETURN)) {
+        // return_statement
+        //         | RETURN expression? ';'
+        //         ;
+        expr_t *x = NULL;
+        if (p->tok != token_SEMICOLON) {
+            x = expression(p);
+        }
+        expect(p, token_SEMICOLON);
+        stmt_t *stmt = alloc(stmt_t);
+        stmt->type = ast_STMT_RETURN;
+        stmt->return_.x = x;
+        return stmt;
+    }
+
+    if (accept(p, token_SWITCH)) {
+        // switch_statement | SWITCH '(' expression ')' case_statement* ;
+        expect(p, token_LPAREN);
+        expr_t *tag = expression(p);
+        expect(p, token_RPAREN);
+        expect(p, token_LBRACE);
+        slice_t clauses = {.desc = &stmt_desc};
+        while (p->tok == token_CASE || p->tok == token_DEFAULT) {
+            // case_statement
+            //         | CASE constant_expression ':' statement+
+            //         | DEFAULT ':' statement+
+            //         ;
+            expr_t *expr = NULL;
+            if (accept(p, token_CASE)) {
+                expr = expression(p);
+            } else {
+                expect(p, token_DEFAULT);
+            }
+            expect(p, token_COLON);
+            slice_t stmts = {.desc = &stmt_desc};
+            bool loop = true;
+            while (loop) {
+                switch (p->tok) {
+                case token_CASE:
+                case token_DEFAULT:
+                case token_RBRACE:
+                    loop = false;
+                    break;
+                default:
+                    break;
+                }
+                if (loop) {
+                    stmt_t *stmt = statement(p);
+                    stmts = append(stmts, &stmt);
+                }
+            }
+            stmt_t stmt = {
+                .type = ast_STMT_CASE,
+                .case_ = {
+                    .expr = expr,
+                    .stmts = slice_to_nil_array(stmts),
+                },
+            };
+            stmt_t *clause = dup(&stmt);
+            clauses = append(clauses, &clause);
+        }
+        expect(p, token_RBRACE);
+        stmt_t stmt = {
+            .type = ast_STMT_SWITCH,
+            .switch_ = {
+                .tag = tag,
+                .stmts = slice_to_nil_array(clauses),
+            },
+        };
+        return dup(&stmt);
+    }
+
+    if (accept(p, token_WHILE)) {
+        // while_statement : WHILE '(' expression ')' statement ;
+        expect(p, token_LPAREN);
+        expr_t *cond = expression(p);
+        expect(p, token_RPAREN);
+        stmt_t *body = statement(p);
+        stmt_t stmt = {
+            .type = ast_STMT_ITER,
+            .iter = {
+                .kind = token_WHILE,
+                .cond = cond,
+                .body = body,
+            },
+        };
+        return dup(&stmt);
+    }
+
     switch (p->tok) {
-    case token_LBRACE:
-        return compound_statement(p);
-    case token_IF:
-        return if_statement(p);
-    case token_SWITCH:
-        return switch_statement(p);
     case token_BREAK:
     case token_CONTINUE:
     case token_GOTO:
-        return jump_statement(p, p->tok);
-    case token_FOR:
-        return for_statement(p);
-    case token_WHILE:
-        return while_statement(p);
-    case token_RETURN:
-        return return_statement(p);
+        // jump_statement
+        //         : GOTO IDENTIFIER ';'
+        //         | CONTINUE ';'
+        //         | BREAK ';'
+        //         ;
+        {
+            token_t keyword = p->tok;
+            next(p);
+            expr_t *label = NULL;
+            if (keyword == token_GOTO) {
+                label = identifier(p);
+            }
+            expect(p, token_SEMICOLON);
+            stmt_t stmt = {
+                .type = ast_STMT_JUMP,
+                .jump = {
+                    .keyword = keyword,
+                    .label = label,
+                },
+            };
+            return dup(&stmt);
+        }
+    case token_LBRACE:
+        return compound_statement(p);
     default:
         break;
     }
+
     expr_t *x = NULL;
     if (p->tok != token_SEMICOLON) {
         x = expression(p);
@@ -925,190 +1085,6 @@ static stmt_t *compound_statement(parser_t *p) {
     stmt = alloc(stmt_t);
     stmt->type = ast_STMT_BLOCK;
     stmt->block.stmts = slice_to_nil_array(stmts);
-    return stmt;
-}
-
-static stmt_t *if_statement(parser_t *p) {
-    // if_statement
-    //         : IF '(' expression ')' compound_statement
-    //         | IF '(' expression ')' compound_statement ELSE compound_statement
-    //         | IF '(' expression ')' compound_statement ELSE if_statement
-    //         ;
-    expect(p, token_IF);
-    expect(p, token_LPAREN);
-    expr_t *cond = expression(p);
-    expect(p, token_RPAREN);
-    if (p->tok != token_LBRACE) {
-        error(p, "`if` must be followed by a compound_statement");
-    }
-    stmt_t *body = compound_statement(p);
-    stmt_t *else_ = NULL;
-    if (accept(p, token_ELSE)) {
-        if (p->tok == token_IF) {
-            else_ = if_statement(p);
-        } else if (p->tok == token_LBRACE) {
-            else_ = compound_statement(p);
-        } else {
-            error(p, "`else` must be followed by an if_statement or compound_statement");
-            else_ = compound_statement(p);
-        }
-    }
-    stmt_t stmt = {
-        .type = ast_STMT_IF,
-        .if_ = {
-            .cond = cond,
-            .body = body,
-            .else_ = else_,
-        },
-    };
-    return dup(&stmt);
-}
-
-static stmt_t *switch_statement(parser_t *p) {
-    // switch_statement | SWITCH '(' expression ')' case_statement* ;
-    expect(p, token_SWITCH);
-    expect(p, token_LPAREN);
-    expr_t *tag = expression(p);
-    expect(p, token_RPAREN);
-    expect(p, token_LBRACE);
-    slice_t clauses = {.desc = &stmt_desc};
-    while (p->tok == token_CASE || p->tok == token_DEFAULT) {
-        // case_statement
-        //         | CASE constant_expression ':' statement+
-        //         | DEFAULT ':' statement+
-        //         ;
-        expr_t *expr = NULL;
-        if (accept(p, token_CASE)) {
-            expr = expression(p);
-        } else {
-            expect(p, token_DEFAULT);
-        }
-        expect(p, token_COLON);
-        slice_t stmts = {.desc = &stmt_desc};
-        bool loop = true;
-        while (loop) {
-            switch (p->tok) {
-            case token_CASE:
-            case token_DEFAULT:
-            case token_RBRACE:
-                loop = false;
-                break;
-            default:
-                break;
-            }
-            if (loop) {
-                stmt_t *stmt = statement(p);
-                stmts = append(stmts, &stmt);
-            }
-        }
-        stmt_t stmt = {
-            .type = ast_STMT_CASE,
-            .case_ = {
-                .expr = expr,
-                .stmts = slice_to_nil_array(stmts),
-            },
-        };
-        stmt_t *clause = dup(&stmt);
-        clauses = append(clauses, &clause);
-    }
-    expect(p, token_RBRACE);
-    stmt_t stmt = {
-        .type = ast_STMT_SWITCH,
-        .switch_ = {
-            .tag = tag,
-            .stmts = slice_to_nil_array(clauses),
-        },
-    };
-    return dup(&stmt);
-}
-
-static stmt_t *while_statement(parser_t *p) {
-    // while_statement : WHILE '(' expression ')' statement ;
-    expect(p, token_WHILE);
-    expect(p, token_LPAREN);
-    expr_t *cond = expression(p);
-    expect(p, token_RPAREN);
-    stmt_t *body = statement(p);
-    stmt_t stmt = {
-        .type = ast_STMT_WHILE,
-        .while_ = {
-            .cond = cond,
-            .body = body,
-        },
-    };
-    return dup(&stmt);
-}
-
-static stmt_t *for_statement(parser_t *p) {
-    // for_statement
-    //         | FOR '(' expression_statement expression_statement ')' statement
-    //         | FOR '(' expression_statement expression_statement expression ')' statement
-    //         ;
-    expect(p, token_FOR);
-    expect(p, token_LPAREN);
-    stmt_t *init = NULL;
-    if (!accept(p, token_SEMICOLON)) {
-        init = statement(p);
-    }
-    expr_t *cond = NULL;
-    if (p->tok != token_SEMICOLON) {
-        cond = expression(p);
-    }
-    expect(p, token_SEMICOLON);
-    expr_t *post = NULL;
-    if (p->tok != token_RPAREN) {
-        post = expression(p);
-    }
-    expect(p, token_RPAREN);
-    stmt_t *body = statement(p);
-    stmt_t stmt = {
-        .type = ast_STMT_FOR,
-        .for_ = {
-            .init = init,
-            .cond = cond,
-            .post = post,
-            .body = body,
-        },
-    };
-    return dup(&stmt);
-}
-
-static stmt_t *jump_statement(parser_t *p, token_t keyword) {
-    // jump_statement
-    //         : GOTO IDENTIFIER ';'
-    //         | CONTINUE ';'
-    //         | BREAK ';'
-    //         ;
-    expect(p, keyword);
-    expr_t *label = NULL;
-    if (keyword == token_GOTO) {
-        label = identifier(p);
-    }
-    expect(p, token_SEMICOLON);
-    stmt_t stmt = {
-        .type = ast_STMT_JUMP,
-        .jump = {
-            .keyword = keyword,
-            .label = label,
-        },
-    };
-    return dup(&stmt);
-}
-
-static stmt_t *return_statement(parser_t *p) {
-    // return_statement
-    //         | RETURN ';'
-    //         | RETURN expression ';'
-    //         ;
-    expr_t *x = NULL;
-    expect(p, token_RETURN);
-    if (p->tok != token_SEMICOLON) {
-        x = expression(p);
-    }
-    expect(p, token_SEMICOLON);
-    stmt_t *stmt = alloc(stmt_t);
-    stmt->type = ast_STMT_RETURN;
-    stmt->return_.x = x;
     return stmt;
 }
 
