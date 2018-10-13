@@ -56,10 +56,11 @@ static expr_t *initializer(parser_t *p);
 static expr_t *type_specifier(parser_t *p);
 static expr_t *struct_or_union_specifier(parser_t *p);
 static expr_t *enum_specifier(parser_t *p);
-static expr_t *declarator(parser_t *p, expr_t **type_ptr);
 static expr_t *pointer(parser_t *p, expr_t *type);
 static field_t **parameter_type_list(parser_t *p);
 static expr_t *type_name(parser_t *p);
+
+static expr_t *declarator(parser_t *p, expr_t **type_ptr);
 static expr_t *abstract_declarator(parser_t *p, expr_t *type);
 
 static stmt_t *statement(parser_t *p);
@@ -71,6 +72,8 @@ static stmt_t *for_statement(parser_t *p);
 static stmt_t *jump_statement(parser_t *p, token_t keyword);
 static stmt_t *return_statement(parser_t *p);
 
+static expr_t *specifier_qualifier_list(parser_t *p);
+static expr_t *declaration_specifiers(parser_t *p, bool is_top);
 static decl_t *declaration(parser_t *p, bool is_external);
 
 static field_t *parse_field(parser_t *p);
@@ -419,7 +422,7 @@ static expr_t *binary_expression(parser_t *p, int prec1) {
             return x;
         }
         expect(p, op);
-        x = _binary_expression(x, op, binary_expression(p, oprec+1));
+        x = _binary_expression(x, op, binary_expression(p, oprec + 1));
     }
 }
 
@@ -533,11 +536,11 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
         //         : struct_declaration
         //         | struct_declaration_list struct_declaration
         //         ;
+        // struct_declaration
+        //         : specifier_qualifier_list struct_declarator_list ';'
+        //         ;
         slice_t slice = {.desc = &field_desc};
         for (;;) {
-            // struct_declaration
-            //         : specifier_qualifier_list struct_declarator_list ';'
-            //         ;
             // struct_declarator_list
             //         : struct_declarator
             //         | struct_declarator_list ',' struct_declarator
@@ -547,15 +550,21 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
             //         | ':' constant_expression
             //         | declarator ':' constant_expression
             //         ;
-            field_t *field = parse_field(p);
+            expr_t *type = specifier_qualifier_list(p);
+            expr_t *name = declarator(p, &type);
+            field_t f = {
+                .type = type,
+                .name = name,
+            };
             expect(p, token_SEMICOLON);
+            field_t *field = dup(&f);
             slice = append(slice, &field);
             if (p->tok == token_RBRACE) {
                 break;
             }
         }
-        fields = slice_to_nil_array(slice);
         expect(p, token_RBRACE);
+        fields = slice_to_nil_array(slice);
     }
     // TODO assert name or fields
     expr_t x = {
@@ -568,13 +577,6 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
     };
     return dup(&x);
 }
-
-// specifier_qualifier_list
-//         : type_specifier specifier_qualifier_list
-//         | type_specifier
-//         | type_qualifier specifier_qualifier_list
-//         | type_qualifier
-//         ;
 
 static expr_t *enum_specifier(parser_t *p) {
     // enum_specifier
@@ -619,20 +621,15 @@ static expr_t *enum_specifier(parser_t *p) {
 }
 
 static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
-    // declarator
-    //         : pointer direct_declarator
-    //         | direct_declarator
-    //         ;
+    // declarator : pointer? direct_declarator ;
     if (p->tok == token_MUL) {
         *type_ptr = pointer(p, *type_ptr);
     }
     // direct_declarator
     //         : IDENTIFIER
     //         | '(' declarator ')'
-    //         | direct_declarator '[' constant_expression ']'
-    //         | direct_declarator '[' ']'
-    //         | direct_declarator '(' parameter_type_list ')'
-    //         | direct_declarator '(' ')'
+    //         | direct_declarator '[' constant_expression? ']'
+    //         | direct_declarator '(' parameter_type_list? ')'
     //         ;
     expr_t *name = NULL;
     switch (p->tok) {
@@ -711,9 +708,7 @@ static field_t **parameter_type_list(parser_t *p) {
     slice_t params = {.desc = &field_desc};
     while (p->tok != token_RPAREN) {
         // parameter_declaration
-        //         : declaration_specifiers declarator
-        //         | declaration_specifiers abstract_declarator
-        //         | declaration_specifiers
+        //         : declaration_specifiers (declarator | abstract_declarator)?
         //         ;
         field_t *param = parse_field(p);
         params = append(params, &param);
@@ -736,7 +731,7 @@ static expr_t *type_name(parser_t *p) {
     //         : specifier_qualifier_list
     //         | specifier_qualifier_list abstract_declarator
     //         ;
-    expr_t *type = type_specifier(p);
+    expr_t *type = specifier_qualifier_list(p);
     type = abstract_declarator(p, type);
     expr_t x = {
         .type = ast_TYPE_NAME,
@@ -1170,18 +1165,20 @@ static expr_t *type_specifier(parser_t *p) {
     return x;
 }
 
-static expr_t *declaration_specifiers(parser_t *p) {
+static expr_t *declaration_specifiers(parser_t *p, bool is_top) {
     // declaration_specifiers
     //         : storage_class_specifier? type_qualifier? type_specifier
     //         ;
-    // storage_class_specifier : TYPEDEF | EXTERN | STATIC | AUTO | REGISTER ;
-    switch (p->tok) {
-    case token_EXTERN:
-    case token_STATIC:
-        next(p);
-        break;
-    default:
-        break;
+    if (is_top) {
+        // storage_class_specifier : TYPEDEF | EXTERN | STATIC | AUTO | REGISTER ;
+        switch (p->tok) {
+        case token_EXTERN:
+        case token_STATIC:
+            next(p);
+            break;
+        default:
+            break;
+        }
     }
     // type_qualifier : CONST | VOLATILE ;
     switch (p->tok) {
@@ -1194,12 +1191,19 @@ static expr_t *declaration_specifiers(parser_t *p) {
     return type_specifier(p);
 }
 
+static expr_t *specifier_qualifier_list(parser_t *p) {
+    // specifier_qualifier_list
+    //         : type_qualifier? type_specifier
+    //         ;
+    return declaration_specifiers(p, false);
+}
+
 static decl_t *declaration(parser_t *p, bool is_external) {
     // declaration : declaration_specifiers init_declarator_list ';' ;
     if (p->tok == token_TYPEDEF) {
         token_t keyword = p->tok;
         expect(p, keyword);
-        expr_t *type = type_specifier(p);
+        expr_t *type = declaration_specifiers(p, true);
         expr_t *ident = declarator(p, &type);
         expect(p, token_SEMICOLON);
         declare(p, p->pkg_scope, obj_kind_TYPE, ident->ident.name);
@@ -1216,7 +1220,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
         };
         return dup(&decl);
     }
-    expr_t *type = declaration_specifiers(p);
+    expr_t *type = declaration_specifiers(p, true);
     expr_t *name = declarator(p, &type);
     expr_t *value = NULL;
     if (is_external && p->tok == token_LBRACE) {
