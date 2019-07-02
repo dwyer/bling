@@ -623,50 +623,59 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
     //         | direct_declarator '(' parameter_type_list? ')'
     //         ;
     expr_t *name = NULL;
+    bool is_ptr = false;
     switch (p->tok) {
     case token_IDENT:
         name = identifier(p);
         break;
     case token_LPAREN:
         expect(p, token_LPAREN);
-        name = declarator(p, type_ptr);
+        is_ptr = accept(p, token_MUL);
+        if (!is_ptr || p->tok == token_IDENT) {
+            name = identifier(p);
+        }
         expect(p, token_RPAREN);
         break;
     default:
         break;
     }
-    for (;;) {
-        if (accept(p, token_LBRACK)) {
-            expr_t *len = NULL;
-            if (p->tok != token_RBRACK) {
-                len = constant_expression(p);
-            }
-            expr_t type = {
-                .type = ast_TYPE_ARRAY,
-                .array = {
-                    .elt = *type_ptr,
-                    .len = len,
-                },
-            };
-            expect(p, token_RBRACK);
-            *type_ptr = memcpy(malloc(sizeof(type)), &type, sizeof(type));
-        } else if (accept(p, token_LPAREN)) {
-            field_t **params = NULL;
-            if (p->tok != token_RPAREN) {
-                params = parameter_type_list(p);
-            }
-            expr_t type = {
-                .type = ast_TYPE_FUNC,
-                .func = {
-                    .result = *type_ptr,
-                    .params = params,
-                },
-            };
-            expect(p, token_RPAREN);
-            *type_ptr = memcpy(malloc(sizeof(type)), &type, sizeof(type));
-        } else {
-            break;
+    if (accept(p, token_LBRACK)) {
+        expr_t *len = NULL;
+        if (p->tok != token_RBRACK) {
+            len = constant_expression(p);
         }
+        expr_t type = {
+            .type = ast_TYPE_ARRAY,
+            .array = {
+                .elt = *type_ptr,
+                .len = len,
+            },
+        };
+        expect(p, token_RBRACK);
+        *type_ptr = memcpy(malloc(sizeof(type)), &type, sizeof(type));
+    } else if (accept(p, token_LPAREN)) {
+        field_t **params = NULL;
+        if (p->tok != token_RPAREN) {
+            params = parameter_type_list(p);
+        }
+        expr_t type = {
+            .type = ast_TYPE_FUNC,
+            .func = {
+                .result = *type_ptr,
+                .params = params,
+            },
+        };
+        expect(p, token_RPAREN);
+        *type_ptr = memcpy(malloc(sizeof(type)), &type, sizeof(type));
+    }
+    if (is_ptr) {
+        expr_t type = {
+            .type = ast_TYPE_PTR,
+            .ptr = {
+                .type = *type_ptr,
+            }
+        };
+        *type_ptr = memcpy(malloc(sizeof(type)), &type, sizeof(type));
     }
     return name;
 }
@@ -745,10 +754,11 @@ static field_t *abstract_declarator(parser_t *p, expr_t *type) {
     //         | direct_abstract_declarator? '[' constant_expression? ']'
     //         | direct_abstract_declarator? '(' parameter_type_list? ')'
     //         ;
+    bool is_ptr = false;
     if (accept(p, token_LPAREN)) {
-        field_t *declarator = abstract_declarator(p, type);
-        type = declarator->type;
+        expect(p, token_MUL);
         expect(p, token_RPAREN);
+        is_ptr = true;
     }
     for (;;) {
         if (accept(p, token_LBRACK)) {
@@ -782,6 +792,15 @@ static field_t *abstract_declarator(parser_t *p, expr_t *type) {
         } else {
             break;
         }
+    }
+    if (is_ptr) {
+        expr_t tmp = {
+            .type = ast_TYPE_PTR,
+            .ptr = {
+                .type = type,
+            },
+        };
+        type = memcpy(malloc(sizeof(tmp)), &tmp, sizeof(tmp));
     }
     field_t declarator = {
         .type = type,

@@ -338,8 +338,28 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
         break;
 
     case ast_TYPE_PTR:
-        emit_type(e, type->ptr.type, NULL);
-        emit_printf(e, "*");
+        type = type->ptr.type;
+        if (type->type == ast_TYPE_FUNC) {
+            emit_type(e, type->func.result, NULL);
+            emit_printf(e, "(*");
+            if (name != NULL) {
+                emit_expr(e, name);
+            }
+            emit_printf(e, ")");
+            emit_printf(e, "(");
+            for (field_t **params = type->func.params; params && *params; ) {
+                emit_field(e, *params);
+                params++;
+                if (*params != NULL) {
+                    emit_printf(e, ", ");
+                }
+            }
+            emit_printf(e, ")");
+            name = NULL;
+        } else {
+            emit_type(e, type, NULL);
+            emit_printf(e, "*");
+        }
         break;
 
     case ast_TYPE_STRUCT:
