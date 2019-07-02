@@ -2,6 +2,7 @@
 *.o
 a.out
 all.c
-c2c
+/bcc
+/c2c
 t8.shakespeare.txt
 test_*

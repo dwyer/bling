@@ -25,12 +25,14 @@ packages = [
     'subc/token',
     'subc/ast',
     'subc/scanner',
-    'subc/parser',
+    # 'subc/parser',
     'subc/emitter',
+    'bling/parser',
     'io/ioutil',
 ]
 
 commands = [
+    'bcc',
     'c2c',
 ]
 

@@ -1,11 +1,18 @@
 CFLAGS=-I.
 
-.PHONY: c2c test clean
+.PHONY: bcc c2c test_bcc test_c2c clean
+
+bcc:
+	./mk-package.py
 
 c2c:
 	./mk-package.py
 
-test: c2c
+
+test_bcc: bcc
+	./bcc hello/hello.bling
+
+test_c2c: c2c
 	cat runtime/clib.h >all.c
 	./$< runtime/runtime.h \
 	    runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \

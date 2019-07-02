@@ -1,10 +1,8 @@
 package main;
 
-import "fmt";
+typedef vector struct { x int; y int; };
 
-type vector struct { x int; y int; };
-
-type token enum { ILLEGAL, STRING, ADD, MUL, SEMICOLON, };
+typedef token enum { ILLEGAL, STRING, ADD, MUL, SEMICOLON, };
 
 func token_string(tok token) *char {
     switch (token) {
