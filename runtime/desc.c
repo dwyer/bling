@@ -1,8 +1,5 @@
 #include "runtime.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 extern int desc_cmp(const desc_t *d, const void *a, const void *b) {
     if (d->cmp) {
         if (d->is_ptr) {

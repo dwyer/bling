@@ -1,7 +1,7 @@
 #include "subc/scanner/scanner.h"
 #include "subc/token/token.h"
 
-static void next(scanner_t *s) {
+static void next0(scanner_t *s) {
     s->offset = s->rd_offset;
     s->ch = s->src[s->rd_offset];
     s->rd_offset++;
@@ -9,13 +9,13 @@ static void next(scanner_t *s) {
 
 static void skip_whitespace(scanner_t *s) {
     while (s->ch == ' ' || s->ch == '\n' || s->ch == '\t') {
-        next(s);
+        next0(s);
     }
 }
 
 static void skip_line(scanner_t *s) {
     while (s->ch && s->ch != '\n') {
-        next(s);
+        next0(s);
     }
 }
 
@@ -31,13 +31,13 @@ static bool is_digit(int ch) {
 static token_t switch4(scanner_t *s, token_t tok0, token_t tok1, int ch2,
         token_t tok2, token_t tok3) {
     if (s->ch == '=') {
-        next(s);
+        next0(s);
         return tok1;
     }
     if (ch2 && tok2 && s->ch == ch2) {
-        next(s);
+        next0(s);
         if (tok3 && s->ch == '=') {
-            next(s);
+            next0(s);
             return tok3;
         }
         return tok2;
@@ -64,7 +64,7 @@ static char *make_string_slice(scanner_t *s, int start, int end) {
 static char *scan_ident(scanner_t *s) {
     int offs = s->offset;
     while (is_letter(s->ch) || is_digit(s->ch)) {
-        next(s);
+        next0(s);
     }
     return make_string_slice(s, offs, s->offset);
 }
@@ -80,7 +80,7 @@ static char *scan_number(scanner_t *s, token_t *tokp) {
                 // TODO error
             }
         }
-        next(s);
+        next0(s);
     }
     if (is_float) {
         *tokp = token_FLOAT;
@@ -99,10 +99,10 @@ static char *scan_rune(scanner_t *s) {
             break;
         }
         escape = s->ch == '\\' && !escape;
-        next(s);
+        next0(s);
         n++;
     }
-    next(s);
+    next0(s);
     return make_string_slice(s, offs, s->offset);
 }
 
@@ -115,10 +115,10 @@ static char *scan_string(scanner_t *s) {
             break;
         }
         escape = s->ch == '\\' && !escape;
-        next(s);
+        next0(s);
         n++;
     }
-    next(s);
+    next0(s);
     return make_string_slice(s, offs, s->offset);
 }
 
@@ -141,18 +141,18 @@ scan_again:
         *lit = scan_string(s);
         tok = token_STRING;
     } else if (s->ch == '.') {
-        next(s);
+        next0(s);
         if (s->ch == '.') {
-            next(s);
+            next0(s);
             if (s->ch == '.') {
-                next(s);
+                next0(s);
                 tok = token_ELLIPSIS;
             }
         } else {
             tok = token_PERIOD;
         }
     } else if (s->ch == '/') {
-        next(s);
+        next0(s);
         if (s->ch == '/') {
             skip_line(s);
             goto scan_again;
@@ -160,16 +160,16 @@ scan_again:
             tok = switch2(s, token_DIV, token_DIV_ASSIGN);
         }
     } else if (s->ch == '-') {
-        next(s);
+        next0(s);
         if (s->ch == '>') {
-            next(s);
+            next0(s);
             tok = token_ARROW;
         } else {
             tok = switch3(s, token_SUB, token_SUB_ASSIGN, '-', token_DEC);
         }
     } else {
         int ch = s->ch;
-        next(s);
+        next0(s);
         switch (ch) {
             // structure
         case '\0':
@@ -246,5 +246,5 @@ extern void scanner_init(scanner_t *s, char *src) {
     s->src = src;
     s->rd_offset = 0;
     s->offset = 0;
-    next(s);
+    next0(s);
 }

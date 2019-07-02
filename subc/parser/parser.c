@@ -1,7 +1,5 @@
 #include "subc/parser/parser.h"
-#define memdup(src, size) memcpy(malloc((size)), (src), (size))
-#define dup(src) (typeof((src)))memdup((src), sizeof(*(src)))
-#define alloc(T) (T *)malloc(sizeof(T))
+#define dup(src) (typeof(src))memcpy(malloc(sizeof(*src)), src, sizeof(*src))
 
 typedef struct {
     scanner_t scanner;
@@ -45,7 +43,7 @@ static void declare(parser_t *p, scope_t *s, obj_kind_t kind, char *name) {
         .kind = kind,
         .name = name,
     };
-    scope_insert(s, dup(&obj));
+    scope_insert(s, memcpy(malloc(sizeof(obj)), &obj, sizeof(obj)));
 }
 
 static expr_t *cast_expression(parser_t *p);
@@ -159,7 +157,7 @@ static expr_t *identifier(parser_t *p) {
     expr_t *expr = NULL;
     switch (p->tok) {
     case token_IDENT:
-        expr = alloc(expr_t);
+        expr = malloc(sizeof(expr_t));
         expr->type = ast_EXPR_IDENT;
         expr->ident.name = strdup(p->lit);
         break;
@@ -194,7 +192,7 @@ static expr_t *primary_expression(parser_t *p) {
                 },
             };
             next(p);
-            return dup(&x);
+            return memcpy(malloc(sizeof(x)), &x, sizeof(x));
         }
     case token_LPAREN:
         {
@@ -206,7 +204,7 @@ static expr_t *primary_expression(parser_t *p) {
                 },
             };
             expect(p, token_RPAREN);
-            return dup(&x);
+            return memcpy(malloc(sizeof(x)), &x, sizeof(x));
         }
     default:
         error(p, "bad expr: %s: %s", token_string(p->tok), p->lit);
@@ -241,7 +239,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                     },
                 };
                 expect(p, token_RBRACK);
-                x = dup(&y);
+                x = memcpy(malloc(sizeof(y)), &y, sizeof(y));
             }
             break;
         case token_LPAREN:
@@ -267,7 +265,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                         .args = slice_to_nil_array(args),
                     },
                 };
-                x = dup(&call);
+                x = memcpy(malloc(sizeof(call)), &call, sizeof(call));
             }
             break;
         case token_ARROW:
@@ -283,7 +281,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                         .sel = identifier(p),
                     },
                 };
-                x = dup(&y);
+                x = memcpy(malloc(sizeof(y)), &y, sizeof(y));
             }
             break;
         case token_INC:
@@ -297,7 +295,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                     },
                 };
                 next(p);
-                x = dup(&y);
+                x = memcpy(malloc(sizeof(y)), &y, sizeof(y));
             }
             break;
         default:
@@ -330,14 +328,14 @@ static expr_t *unary_expression(parser_t *p) {
     case token_MUL:
     case token_NOT:
     case token_SUB:
-        x = alloc(expr_t);
+        x = malloc(sizeof(expr_t));
         x->type = ast_EXPR_UNARY;
         x->unary.op = p->tok;
         next(p);
         x->unary.x = cast_expression(p);
         break;
     case token_SIZEOF:
-        x = alloc(expr_t);
+        x = malloc(sizeof(expr_t));
         x->type = ast_EXPR_SIZEOF;
         expect(p, token_SIZEOF);
         expect(p, token_LPAREN);
@@ -379,7 +377,7 @@ static expr_t *cast_expression(parser_t *p) {
                     .expr = x,
                 },
             };
-            return dup(&y);
+            return memcpy(malloc(sizeof(y)), &y, sizeof(y));
         } else {
             expr_t x = {
                 .type = ast_EXPR_PAREN,
@@ -388,7 +386,7 @@ static expr_t *cast_expression(parser_t *p) {
                 },
             };
             expect(p, token_RPAREN);
-            return postfix_expression(p, dup(&x));
+            return postfix_expression(p, memcpy(malloc(sizeof(x)), &x, sizeof(x)));
         }
     }
     return unary_expression(p);
@@ -403,7 +401,7 @@ static expr_t *_binary_expression(expr_t *x, token_t op, expr_t *y) {
             .y = y,
         },
     };
-    return dup(&z);
+    return memcpy(malloc(sizeof(z)), &z, sizeof(z));
 }
 
 static expr_t *binary_expression(parser_t *p, int prec1) {
@@ -437,7 +435,7 @@ static expr_t *ternary_expression(parser_t *p) {
                 .alternative = alternative,
             },
         };
-        x = dup(&conditional);
+        x = memcpy(malloc(sizeof(conditional)), &conditional, sizeof(conditional));
     }
     return x;
 }
@@ -550,7 +548,7 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
                 .name = name,
             };
             expect(p, token_SEMICOLON);
-            field_t *field = dup(&f);
+            field_t *field = memcpy(malloc(sizeof(f)), &f, sizeof(f));
             slice = append(slice, &field);
             if (p->tok == token_RBRACE) {
                 break;
@@ -568,7 +566,7 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
             .fields = fields,
         },
     };
-    return dup(&x);
+    return memcpy(malloc(sizeof(x)), &x, sizeof(x));
 }
 
 static expr_t *enum_specifier(parser_t *p) {
@@ -589,7 +587,7 @@ static expr_t *enum_specifier(parser_t *p) {
         slice_t list = {.desc=&enumerator_desc};
         for (;;) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
-            enumerator_t *enumerator = alloc(enumerator_t);
+            enumerator_t *enumerator = malloc(sizeof(enumerator_t));
             enumerator->name = identifier(p);
             enumerator->value = NULL;
             if (accept(p, token_ASSIGN)) {
@@ -610,7 +608,7 @@ static expr_t *enum_specifier(parser_t *p) {
             .enumerators = enums,
         },
     };
-    return dup(&x);
+    return memcpy(malloc(sizeof(x)), &x, sizeof(x));
 }
 
 static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
@@ -651,7 +649,7 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
                 },
             };
             expect(p, token_RBRACK);
-            *type_ptr = dup(&type);
+            *type_ptr = memcpy(malloc(sizeof(type)), &type, sizeof(type));
         } else if (accept(p, token_LPAREN)) {
             field_t **params = NULL;
             if (p->tok != token_RPAREN) {
@@ -665,7 +663,7 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
                 },
             };
             expect(p, token_RPAREN);
-            *type_ptr = dup(&type);
+            *type_ptr = memcpy(malloc(sizeof(type)), &type, sizeof(type));
         } else {
             break;
         }
@@ -683,7 +681,7 @@ static expr_t *pointer(parser_t *p, expr_t *type) {
                 .type = type,
             },
         };
-        type = dup(&x);
+        type = memcpy(malloc(sizeof(x)), &x, sizeof(x));
     }
     return type;
 }
@@ -708,7 +706,7 @@ static field_t **parameter_type_list(parser_t *p) {
             break;
         }
         if (accept(p, token_ELLIPSIS)) {
-            field_t *param = alloc(field_t);
+            field_t *param = malloc(sizeof(field_t));
             param->type = NULL;
             param->name = NULL;
             params = append(params, &param);
@@ -732,7 +730,7 @@ static expr_t *type_name(parser_t *p) {
             .type = type,
         },
     };
-    return dup(&x);
+    return memcpy(malloc(sizeof(x)), &x, sizeof(x));
 }
 
 static field_t *abstract_declarator(parser_t *p, expr_t *type) {
@@ -766,7 +764,7 @@ static field_t *abstract_declarator(parser_t *p, expr_t *type) {
                 },
             };
             expect(p, token_RBRACK);
-            type = dup(&t);
+            type = memcpy(malloc(sizeof(t)), &t, sizeof(t));
         } else if (accept(p, token_LPAREN)) {
             field_t **params = NULL;
             if (p->tok != token_RPAREN) {
@@ -780,7 +778,7 @@ static field_t *abstract_declarator(parser_t *p, expr_t *type) {
                 },
             };
             expect(p, token_RPAREN);
-            type = dup(&t);
+            type = memcpy(malloc(sizeof(t)), &t, sizeof(t));
         } else {
             break;
         }
@@ -788,7 +786,7 @@ static field_t *abstract_declarator(parser_t *p, expr_t *type) {
     field_t declarator = {
         .type = type,
     };
-    return dup(&declarator);
+    return memcpy(malloc(sizeof(declarator)), &declarator, sizeof(declarator));
 }
 
 static expr_t *initializer(parser_t *p) {
@@ -819,7 +817,7 @@ static expr_t *initializer(parser_t *p) {
                     .value = initializer(p),
                 },
             };
-            value = dup(&x);
+            value = memcpy(malloc(sizeof(x)), &x, sizeof(x));
         } else {
             value = initializer(p);
         }
@@ -835,7 +833,7 @@ static expr_t *initializer(parser_t *p) {
             .list = slice_to_nil_array(list),
         },
     };
-    return dup(&expr);
+    return memcpy(malloc(sizeof(expr)), &expr, sizeof(expr));
 }
 
 static stmt_t *statement(parser_t *p) {
@@ -856,7 +854,7 @@ static stmt_t *statement(parser_t *p) {
             .type = ast_STMT_DECL,
             .decl = declaration(p, false),
         };
-        return dup(&stmt);
+        return memcpy(malloc(sizeof(stmt)), &stmt, sizeof(stmt));
     }
 
     if (accept(p, token_FOR)) {
@@ -889,7 +887,7 @@ static stmt_t *statement(parser_t *p) {
                 .body = body,
             },
         };
-        return dup(&stmt);
+        return memcpy(malloc(sizeof(stmt)), &stmt, sizeof(stmt));
     }
 
     if (accept(p, token_IF)) {
@@ -923,7 +921,7 @@ static stmt_t *statement(parser_t *p) {
                 .else_ = else_,
             },
         };
-        return dup(&stmt);
+        return memcpy(malloc(sizeof(stmt)), &stmt, sizeof(stmt));
     }
 
     if (accept(p, token_RETURN)) {
@@ -935,7 +933,7 @@ static stmt_t *statement(parser_t *p) {
             x = expression(p);
         }
         expect(p, token_SEMICOLON);
-        stmt_t *stmt = alloc(stmt_t);
+        stmt_t *stmt = malloc(sizeof(stmt_t));
         stmt->type = ast_STMT_RETURN;
         stmt->return_.x = x;
         return stmt;
@@ -984,7 +982,7 @@ static stmt_t *statement(parser_t *p) {
                     .stmts = slice_to_nil_array(stmts),
                 },
             };
-            stmt_t *clause = dup(&stmt);
+            stmt_t *clause = memcpy(malloc(sizeof(stmt)), &stmt, sizeof(stmt));
             clauses = append(clauses, &clause);
         }
         expect(p, token_RBRACE);
@@ -995,7 +993,7 @@ static stmt_t *statement(parser_t *p) {
                 .stmts = slice_to_nil_array(clauses),
             },
         };
-        return dup(&stmt);
+        return memcpy(malloc(sizeof(stmt)), &stmt, sizeof(stmt));
     }
 
     if (accept(p, token_WHILE)) {
@@ -1012,7 +1010,7 @@ static stmt_t *statement(parser_t *p) {
                 .body = body,
             },
         };
-        return dup(&stmt);
+        return memcpy(malloc(sizeof(stmt)), &stmt, sizeof(stmt));
     }
 
     switch (p->tok) {
@@ -1039,7 +1037,7 @@ static stmt_t *statement(parser_t *p) {
                     .label = label,
                 },
             };
-            return dup(&stmt);
+            return memcpy(malloc(sizeof(stmt)), &stmt, sizeof(stmt));
         }
     case token_LBRACE:
         return compound_statement(p);
@@ -1064,7 +1062,7 @@ static stmt_t *statement(parser_t *p) {
                     .label = x,
                 },
             };
-            return dup(&stmt);
+            return memcpy(malloc(sizeof(stmt)), &stmt, sizeof(stmt));
         }
     }
     // expression_statement : expression? ';' ;
@@ -1073,7 +1071,7 @@ static stmt_t *statement(parser_t *p) {
         .expr = {.x = x},
     };
     expect(p, token_SEMICOLON);
-    return dup(&stmt);
+    return memcpy(malloc(sizeof(stmt)), &stmt, sizeof(stmt));
 }
 
 static stmt_t *compound_statement(parser_t *p) {
@@ -1087,7 +1085,7 @@ static stmt_t *compound_statement(parser_t *p) {
         stmts = append(stmts, &stmt);
     }
     expect(p, token_RBRACE);
-    stmt = alloc(stmt_t);
+    stmt = malloc(sizeof(stmt_t));
     stmt->type = ast_STMT_BLOCK;
     stmt->block.stmts = slice_to_nil_array(stmts);
     return stmt;
@@ -1101,7 +1099,7 @@ static field_t *parse_field(parser_t *p) {
         .type = type,
         .name = name,
     };
-    return dup(&field);
+    return memcpy(malloc(sizeof(field)), &field, sizeof(field));
 }
 
 static expr_t *type_specifier(parser_t *p) {
@@ -1197,9 +1195,9 @@ static decl_t *declaration(parser_t *p, bool is_external) {
         };
         decl_t decl = {
             .type = ast_DECL_GEN,
-            .gen = {.spec = dup(&spec)},
+            .gen = {.spec = memcpy(malloc(sizeof(spec)), &spec, sizeof(spec))},
         };
-        return dup(&decl);
+        return memcpy(malloc(sizeof(decl)), &decl, sizeof(decl));
     }
     expr_t *type = declaration_specifiers(p, true);
     expr_t *name = declarator(p, &type);
@@ -1216,7 +1214,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
                 .body = body,
             },
         };
-        return dup(&decl);
+        return memcpy(malloc(sizeof(decl)), &decl, sizeof(decl));
     }
     // init_declarator_list
     //         : init_declarator
@@ -1241,10 +1239,10 @@ static decl_t *declaration(parser_t *p, bool is_external) {
     decl_t decl = {
         .type = ast_DECL_GEN,
         .gen = {
-            .spec = dup(&spec),
+            .spec = memcpy(malloc(sizeof(spec)), &spec, sizeof(spec)),
         },
     };
-    return dup(&decl);
+    return memcpy(malloc(sizeof(decl)), &decl, sizeof(decl));
 }
 
 static file_t *parse_file(parser_t *p) {
@@ -1267,7 +1265,7 @@ static file_t *parse_file(parser_t *p) {
         .name = name,
         .decls = slice_to_nil_array(decls),
     };
-    return dup(&file);
+    return memcpy(malloc(sizeof(file)), &file, sizeof(file));
 }
 
 extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {

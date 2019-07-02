@@ -6,6 +6,7 @@ compile:
 	./mk-package.py
 
 test: compile
+	cat runtime/clib.h >all.c
 	./$< runtime/runtime.h \
 	    runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \
 	    builtin/builtin.h builtin/builtin.c \
@@ -13,7 +14,8 @@ test: compile
 	    subc/token/token.h subc/token/token.c \
 	    subc/ast/ast.h \
 	    subc/scanner/scanner.h subc/scanner/scanner.c \
-	    subc/parser/parser.h subc/parser/parser.c \
+	    subc/parser/parser.h subc/parser/parser.c >>all.c
+	cc all.c
 
 clean:
 	$(RM) compile

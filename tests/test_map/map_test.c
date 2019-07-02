@@ -1,10 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h> // rand
-#include <assert.h> // assert
-#include <ctype.h> // isspace
-#include <string.h> // strtok
-#include <time.h> // clock
-
 #include "builtin/builtin.h"
 
 static void slugify(char *s) {

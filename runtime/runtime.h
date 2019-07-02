@@ -1,11 +1,6 @@
 #pragma once
 
-#include <execinfo.h> // backtrace
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "runtime/clib.h"
 
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #define min(x, y) ((x) < (y) ? (x) : (y))
