@@ -12,10 +12,15 @@ test: compile
 	    builtin/builtin.h builtin/builtin.c \
 	    io/ioutil/ioutil.h io/ioutil/ioutil.c \
 	    subc/token/token.h subc/token/token.c \
-	    subc/ast/ast.h \
+	    subc/ast/ast.h subc/ast/ast.c \
 	    subc/scanner/scanner.h subc/scanner/scanner.c \
-	    subc/parser/parser.h subc/parser/parser.c >>all.c
+	    subc/parser/parser.h subc/parser/parser.c \
+	    cmd/compile/emit.h cmd/compile/emit.c \
+	    cmd/compile/main.c \
+	    >>all.c
 	cc all.c
+	./a.out all.c
+
 
 clean:
 	$(RM) compile

@@ -281,6 +281,7 @@ extern object_t *scope_insert(scope_t *s, object_t *obj);
 extern object_t *scope_lookup(scope_t *s, char *name);
 
 typedef struct {
+    const char *filename;
     expr_t *name;
     decl_t **decls;
     scope_t *scope;

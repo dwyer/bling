@@ -1281,6 +1281,7 @@ static file_t *parse_file(parser_t *p) {
         decls = append(decls, &decl);
     }
     file_t file = {
+        .filename = p->filename,
         .name = name,
         .decls = slice_to_nil_array(decls),
     };

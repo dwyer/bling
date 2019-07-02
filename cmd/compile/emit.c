@@ -421,6 +421,7 @@ static void emit_decl(emitter_t *e, decl_t *decl) {
 }
 
 extern void emitter_emit_file(emitter_t *e, file_t *file) {
+    emit_printf(e, "/* %s */\n\n", file->filename);
     for (decl_t **decls = file->decls; decls && *decls; decls++) {
         emit_decl(e, *decls);
         emit_printf(e, "\n\n");

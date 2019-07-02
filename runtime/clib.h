@@ -1,4 +1,6 @@
-#pragma once
+#ifndef __CLIB_H__
+#define __CLIB_H__
+
 #include <execinfo.h> // backtrace
 #include <stdarg.h>
 #include <stdbool.h>
@@ -10,3 +12,4 @@
 #include <ctype.h> // isspace
 #include <time.h> // clock
 
+#endif
