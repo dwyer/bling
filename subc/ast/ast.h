@@ -44,6 +44,7 @@ typedef enum {
     ast_TYPE_NAME,
     ast_TYPE_PTR,
     ast_TYPE_FUNC,
+    ast_TYPE_QUAL,
     ast_TYPE_STRUCT,
 
 } ast_node_type_t;
@@ -61,6 +62,7 @@ typedef struct {
 typedef struct {
     expr_t *type;
     expr_t *name;
+    bool is_const;
 } field_t;
 
 struct decl {
@@ -177,6 +179,11 @@ struct expr {
         struct {
             expr_t *type;
         } type_name;
+
+        struct {
+            token_t qual;
+            expr_t *type;
+        } qual;
 
         struct {
             token_t op;

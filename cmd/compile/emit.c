@@ -14,7 +14,7 @@ static void emit_printf(emitter_t *e, char *fmt, ...) {
 
 static void emit_tabs(emitter_t *e) {
     for (int i = 0; i < e->indent; i++) {
-        emit_printf(e, "\t");
+        emit_printf(e, "    ");
     }
 }
 
@@ -26,6 +26,9 @@ static void emit_field(emitter_t *e, field_t *field) {
     if (field->type == NULL && field->name == NULL) {
         emit_printf(e, "...");
     } else {
+        if (field->is_const) {
+            emit_printf(e, "const ");
+        }
         emit_type(e, field->type, field->name);
     }
 }
@@ -362,6 +365,13 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
         }
         break;
 
+    case ast_TYPE_QUAL:
+        emit_token(e, type->qual.qual);
+        emit_printf(e, " ");
+        emit_type(e, type->qual.type, name);
+        name = NULL;
+        break;
+
     case ast_TYPE_STRUCT:
         emit_token(e, type->struct_.tok);
         if (type->struct_.name) {
@@ -421,7 +431,7 @@ static void emit_decl(emitter_t *e, decl_t *decl) {
 }
 
 extern void emitter_emit_file(emitter_t *e, file_t *file) {
-    emit_printf(e, "/* %s */\n\n", file->filename);
+    emit_printf(e, "// %s //\n\n", file->filename);
     for (decl_t **decls = file->decls; decls && *decls; decls++) {
         emit_decl(e, *decls);
         emit_printf(e, "\n\n");

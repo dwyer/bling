@@ -60,7 +60,7 @@ static pair_t *pair_ref(const map_t *m, const void *key) {
     return NULL;
 }
 
-static void *memdup(const void *src, size_t size) {
+extern void *memdup(const void *src, size_t size) {
     return memcpy(malloc(size), src, size);
 }
 

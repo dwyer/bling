@@ -1111,13 +1111,10 @@ static stmt_t *compound_statement(parser_t *p) {
 }
 
 static field_t *parse_field(parser_t *p) {
-    accept(p, token_CONST);
-    expr_t *type = type_specifier(p);
-    expr_t *name = declarator(p, &type);
-    field_t field = {
-        .type = type,
-        .name = name,
-    };
+    field_t field = {};
+    field.is_const = accept(p, token_CONST);
+    field.type = type_specifier(p);
+    field.name = declarator(p, &field.type);
     return memcpy(malloc(sizeof(field)), &field, sizeof(field));
 }
 
@@ -1179,14 +1176,27 @@ static expr_t *declaration_specifiers(parser_t *p, bool is_top) {
         }
     }
     // type_qualifier : CONST | VOLATILE ;
+    bool is_const = false;
     switch (p->tok) {
     case token_CONST:
+        is_const = true;
         next(p);
         break;
     default:
         break;
     }
-    return type_specifier(p);
+    expr_t *type = type_specifier(p);
+    if (is_const) {
+        expr_t x = {
+            .type = ast_TYPE_QUAL,
+            .qual = {
+                .type = type,
+                .qual = token_CONST,
+            }
+        };
+        type = memdup(&x, sizeof(x));
+    }
+    return type;
 }
 
 static expr_t *specifier_qualifier_list(parser_t *p) {

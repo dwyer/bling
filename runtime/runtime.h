@@ -66,3 +66,5 @@ typedef struct {
 
 extern map_iter_t map_iter(const map_t *m);
 extern int map_iter_next(map_iter_t *m, void *key, void *val);
+
+extern void *memdup(const void *src, size_t size);
