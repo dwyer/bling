@@ -2,7 +2,7 @@
 
 #include "subc/scanner/scanner.h"
 #include "subc/parser/parser.h"
-#include "cmd/compile/emit.h"
+#include "subc/emitter/emit.h"
 
 static char *types[] = {
     // native types

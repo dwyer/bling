@@ -26,6 +26,7 @@ packages = [
     'subc/ast',
     'subc/scanner',
     'subc/parser',
+    'subc/emitter',
     'io/ioutil',
 ]
 

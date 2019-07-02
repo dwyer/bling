@@ -1,4 +1,4 @@
-#include "cmd/compile/emit.h"
+#include "subc/emitter/emit.h"
 #include "subc/token/token.h"
 
 static void emit_decl(emitter_t *e, decl_t *decl);

@@ -15,7 +15,7 @@ test: compile
 	    subc/ast/ast.h subc/ast/ast.c \
 	    subc/scanner/scanner.h subc/scanner/scanner.c \
 	    subc/parser/parser.h subc/parser/parser.c \
-	    cmd/compile/emit.h cmd/compile/emit.c \
+	    subc/emitter/emit.h subc/emitter/emit.c \
 	    cmd/compile/main.c \
 	    >>all.c
 	cc all.c
