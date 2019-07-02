@@ -1,11 +1,11 @@
 CFLAGS=-I.
 
-.PHONY: compile test clean
+.PHONY: c2c test clean
 
-compile:
+c2c:
 	./mk-package.py
 
-test: compile
+test: c2c
 	cat runtime/clib.h >all.c
 	./$< runtime/runtime.h \
 	    runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \
@@ -16,12 +16,12 @@ test: compile
 	    subc/scanner/scanner.h subc/scanner/scanner.c \
 	    subc/parser/parser.h subc/parser/parser.c \
 	    subc/emitter/emit.h subc/emitter/emit.c \
-	    cmd/compile/main.c \
+	    cmd/c2c/main.c \
 	    >>all.c
 	cc all.c
 	./a.out all.c
 
 
 clean:
-	$(RM) compile
+	$(RM) c2c
 	find * -name \*.o -delete

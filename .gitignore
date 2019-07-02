@@ -1,7 +1,7 @@
 *.dSYM
 *.o
-compile
+a.out
+all.c
+c2c
 t8.shakespeare.txt
 test_*
-all.c
-a.out

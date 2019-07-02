@@ -31,7 +31,7 @@ packages = [
 ]
 
 commands = [
-    'compile',
+    'c2c',
 ]
 
 tests = ['test_map']
