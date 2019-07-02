@@ -2,9 +2,6 @@
 
 #include "runtime/clib.h"
 
-#define max(x, y) ((x) > (y) ? (x) : (y))
-#define min(x, y) ((x) < (y) ? (x) : (y))
-
 typedef struct {
     size_t size;
     bool is_ptr;

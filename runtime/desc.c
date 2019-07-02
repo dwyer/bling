@@ -19,7 +19,10 @@ extern uintptr_t desc_hash(const desc_t *d, const void *p) {
         return d->hash(p);
     }
     uintptr_t hash = 0;
-    int size = min(d->size, sizeof(uintptr_t));
+    int size = sizeof(uintptr_t);
+    if (size > d->size) {
+        size = d->size;
+    }
     memcpy(&hash, p, size);
     return hash;
 }
