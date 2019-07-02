@@ -365,6 +365,13 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
         }
         break;
 
+    case ast_SPEC_STORAGE:
+        emit_token(e, type->store.store);
+        emit_printf(e, " ");
+        emit_type(e, type->store.type, name);
+        name = NULL;
+        break;
+
     case ast_TYPE_QUAL:
         emit_token(e, type->qual.qual);
         emit_printf(e, " ");

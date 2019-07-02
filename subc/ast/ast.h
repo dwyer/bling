@@ -25,6 +25,7 @@ typedef enum {
     ast_EXPR_SIZEOF,
     ast_EXPR_INIT_DECL,
 
+    ast_SPEC_STORAGE,
     ast_SPEC_TYPEDEF,
     ast_SPEC_VALUE,
 
@@ -175,6 +176,11 @@ struct expr {
             expr_t *name;
             field_t **fields;
         } struct_;
+
+        struct {
+            token_t store;
+            expr_t *type;
+        } store;
 
         struct {
             expr_t *type;

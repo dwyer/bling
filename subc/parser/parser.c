@@ -877,7 +877,7 @@ static stmt_t *statement(parser_t *p) {
 
     if (accept(p, token_FOR)) {
         // for_statement
-        //         | FOR '(' simple_statement? ';' expression? ';' expression? ')' 
+        //         | FOR '(' simple_statement? ';' expression? ';' expression? ')'
         //              compound_statement ;
         expect(p, token_LPAREN);
         stmt_t *init = NULL;
@@ -1163,11 +1163,13 @@ static expr_t *declaration_specifiers(parser_t *p, bool is_top) {
     // declaration_specifiers
     //         : storage_class_specifier? type_qualifier? type_specifier
     //         ;
+    token_t storage_class_specifier = token_ILLEGAL;
     if (is_top) {
         // storage_class_specifier : TYPEDEF | EXTERN | STATIC | AUTO | REGISTER ;
         switch (p->tok) {
         case token_EXTERN:
         case token_STATIC:
+            storage_class_specifier = p->tok;
             next(p);
             break;
         default:
@@ -1189,8 +1191,18 @@ static expr_t *declaration_specifiers(parser_t *p, bool is_top) {
         expr_t x = {
             .type = ast_TYPE_QUAL,
             .qual = {
-                .type = type,
                 .qual = token_CONST,
+                .type = type,
+            }
+        };
+        type = memdup(&x, sizeof(x));
+    }
+    if (storage_class_specifier != token_ILLEGAL) {
+        expr_t x = {
+            .type = ast_SPEC_STORAGE,
+            .store = {
+                .store = storage_class_specifier,
+                .type = type,
             }
         };
         type = memdup(&x, sizeof(x));
