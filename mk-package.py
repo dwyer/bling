@@ -34,7 +34,7 @@ packages = [
 ]
 
 commands = [
-    'bcc',
+    'b2c',
 ]
 
 tests = ['test_map']
