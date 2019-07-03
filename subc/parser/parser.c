@@ -225,7 +225,6 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
         x = primary_expression(p);
     }
     for (;;) {
-        expr_t *y;
         switch (p->tok) {
         case token_LBRACK:
             {
@@ -320,7 +319,7 @@ static expr_t *unary_expression(parser_t *p) {
     //         | '~'
     //         | '!'
     //         ;
-    expr_t *x;
+    expr_t *x = NULL;
     switch (p->tok) {
     case token_ADD:
     case token_AND:
@@ -439,31 +438,6 @@ static expr_t *ternary_expression(parser_t *p) {
     return x;
 }
 
-static expr_t *assignment_expression(parser_t *p) {
-    // assignment_expression
-    //         : ternary_expression
-    //         | unary_expression assignment_operator assignment_expression
-    //         ;
-    expr_t *x = ternary_expression(p);
-    switch (p->tok) {
-    case token_ADD_ASSIGN:
-    case token_ASSIGN:
-    case token_DIV_ASSIGN:
-    case token_MUL_ASSIGN:
-    case token_SUB_ASSIGN:
-    case token_XOR_ASSIGN:
-        {
-            token_t op = p->tok;
-            next(p);
-            x = _binary_expression(x, op, assignment_expression(p));
-        }
-        break;
-    default:
-        break;
-    }
-    return x;
-}
-
 static token_t assignment_operator(parser_t *p) {
     // assignment_operator
     //         : '='
@@ -492,6 +466,20 @@ static token_t assignment_operator(parser_t *p) {
     default:
         return token_ILLEGAL;
     }
+}
+
+static expr_t *assignment_expression(parser_t *p) {
+    // assignment_expression
+    //         : ternary_expression
+    //         | unary_expression assignment_operator assignment_expression
+    //         ;
+    expr_t *x = ternary_expression(p);
+    token_t op = assignment_operator(p);
+    if (op != token_ILLEGAL) {
+        next(p);
+        x = _binary_expression(x, op, assignment_expression(p));
+    }
+    return x;
 }
 
 static expr_t *expression(parser_t *p) {

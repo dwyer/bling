@@ -39,6 +39,5 @@ int main(int argc, char *argv[]) {
         free(file->decls);
         free(file);
     }
-    object_t *obj;
     return 0;
 }

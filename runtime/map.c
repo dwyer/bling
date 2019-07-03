@@ -27,9 +27,9 @@ extern map_t map_init(const desc_t *key_desc, const desc_t *val_desc) {
 }
 
 extern void map_deinit(map_t *m) {
-    for (int i = 0; i < slice_len(&m->pairs); i++) {
-        pair_t *p = (pair_t *)slice_ref(&m->pairs, i);
-    }
+    // for (int i = 0; i < slice_len(&m->pairs); i++) {
+    //     pair_t *p = (pair_t *)slice_ref(&m->pairs, i);
+    // }
     slice_deinit(&m->pairs);
 }
 
