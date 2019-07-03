@@ -1,22 +1,9 @@
 CFLAGS=-I.
 
-.PHONY: bcc c2c test_bcc test_c2c clean
+.PHONY: bcc bcc test_bcc test_c2c clean
 
-bcc:
+test_c2c: bcc
 	./mk-package.py
-
-c2c:
-	./mk-package.py
-
-test: c2c
-	./c2c cmd/c2c/main.c
-
-
-test_bcc: bcc
-	./bcc hello/hello.bling
-
-test_c2c: c2c
-	cat runtime/clib.h >all.c
 	./$< runtime/runtime.h \
 	    runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \
 	    builtin/builtin.h builtin/builtin.c \
@@ -27,13 +14,10 @@ test_c2c: c2c
 	    subc/ast/ast.h subc/ast/ast.c \
 	    subc/scanner/scanner.h subc/scanner/scanner.c \
 	    subc/parser/parser.h subc/parser/parser.c \
-	    subc/emitter/emit.h subc/emitter/emit.c \
-	    cmd/c2c/main.c \
-	    >>all.c
-	cc all.c
-	./a.out all.c
+	    bling/emitter/emit.h bling/emitter/emit.c \
+	    cmd/bcc/main.c
 
 
 clean:
-	$(RM) c2c
+	$(RM) bcc
 	find * -name \*.o -delete

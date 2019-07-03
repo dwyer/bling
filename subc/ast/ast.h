@@ -68,17 +68,20 @@ typedef struct {
 
 struct decl {
     ast_node_type_t type;
+    token_t store;
     union {
 
         struct {
             spec_t *spec;
             // TODO: spec_t **specs;
+            token_t store;
         } gen;
 
         struct {
             expr_t *type;
             expr_t *name;
             stmt_t *body;
+            token_t store;
         } func;
 
     };
@@ -176,11 +179,6 @@ struct expr {
             expr_t *name;
             field_t **fields;
         } struct_;
-
-        struct {
-            token_t store;
-            expr_t *type;
-        } store;
 
         struct {
             expr_t *type;
