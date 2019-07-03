@@ -115,10 +115,8 @@ static void print_expr(printer_t *p, expr_t *expr) {
         break;
 
     case ast_EXPR_KEY_VALUE:
-        print_token(p, token_PERIOD);
         print_expr(p, expr->key_value.key);
-        print_space(p);
-        print_token(p, token_ASSIGN);
+        print_token(p, token_COLON);
         print_space(p);
         print_expr(p, expr->key_value.value);
         break;
@@ -316,6 +314,9 @@ static void print_spec(printer_t *p, spec_t *spec) {
             print_space(p);
             print_token(p, token_ASSIGN);
             print_space(p);
+            if (spec->value.value->type == ast_EXPR_COMPOUND) {
+                print_type(p, spec->value.type);
+            }
             print_expr(p, spec->value.value);
         }
         print_token(p, token_SEMICOLON);
