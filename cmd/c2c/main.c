@@ -4,6 +4,11 @@
 #include "subc/parser/parser.h"
 #include "subc/emitter/emit.h"
 
+$import("builtin");
+$import("subc/scanner");
+$import("subc/parser");
+$import("subc/emitter");
+
 static char *types[] = {
     // native types
     "char",

@@ -1294,6 +1294,27 @@ static file_t *parse_file(parser_t *p) {
         expect(p, token_RPAREN);
         expect(p, token_SEMICOLON);
     }
+    while (p->tok == token_IMPORT) {
+        expect(p, token_IMPORT);
+        expect(p, token_LPAREN);
+        expr_t *s = primary_expression(p);
+        expect(p, token_RPAREN);
+        expect(p, token_SEMICOLON);
+        assert(s->type == ast_EXPR_BASIC_LIT);
+        assert(s->basic_lit.kind == token_STRING);
+        const char *lit = s->basic_lit.value;
+        int n = strlen(lit) - 2;
+        char *dirname = malloc(n + 1);
+        for (int i = 0; i < n; i++) {
+            dirname[i] = lit[i+1];
+        }
+        dirname[n] = '\0';
+        os_FileInfo **files = ioutil_read_dir(dirname);
+        while (*files != NULL) {
+            print("import: %s", (*files)->name);
+            files++;
+        }
+    }
     while (p->tok != token_EOF) {
         // translation_unit
         //         : external_declaration+

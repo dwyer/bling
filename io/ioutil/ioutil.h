@@ -1,4 +1,6 @@
 #pragma once
 #include "builtin/builtin.h"
+#include "os/os.h"
 
-char *ioutil_read_file(char *filename);
+os_FileInfo **ioutil_read_dir(const char *filename);
+char *ioutil_read_file(const char *filename);
