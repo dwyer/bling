@@ -1,5 +1,5 @@
 cc_binary(
-    name = "b2c",
+    name = "c2bling",
     srcs = [
         "main.c",
     ],

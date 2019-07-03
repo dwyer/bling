@@ -1,6 +1,6 @@
 CFLAGS=-I.
 
-.PHONY: bazel-bin/cmd/b2c/b2c bazel-bin/cmd/c2c/c2c
+.PHONY: bazel-bin/cmd/c2bling/c2bling bazel-bin/cmd/c2c/c2c
 
 SRCS=runtime/runtime.h \
      runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \
@@ -13,21 +13,20 @@ SRCS=runtime/runtime.h \
      subc/scanner/scanner.h subc/scanner/scanner.c \
      subc/parser/parser.h subc/parser/parser.c \
      bling/emitter/emit.h bling/emitter/emit.c \
-     cmd/b2c/main.c
+     cmd/c2bling/main.c
 
-all.bling: bazel-bin/cmd/b2c/b2c
-	bazel-bin/cmd/b2c/b2c $(SRCS) >all.bling
+all.bling: bazel-bin/cmd/c2bling/c2bling
+	bazel-bin/cmd/c2bling/c2bling $(SRCS) >all.bling
 
 all.c: bazel-bin/cmd/c2c/c2c
 	bazel-bin/cmd/c2c/c2c $(SRCS) >all.c
 
-bazel-bin/cmd/b2c/b2c:
-	bazel build cmd/b2c
+bazel-bin/cmd/c2bling/c2bling:
+	bazel build cmd/c2bling
 
 bazel-bin/cmd/c2c/c2c:
 	bazel build cmd/c2c
 
 
 clean:
-	$(RM) b2c c2c bcc
-	find * -name \*.o -delete
+	bazel clean
