@@ -1,0 +1,10 @@
+cc_binary(
+    name = "blingc",
+    srcs = [
+        "main.c",
+    ],
+    deps = [
+        "//bling/parser",
+        "//subc/emitter",
+    ],
+)

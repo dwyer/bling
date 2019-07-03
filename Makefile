@@ -2,6 +2,9 @@ CFLAGS=-I.
 
 .PHONY: bazel-bin/cmd/c2bling/c2bling bazel-bin/cmd/c2c/c2c
 
+bazel-bin/cmd/blingc/blingc:
+	bazel build cmd/blingc
+
 SRCS=runtime/runtime.h \
      runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \
      builtin/builtin.h builtin/builtin.c \
