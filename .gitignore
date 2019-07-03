@@ -1,6 +1,7 @@
 *.dSYM
 *.o
 a.out
+all.bling
 all.c
 /b2c
 /bcc
