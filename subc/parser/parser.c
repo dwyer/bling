@@ -1230,18 +1230,21 @@ static decl_t *declaration(parser_t *p, bool is_external) {
     expr_t *type = declaration_specifiers(p, true);
     expr_t *name = declarator(p, &type);
     expr_t *value = NULL;
-    if (is_external && p->tok == token_LBRACE) {
-        // function_definition
-        //         : declaration_specifiers declarator compound_statement ;
-        stmt_t *body = compound_statement(p);
+    if (type->type == ast_TYPE_FUNC) {
         decl_t decl = {
             .type = ast_DECL_FUNC,
             .func = {
                 .type = type,
                 .name = name,
-                .body = body,
             },
         };
+        if (is_external && p->tok == token_LBRACE) {
+            // function_definition
+            //         : declaration_specifiers declarator compound_statement ;
+            decl.func.body = compound_statement(p);
+        } else {
+            expect(p, token_SEMICOLON);
+        }
         return memdup(&decl, sizeof(decl));
     }
     // init_declarator_list

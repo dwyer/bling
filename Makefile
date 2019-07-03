@@ -2,9 +2,10 @@ CFLAGS=-I.
 
 .PHONY: b2c test_bcc test_c2c clean
 
-test_c2c: b2c
-	./mk-package.py
-	./$< runtime/runtime.h \
+test_c2c:
+	bazel build cmd/b2c
+	bazel-bin/cmd/b2c/b2c \
+	    runtime/runtime.h \
 	    runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \
 	    builtin/builtin.h builtin/builtin.c \
 	    os/os.h os/os.c \

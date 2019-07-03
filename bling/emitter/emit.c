@@ -76,10 +76,11 @@ static void print_expr(printer_t *p, expr_t *expr) {
         break;
 
     case ast_EXPR_CAST:
-        print_token(p, token_LPAREN);
-        print_expr(p, expr->cast.type);
-        print_token(p, token_RPAREN);
         print_expr(p, expr->cast.expr);
+        print_space(p);
+        print_string(p, "$as");
+        print_space(p);
+        print_expr(p, expr->cast.type);
         break;
 
     case ast_EXPR_COMPOUND:
@@ -401,10 +402,7 @@ static void print_type(printer_t *p, expr_t *type) {
     case ast_TYPE_PTR:
         type = type->ptr.type;
         if (type->type == ast_TYPE_FUNC) {
-            print_type(p, type->func.result);
-            print_token(p, token_LPAREN);
-            print_token(p, token_MUL);
-            print_token(p, token_RPAREN);
+            print_token(p, token_FUNC);
             print_token(p, token_LPAREN);
             for (field_t **params = type->func.params; params && *params; ) {
                 print_field(p, *params);
@@ -415,6 +413,10 @@ static void print_type(printer_t *p, expr_t *type) {
                 }
             }
             print_token(p, token_RPAREN);
+            if (!is_void(type->func.result)) {
+                print_space(p);
+                print_type(p, type->func.result);
+            }
         } else {
             print_token(p, token_MUL);
             print_type(p, type);
