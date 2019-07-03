@@ -7,7 +7,7 @@ typedef uint32_t os_FileMode;
 
 typedef struct {
     char *name;
-    uintptr_t fp;
+    int fd;
 } os_File;
 
 extern os_File *os_open(const char *filename);

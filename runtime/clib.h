@@ -1,6 +1,11 @@
 #ifndef __CLIB_H__
 #define __CLIB_H__
 
+#include <sys/stat.h> // os: stat
+#include <dirent.h> // os: DIR, dirent, opendir, readdir, closedir
+#include <fcntl.h> // os: open
+#include <unistd.h> // os: read, close
+
 #include <execinfo.h> // backtrace
 #include <stdarg.h>
 #include <stdbool.h>

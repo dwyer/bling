@@ -21,6 +21,7 @@ test_c2c: c2c
 	    runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \
 	    builtin/builtin.h builtin/builtin.c \
 	    os/os.h os/os.c \
+	    fmt/fmt.h fmt/fmt.c \
 	    io/ioutil/ioutil.h io/ioutil/ioutil.c \
 	    subc/token/token.h subc/token/token.c \
 	    subc/ast/ast.h subc/ast/ast.c \

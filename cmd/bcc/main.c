@@ -11,6 +11,7 @@ static char *types[] = {
     "void",
 
     // libc types
+    "DIR",
     "FILE",
     "bool",
     "size_t",

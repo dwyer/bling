@@ -4,24 +4,23 @@
 #include <dirent.h>
 
 extern os_File *os_open(const char *filename) {
-    FILE *fp = fopen(filename, "r");
-    if (fp == NULL) {
+    int fd = open(filename, O_RDONLY);
+    if (fd == 0) {
         panic("couldn't open file: %s", filename);
     }
-    os_File f = {
+    os_File file = {
         .name = strdup(filename),
-        .fp = (uintptr_t)fp,
+        .fd = fd,
     };
-    return memdup(&f, sizeof(f));
+    return memdup(&file, sizeof(file));
 }
 
 extern int os_read(os_File *file, char *b, int n) {
-    return fread(b, sizeof(*b), n, (FILE *)file->fp);
+    return read(file->fd, b, n);
 }
 
 extern void os_close(os_File *file) {
-    FILE *fp = (FILE *)file->fp;
-    fclose(fp);
+    close(file->fd);
 }
 
 extern os_FileInfo os_stat(const char *filename) {
