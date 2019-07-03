@@ -5,6 +5,6 @@
 typedef struct {
     FILE *fp;
     int indent;
-} emitter_t;
+} printer_t;
 
-extern void emitter_emit_file(emitter_t *e, file_t *file);
+extern void printer_print_file(printer_t *e, file_t *file);

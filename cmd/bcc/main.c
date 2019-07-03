@@ -1,7 +1,7 @@
 #include "builtin/builtin.h"
 
-#include "bling/parser/parser.h"
-#include "subc/emitter/emit.h"
+#include "subc/parser/parser.h"
+#include "bling/emitter/emit.h"
 
 static char *types[] = {
     // native types
@@ -34,8 +34,8 @@ int main(int argc, char *argv[]) {
     }
     for (int i = 1; i < argc; i++) {
         file_t *file = parser_parse_file(argv[i], scope);
-        emitter_t emitter = {.fp = stdout};
-        emitter_emit_file(&emitter, file);
+        printer_t printer = {.fp = stdout};
+        printer_print_file(&printer, file);
         free(file->decls);
         free(file);
     }

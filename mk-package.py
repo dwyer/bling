@@ -35,7 +35,6 @@ packages = [
 
 commands = [
     'bcc',
-    'c2c',
 ]
 
 tests = ['test_map']
