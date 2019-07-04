@@ -1,11 +1,11 @@
 #include "builtin/builtin.h"
 
-#include "subc/scanner/scanner.h"
+#include "bling/scanner/scanner.h"
 #include "subc/parser/parser.h"
 #include "subc/emitter/emit.h"
 
 $import("builtin");
-$import("subc/scanner");
+$import("bling/scanner");
 $import("subc/parser");
 $import("subc/emitter");
 

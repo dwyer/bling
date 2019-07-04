@@ -1,5 +1,5 @@
 #include "bling/emitter/emit.h"
-#include "subc/token/token.h"
+#include "bling/token/token.h"
 
 static void print_decl(printer_t *p, decl_t *decl);
 static void print_expr(printer_t *p, expr_t *expr);

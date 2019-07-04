@@ -8,9 +8,9 @@ SRCS=runtime/runtime.h \
      os/os.h os/os.c \
      fmt/fmt.h fmt/fmt.c \
      io/ioutil/ioutil.h io/ioutil/ioutil.c \
-     subc/token/token.h subc/token/token.c \
-     subc/ast/ast.h subc/ast/ast.c \
-     subc/scanner/scanner.h subc/scanner/scanner.c \
+     bling/token/token.h bling/token/token.c \
+     bling/ast/ast.h bling/ast/ast.c \
+     bling/scanner/scanner.h bling/scanner/scanner.c \
      subc/parser/parser.h subc/parser/parser.c \
      bling/emitter/emit.h bling/emitter/emit.c \
      cmd/c2bling/main.c
@@ -18,14 +18,12 @@ SRCS=runtime/runtime.h \
 test: bazel-bin/cmd/blingc/blingc all.bling
 	bazel-bin/cmd/blingc/blingc all.bling
 
-
-
-
 all.bling: bazel-bin/cmd/c2bling/c2bling
 	bazel-bin/cmd/c2bling/c2bling $(SRCS) >all.bling
 
 all.c: bazel-bin/cmd/c2c/c2c
-	bazel-bin/cmd/c2c/c2c $(SRCS) >all.c
+	cat runtime/clib.h >all.c
+	bazel-bin/cmd/c2c/c2c $(SRCS) >>all.c
 
 bazel-bin/cmd/blingc/blingc:
 	bazel build cmd/blingc

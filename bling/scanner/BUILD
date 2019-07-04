@@ -1,13 +1,14 @@
 cc_library(
-    name = "ast",
+    name = "scanner",
     srcs = [
-        "ast.c",
+        "scanner.c",
     ],
     hdrs = [
-        "ast.h",
+        "scanner.h",
     ],
     deps = [
-        "//subc/token",
+        "//bling/ast",
+        "//bling/token",
     ],
     visibility = ["//visibility:public"],
 )

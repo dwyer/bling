@@ -1,9 +1,9 @@
 #pragma once
 #include "builtin/builtin.h"
 #include "io/ioutil/ioutil.h"
-#include "subc/ast/ast.h"
-#include "subc/scanner/scanner.h"
-#include "subc/token/token.h"
+#include "bling/ast/ast.h"
+#include "bling/scanner/scanner.h"
+#include "bling/token/token.h"
 
 typedef struct {
     scope_t *pkg_scope;

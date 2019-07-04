@@ -8,9 +8,9 @@ cc_library(
     ],
     deps = [
         "//io/ioutil",
-        "//subc/token",
-        "//subc/ast",
-        "//subc/scanner",
+        "//bling/token",
+        "//bling/ast",
+        "//bling/scanner",
     ],
     visibility = ["//visibility:public"],
 )

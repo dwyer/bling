@@ -7,7 +7,7 @@ cc_library(
         "emit.h",
     ],
     deps = [
-        "//subc/ast",
+        "//bling/ast",
     ],
     visibility = ["//visibility:public"],
 )
