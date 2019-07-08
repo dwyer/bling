@@ -3,8 +3,7 @@
 #include "fmt/fmt.h"
 
 extern os_FileInfo **ioutil_read_dir(const char *dirname) {
-    desc_t desc = {.size = sizeof(uintptr_t)};
-    slice_t arr = {.desc = &desc, .cap = 4};
+    slice_t arr = {.size = sizeof(uintptr_t), .cap = 4};
     char **names = os_listdir(dirname);
     for (int i = 0; names[i] != NULL; i++) {
         char *path = fmt_sprintf("%s/%s", dirname, names[i]);
@@ -21,8 +20,7 @@ extern os_FileInfo **ioutil_read_dir(const char *dirname) {
 
 char *ioutil_read_file(const char *filename) {
     os_File *file = os_open(filename);
-    desc_t desc = {.size = sizeof(char)};
-    slice_t str = {.desc = &desc, .cap = 8};
+    slice_t str = {.size = sizeof(char), .cap = 1024};
     for (;;) {
         char buf[BUFSIZ];
         int n = os_read(file, buf, BUFSIZ);

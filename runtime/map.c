@@ -19,7 +19,7 @@ extern map_t map_init(const desc_t *key_desc, const desc_t *val_desc) {
     };
     map_t m = {
         .len = 0,
-        .pairs = slice_init(&pair_desc, default_cap, 0),
+        .pairs = slice_init(pair_desc.size, default_cap, 0),
         .key_desc = key_desc,
         .val_desc = val_desc,
     };
@@ -99,7 +99,7 @@ extern void map_set(map_t *m, const void *key, const void *val) {
     if (load_factor >= max_load_factor) {
         int new_cap = map_cap(m) * 2;
         slice_t pairs = m->pairs;
-        m->pairs = slice_init(m->pairs.desc, new_cap, 0);
+        m->pairs = slice_init(m->pairs.size, new_cap, 0);
         m->len = 0;
         for (int i = 0; i < slice_len(&pairs); i++) {
             pair_t *p = (pair_t *)slice_ref(&pairs, i);

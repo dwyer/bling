@@ -11,10 +11,10 @@ typedef struct {
 } desc_t;
 
 typedef struct {
+    int size;
     int len;
     int cap;
     void *array;
-    const desc_t *desc;
 } slice_t;
 
 typedef struct {
@@ -27,7 +27,7 @@ typedef struct {
 extern int desc_cmp(const desc_t *d, const void *a, const void *b);
 extern uintptr_t desc_hash(const desc_t *d, const void *a);
 
-extern slice_t slice_init(const desc_t *desc, int len, int cap);
+extern slice_t slice_init(int size, int len, int cap);
 extern void slice_deinit(slice_t *s);
 
 extern int slice_len(const slice_t *s);

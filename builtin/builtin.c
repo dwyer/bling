@@ -40,8 +40,8 @@ extern slice_t append(slice_t s, void *obj) {
     return s;
 }
 
-extern slice_t make_slice(const desc_t *desc, int len, int cap) {
-    return slice_init(desc, len, cap);
+extern slice_t make_slice(int size, int len, int cap) {
+    return slice_init(size, len, cap);
 }
 
 extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc) {

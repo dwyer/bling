@@ -69,13 +69,6 @@ static decl_t *declaration(parser_t *p, bool is_external);
 
 static field_t *parse_field(parser_t *p);
 
-static const desc_t str_desc = {.size = sizeof(char *)};
-
-static const desc_t expr_desc = {.size = sizeof(expr_t *)};
-static const desc_t decl_desc = {.size = sizeof(decl_t *)};
-static const desc_t stmt_desc = {.size = sizeof(stmt_t *)};
-static const desc_t field_desc = {.size = sizeof(field_t *)};
-
 static bool is_type(parser_t *p) {
     switch (p->tok) {
     case token_CONST:
@@ -242,7 +235,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
             break;
         case token_LPAREN:
             {
-                slice_t args = {.desc = &expr_desc};
+                slice_t args = {.size = sizeof(expr_t *)};
                 expect(p, token_LPAREN);
                 // argument_expression_list
                 //         : assignment_expression
@@ -517,7 +510,7 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
         // struct_declaration
         //         : specifier_qualifier_list struct_declarator_list ';'
         //         ;
-        slice_t slice = {.desc = &field_desc};
+        slice_t slice = {.size = sizeof(field_t *)};
         for (;;) {
             expr_t *name = identifier(p);
             expr_t *type = type_specifier(p);
@@ -561,8 +554,7 @@ static expr_t *enum_specifier(parser_t *p) {
     enumerator_t **enums = NULL;
     if (accept(p, token_LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
-        desc_t enumerator_desc = {.size=sizeof(enumerator_t *)};
-        slice_t list = {.desc=&enumerator_desc};
+        slice_t list = {.size = sizeof(enumerator_t *)};
         for (;;) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             enumerator_t *enumerator = malloc(sizeof(enumerator_t));
@@ -674,7 +666,7 @@ static expr_t *pointer(parser_t *p, expr_t *type) {
 }
 
 static field_t **parameter_type_list(parser_t *p) {
-    slice_t params = {.desc = &field_desc};
+    slice_t params = {.size = sizeof(field_t *)};
     while (p->tok != token_RPAREN) {
         field_t *param = parse_field(p);
         params = append(params, &param);
@@ -787,7 +779,7 @@ static expr_t *initializer(parser_t *p) {
     //         : designation? initializer
     //         | initializer_list ',' designation? initializer
     //         ;
-    slice_t list = {.desc = &expr_desc};
+    slice_t list = {.size = sizeof(expr_t *)};
     while (p->tok != token_RBRACE && p->tok != token_EOF) {
         expr_t *value = NULL;
         // designation : designator_list '=' ;
@@ -931,7 +923,7 @@ static stmt_t *statement(parser_t *p) {
         expr_t *tag = expression(p);
         expect(p, token_RPAREN);
         expect(p, token_LBRACE);
-        slice_t clauses = {.desc = &stmt_desc};
+        slice_t clauses = {.size = sizeof(stmt_t *)};
         while (p->tok == token_CASE || p->tok == token_DEFAULT) {
             // case_statement
             //         | CASE constant_expression ':' statement+
@@ -944,7 +936,7 @@ static stmt_t *statement(parser_t *p) {
                 expect(p, token_DEFAULT);
             }
             expect(p, token_COLON);
-            slice_t stmts = {.desc = &stmt_desc};
+            slice_t stmts = {.size = sizeof(stmt_t *)};
             bool loop = true;
             while (loop) {
                 switch (p->tok) {
@@ -1063,7 +1055,7 @@ static stmt_t *statement(parser_t *p) {
 static stmt_t *compound_statement(parser_t *p) {
     // compound_statement : '{' statement_list? '}' ;
     stmt_t *stmt = NULL;
-    slice_t stmts = {.desc = &stmt_desc};
+    slice_t stmts = {.size = sizeof(stmt_t *)};
     expect(p, token_LBRACE);
     // statement_list : statement+ ;
     while (p->tok != token_RBRACE) {
@@ -1240,7 +1232,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
 }
 
 static file_t *parse_file(parser_t *p) {
-    slice_t decls = {.desc = &decl_desc};
+    slice_t decls = {.size = sizeof(decl_t *)};
     expr_t *name = NULL;
     if (accept(p, token_PACKAGE)) {
         expect(p, token_LPAREN);

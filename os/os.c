@@ -38,8 +38,7 @@ extern os_FileInfo os_stat(const char *filename) {
 }
 
 extern char **os_listdir(const char *dirname) {
-    desc_t desc = {.size = sizeof(uintptr_t)};
-    slice_t arr = {.desc = &desc, .cap = 4};
+    slice_t arr = {.size = sizeof(uintptr_t), .cap = 4};
     DIR *dp = opendir(dirname);
     if (dp != NULL) {
         for (;;) {

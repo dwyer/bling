@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern slice_t slice_init(const desc_t *desc, int len, int cap) {
+extern slice_t slice_init(int size, int len, int cap) {
     slice_t s = {
+        .size = size,
         .len = 0,
         .cap = 0,
         .array = NULL,
-        .desc = desc,
     };
     slice_set_len(&s, len);
     return s;
@@ -27,16 +27,16 @@ extern int slice_cap(const slice_t *s) {
 }
 
 extern void *slice_ref(const slice_t *s, int i) {
-    return (void *)&((char *)s->array)[i * s->desc->size];
+    return (void *)&((char *)s->array)[i * s->size];
 }
 
 extern void slice_get(const slice_t *s, int i, void *dst) {
-    memcpy(dst, slice_ref(s, i), s->desc->size);
+    memcpy(dst, slice_ref(s, i), s->size);
 }
 
 static void slice_set_cap(slice_t *s, int cap) {
     s->cap = cap;
-    s->array = realloc(s->array, s->cap * s->desc->size);
+    s->array = realloc(s->array, s->cap * s->size);
 }
 
 static void set_len(slice_t *s, int len) {
@@ -61,12 +61,12 @@ extern void slice_set_len(slice_t *s, int len) {
     set_len(s, len);
     int diff = len - old;
     if (diff > 0) {
-        memset(slice_ref(s, old), 0, diff * s->desc->size);
+        memset(slice_ref(s, old), 0, diff * s->size);
     }
 }
 
 extern void slice_set(slice_t *s, int i, const void *x) {
-    memcpy(slice_ref(s, i), x, s->desc->size);
+    memcpy(slice_ref(s, i), x, s->size);
 }
 
 extern void slice_append(slice_t *s, const void *x) {
