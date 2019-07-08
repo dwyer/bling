@@ -37,14 +37,6 @@ static void close_scope(parser_t *p) {
     free(top);
 }
 
-static void declare(parser_t *p, scope_t *s, obj_kind_t kind, char *name) {
-    object_t obj = {
-        .kind = kind,
-        .name = name,
-    };
-    scope_insert(s, memdup(&obj, sizeof(obj)));
-}
-
 static expr_t *cast_expression(parser_t *p);
 static expr_t *expression(parser_t *p);
 static expr_t *constant_expression(parser_t *p);
@@ -53,8 +45,8 @@ static expr_t *initializer(parser_t *p);
 static expr_t *type_specifier(parser_t *p);
 static expr_t *struct_or_union_specifier(parser_t *p);
 static expr_t *enum_specifier(parser_t *p);
-static expr_t *pointer(parser_t *p, expr_t *type);
-static field_t **parameter_type_list(parser_t *p);
+static expr_t *pointer(parser_t *p);
+static field_t **parameter_type_list(parser_t *p, bool anon);
 static expr_t *type_name(parser_t *p);
 
 static expr_t *declarator(parser_t *p, expr_t **type_ptr);
@@ -67,7 +59,7 @@ static expr_t *specifier_qualifier_list(parser_t *p);
 static expr_t *declaration_specifiers(parser_t *p, bool is_top);
 static decl_t *declaration(parser_t *p, bool is_external);
 
-static field_t *parse_field(parser_t *p);
+static field_t *parse_field(parser_t *p, bool anon);
 
 static bool is_type(parser_t *p) {
     switch (p->tok) {
@@ -584,7 +576,7 @@ static expr_t *enum_specifier(parser_t *p) {
 static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
     // declarator : pointer? direct_declarator ;
     if (p->tok == token_MUL) {
-        *type_ptr = pointer(p, *type_ptr);
+        *type_ptr = pointer(p);
     }
     // direct_declarator
     //         : IDENTIFIER
@@ -626,7 +618,7 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
     } else if (accept(p, token_LPAREN)) {
         field_t **params = NULL;
         if (p->tok != token_RPAREN) {
-            params = parameter_type_list(p);
+            params = parameter_type_list(p, false);
         }
         expr_t type = {
             .type = ast_TYPE_FUNC,
@@ -650,25 +642,21 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
     return name;
 }
 
-static expr_t *pointer(parser_t *p, expr_t *type) {
-    // pointer : '*' type_qualifier_list? pointer? ;
-    while (accept(p, token_MUL)) {
-        // type_qualifier_list : type_qualifier+ ;
-        expr_t x = {
-            .type = ast_TYPE_PTR,
-            .ptr = {
-                .type = type,
-            },
-        };
-        type = memdup(&x, sizeof(x));
-    }
-    return type;
+static expr_t *pointer(parser_t *p) {
+    expect(p, token_MUL);
+    expr_t x = {
+        .type = ast_TYPE_PTR,
+        .ptr = {
+            .type = type_specifier(p),
+        },
+    };
+    return memdup(&x, sizeof(x));
 }
 
-static field_t **parameter_type_list(parser_t *p) {
+static field_t **parameter_type_list(parser_t *p, bool anon) {
     slice_t params = {.size = sizeof(field_t *)};
     while (p->tok != token_RPAREN) {
-        field_t *param = parse_field(p);
+        field_t *param = parse_field(p, anon);
         params = append(params, &param);
         if (!accept(p, token_COMMA)) {
             break;
@@ -706,7 +694,7 @@ static field_t *abstract_declarator(parser_t *p, expr_t *type) {
     //         : pointer? direct_abstract_declarator?
     //         ;
     if (p->tok == token_MUL) {
-        type = pointer(p, type);
+        type = pointer(p);
     }
     // direct_abstract_declarator
     //         : '(' abstract_declarator ')'
@@ -737,7 +725,7 @@ static field_t *abstract_declarator(parser_t *p, expr_t *type) {
         } else if (accept(p, token_LPAREN)) {
             field_t **params = NULL;
             if (p->tok != token_RPAREN) {
-                params = parameter_type_list(p);
+                params = parameter_type_list(p, false);
             }
             expr_t t = {
                 .type = ast_TYPE_FUNC,
@@ -1069,20 +1057,46 @@ static stmt_t *compound_statement(parser_t *p) {
     return stmt;
 }
 
-static field_t *parse_field(parser_t *p) {
+static field_t *parse_field(parser_t *p, bool anon) {
     field_t field = {};
     field.is_const = accept(p, token_CONST);
-    field.name = identifier(p);
-    field.type = type_specifier(p);
+    if (p->tok == token_IDENT)
+        field.name = identifier(p);
+    if (field.name != NULL && (p->tok == token_COMMA || p->tok == token_RPAREN)) {
+        field.type = field.name;
+        field.name = NULL;
+    } else {
+        field.type = type_specifier(p);
+    }
     return memdup(&field, sizeof(field));
+}
+
+static expr_t *func_type(parser_t *p) {
+    expect(p, token_FUNC);
+    expect(p, token_LPAREN);
+    field_t **params = parameter_type_list(p, false);
+    expect(p, token_RPAREN);
+    expr_t *result = NULL;
+    if (p->tok != token_SEMICOLON) {
+        result = type_specifier(p);
+    }
+    expr_t x = {
+        .type = ast_TYPE_FUNC,
+        .func = {
+            .params = params,
+        },
+    };
+    return memdup(&x, sizeof(x));
 }
 
 static expr_t *type_specifier(parser_t *p) {
     expr_t *x = NULL;
     switch (p->tok) {
-    case token_SIGNED:
-    case token_UNSIGNED:
-        error(p, "`%s` is not supported in subc", token_string(p->tok));
+    case token_IDENT:
+        x = identifier(p);
+        break;
+    case token_MUL:
+        x = pointer(p);
         break;
     case token_STRUCT:
     case token_UNION:
@@ -1091,24 +1105,11 @@ static expr_t *type_specifier(parser_t *p) {
     case token_ENUM:
         x = enum_specifier(p);
         break;
-    case token_IDENT:
-        x = identifier(p);
-        break;
     case token_FUNC:
-        {
-            next(p);
-            expect(p, token_LPAREN);
-            expect(p, token_RPAREN);
-            field_t **params = parameter_type_list(p);
-            expect(p, token_SEMICOLON);
-        }
+        x = func_type(p);
         break;
     default:
-        if (p->lit) {
-            error(p, "expected type, got %s", p->lit);
-        } else {
-            error(p, "expected type, got %s", token_string(p->tok));
-        }
+        error(p, "expected type, got %s", token_string(p->tok));
         break;
     }
     return x;
@@ -1161,26 +1162,30 @@ static expr_t *specifier_qualifier_list(parser_t *p) {
 }
 
 static decl_t *declaration(parser_t *p, bool is_external) {
-    // declaration : declaration_specifiers init_declarator_list ';' ;
-    if (p->tok == token_TYPEDEF) {
-        token_t keyword = p->tok;
-        expect(p, keyword);
-        expr_t *ident = identifier(p);
-        expr_t *type = type_specifier(p);
-        expect(p, token_SEMICOLON);
-        declare(p, p->pkg_scope, obj_kind_TYPE, ident->ident.name);
-        spec_t spec = {
-            .type = ast_SPEC_TYPEDEF,
-            .typedef_ = {
-                .name = ident,
-                .type = type,
-            },
-        };
-        decl_t decl = {
-            .type = ast_DECL_GEN,
-            .gen = {.spec = memdup(&spec, sizeof(spec))},
-        };
-        return memdup(&decl, sizeof(decl));
+    switch (p->tok) {
+    case token_TYPEDEF:
+        {
+            token_t keyword = p->tok;
+            expect(p, keyword);
+            expr_t *ident = identifier(p);
+            expr_t *type = type_specifier(p);
+            expect(p, token_SEMICOLON);
+            spec_t spec = {
+                .type = ast_SPEC_TYPEDEF,
+                .typedef_ = {
+                    .name = ident,
+                    .type = type,
+                },
+            };
+            decl_t decl = {
+                .type = ast_DECL_GEN,
+                .gen = {.spec = memdup(&spec, sizeof(spec))},
+            };
+            return memdup(&decl, sizeof(decl));
+        }
+    default:
+        panic("cant handle it: %s", token_string(p->tok));
+        return NULL;
     }
     expr_t *type = declaration_specifiers(p, true);
     expr_t *name = declarator(p, &type);
@@ -1262,9 +1267,6 @@ static file_t *parse_file(parser_t *p) {
         }
     }
     while (p->tok != token_EOF) {
-        // translation_unit
-        //         : external_declaration+
-        //         ;
         decl_t *decl = declaration(p, true);
         decls = append(decls, &decl);
     }

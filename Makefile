@@ -26,13 +26,13 @@ all.c: bazel-bin/cmd/c2c/c2c
 	bazel-bin/cmd/c2c/c2c $(SRCS) >>all.c
 
 bazel-bin/cmd/blingc/blingc:
-	bazel build cmd/blingc
+	bazel build --copt="-g0" cmd/blingc
 
 bazel-bin/cmd/c2bling/c2bling:
-	bazel build cmd/c2bling
+	bazel build --copt="-g0" cmd/c2bling
 
 bazel-bin/cmd/c2c/c2c:
-	bazel build cmd/c2c
+	bazel build --copt="-g0" cmd/c2c
 
 
 clean:
