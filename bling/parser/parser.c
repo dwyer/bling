@@ -519,17 +519,8 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
         //         ;
         slice_t slice = {.desc = &field_desc};
         for (;;) {
-            // struct_declarator_list
-            //         : struct_declarator
-            //         | struct_declarator_list ',' struct_declarator
-            //         ;
-            // struct_declarator
-            //         : declarator
-            //         | ':' constant_expression
-            //         | declarator ':' constant_expression
-            //         ;
-            expr_t *type = specifier_qualifier_list(p);
-            expr_t *name = declarator(p, &type);
+            expr_t *name = identifier(p);
+            expr_t *type = type_specifier(p);
             field_t f = {
                 .type = type,
                 .name = name,
@@ -683,19 +674,8 @@ static expr_t *pointer(parser_t *p, expr_t *type) {
 }
 
 static field_t **parameter_type_list(parser_t *p) {
-    // parameter_type_list
-    //         : parameter_list
-    //         | parameter_list ',' '...'
-    //         ;
-    // parameter_list
-    //         : parameter_declaration
-    //         | parameter_list ',' parameter_declaration
-    //         ;
     slice_t params = {.desc = &field_desc};
     while (p->tok != token_RPAREN) {
-        // parameter_declaration
-        //         : declaration_specifiers (declarator | abstract_declarator)?
-        //         ;
         field_t *param = parse_field(p);
         params = append(params, &param);
         if (!accept(p, token_COMMA)) {
@@ -1100,26 +1080,12 @@ static stmt_t *compound_statement(parser_t *p) {
 static field_t *parse_field(parser_t *p) {
     field_t field = {};
     field.is_const = accept(p, token_CONST);
+    field.name = identifier(p);
     field.type = type_specifier(p);
-    field.name = declarator(p, &field.type);
     return memdup(&field, sizeof(field));
 }
 
 static expr_t *type_specifier(parser_t *p) {
-    // type_specifier
-    //         : VOID
-    //         | CHAR
-    //         | SHORT
-    //         | INT
-    //         | LONG
-    //         | FLOAT
-    //         | DOUBLE
-    //         | SIGNED
-    //         | UNSIGNED
-    //         | struct_or_union_specifier
-    //         | enum_specifier
-    //         | TYPE_NAME
-    //         ;
     expr_t *x = NULL;
     switch (p->tok) {
     case token_SIGNED:
@@ -1135,6 +1101,15 @@ static expr_t *type_specifier(parser_t *p) {
         break;
     case token_IDENT:
         x = identifier(p);
+        break;
+    case token_FUNC:
+        {
+            next(p);
+            expect(p, token_LPAREN);
+            expect(p, token_RPAREN);
+            field_t **params = parameter_type_list(p);
+            expect(p, token_SEMICOLON);
+        }
         break;
     default:
         if (p->lit) {
@@ -1198,8 +1173,8 @@ static decl_t *declaration(parser_t *p, bool is_external) {
     if (p->tok == token_TYPEDEF) {
         token_t keyword = p->tok;
         expect(p, keyword);
-        expr_t *type = declaration_specifiers(p, true);
-        expr_t *ident = declarator(p, &type);
+        expr_t *ident = identifier(p);
+        expr_t *type = type_specifier(p);
         expect(p, token_SEMICOLON);
         declare(p, p->pkg_scope, obj_kind_TYPE, ident->ident.name);
         spec_t spec = {
