@@ -1109,6 +1109,24 @@ static expr_t *type_specifier(parser_t *p) {
     case token_FUNC:
         x = func_type(p);
         break;
+    case token_LBRACK:
+        {
+            expect(p, token_LBRACK);
+            expr_t *len = NULL;
+            if (p->tok != token_RBRACK) {
+                len = constant_expression(p);
+            }
+            expect(p, token_RBRACK);
+            expr_t type = {
+                .type = ast_TYPE_ARRAY,
+                .array = {
+                    .elt = type_specifier(p),
+                    .len = len,
+                },
+            };
+            x = memdup(&type, sizeof(type));
+        }
+        break;
     default:
         error(p, "expected type, got %s", token_string(p->tok));
         break;
