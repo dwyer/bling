@@ -909,10 +909,8 @@ static stmt_t *statement(parser_t *p) {
     }
 
     if (accept(p, token_SWITCH)) {
-        // switch_statement | SWITCH '(' expression ')' case_statement* ;
-        expect(p, token_LPAREN);
+        // switch_statement | SWITCH expression case_statement* ;
         expr_t *tag = expression(p);
-        expect(p, token_RPAREN);
         expect(p, token_LBRACE);
         slice_t clauses = {.size = sizeof(stmt_t *)};
         while (p->tok == token_CASE || p->tok == token_DEFAULT) {

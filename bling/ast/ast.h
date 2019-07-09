@@ -50,10 +50,10 @@ typedef enum {
 
 } ast_node_type_t;
 
-typedef struct decl decl_t;
-typedef struct expr expr_t;
-typedef struct spec spec_t;
-typedef struct stmt stmt_t;
+typedef struct decl_t decl_t;
+typedef struct expr_t expr_t;
+typedef struct spec_t spec_t;
+typedef struct stmt_t stmt_t;
 
 typedef struct {
     expr_t *name;
@@ -66,7 +66,7 @@ typedef struct {
     bool is_const;
 } field_t;
 
-struct decl {
+struct decl_t {
     ast_node_type_t type;
     token_t store;
     union {
@@ -87,7 +87,7 @@ struct decl {
     };
 };
 
-struct expr {
+struct expr_t {
     ast_node_type_t type;
     union {
 
@@ -197,7 +197,7 @@ struct expr {
     };
 };
 
-struct stmt {
+struct stmt_t {
     ast_node_type_t type;
     union {
 
@@ -251,7 +251,7 @@ struct stmt {
     };
 };
 
-struct spec {
+struct spec_t {
     ast_node_type_t type;
     union {
 
