@@ -16,16 +16,14 @@ SRCS=runtime/runtime.h \
      cmd/blingc/main.c
 
 a.out: bazel-bin/cmd/blingc/blingc all.bling
-	cat runtime/clib.h >all.c
-	bazel-bin/cmd/blingc/blingc all.bling >>all.c
+	bazel-bin/cmd/blingc/blingc all.bling >all.c
 	cc all.c
 
 all.bling: bazel-bin/cmd/c2bling/c2bling
 	bazel-bin/cmd/c2bling/c2bling $(SRCS) >all.bling
 
 all.c: bazel-bin/cmd/c2c/c2c
-	cat runtime/clib.h >all.c
-	bazel-bin/cmd/c2c/c2c $(SRCS) >>all.c
+	bazel-bin/cmd/c2c/c2c $(SRCS) >all.c
 
 bazel-bin/cmd/blingc/blingc:
 	bazel build --copt="-g0" cmd/blingc

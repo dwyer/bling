@@ -32,9 +32,12 @@ int main(int argc, char *argv[]) {
         obj->name = *names;
         scope_insert(scope, obj);
     }
+    emitter_t printer = {.fp = stdout};
+    char *src = ioutil_read_file("runtime/clib.h");
+    fputs(src, printer.fp);
+    free(src);
     for (int i = 1; i < argc; i++) {
         file_t *file = parser_parse_file(argv[i], scope);
-        emitter_t printer = {.fp = stdout};
         emitter_emit_file(&printer, file);
         free(file->decls);
         free(file);
