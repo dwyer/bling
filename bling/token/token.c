@@ -11,6 +11,7 @@ extern char *token_string(token_t tok) {
     case token_STRING: return "STRING";
     case token_TYPE_NAME: return "TYPE";
 
+    case token_AS: return "$as";
     case token_BREAK: return "break";
     case token_CASE: return "case";
     case token_CONST: return "const";
@@ -90,7 +91,7 @@ extern char *token_string(token_t tok) {
 }
 
 extern token_t token_lookup(char *ident) {
-    for (token_t tok = token_BREAK; tok <= token_WHILE; tok++) {
+    for (token_t tok = token_AS; tok <= token_WHILE; tok++) {
         char *s = token_string(tok);
         if (!strcmp(ident, s)) {
             return tok;

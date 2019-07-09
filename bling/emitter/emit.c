@@ -78,7 +78,7 @@ static void print_expr(printer_t *p, expr_t *expr) {
     case ast_EXPR_CAST:
         print_expr(p, expr->cast.expr);
         print_space(p);
-        print_string(p, "$as");
+        print_token(p, token_AS);
         print_space(p);
         print_expr(p, expr->cast.type);
         break;
@@ -425,8 +425,8 @@ static void print_type(printer_t *p, expr_t *type) {
         break;
 
     case ast_TYPE_QUAL:
-        print_token(p, type->qual.qual);
-        print_space(p);
+        //print_token(p, type->qual.qual);
+        //print_space(p);
         print_type(p, type->qual.type);
         break;
 

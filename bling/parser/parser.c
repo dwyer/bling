@@ -372,7 +372,18 @@ static expr_t *cast_expression(parser_t *p) {
             return postfix_expression(p, memdup(&x, sizeof(x)));
         }
     }
-    return unary_expression(p);
+    expr_t *x = unary_expression(p);
+    if (accept(p, token_AS)) {
+        expr_t y = {
+            .type = ast_EXPR_CAST,
+            .cast = {
+                .type = type_specifier(p),
+                .expr = x,
+            },
+        };
+        x = memdup(&y, sizeof(y));
+    }
+    return x;
 }
 
 static expr_t *_binary_expression(expr_t *x, token_t op, expr_t *y) {
@@ -858,13 +869,11 @@ static stmt_t *statement(parser_t *p) {
 
     if (accept(p, token_IF)) {
         // if_statement
-        //         : IF '(' expression ')' compound_statement
-        //         | IF '(' expression ')' compound_statement ELSE compound_statement
-        //         | IF '(' expression ')' compound_statement ELSE if_statement
+        //         : IF expression compound_statement
+        //         | IF expression compound_statement ELSE compound_statement
+        //         | IF expression compound_statement ELSE if_statement
         //         ;
-        expect(p, token_LPAREN);
         expr_t *cond = expression(p);
-        expect(p, token_RPAREN);
         if (p->tok != token_LBRACE) {
             error(p, "`if` must be followed by a compound_statement");
         }
@@ -1164,6 +1173,7 @@ static expr_t *specifier_qualifier_list(parser_t *p) {
 static decl_t *declaration(parser_t *p, bool is_external) {
     switch (p->tok) {
     case token_TYPEDEF:
+    case token_VAR:
         {
             token_t keyword = p->tok;
             expect(p, keyword);
@@ -1183,57 +1193,30 @@ static decl_t *declaration(parser_t *p, bool is_external) {
             };
             return memdup(&decl, sizeof(decl));
         }
+    case token_FUNC:
+        {
+            decl_t decl = {.type = ast_DECL_FUNC};
+            expect(p, token_FUNC);
+            decl.func.name = identifier(p);
+            expect(p, token_LPAREN);
+            expr_t type = {.type = ast_TYPE_FUNC};
+            type.func.params = parameter_type_list(p, false);
+            expect(p, token_RPAREN);
+            if (p->tok != token_LBRACE && p->tok != token_SEMICOLON) {
+                type.func.result = type_specifier(p);
+            }
+            decl.func.type = memdup(&type, sizeof(type));
+            if (p->tok == token_LBRACE) {
+                decl.func.body = compound_statement(p);
+            } else {
+                expect(p, token_SEMICOLON);
+            }
+            return memdup(&decl, sizeof(decl));
+        }
     default:
         panic("cant handle it: %s", token_string(p->tok));
         return NULL;
     }
-    expr_t *type = declaration_specifiers(p, true);
-    expr_t *name = declarator(p, &type);
-    expr_t *value = NULL;
-    if (type->type == ast_TYPE_FUNC) {
-        decl_t decl = {
-            .type = ast_DECL_FUNC,
-            .func = {
-                .type = type,
-                .name = name,
-            },
-        };
-        if (is_external && p->tok == token_LBRACE) {
-            // function_definition
-            //         : declaration_specifiers declarator compound_statement ;
-            decl.func.body = compound_statement(p);
-        } else {
-            expect(p, token_SEMICOLON);
-        }
-        return memdup(&decl, sizeof(decl));
-    }
-    // init_declarator_list
-    //         : init_declarator
-    //         | init_declarator_list ',' init_declarator
-    //         ;
-    // init_declarator
-    //         : declarator
-    //         | declarator '=' initializer
-    //         ;
-    if (accept(p, token_ASSIGN)) {
-        value = initializer(p);
-    }
-    expect(p, token_SEMICOLON);
-    spec_t spec = {
-        .type = ast_SPEC_VALUE,
-        .value = {
-            .type = type,
-            .name = name,
-            .value = value,
-        },
-    };
-    decl_t decl = {
-        .type = ast_DECL_GEN,
-        .gen = {
-            .spec = memdup(&spec, sizeof(spec)),
-        },
-    };
-    return memdup(&decl, sizeof(decl));
 }
 
 static file_t *parse_file(parser_t *p) {

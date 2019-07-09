@@ -14,6 +14,7 @@ typedef enum {
     token_INT,
     token_STRING,
 
+    token_AS,
     token_BREAK,
     token_CASE,
     token_CONST,
