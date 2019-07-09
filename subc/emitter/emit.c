@@ -133,7 +133,7 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
     case ast_EXPR_SIZEOF:
         emit_token(e, token_SIZEOF);
         emit_token(e, token_LPAREN);
-        emit_expr(e, expr->sizeof_.x);
+        emit_type(e, expr->sizeof_.x, NULL);
         emit_token(e, token_RPAREN);
         break;
 
@@ -143,7 +143,7 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         break;
 
     case ast_TYPE_NAME:
-        emit_type(e, expr->type_name.type, NULL);
+        emit_expr(e, expr->type_name.type);
         break;
 
     default:
@@ -383,6 +383,10 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
             emit_tabs(e);
             emit_token(e, token_RBRACE);
         }
+        break;
+
+    case ast_TYPE_NAME:
+        emit_expr(e, type->type_name.type);
         break;
 
     case ast_TYPE_PTR:

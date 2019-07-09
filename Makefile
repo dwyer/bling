@@ -11,9 +11,9 @@ SRCS=runtime/runtime.h \
      bling/token/token.h bling/token/token.c \
      bling/ast/ast.h bling/ast/ast.c \
      bling/scanner/scanner.h bling/scanner/scanner.c \
-     subc/parser/parser.h subc/parser/parser.c \
-     bling/emitter/emit.h bling/emitter/emit.c \
-     cmd/c2bling/main.c
+     bling/parser/parser.h bling/parser/parser.c \
+     subc/emitter/emit.h subc/emitter/emit.c \
+     cmd/blingc/main.c
 
 a.out: bazel-bin/cmd/blingc/blingc all.bling
 	cat runtime/clib.h >all.c

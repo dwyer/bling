@@ -322,14 +322,7 @@ static expr_t *unary_expression(parser_t *p) {
         x->type = ast_EXPR_SIZEOF;
         expect(p, token_SIZEOF);
         expect(p, token_LPAREN);
-        if (is_type(p)) {
-            x->sizeof_.x = type_name(p);
-            if (p->tok == token_MUL) {
-                declarator(p, &x->sizeof_.x); // TODO assert result == NULL?
-            }
-        } else {
-            x->sizeof_.x = unary_expression(p);
-        }
+        x->sizeof_.x = type_specifier(p);
         expect(p, token_RPAREN);
         break;
     case token_DEC:
@@ -1064,8 +1057,9 @@ static stmt_t *compound_statement(parser_t *p) {
 static field_t *parse_field(parser_t *p, bool anon) {
     field_t field = {};
     field.is_const = accept(p, token_CONST);
-    if (p->tok == token_IDENT)
+    if (p->tok == token_IDENT) {
         field.name = identifier(p);
+    }
     if (field.name != NULL && (p->tok == token_COMMA || p->tok == token_RPAREN)) {
         field.type = field.name;
         field.name = NULL;

@@ -136,7 +136,7 @@ static void print_expr(printer_t *p, expr_t *expr) {
     case ast_EXPR_SIZEOF:
         print_token(p, token_SIZEOF);
         print_token(p, token_LPAREN);
-        print_expr(p, expr->sizeof_.x);
+        print_type(p, expr->sizeof_.x);
         print_token(p, token_RPAREN);
         break;
 
@@ -400,6 +400,10 @@ static void print_type(printer_t *p, expr_t *type) {
         }
         break;
 
+    case ast_TYPE_NAME:
+        print_type(p, type->type_name.type);
+        break;
+
     case ast_TYPE_PTR:
         type = type->ptr.type;
         if (type->type == ast_TYPE_FUNC) {
@@ -459,7 +463,7 @@ static void print_type(printer_t *p, expr_t *type) {
         break;
 
     default:
-        panic("/* [UNKNOWN TYPE] */");
+        panic("Unknown type: %d", type->type);
     }
 }
 

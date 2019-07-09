@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     }
     scope_t *scope = scope_new(NULL);
     for (char **names = types; *names; names++) {
-        object_t *obj = malloc(sizeof(*obj));
+        object_t *obj = malloc(sizeof(object_t *));
         obj->kind = obj_kind_TYPE;
         obj->name = *names;
         scope_insert(scope, obj);

@@ -5,7 +5,7 @@ static const desc_t _object_desc = {
 };
 
 extern scope_t *scope_new(scope_t *outer) {
-    scope_t *s = malloc(sizeof(*s));
+    scope_t *s = malloc(sizeof(scope_t));
     s->outer = outer;
     s->objects = make_map(&desc_str, &_object_desc);
     return s;
