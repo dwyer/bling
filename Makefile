@@ -15,8 +15,10 @@ SRCS=runtime/runtime.h \
      bling/emitter/emit.h bling/emitter/emit.c \
      cmd/c2bling/main.c
 
-test: bazel-bin/cmd/blingc/blingc all.bling
-	bazel-bin/cmd/blingc/blingc all.bling
+a.out: bazel-bin/cmd/blingc/blingc all.bling
+	cat runtime/clib.h >all.c
+	bazel-bin/cmd/blingc/blingc all.bling >>all.c
+	cc all.c
 
 all.bling: bazel-bin/cmd/c2bling/c2bling
 	bazel-bin/cmd/c2bling/c2bling $(SRCS) >all.bling

@@ -515,12 +515,14 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
         //         ;
         slice_t slice = {.size = sizeof(field_t *)};
         for (;;) {
-            expr_t *name = identifier(p);
-            expr_t *type = type_specifier(p);
-            field_t f = {
-                .type = type,
-                .name = name,
-            };
+            field_t f = {};
+            if (p->tok == token_UNION) {
+                // anonymous union
+                f.type = type_specifier(p);
+            } else {
+                f.name = identifier(p);
+                f.type = type_specifier(p);
+            }
             expect(p, token_SEMICOLON);
             field_t *field = memdup(&f, sizeof(f));
             slice = append(slice, &field);
@@ -766,30 +768,22 @@ static field_t *abstract_declarator(parser_t *p, expr_t *type) {
     return memdup(&declarator, sizeof(declarator));
 }
 
-static expr_t *initializer(parser_t *p) {
-    // initializer
-    //         : assignment_expression
-    //         | '{' initializer_list ','? '}'
-    //         ;
-    expr_t *x = ternary_expression(p);
+static expr_t *initializer_list(parser_t *p) {
     // initializer_list
     //         : designation? initializer
     //         | initializer_list ',' designation? initializer
     //         ;
-    if (!accept(p, token_LBRACE)) {
-        return x;
-    }
+    expect(p, token_LBRACE);
     slice_t list = {.size = sizeof(expr_t *)};
     while (p->tok != token_RBRACE && p->tok != token_EOF) {
         expr_t *value = initializer(p);
-        if (accept(p, token_COLON)) {
+        if (value->type == ast_EXPR_IDENT && accept(p, token_COLON)) {
             expr_t *key = value;
-            value = initializer(p);
             expr_t x = {
                 .type = ast_EXPR_KEY_VALUE,
                 .key_value = {
                     .key = key,
-                    .value = value,
+                    .value = initializer(p),
                 },
             };
             value = memdup(&x, sizeof(x));
@@ -807,6 +801,30 @@ static expr_t *initializer(parser_t *p) {
         },
     };
     return memdup(&expr, sizeof(expr));
+}
+
+static expr_t *initializer(parser_t *p) {
+    // initializer
+    //         : assignment_expression
+    //         | '{' initializer_list ','? '}'
+    //         | identifier '{' initializer_list ','? '}'
+    //         ;
+    if (p->tok == token_LBRACE) {
+        return initializer_list(p);
+    }
+    expr_t *x = NULL;
+    switch (p->tok) {
+    case token_LBRACK:
+        x = type_specifier(p);
+        return initializer_list(p);
+    default:
+        x = assignment_expression(p);
+        break;
+    }
+    if (x->type == ast_EXPR_IDENT && p->tok == token_LBRACE) {
+        return initializer_list(p);
+    }
+    return x;
 }
 
 static stmt_t *statement(parser_t *p) {
@@ -1083,6 +1101,7 @@ static expr_t *func_type(parser_t *p) {
         .type = ast_TYPE_FUNC,
         .func = {
             .params = params,
+            .result = result,
         },
     };
     return memdup(&x, sizeof(x));

@@ -334,7 +334,13 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
         break;
 
     case ast_TYPE_FUNC:
-        emit_type(e, type->func.result, name);
+        if (type->func.result != NULL) {
+            emit_type(e, type->func.result, name);
+        } else {
+            emit_string(e, "void");
+            emit_space(e);
+            emit_expr(e, name);
+        }
         emit_token(e, token_LPAREN);
         for (field_t **params = type->func.params; params && *params; ) {
             emit_field(e, *params);

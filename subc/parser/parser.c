@@ -1239,21 +1239,46 @@ static decl_t *declaration(parser_t *p, bool is_external) {
         value = initializer(p);
     }
     expect(p, token_SEMICOLON);
-    spec_t spec = {
-        .type = ast_SPEC_VALUE,
-        .value = {
-            .type = type,
-            .name = name,
-            .value = value,
-        },
-    };
-    decl_t decl = {
-        .type = ast_DECL_GEN,
-        .gen = {
-            .spec = memdup(&spec, sizeof(spec)),
-        },
-    };
-    return memdup(&decl, sizeof(decl));
+    if (name != NULL) {
+        spec_t spec = {
+            .type = ast_SPEC_VALUE,
+            .value = {
+                .type = type,
+                .name = name,
+                .value = value,
+            },
+        };
+        decl_t decl = {
+            .type = ast_DECL_GEN,
+            .gen = {
+                .spec = memdup(&spec, sizeof(spec)),
+            },
+        };
+        return memdup(&decl, sizeof(decl));
+    } else {
+        switch (type->type) {
+        case ast_TYPE_STRUCT:
+            name = type->struct_.name;
+            break;
+        default:
+            panic("FUCK: %d", type->type);
+            break;
+        }
+        spec_t spec = {
+            .type = ast_SPEC_TYPEDEF,
+            .typedef_ = {
+                .type = type,
+                .name = name,
+            },
+        };
+        decl_t decl = {
+            .type = ast_DECL_GEN,
+            .gen = {
+                .spec = memdup(&spec, sizeof(spec)),
+            },
+        };
+        return memdup(&decl, sizeof(decl));
+    }
 }
 
 static file_t *parse_file(parser_t *p) {
