@@ -73,7 +73,7 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
 
     case ast_EXPR_CAST:
         emit_token(e, token_LPAREN);
-        emit_expr(e, expr->cast.type);
+        emit_type(e, expr->cast.type, NULL);
         emit_token(e, token_RPAREN);
         emit_expr(e, expr->cast.expr);
         break;
@@ -147,7 +147,7 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         break;
 
     default:
-        emit_string(e, "/* [UNKNOWN EXPR] */");
+        panic("Unknown expr: %d", expr->type);
         break;
     }
 }
@@ -448,7 +448,7 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
         break;
 
     default:
-        panic("/* [UNKNOWN TYPE] */");
+        panic("Unknown type: %d", type->type);
     }
 
     if (name) {

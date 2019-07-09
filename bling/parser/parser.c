@@ -349,35 +349,22 @@ static expr_t *cast_expression(parser_t *p) {
     //         | '(' type_name ')' cast_expression
     //         ;
     if (accept(p, token_LPAREN)) {
-        if (is_type(p)) {
-            expr_t *type = type_name(p);
-            expect(p, token_RPAREN);
-            expr_t *x = cast_expression(p);
-            expr_t y = {
-                .type = ast_EXPR_CAST,
-                .cast = {
-                    .type = type,
-                    .expr = x,
-                },
-            };
-            return memdup(&y, sizeof(y));
-        } else {
-            expr_t x = {
-                .type = ast_EXPR_PAREN,
-                .paren = {
-                    .x = expression(p),
-                },
-            };
-            expect(p, token_RPAREN);
-            return postfix_expression(p, memdup(&x, sizeof(x)));
-        }
+        expr_t x = {
+            .type = ast_EXPR_PAREN,
+            .paren = {
+                .x = expression(p),
+            },
+        };
+        expect(p, token_RPAREN);
+        return postfix_expression(p, memdup(&x, sizeof(x)));
     }
     expr_t *x = unary_expression(p);
     if (accept(p, token_AS)) {
+        expr_t *type = type_specifier(p);
         expr_t y = {
             .type = ast_EXPR_CAST,
             .cast = {
-                .type = type_specifier(p),
+                .type = type,
                 .expr = x,
             },
         };
@@ -1097,14 +1084,20 @@ static expr_t *func_type(parser_t *p) {
     if (p->tok != token_SEMICOLON) {
         result = type_specifier(p);
     }
-    expr_t x = {
+    expr_t type = {
         .type = ast_TYPE_FUNC,
         .func = {
             .params = params,
             .result = result,
         },
     };
-    return memdup(&x, sizeof(x));
+    expr_t ptr = {
+        .type = ast_TYPE_PTR,
+        .ptr = {
+            .type = memdup(&type, sizeof(type)),
+        },
+    };
+    return memdup(&ptr, sizeof(ptr));
 }
 
 static expr_t *type_specifier(parser_t *p) {
