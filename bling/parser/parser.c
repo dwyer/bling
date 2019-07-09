@@ -771,32 +771,28 @@ static expr_t *initializer(parser_t *p) {
     //         : assignment_expression
     //         | '{' initializer_list ','? '}'
     //         ;
-    if (!accept(p, token_LBRACE)) {
-        return assignment_expression(p);
-    }
+    expr_t *x = ternary_expression(p);
     // initializer_list
     //         : designation? initializer
     //         | initializer_list ',' designation? initializer
     //         ;
+    if (!accept(p, token_LBRACE)) {
+        return x;
+    }
     slice_t list = {.size = sizeof(expr_t *)};
     while (p->tok != token_RBRACE && p->tok != token_EOF) {
-        expr_t *value = NULL;
-        // designation : designator_list '=' ;
-        // designator_list : designator+ ;
-        // designator : '.' identifier
-        if (accept(p, token_PERIOD)) {
-            expr_t *key = identifier(p);
-            expect(p, token_ASSIGN);
+        expr_t *value = initializer(p);
+        if (accept(p, token_COLON)) {
+            expr_t *key = value;
+            value = initializer(p);
             expr_t x = {
                 .type = ast_EXPR_KEY_VALUE,
                 .key_value = {
                     .key = key,
-                    .value = initializer(p),
+                    .value = value,
                 },
             };
             value = memdup(&x, sizeof(x));
-        } else {
-            value = initializer(p);
         }
         list = append(list, &value);
         if (!accept(p, token_COMMA)) {
@@ -826,7 +822,7 @@ static stmt_t *statement(parser_t *p) {
     //         | expression_statement
     //         ;
 
-    if (is_type(p)) {
+    if (p->tok == token_VAR) {
         stmt_t stmt = {
             .type = ast_STMT_DECL,
             .decl = declaration(p, false),
@@ -1173,7 +1169,6 @@ static expr_t *specifier_qualifier_list(parser_t *p) {
 static decl_t *declaration(parser_t *p, bool is_external) {
     switch (p->tok) {
     case token_TYPEDEF:
-    case token_VAR:
         {
             token_t keyword = p->tok;
             expect(p, keyword);
@@ -1185,6 +1180,30 @@ static decl_t *declaration(parser_t *p, bool is_external) {
                 .typedef_ = {
                     .name = ident,
                     .type = type,
+                },
+            };
+            decl_t decl = {
+                .type = ast_DECL_GEN,
+                .gen = {.spec = memdup(&spec, sizeof(spec))},
+            };
+            return memdup(&decl, sizeof(decl));
+        }
+    case token_VAR:
+        {
+            expect(p, token_VAR);
+            expr_t *ident = identifier(p);
+            expr_t *type = type_specifier(p);
+            expr_t *value = NULL;
+            if (accept(p, token_ASSIGN)) {
+                value = initializer(p);
+            }
+            expect(p, token_SEMICOLON);
+            spec_t spec = {
+                .type = ast_SPEC_VALUE,
+                .value = {
+                    .name = ident,
+                    .type = type,
+                    .value = value,
                 },
             };
             decl_t decl = {
