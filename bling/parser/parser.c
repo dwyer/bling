@@ -832,9 +832,8 @@ static stmt_t *statement(parser_t *p) {
 
     if (accept(p, token_FOR)) {
         // for_statement
-        //         | FOR '(' simple_statement? ';' expression? ';' expression? ')'
+        //         | FOR simple_statement? ';' expression? ';' expression?
         //              compound_statement ;
-        expect(p, token_LPAREN);
         stmt_t *init = NULL;
         if (!accept(p, token_SEMICOLON)) {
             init = statement(p);
@@ -845,10 +844,9 @@ static stmt_t *statement(parser_t *p) {
         }
         expect(p, token_SEMICOLON);
         expr_t *post = NULL;
-        if (p->tok != token_RPAREN) {
+        if (p->tok != token_LBRACE) {
             post = expression(p);
         }
-        expect(p, token_RPAREN);
         stmt_t *body = compound_statement(p);
         stmt_t stmt = {
             .type = ast_STMT_ITER,
@@ -968,11 +966,9 @@ static stmt_t *statement(parser_t *p) {
     }
 
     if (accept(p, token_WHILE)) {
-        // while_statement : WHILE '(' expression ')' statement ;
-        expect(p, token_LPAREN);
+        // while_statement : WHILE expression compound_statement ;
         expr_t *cond = expression(p);
-        expect(p, token_RPAREN);
-        stmt_t *body = statement(p);
+        stmt_t *body = compound_statement(p);
         stmt_t stmt = {
             .type = ast_STMT_ITER,
             .iter = {
