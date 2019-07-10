@@ -33,7 +33,7 @@ static decl_t *declaration(parser_t *p, bool is_external);
 
 static field_t *parse_field(parser_t *p, bool anon);
 
-static void error(parser_t *p, char *fmt, ...) {
+extern void parser_error(parser_t *p, char *fmt, ...) {
     int line = 1;
     int col = 1;
     int line_offset = 0;
@@ -69,7 +69,7 @@ extern void parser_next(parser_t *p) {
     p->tok = scanner_scan(&p->scanner, &p->lit);
 }
 
-static bool accept(parser_t *p, token_t tok0) {
+extern bool accept(parser_t *p, token_t tok0) {
     if (p->tok == tok0) {
         parser_next(p);
         return true;
@@ -77,18 +77,18 @@ static bool accept(parser_t *p, token_t tok0) {
     return false;
 }
 
-static void expect(parser_t *p, token_t tok) {
+extern void expect(parser_t *p, token_t tok) {
     if (p->tok != tok) {
         char *lit = p->lit;
         if (lit == NULL) {
             lit = token_string(p->tok);
         }
-        error(p, "expected `%s`, got `%s`", token_string(tok), lit);
+        parser_error(p, "expected `%s`, got `%s`", token_string(tok), lit);
     }
     parser_next(p);
 }
 
-static expr_t *identifier(parser_t *p) {
+extern expr_t *identifier(parser_t *p) {
     expr_t *expr = NULL;
     switch (p->tok) {
     case token_IDENT:
@@ -104,7 +104,7 @@ static expr_t *identifier(parser_t *p) {
     return expr;
 }
 
-static expr_t *primary_expression(parser_t *p) {
+extern expr_t *primary_expression(parser_t *p) {
     // primary_expression
     //         : IDENTIFIER
     //         | CONSTANT
@@ -142,7 +142,7 @@ static expr_t *primary_expression(parser_t *p) {
             return memdup(&x, sizeof(x));
         }
     default:
-        error(p, "bad expr: %s: %s", token_string(p->tok), p->lit);
+        parser_error(p, "bad expr: %s: %s", token_string(p->tok), p->lit);
         return NULL;
     }
 }
@@ -278,7 +278,7 @@ static expr_t *unary_expression(parser_t *p) {
         break;
     case token_DEC:
     case token_INC:
-        error(p, "unary `%s` not supported in subc", token_string(p->tok));
+        parser_error(p, "unary `%s` not supported in subc", token_string(p->tok));
         break;
     default:
         x = postfix_expression(p, NULL);
@@ -666,7 +666,7 @@ static stmt_t *statement(parser_t *p) {
         //         ;
         expr_t *cond = expression(p);
         if (p->tok != token_LBRACE) {
-            error(p, "`if` must be followed by a compound_statement");
+            parser_error(p, "`if` must be followed by a compound_statement");
         }
         stmt_t *body = compound_statement(p);
         stmt_t *else_ = NULL;
@@ -676,7 +676,7 @@ static stmt_t *statement(parser_t *p) {
             } else if (p->tok == token_LBRACE) {
                 else_ = compound_statement(p);
             } else {
-                error(p, "`else` must be followed by an if_statement or compound_statement");
+                parser_error(p, "`else` must be followed by an if_statement or compound_statement");
             }
         }
         stmt_t stmt = {
@@ -931,7 +931,7 @@ static expr_t *type_specifier(parser_t *p) {
         }
         break;
     default:
-        error(p, "expected type, got %s", token_string(p->tok));
+        parser_error(p, "expected type, got %s", token_string(p->tok));
         break;
     }
     return x;

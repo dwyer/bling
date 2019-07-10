@@ -19,3 +19,8 @@ typedef struct {
 extern void parser_declare(parser_t *p, scope_t *s, obj_kind_t kind, char *name);
 extern void parser_next(parser_t *p);
 extern void parser_init(parser_t *p, char *filename, char *src);
+extern void parser_error(parser_t *p, char *fmt, ...);
+extern bool accept(parser_t *p, token_t tok);
+extern void expect(parser_t *p, token_t tok);
+extern expr_t *identifier(parser_t *p);
+extern expr_t *primary_expression(parser_t *p);

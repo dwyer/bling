@@ -45,115 +45,6 @@ static bool is_type(parser_t *p) {
     }
 }
 
-static void error(parser_t *p, char *fmt, ...) {
-    int line = 1;
-    int col = 1;
-    int line_offset = 0;
-    for (int i = 0; i < p->scanner.offset; i++) {
-        if (p->scanner.src[i] == '\n') {
-            line++;
-            line_offset = i + 1;
-            col = 1;
-        } else {
-            col++;
-        }
-    }
-    fprintf(stderr, "%s:%d:%d: ", p->filename, line, col);
-    va_list ap;
-    va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    fputc('\n', stderr);
-    for (int i = line_offset; ; i++) {
-        int ch = p->scanner.src[i];
-        fputc(ch, stderr);
-        if (!ch || ch == '\n') {
-            break;
-        }
-    }
-    fputc('\n', stderr);
-    panic("panicing");
-    exit(1);
-}
-
-static bool accept(parser_t *p, token_t tok0) {
-    if (p->tok == tok0) {
-        parser_next(p);
-        return true;
-    }
-    return false;
-}
-
-static void expect(parser_t *p, token_t tok) {
-    if (p->tok != tok) {
-        char *lit = p->lit;
-        if (lit == NULL) {
-            lit = token_string(p->tok);
-        }
-        error(p, "expected `%s`, got `%s`", token_string(tok), lit);
-    }
-    parser_next(p);
-}
-
-static expr_t *identifier(parser_t *p) {
-    expr_t *expr = NULL;
-    switch (p->tok) {
-    case token_IDENT:
-        expr = malloc(sizeof(expr_t));
-        expr->type = ast_EXPR_IDENT;
-        expr->ident.name = strdup(p->lit);
-        break;
-    default:
-        expect(p, token_IDENT);
-        break;
-    }
-    parser_next(p);
-    return expr;
-}
-
-static expr_t *primary_expression(parser_t *p) {
-    // primary_expression
-    //         : IDENTIFIER
-    //         | CONSTANT
-    //         | STRING_LITERAL
-    //         | '(' expression ')'
-    //         ;
-    switch (p->tok) {
-    case token_IDENT:
-        return identifier(p);
-    case token_CHAR:
-    case token_FLOAT:
-    case token_INT:
-    case token_STRING:
-        {
-            expr_t x = {
-                .type = ast_EXPR_BASIC_LIT,
-                .basic_lit = {
-                    .kind = p->tok,
-                    .value = strdup(p->lit),
-                },
-            };
-            parser_next(p);
-            return memdup(&x, sizeof(x));
-        }
-    case token_LPAREN:
-        {
-            expect(p, token_LPAREN);
-            expr_t x = {
-                .type = ast_EXPR_PAREN,
-                .paren = {
-                    .x = expression(p),
-                },
-            };
-            expect(p, token_RPAREN);
-            return memdup(&x, sizeof(x));
-        }
-    default:
-        error(p, "bad expr: %s: %s", token_string(p->tok), p->lit);
-        return NULL;
-    }
-}
-
 static expr_t *postfix_expression(parser_t *p, expr_t *x) {
     // postfix_expression
     //         : primary_expression
@@ -292,7 +183,7 @@ static expr_t *unary_expression(parser_t *p) {
         break;
     case token_DEC:
     case token_INC:
-        error(p, "unary `%s` not supported in subc", token_string(p->tok));
+        parser_error(p, "unary `%s` not supported in subc", token_string(p->tok));
         break;
     default:
         x = postfix_expression(p, NULL);
@@ -848,7 +739,7 @@ static stmt_t *statement(parser_t *p) {
         expr_t *cond = expression(p);
         expect(p, token_RPAREN);
         if (p->tok != token_LBRACE) {
-            error(p, "`if` must be followed by a compound_statement");
+            parser_error(p, "`if` must be followed by a compound_statement");
         }
         stmt_t *body = compound_statement(p);
         stmt_t *else_ = NULL;
@@ -858,7 +749,7 @@ static stmt_t *statement(parser_t *p) {
             } else if (p->tok == token_LBRACE) {
                 else_ = compound_statement(p);
             } else {
-                error(p, "`else` must be followed by an if_statement or compound_statement");
+                parser_error(p, "`else` must be followed by an if_statement or compound_statement");
             }
         }
         stmt_t stmt = {
@@ -1066,7 +957,7 @@ static expr_t *type_specifier(parser_t *p) {
     switch (p->tok) {
     case token_SIGNED:
     case token_UNSIGNED:
-        error(p, "`%s` is not supported in subc", token_string(p->tok));
+        parser_error(p, "`%s` is not supported in subc", token_string(p->tok));
         break;
     case token_STRUCT:
     case token_UNION:
@@ -1080,9 +971,9 @@ static expr_t *type_specifier(parser_t *p) {
         break;
     default:
         if (p->lit) {
-            error(p, "expected type, got %s", p->lit);
+            parser_error(p, "expected type, got %s", p->lit);
         } else {
-            error(p, "expected type, got %s", token_string(p->tok));
+            parser_error(p, "expected type, got %s", token_string(p->tok));
         }
         break;
     }
