@@ -12,6 +12,7 @@ SRCS=runtime/runtime.h \
      bling/ast/ast.h bling/ast/ast.c \
      bling/scanner/scanner.h bling/scanner/scanner.c \
      bling/parser/parser.h bling/parser/parser.c \
+     bling/emitter/emit.h bling/emitter/emit.c \
      subc/emitter/emit.h subc/emitter/emit.c \
      cmd/blingc/main.c
 

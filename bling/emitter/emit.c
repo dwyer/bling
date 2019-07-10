@@ -1,63 +1,67 @@
 #include "bling/emitter/emit.h"
 #include "bling/token/token.h"
 
-static void print_decl(printer_t *p, decl_t *decl);
-static void print_expr(printer_t *p, expr_t *expr);
-static void print_type(printer_t *p, expr_t *type);
-
-static void print_string(printer_t *p, const char *s) {
-    fputs(s, p->fp);
+extern void emit_string(emitter_t *e, const char *s) {
+    fputs(s, e->fp);
 }
 
-static void print_space(printer_t *p) {
-    print_string(p, " ");
+extern void emit_space(emitter_t *e) {
+    emit_string(e, " ");
 }
 
-static void print_newline(printer_t *p) {
-    print_string(p, "\n");
+extern void emit_newline(emitter_t *e) {
+    emit_string(e, "\n");
 }
 
-static void print_tabs(printer_t *p) {
-    for (int i = 0; i < p->indent; i++) {
-        print_string(p, "    ");
+extern void emit_tabs(emitter_t *e) {
+    for (int i = 0; i < e->indent; i++) {
+        emit_string(e, "    ");
     }
 }
 
-static void print_token(printer_t *p, token_t tok) {
-    print_string(p, token_string(tok));
+extern void emit_token(emitter_t *e, token_t tok) {
+    emit_string(e, token_string(tok));
 }
 
-static void print_field(printer_t *p, field_t *field) {
+static void print_decl(emitter_t *p, decl_t *decl);
+static void print_expr(emitter_t *p, expr_t *expr);
+static void print_type(emitter_t *p, expr_t *type);
+
+static void print_token(emitter_t *p, token_t tok) {
+    emit_string(p, token_string(tok));
+}
+
+static void print_field(emitter_t *p, field_t *field) {
     if (field->type == NULL && field->name == NULL) {
-        print_string(p, "...");
+        emit_string(p, "...");
     } else {
         if (field->is_const) {
             print_token(p, token_CONST);
-            print_space(p);
+            emit_space(p);
         }
         if (field->name != NULL) {
             print_expr(p, field->name);
-            print_space(p);
+            emit_space(p);
         }
         print_type(p, field->type);
     }
 }
 
-static void print_expr(printer_t *p, expr_t *expr) {
+static void print_expr(emitter_t *p, expr_t *expr) {
     if (!expr) {
         panic("print_expr: expr is NULL");
     }
     switch (expr->type) {
 
     case ast_EXPR_BASIC_LIT:
-        print_string(p, expr->basic_lit.value);
+        emit_string(p, expr->basic_lit.value);
         break;
 
     case ast_EXPR_BINARY:
         print_expr(p, expr->binary.x);
-        print_space(p);
+        emit_space(p);
         print_token(p, expr->binary.op);
-        print_space(p);
+        emit_space(p);
         print_expr(p, expr->binary.y);
         break;
 
@@ -69,7 +73,7 @@ static void print_expr(printer_t *p, expr_t *expr) {
             args++;
             if (*args) {
                 print_token(p, token_COMMA);
-                print_space(p);
+                emit_space(p);
             }
         }
         print_token(p, token_RPAREN);
@@ -77,29 +81,29 @@ static void print_expr(printer_t *p, expr_t *expr) {
 
     case ast_EXPR_CAST:
         print_expr(p, expr->cast.expr);
-        print_space(p);
+        emit_space(p);
         print_token(p, token_AS);
-        print_space(p);
+        emit_space(p);
         print_expr(p, expr->cast.type);
         break;
 
     case ast_EXPR_COMPOUND:
         print_token(p, token_LBRACE);
-        print_newline(p);
+        emit_newline(p);
         p->indent++;
         for (expr_t **exprs = expr->compound.list; exprs && *exprs; exprs++) {
-            print_tabs(p);
+            emit_tabs(p);
             print_expr(p, *exprs);
             print_token(p, token_COMMA);
-            print_newline(p);
+            emit_newline(p);
         }
         p->indent--;
-        print_tabs(p);
+        emit_tabs(p);
         print_token(p, token_RBRACE);
         break;
 
     case ast_EXPR_IDENT:
-        print_string(p, expr->ident.name);
+        emit_string(p, expr->ident.name);
         break;
 
     case ast_EXPR_INDEX:
@@ -117,7 +121,7 @@ static void print_expr(printer_t *p, expr_t *expr) {
     case ast_EXPR_KEY_VALUE:
         print_expr(p, expr->key_value.key);
         print_token(p, token_COLON);
-        print_space(p);
+        emit_space(p);
         print_expr(p, expr->key_value.value);
         break;
 
@@ -150,49 +154,49 @@ static void print_expr(printer_t *p, expr_t *expr) {
         break;
 
     default:
-        print_string(p, "/* [UNKNOWN EXPR] */");
+        emit_string(p, "/* [UNKNOWN EXPR] */");
         break;
     }
 }
 
-static void print_stmt(printer_t *p, stmt_t *stmt) {
+static void print_stmt(emitter_t *p, stmt_t *stmt) {
     switch (stmt->type) {
 
     case ast_STMT_BLOCK:
         print_token(p, token_LBRACE);
-        print_newline(p);
+        emit_newline(p);
         p->indent++;
         for (stmt_t **stmts = stmt->block.stmts; stmts && *stmts; stmts++) {
             switch ((*stmts)->type) {
             case ast_STMT_LABEL:
                 break;
             default:
-                print_tabs(p);
+                emit_tabs(p);
                 break;
             }
             print_stmt(p, *stmts);
-            print_newline(p);
+            emit_newline(p);
         }
         p->indent--;
-        print_tabs(p);
+        emit_tabs(p);
         print_token(p, token_RBRACE);
         break;
 
     case ast_STMT_CASE:
         if (stmt->case_.expr) {
             print_token(p, token_CASE);
-            print_space(p);
+            emit_space(p);
             print_expr(p, stmt->case_.expr);
         } else {
             print_token(p, token_DEFAULT);
         }
         print_token(p, token_COLON);
-        print_newline(p);
+        emit_newline(p);
         p->indent++;
         for (stmt_t **stmts = stmt->case_.stmts; stmts && *stmts; stmts++) {
-            print_tabs(p);
+            emit_tabs(p);
             print_stmt(p, *stmts);
-            print_newline(p);
+            emit_newline(p);
         }
         p->indent--;
         break;
@@ -208,28 +212,28 @@ static void print_stmt(printer_t *p, stmt_t *stmt) {
 
     case ast_STMT_IF:
         print_token(p, token_IF);
-        print_space(p);
+        emit_space(p);
         print_expr(p, stmt->if_.cond);
-        print_space(p);
+        emit_space(p);
         print_stmt(p, stmt->if_.body);
         if (stmt->if_.else_) {
-            print_space(p);
+            emit_space(p);
             print_token(p, token_ELSE);
-            print_space(p);
+            emit_space(p);
             print_stmt(p, stmt->if_.else_);
         }
         break;
 
     case ast_STMT_ITER:
         print_token(p, stmt->iter.kind);
-        print_space(p);
+        emit_space(p);
         if (stmt->iter.kind == token_FOR) {
             if (stmt->iter.init) {
                 print_stmt(p, stmt->iter.init);
-                print_space(p);
+                emit_space(p);
             } else {
                 print_token(p, token_SEMICOLON);
-                print_space(p);
+                emit_space(p);
             }
         }
         if (stmt->iter.cond) {
@@ -237,19 +241,19 @@ static void print_stmt(printer_t *p, stmt_t *stmt) {
         }
         if (stmt->iter.kind == token_FOR) {
             print_token(p, token_SEMICOLON);
-            print_space(p);
+            emit_space(p);
             if (stmt->iter.post) {
                 print_expr(p, stmt->iter.post);
             }
         }
-        print_space(p);
+        emit_space(p);
         print_stmt(p, stmt->iter.body);
         break;
 
     case ast_STMT_JUMP:
         print_token(p, stmt->jump.keyword);
         if (stmt->jump.label) {
-            print_space(p);
+            emit_space(p);
             print_expr(p, stmt->jump.label);
         }
         print_token(p, token_SEMICOLON);
@@ -263,7 +267,7 @@ static void print_stmt(printer_t *p, stmt_t *stmt) {
     case ast_STMT_RETURN:
         print_token(p, token_RETURN);
         if (stmt->return_.x) {
-            print_space(p);
+            emit_space(p);
             print_expr(p, stmt->return_.x);
         }
         print_token(p, token_SEMICOLON);
@@ -271,33 +275,33 @@ static void print_stmt(printer_t *p, stmt_t *stmt) {
 
     case ast_STMT_SWITCH:
         print_token(p, token_SWITCH);
-        print_space(p);
+        emit_space(p);
         print_expr(p, stmt->switch_.tag);
-        print_space(p);
+        emit_space(p);
         print_token(p, token_LBRACE);
-        print_newline(p);
+        emit_newline(p);
         for (stmt_t **stmts = stmt->switch_.stmts; stmts && *stmts; stmts++) {
-            print_tabs(p);
+            emit_tabs(p);
             print_stmt(p, *stmts);
         }
-        print_tabs(p);
+        emit_tabs(p);
         print_token(p, token_RBRACE);
         break;
 
     default:
-        print_string(p, "/* [UNKNOWN STMT] */;");
+        emit_string(p, "/* [UNKNOWN STMT] */;");
         break;
     }
 }
 
-static void print_spec(printer_t *p, spec_t *spec) {
+static void print_spec(emitter_t *p, spec_t *spec) {
     switch (spec->type) {
 
     case ast_SPEC_TYPEDEF:
         print_token(p, token_TYPEDEF);
-        print_space(p);
+        emit_space(p);
         print_expr(p, spec->typedef_.name);
-        print_space(p);
+        emit_space(p);
         print_type(p, spec->typedef_.type);
         print_token(p, token_SEMICOLON);
         break;
@@ -305,15 +309,15 @@ static void print_spec(printer_t *p, spec_t *spec) {
     case ast_SPEC_VALUE:
         print_token(p, token_VAR);
         if (spec->value.name) {
-            print_space(p);
+            emit_space(p);
             print_expr(p, spec->value.name);
         }
-        print_space(p);
+        emit_space(p);
         print_type(p, spec->value.type);
         if (spec->value.value) {
-            print_space(p);
+            emit_space(p);
             print_token(p, token_ASSIGN);
-            print_space(p);
+            emit_space(p);
             if (spec->value.value->type == ast_EXPR_COMPOUND) {
                 print_type(p, spec->value.type);
             }
@@ -323,7 +327,7 @@ static void print_spec(printer_t *p, spec_t *spec) {
         break;
 
     default:
-        print_string(p, "/* [UNKNOWN SPEC] */");
+        emit_string(p, "/* [UNKNOWN SPEC] */");
         break;
 
     }
@@ -341,7 +345,7 @@ static bool is_void(expr_t *type) {
     return type->type == ast_EXPR_IDENT && streq(type->ident.name, "void");
 }
 
-static void print_type(printer_t *p, expr_t *type) {
+static void print_type(emitter_t *p, expr_t *type) {
     switch (type->type) {
     case ast_TYPE_ARRAY:
         print_token(p, token_LBRACK);
@@ -359,12 +363,12 @@ static void print_type(printer_t *p, expr_t *type) {
             params++;
             if (*params != NULL) {
                 print_token(p, token_COMMA);
-                print_space(p);
+                emit_space(p);
             }
         }
         print_token(p, token_RPAREN);
         if (!is_void(type->func.result)) {
-            print_space(p);
+            emit_space(p);
             print_type(p, type->func.result);
         }
         break;
@@ -372,30 +376,30 @@ static void print_type(printer_t *p, expr_t *type) {
     case ast_TYPE_ENUM:
         print_token(p, token_ENUM);
         if (type->enum_.name) {
-            print_space(p);
+            emit_space(p);
             print_expr(p, type->enum_.name);
         }
         if (type->enum_.enumerators) {
-            print_space(p);
+            emit_space(p);
             print_token(p, token_LBRACE);
-            print_newline(p);
+            emit_newline(p);
             p->indent++;
             for (enumerator_t **enumerators = type->enum_.enumerators;
                     enumerators && *enumerators; enumerators++) {
                 enumerator_t *enumerator = *enumerators;
-                print_tabs(p);
+                emit_tabs(p);
                 print_expr(p, enumerator->name);
                 if (enumerator->value) {
-                    print_space(p);
+                    emit_space(p);
                     print_token(p, token_ASSIGN);
-                    print_space(p);
+                    emit_space(p);
                     print_expr(p, enumerator->value);
                 }
                 print_token(p, token_COMMA);
-                print_newline(p);
+                emit_newline(p);
             }
             p->indent--;
-            print_tabs(p);
+            emit_tabs(p);
             print_token(p, token_RBRACE);
         }
         break;
@@ -414,12 +418,12 @@ static void print_type(printer_t *p, expr_t *type) {
                 params++;
                 if (*params != NULL) {
                     print_token(p, token_COMMA);
-                    print_space(p);
+                    emit_space(p);
                 }
             }
             print_token(p, token_RPAREN);
             if (!is_void(type->func.result)) {
-                print_space(p);
+                emit_space(p);
                 print_type(p, type->func.result);
             }
         } else {
@@ -430,30 +434,30 @@ static void print_type(printer_t *p, expr_t *type) {
 
     case ast_TYPE_QUAL:
         //print_token(p, type->qual.qual);
-        //print_space(p);
+        //emit_space(p);
         print_type(p, type->qual.type);
         break;
 
     case ast_TYPE_STRUCT:
         print_token(p, type->struct_.tok);
         if (type->struct_.name) {
-            print_space(p);
+            emit_space(p);
             print_expr(p, type->struct_.name);
         }
         if (type->struct_.fields) {
-            print_space(p);
+            emit_space(p);
             print_token(p, token_LBRACE);
-            print_newline(p);
+            emit_newline(p);
             p->indent++;
             for (field_t **fields = type->struct_.fields; fields && *fields;
                     fields++) {
-                print_tabs(p);
+                emit_tabs(p);
                 print_field(p, *fields);
                 print_token(p, token_SEMICOLON);
-                print_newline(p);
+                emit_newline(p);
             }
             p->indent--;
-            print_tabs(p);
+            emit_tabs(p);
             print_token(p, token_RBRACE);
         }
         break;
@@ -467,16 +471,16 @@ static void print_type(printer_t *p, expr_t *type) {
     }
 }
 
-static void print_decl(printer_t *p, decl_t *decl) {
+static void print_decl(emitter_t *p, decl_t *decl) {
     switch (decl->type) {
 
     case ast_DECL_FUNC:
         print_token(p, token_FUNC);
-        print_space(p);
+        emit_space(p);
         print_expr(p, decl->func.name);
         print_type(p, decl->func.type);
         if (decl->func.body) {
-            print_space(p);
+            emit_space(p);
             print_stmt(p, decl->func.body);
         } else {
             print_token(p, token_SEMICOLON);
@@ -488,19 +492,19 @@ static void print_decl(printer_t *p, decl_t *decl) {
         break;
 
     default:
-        print_string(p, "/* [UNKNOWN DECL] */");
+        emit_string(p, "/* [UNKNOWN DECL] */");
         break;
     }
 }
 
-extern void printer_print_file(printer_t *p, file_t *file) {
-    print_string(p, "// ");
-    print_string(p, file->filename);
-    print_newline(p);
-    print_newline(p);
+extern void printer_print_file(emitter_t *p, file_t *file) {
+    emit_string(p, "// ");
+    emit_string(p, file->filename);
+    emit_newline(p);
+    emit_newline(p);
     for (decl_t **decls = file->decls; decls && *decls; decls++) {
         print_decl(p, *decls);
-        print_newline(p);
-        print_newline(p);
+        emit_newline(p);
+        emit_newline(p);
     }
 }

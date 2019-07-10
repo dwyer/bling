@@ -1,31 +1,9 @@
 #include "subc/emitter/emit.h"
 #include "bling/token/token.h"
 
-static void emit_decl(emitter_t *e, decl_t *decl);
-static void emit_expr(emitter_t *e, expr_t *expr);
-static void emit_type(emitter_t *e, expr_t *type, expr_t *name);
-
-static void emit_string(emitter_t *e, const char *s) {
-    fputs(s, e->fp);
-}
-
-static void emit_space(emitter_t *e) {
-    emit_string(e, " ");
-}
-
-static void emit_newline(emitter_t *e) {
-    emit_string(e, "\n");
-}
-
-static void emit_tabs(emitter_t *e) {
-    for (int i = 0; i < e->indent; i++) {
-        emit_string(e, "    ");
-    }
-}
-
-static void emit_token(emitter_t *e, token_t tok) {
-    emit_string(e, token_string(tok));
-}
+static void emit_c_decl(emitter_t *e, decl_t *decl);
+static void emit_c_expr(emitter_t *e, expr_t *expr);
+static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name);
 
 static void emit_field(emitter_t *e, field_t *field) {
     if (field->type == NULL && field->name == NULL) {
@@ -35,13 +13,13 @@ static void emit_field(emitter_t *e, field_t *field) {
             emit_token(e, token_CONST);
             emit_space(e);
         }
-        emit_type(e, field->type, field->name);
+        emit_c_type(e, field->type, field->name);
     }
 }
 
-static void emit_expr(emitter_t *e, expr_t *expr) {
+static void emit_c_expr(emitter_t *e, expr_t *expr) {
     if (!expr) {
-        panic("emit_expr: expr is NULL");
+        panic("emit_c_expr: expr is NULL");
     }
     switch (expr->type) {
 
@@ -50,18 +28,18 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         break;
 
     case ast_EXPR_BINARY:
-        emit_expr(e, expr->binary.x);
+        emit_c_expr(e, expr->binary.x);
         emit_space(e);
         emit_token(e, expr->binary.op);
         emit_space(e);
-        emit_expr(e, expr->binary.y);
+        emit_c_expr(e, expr->binary.y);
         break;
 
     case ast_EXPR_CALL:
-        emit_expr(e, expr->call.func);
+        emit_c_expr(e, expr->call.func);
         emit_token(e, token_LPAREN);
         for (expr_t **args = expr->call.args; args && *args; ) {
-            emit_expr(e, *args);
+            emit_c_expr(e, *args);
             args++;
             if (*args) {
                 emit_token(e, token_COMMA);
@@ -73,9 +51,9 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
 
     case ast_EXPR_CAST:
         emit_token(e, token_LPAREN);
-        emit_type(e, expr->cast.type, NULL);
+        emit_c_type(e, expr->cast.type, NULL);
         emit_token(e, token_RPAREN);
-        emit_expr(e, expr->cast.expr);
+        emit_c_expr(e, expr->cast.expr);
         break;
 
     case ast_EXPR_COMPOUND:
@@ -84,7 +62,7 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         e->indent++;
         for (expr_t **exprs = expr->compound.list; exprs && *exprs; exprs++) {
             emit_tabs(e);
-            emit_expr(e, *exprs);
+            emit_c_expr(e, *exprs);
             emit_token(e, token_COMMA);
             emit_newline(e);
         }
@@ -98,52 +76,52 @@ static void emit_expr(emitter_t *e, expr_t *expr) {
         break;
 
     case ast_EXPR_INDEX:
-        emit_expr(e, expr->index.x);
+        emit_c_expr(e, expr->index.x);
         emit_token(e, token_LBRACK);
-        emit_expr(e, expr->index.index);
+        emit_c_expr(e, expr->index.index);
         emit_token(e, token_RBRACK);
         break;
 
     case ast_EXPR_INCDEC:
-        emit_expr(e, expr->incdec.x);
+        emit_c_expr(e, expr->incdec.x);
         emit_token(e, expr->incdec.tok);
         break;
 
     case ast_EXPR_KEY_VALUE:
         emit_token(e, token_PERIOD);
-        emit_expr(e, expr->key_value.key);
+        emit_c_expr(e, expr->key_value.key);
         emit_space(e);
         emit_token(e, token_ASSIGN);
         emit_space(e);
-        emit_expr(e, expr->key_value.value);
+        emit_c_expr(e, expr->key_value.value);
         break;
 
     case ast_EXPR_PAREN:
         emit_token(e, token_LPAREN);
-        emit_expr(e, expr->paren.x);
+        emit_c_expr(e, expr->paren.x);
         emit_token(e, token_RPAREN);
         break;
 
     case ast_EXPR_SELECTOR:
-        emit_expr(e, expr->selector.x);
+        emit_c_expr(e, expr->selector.x);
         emit_token(e, expr->selector.tok);
-        emit_expr(e, expr->selector.sel);
+        emit_c_expr(e, expr->selector.sel);
         break;
 
     case ast_EXPR_SIZEOF:
         emit_token(e, token_SIZEOF);
         emit_token(e, token_LPAREN);
-        emit_type(e, expr->sizeof_.x, NULL);
+        emit_c_type(e, expr->sizeof_.x, NULL);
         emit_token(e, token_RPAREN);
         break;
 
     case ast_EXPR_UNARY:
         emit_token(e, expr->unary.op);
-        emit_expr(e, expr->unary.x);
+        emit_c_expr(e, expr->unary.x);
         break;
 
     case ast_TYPE_NAME:
-        emit_expr(e, expr->type_name.type);
+        emit_c_expr(e, expr->type_name.type);
         break;
 
     default:
@@ -179,7 +157,7 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         if (stmt->case_.expr) {
             emit_token(e, token_CASE);
             emit_space(e);
-            emit_expr(e, stmt->case_.expr);
+            emit_c_expr(e, stmt->case_.expr);
         } else {
             emit_token(e, token_DEFAULT);
         }
@@ -195,11 +173,11 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         break;
 
     case ast_STMT_DECL:
-        emit_decl(e, stmt->decl);
+        emit_c_decl(e, stmt->decl);
         break;
 
     case ast_STMT_EXPR:
-        emit_expr(e, stmt->expr.x);
+        emit_c_expr(e, stmt->expr.x);
         emit_token(e, token_SEMICOLON);
         break;
 
@@ -207,7 +185,7 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         emit_token(e, token_IF);
         emit_space(e);
         emit_token(e, token_LPAREN);
-        emit_expr(e, stmt->if_.cond);
+        emit_c_expr(e, stmt->if_.cond);
         emit_token(e, token_RPAREN);
         emit_space(e);
         emit_stmt(e, stmt->if_.body);
@@ -233,13 +211,13 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
             }
         }
         if (stmt->iter.cond) {
-            emit_expr(e, stmt->iter.cond);
+            emit_c_expr(e, stmt->iter.cond);
         }
         if (stmt->iter.kind == token_FOR) {
             emit_token(e, token_SEMICOLON);
             emit_space(e);
             if (stmt->iter.post) {
-                emit_expr(e, stmt->iter.post);
+                emit_c_expr(e, stmt->iter.post);
             }
         }
         emit_token(e, token_RPAREN);
@@ -251,13 +229,13 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         emit_token(e, stmt->jump.keyword);
         if (stmt->jump.label) {
             emit_space(e);
-            emit_expr(e, stmt->jump.label);
+            emit_c_expr(e, stmt->jump.label);
         }
         emit_token(e, token_SEMICOLON);
         break;
 
     case ast_STMT_LABEL:
-        emit_expr(e, stmt->label.label);
+        emit_c_expr(e, stmt->label.label);
         emit_token(e, token_COLON);
         break;
 
@@ -265,7 +243,7 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         emit_token(e, token_RETURN);
         if (stmt->return_.x) {
             emit_space(e);
-            emit_expr(e, stmt->return_.x);
+            emit_c_expr(e, stmt->return_.x);
         }
         emit_token(e, token_SEMICOLON);
         break;
@@ -274,7 +252,7 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         emit_token(e, token_SWITCH);
         emit_space(e);
         emit_token(e, token_LPAREN);
-        emit_expr(e, stmt->switch_.tag);
+        emit_c_expr(e, stmt->switch_.tag);
         emit_token(e, token_RPAREN);
         emit_space(e);
         emit_token(e, token_LBRACE);
@@ -299,17 +277,17 @@ static void emit_spec(emitter_t *e, spec_t *spec) {
     case ast_SPEC_TYPEDEF:
         emit_token(e, token_TYPEDEF);
         emit_space(e);
-        emit_type(e, spec->typedef_.type, spec->typedef_.name);
+        emit_c_type(e, spec->typedef_.type, spec->typedef_.name);
         emit_token(e, token_SEMICOLON);
         break;
 
     case ast_SPEC_VALUE:
-        emit_type(e, spec->value.type, spec->value.name);
+        emit_c_type(e, spec->value.type, spec->value.name);
         if (spec->value.value) {
             emit_space(e);
             emit_token(e, token_ASSIGN);
             emit_space(e);
-            emit_expr(e, spec->value.value);
+            emit_c_expr(e, spec->value.value);
         }
         emit_token(e, token_SEMICOLON);
         break;
@@ -321,13 +299,13 @@ static void emit_spec(emitter_t *e, spec_t *spec) {
     }
 }
 
-static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
+static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
     switch (type->type) {
     case ast_TYPE_ARRAY:
-        emit_type(e, type->array.elt, name);
+        emit_c_type(e, type->array.elt, name);
         emit_token(e, token_LBRACK);
         if (type->array.len) {
-            emit_expr(e, type->array.len);
+            emit_c_expr(e, type->array.len);
         }
         emit_token(e, token_RBRACK);
         name = NULL;
@@ -335,11 +313,11 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
 
     case ast_TYPE_FUNC:
         if (type->func.result != NULL) {
-            emit_type(e, type->func.result, name);
+            emit_c_type(e, type->func.result, name);
         } else {
             emit_string(e, "void");
             emit_space(e);
-            emit_expr(e, name);
+            emit_c_expr(e, name);
         }
         emit_token(e, token_LPAREN);
         for (field_t **params = type->func.params; params && *params; ) {
@@ -358,7 +336,7 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
         emit_token(e, token_ENUM);
         if (type->enum_.name) {
             emit_space(e);
-            emit_expr(e, type->enum_.name);
+            emit_c_expr(e, type->enum_.name);
         }
         if (type->enum_.enumerators) {
             emit_space(e);
@@ -369,12 +347,12 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
                     enumerators && *enumerators; enumerators++) {
                 enumerator_t *enumerator = *enumerators;
                 emit_tabs(e);
-                emit_expr(e, enumerator->name);
+                emit_c_expr(e, enumerator->name);
                 if (enumerator->value) {
                     emit_space(e);
                     emit_token(e, token_ASSIGN);
                     emit_space(e);
-                    emit_expr(e, enumerator->value);
+                    emit_c_expr(e, enumerator->value);
                 }
                 emit_token(e, token_COMMA);
                 emit_newline(e);
@@ -386,17 +364,17 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
         break;
 
     case ast_TYPE_NAME:
-        emit_expr(e, type->type_name.type);
+        emit_c_expr(e, type->type_name.type);
         break;
 
     case ast_TYPE_PTR:
         type = type->ptr.type;
         if (type->type == ast_TYPE_FUNC) {
-            emit_type(e, type->func.result, NULL);
+            emit_c_type(e, type->func.result, NULL);
             emit_token(e, token_LPAREN);
             emit_token(e, token_MUL);
             if (name != NULL) {
-                emit_expr(e, name);
+                emit_c_expr(e, name);
             }
             emit_token(e, token_RPAREN);
             emit_token(e, token_LPAREN);
@@ -411,7 +389,7 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
             emit_token(e, token_RPAREN);
             name = NULL;
         } else {
-            emit_type(e, type, NULL);
+            emit_c_type(e, type, NULL);
             emit_token(e, token_MUL);
         }
         break;
@@ -419,7 +397,7 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
     case ast_TYPE_QUAL:
         emit_token(e, type->qual.qual);
         emit_space(e);
-        emit_type(e, type->qual.type, name);
+        emit_c_type(e, type->qual.type, name);
         name = NULL;
         break;
 
@@ -427,7 +405,7 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
         emit_token(e, type->struct_.tok);
         if (type->struct_.name) {
             emit_space(e);
-            emit_expr(e, type->struct_.name);
+            emit_c_expr(e, type->struct_.name);
         }
         if (type->struct_.fields) {
             emit_space(e);
@@ -448,7 +426,7 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
         break;
 
     case ast_EXPR_IDENT:
-        emit_expr(e, type);
+        emit_c_expr(e, type);
         break;
 
     default:
@@ -457,18 +435,18 @@ static void emit_type(emitter_t *e, expr_t *type, expr_t *name) {
 
     if (name) {
         emit_space(e);
-        emit_expr(e, name);
+        emit_c_expr(e, name);
     }
 }
 
-static void emit_decl(emitter_t *e, decl_t *decl) {
+static void emit_c_decl(emitter_t *e, decl_t *decl) {
     if (decl->store != token_ILLEGAL) {
         emit_token(e, decl->store);
     }
     switch (decl->type) {
 
     case ast_DECL_FUNC:
-        emit_type(e, decl->func.type, decl->func.name);
+        emit_c_type(e, decl->func.type, decl->func.name);
         emit_space(e);
         if (decl->func.body) {
             emit_stmt(e, decl->func.body);
@@ -493,7 +471,7 @@ extern void emitter_emit_file(emitter_t *e, file_t *file) {
     emit_newline(e);
     emit_newline(e);
     for (decl_t **decls = file->decls; decls && *decls; decls++) {
-        emit_decl(e, *decls);
+        emit_c_decl(e, *decls);
         emit_newline(e);
         emit_newline(e);
     }

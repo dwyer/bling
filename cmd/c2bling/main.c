@@ -34,8 +34,8 @@ int main(int argc, char *argv[]) {
     }
     for (int i = 1; i < argc; i++) {
         file_t *file = parser_parse_cfile(argv[i], scope);
-        printer_t printer = {.fp = stdout};
-        printer_print_file(&printer, file);
+        emitter_t emitter = {.fp = stdout};
+        printer_print_file(&emitter, file);
         free(file->decls);
         free(file);
     }
