@@ -11,6 +11,7 @@ cc_library(
         "//bling/token",
         "//bling/ast",
         "//bling/scanner",
+        "//bling/parser",
     ],
     visibility = ["//visibility:public"],
 )

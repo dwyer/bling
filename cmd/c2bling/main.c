@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
         scope_insert(scope, obj);
     }
     for (int i = 1; i < argc; i++) {
-        file_t *file = parser_parse_file(argv[i], scope);
+        file_t *file = parser_parse_cfile(argv[i], scope);
         printer_t printer = {.fp = stdout};
         printer_print_file(&printer, file);
         free(file->decls);

@@ -1,40 +1,18 @@
 #include "bling/parser/parser.h"
 
-typedef struct {
-    scanner_t scanner;
-    token_t tok;
-    char *lit;
-    char *filename;
-    scope_t *top_scope;
-    scope_t *pkg_scope;
-} parser_t;
-
-static void next(parser_t *p);
-
-static void *slice_to_nil_array(slice_t s) {
-    if (len(s)) {
-        void *nil = NULL;
-        s = append(s, &nil);
-    }
-    return s.array;
-}
-
-static void init(parser_t *p, char *filename, char *src) {
+extern void parser_init(parser_t *p, char *filename, char *src) {
     p->filename = filename;
     p->lit = NULL;
     scanner_init(&p->scanner, src);
-    next(p);
+    parser_next(p);
 }
 
-static void open_scope(parser_t *p) {
-    p->top_scope = scope_new(p->top_scope);
-}
-
-static void close_scope(parser_t *p) {
-    scope_t *top = p->top_scope;
-    p->top_scope = top->outer;
-    scope_deinit(top);
-    free(top);
+extern void parser_declare(parser_t *p, scope_t *s, obj_kind_t kind, char *name) {
+    object_t obj = {
+        .kind = kind,
+        .name = name,
+    };
+    scope_insert(s, memdup(&obj, sizeof(obj)));
 }
 
 static expr_t *cast_expression(parser_t *p);
@@ -113,14 +91,14 @@ static void error(parser_t *p, char *fmt, ...) {
     exit(1);
 }
 
-static void next(parser_t *p) {
+extern void parser_next(parser_t *p) {
     free(p->lit);
     p->tok = scanner_scan(&p->scanner, &p->lit);
 }
 
 static bool accept(parser_t *p, token_t tok0) {
     if (p->tok == tok0) {
-        next(p);
+        parser_next(p);
         return true;
     }
     return false;
@@ -134,7 +112,7 @@ static void expect(parser_t *p, token_t tok) {
         }
         error(p, "expected `%s`, got `%s`", token_string(tok), lit);
     }
-    next(p);
+    parser_next(p);
 }
 
 static expr_t *identifier(parser_t *p) {
@@ -149,7 +127,7 @@ static expr_t *identifier(parser_t *p) {
         expect(p, token_IDENT);
         break;
     }
-    next(p);
+    parser_next(p);
     return expr;
 }
 
@@ -175,7 +153,7 @@ static expr_t *primary_expression(parser_t *p) {
                     .value = strdup(p->lit),
                 },
             };
-            next(p);
+            parser_next(p);
             return memdup(&x, sizeof(x));
         }
     case token_LPAREN:
@@ -255,7 +233,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
         case token_PERIOD:
             {
                 token_t tok = p->tok;
-                next(p);
+                parser_next(p);
                 expr_t y = {
                     .type = ast_EXPR_SELECTOR,
                     .selector = {
@@ -277,7 +255,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                         .tok = p->tok,
                     },
                 };
-                next(p);
+                parser_next(p);
                 x = memdup(&y, sizeof(y));
             }
             break;
@@ -314,7 +292,7 @@ static expr_t *unary_expression(parser_t *p) {
         x = malloc(sizeof(expr_t));
         x->type = ast_EXPR_UNARY;
         x->unary.op = p->tok;
-        next(p);
+        parser_next(p);
         x->unary.x = cast_expression(p);
         break;
     case token_SIZEOF:
@@ -452,7 +430,7 @@ static expr_t *assignment_expression(parser_t *p) {
     expr_t *x = ternary_expression(p);
     token_t op = assignment_operator(p);
     if (op != token_ILLEGAL) {
-        next(p);
+        parser_next(p);
         x = _binary_expression(x, op, assignment_expression(p));
     }
     return x;
@@ -987,7 +965,7 @@ static stmt_t *statement(parser_t *p) {
         //         ;
         {
             token_t keyword = p->tok;
-            next(p);
+            parser_next(p);
             expr_t *label = NULL;
             if (keyword == token_GOTO) {
                 label = identifier(p);
@@ -1147,7 +1125,7 @@ static expr_t *declaration_specifiers(parser_t *p, bool is_top) {
         switch (p->tok) {
         case token_EXTERN:
         case token_STATIC:
-            next(p);
+            parser_next(p);
             break;
         default:
             break;
@@ -1158,7 +1136,7 @@ static expr_t *declaration_specifiers(parser_t *p, bool is_top) {
     switch (p->tok) {
     case token_CONST:
         is_const = true;
-        next(p);
+        parser_next(p);
         break;
     default:
         break;
@@ -1301,7 +1279,7 @@ static file_t *parse_file(parser_t *p) {
 extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {
     char *src = ioutil_read_file(filename);
     parser_t p;
-    init(&p, filename, src);
+    parser_init(&p, filename, src);
     p.pkg_scope = pkg_scope;
     file_t *file = parse_file(&p);
     free(src);

@@ -73,3 +73,11 @@ extern void slice_append(slice_t *s, const void *x) {
     set_len(s, s->len + 1);
     slice_set(s, s->len - 1, x);
 }
+
+extern void *slice_to_nil_array(slice_t s) {
+    if (slice_len(&s)) {
+        void *nil = NULL;
+        slice_append(&s, &nil);
+    }
+    return s.array;
+}

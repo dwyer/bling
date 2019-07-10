@@ -40,6 +40,7 @@ extern void slice_get(const slice_t *s, int i, void *dst);
 extern void slice_set_len(slice_t *s, int len);
 extern void slice_set(slice_t *s, int i, const void *x);
 extern void slice_append(slice_t *s, const void *x);
+extern void *slice_to_nil_array(slice_t s);
 
 typedef enum {
     map_status_ok = 1,
