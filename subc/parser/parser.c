@@ -303,9 +303,8 @@ static expr_t *assignment_expression(parser_t *p) {
 static expr_t *expression(parser_t *p) {
     // expression
     //         : assignment_expression
-    //         | expression ',' assignment_expression
     //         ;
-    return assignment_expression(p);
+    return ternary_expression(p);
 }
 
 static expr_t *constant_expression(parser_t *p) {
@@ -696,7 +695,7 @@ static stmt_t *statement(parser_t *p) {
         expect(p, token_SEMICOLON);
         expr_t *post = NULL;
         if (p->tok != token_RPAREN) {
-            post = expression(p);
+            post = assignment_expression(p);
         }
         expect(p, token_RPAREN);
         stmt_t *body = compound_statement(p);
@@ -776,7 +775,7 @@ static stmt_t *statement(parser_t *p) {
             //         ;
             expr_t *expr = NULL;
             if (accept(p, token_CASE)) {
-                expr = expression(p);
+                expr = constant_expression(p);
             } else {
                 expect(p, token_DEFAULT);
             }
@@ -820,11 +819,11 @@ static stmt_t *statement(parser_t *p) {
     }
 
     if (accept(p, token_WHILE)) {
-        // while_statement : WHILE '(' expression ')' statement ;
+        // while_statement : WHILE '(' expression ')' compound_statement ;
         expect(p, token_LPAREN);
         expr_t *cond = expression(p);
         expect(p, token_RPAREN);
-        stmt_t *body = statement(p);
+        stmt_t *body = compound_statement(p);
         stmt_t stmt = {
             .type = ast_STMT_ITER,
             .iter = {
@@ -870,7 +869,7 @@ static stmt_t *statement(parser_t *p) {
 
     expr_t *x = NULL;
     if (p->tok != token_SEMICOLON) {
-        x = expression(p);
+        x = assignment_expression(p);
     }
     // labeled_statement
     //         : IDENTIFIER ':' statement
