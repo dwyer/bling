@@ -20,7 +20,7 @@ static expr_t *expression(parser_t *p);
 static expr_t *constant_expression(parser_t *p);
 static expr_t *initializer(parser_t *p);
 
-static expr_t *type_specifier(parser_t *p);
+static expr_t *parse_type(parser_t *p);
 static expr_t *struct_or_union_specifier(parser_t *p);
 static expr_t *enum_specifier(parser_t *p);
 static expr_t *pointer(parser_t *p);
@@ -30,7 +30,6 @@ static stmt_t *statement(parser_t *p);
 static stmt_t *compound_statement(parser_t *p);
 
 static decl_t *declaration(parser_t *p, bool is_external);
-
 static field_t *parse_field(parser_t *p, bool anon);
 
 extern void parser_error(parser_t *p, char *fmt, ...) {
@@ -153,9 +152,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
     //         | postfix_expression '[' expression ']'
     //         | postfix_expression '(' argument_expression_list? ')'
     //         | postfix_expression '.' IDENTIFIER
-    //         | postfix_expression '*' IDENTIFIER
-    //         | postfix_expression '++'
-    //         | postfix_expression '--'
+    //         | postfix_expression '->' IDENTIFIER
     //         ;
     if (x == NULL) {
         x = primary_expression(p);
@@ -233,14 +230,6 @@ static expr_t *unary_expression(parser_t *p) {
     //         | SIZEOF unary_expression
     //         | SIZEOF '(' type_name ')'
     //         ;
-    // unary_operator
-    //         : '&'
-    //         | '*'
-    //         | '+'
-    //         | '-'
-    //         | '~'
-    //         | '!'
-    //         ;
     expr_t *x = NULL;
     switch (p->tok) {
     case token_ADD:
@@ -248,6 +237,14 @@ static expr_t *unary_expression(parser_t *p) {
     case token_MUL:
     case token_NOT:
     case token_SUB:
+        // unary_operator
+        //         : '&'
+        //         | '*'
+        //         | '+'
+        //         | '-'
+        //         | '~'
+        //         | '!'
+        //         ;
         x = malloc(sizeof(expr_t));
         x->type = ast_EXPR_UNARY;
         x->unary.op = p->tok;
@@ -259,7 +256,7 @@ static expr_t *unary_expression(parser_t *p) {
         x->type = ast_EXPR_SIZEOF;
         expect(p, token_SIZEOF);
         expect(p, token_LPAREN);
-        x->sizeof_.x = type_specifier(p);
+        x->sizeof_.x = parse_type(p);
         expect(p, token_RPAREN);
         break;
     case token_DEC:
@@ -290,7 +287,7 @@ static expr_t *cast_expression(parser_t *p) {
     }
     expr_t *x = unary_expression(p);
     if (accept(p, token_AS)) {
-        expr_t *type = type_specifier(p);
+        expr_t *type = parse_type(p);
         expr_t y = {
             .type = ast_EXPR_CAST,
             .cast = {
@@ -394,9 +391,7 @@ static expr_t *assignment_expression(parser_t *p) {
 }
 
 static expr_t *expression(parser_t *p) {
-    // expression
-    //         : assignment_expression
-    //         ;
+    // expression : ternary_expression ;
     return ternary_expression(p);
 }
 
@@ -432,10 +427,10 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
             field_t f = {};
             if (p->tok == token_UNION) {
                 // anonymous union
-                f.type = type_specifier(p);
+                f.type = parse_type(p);
             } else {
                 f.name = identifier(p);
-                f.type = type_specifier(p);
+                f.type = parse_type(p);
             }
             expect(p, token_SEMICOLON);
             field_t *field = memdup(&f, sizeof(f));
@@ -505,7 +500,7 @@ static expr_t *pointer(parser_t *p) {
     expr_t x = {
         .type = ast_TYPE_PTR,
         .ptr = {
-            .type = type_specifier(p),
+            .type = parse_type(p),
         },
     };
     return memdup(&x, sizeof(x));
@@ -577,7 +572,7 @@ static expr_t *initializer(parser_t *p) {
     expr_t *x = NULL;
     switch (p->tok) {
     case token_LBRACK:
-        x = type_specifier(p);
+        x = parse_type(p);
         return initializer_list(p);
     default:
         x = assignment_expression(p);
@@ -846,7 +841,7 @@ static field_t *parse_field(parser_t *p, bool anon) {
         field.type = field.name;
         field.name = NULL;
     } else {
-        field.type = type_specifier(p);
+        field.type = parse_type(p);
     }
     return memdup(&field, sizeof(field));
 }
@@ -858,7 +853,7 @@ static expr_t *func_type(parser_t *p) {
     expect(p, token_RPAREN);
     expr_t *result = NULL;
     if (p->tok != token_SEMICOLON) {
-        result = type_specifier(p);
+        result = parse_type(p);
     }
     expr_t type = {
         .type = ast_TYPE_FUNC,
@@ -876,7 +871,7 @@ static expr_t *func_type(parser_t *p) {
     return memdup(&ptr, sizeof(ptr));
 }
 
-static expr_t *type_specifier(parser_t *p) {
+static expr_t *parse_type(parser_t *p) {
     expr_t *x = NULL;
     switch (p->tok) {
     case token_IDENT:
@@ -906,7 +901,7 @@ static expr_t *type_specifier(parser_t *p) {
             expr_t type = {
                 .type = ast_TYPE_ARRAY,
                 .array = {
-                    .elt = type_specifier(p),
+                    .elt = parse_type(p),
                     .len = len,
                 },
             };
@@ -927,7 +922,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
             token_t keyword = p->tok;
             expect(p, keyword);
             expr_t *ident = identifier(p);
-            expr_t *type = type_specifier(p);
+            expr_t *type = parse_type(p);
             expect(p, token_SEMICOLON);
             spec_t spec = {
                 .type = ast_SPEC_TYPEDEF,
@@ -946,7 +941,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
         {
             expect(p, token_VAR);
             expr_t *ident = identifier(p);
-            expr_t *type = type_specifier(p);
+            expr_t *type = parse_type(p);
             expr_t *value = NULL;
             if (accept(p, token_ASSIGN)) {
                 value = initializer(p);
@@ -976,7 +971,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
             type.func.params = parameter_type_list(p, false);
             expect(p, token_RPAREN);
             if (p->tok != token_LBRACE && p->tok != token_SEMICOLON) {
-                type.func.result = type_specifier(p);
+                type.func.result = parse_type(p);
             }
             decl.func.type = memdup(&type, sizeof(type));
             if (p->tok == token_LBRACE) {

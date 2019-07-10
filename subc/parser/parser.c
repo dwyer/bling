@@ -52,8 +52,6 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
     //         | postfix_expression '(' argument_expression_list? ')'
     //         | postfix_expression '.' IDENTIFIER
     //         | postfix_expression '*' IDENTIFIER
-    //         | postfix_expression '++'
-    //         | postfix_expression '--'
     //         ;
     if (x == NULL) {
         x = primary_expression(p);
@@ -131,14 +129,6 @@ static expr_t *unary_expression(parser_t *p) {
     //         | SIZEOF unary_expression
     //         | SIZEOF '(' type_name ')'
     //         ;
-    // unary_operator
-    //         : '&'
-    //         | '*'
-    //         | '+'
-    //         | '-'
-    //         | '~'
-    //         | '!'
-    //         ;
     expr_t *x = NULL;
     switch (p->tok) {
     case token_ADD:
@@ -146,6 +136,14 @@ static expr_t *unary_expression(parser_t *p) {
     case token_MUL:
     case token_NOT:
     case token_SUB:
+        // unary_operator
+        //         : '&'
+        //         | '*'
+        //         | '+'
+        //         | '-'
+        //         | '~'
+        //         | '!'
+        //         ;
         x = malloc(sizeof(expr_t));
         x->type = ast_EXPR_UNARY;
         x->unary.op = p->tok;
@@ -301,9 +299,7 @@ static expr_t *assignment_expression(parser_t *p) {
 }
 
 static expr_t *expression(parser_t *p) {
-    // expression
-    //         : assignment_expression
-    //         ;
+    // expression : ternary_expression ;
     return ternary_expression(p);
 }
 
