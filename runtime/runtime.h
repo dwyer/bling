@@ -22,6 +22,8 @@ typedef struct {
     slice_t pairs;
     const desc_t *key_desc;
     const desc_t *val_desc;
+    int key_size;
+    int val_size;
 } map_t;
 
 extern int desc_cmp(const desc_t *d, const void *a, const void *b);

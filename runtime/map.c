@@ -14,12 +14,9 @@ typedef struct {
 } pair_t;
 
 extern map_t map_init(const desc_t *key_desc, const desc_t *val_desc) {
-    static const desc_t pair_desc = {
-        .size = sizeof(pair_t),
-    };
     map_t m = {
         .len = 0,
-        .pairs = slice_init(pair_desc.size, default_cap, 0),
+        .pairs = slice_init(sizeof(pair_t), default_cap, 0),
         .key_desc = key_desc,
         .val_desc = val_desc,
     };
