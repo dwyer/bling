@@ -129,7 +129,9 @@ extern expr_t *primary_expression(parser_t *p) {
             return memdup(&x, sizeof(x));
         }
     case token_LPAREN:
-        {
+        if (p->c_mode) {
+            panic("unreachable");
+        } else {
             expect(p, token_LPAREN);
             expr_t x = {
                 .type = ast_EXPR_PAREN,
@@ -275,9 +277,9 @@ static expr_t *cast_expression(parser_t *p) {
     //         ;
     if (accept(p, token_AS)) {
         expect(p, token_LPAREN);
-        expr_t *expr = cast_expression(p);
-        expect(p, token_COMMA);
         expr_t *type = parse_type(p);
+        expect(p, token_COMMA);
+        expr_t *expr = cast_expression(p);
         expect(p, token_RPAREN);
         expr_t y = {
             .type = ast_EXPR_CAST,
