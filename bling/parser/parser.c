@@ -555,24 +555,11 @@ static expr_t *initializer(parser_t *p) {
     // initializer
     //         : assignment_expression
     //         | '{' initializer_list ','? '}'
-    //         | identifier '{' initializer_list ','? '}'
     //         ;
     if (p->tok == token_LBRACE) {
         return initializer_list(p);
     }
-    expr_t *x = NULL;
-    switch (p->tok) {
-    case token_LBRACK:
-        x = parse_type(p);
-        return initializer_list(p);
-    default:
-        x = assignment_expression(p);
-        break;
-    }
-    if (x->type == ast_EXPR_IDENT && p->tok == token_LBRACE) {
-        return initializer_list(p);
-    }
-    return x;
+    return ternary_expression(p);
 }
 
 static stmt_t *statement(parser_t *p) {

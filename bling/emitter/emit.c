@@ -320,9 +320,6 @@ static void print_spec(emitter_t *p, spec_t *spec) {
             emit_space(p);
             print_token(p, token_ASSIGN);
             emit_space(p);
-            if (spec->value.value->type == ast_EXPR_COMPOUND) {
-                print_type(p, spec->value.type);
-            }
             print_expr(p, spec->value.value);
         }
         print_token(p, token_SEMICOLON);
