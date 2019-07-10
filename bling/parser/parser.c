@@ -273,7 +273,7 @@ static expr_t *unary_expression(parser_t *p) {
 static expr_t *cast_expression(parser_t *p) {
     // cast_expression
     //         : unary_expression
-    //         | '(' type_name ')' cast_expression
+    //         | AS '(' cast_expression ',' type_name ')'
     //         ;
     if (accept(p, token_LPAREN)) {
         expr_t x = {
@@ -285,19 +285,22 @@ static expr_t *cast_expression(parser_t *p) {
         expect(p, token_RPAREN);
         return postfix_expression(p, memdup(&x, sizeof(x)));
     }
-    expr_t *x = unary_expression(p);
     if (accept(p, token_AS)) {
+        expect(p, token_LPAREN);
+        expr_t *expr = cast_expression(p);
+        expect(p, token_COMMA);
         expr_t *type = parse_type(p);
+        expect(p, token_RPAREN);
         expr_t y = {
             .type = ast_EXPR_CAST,
             .cast = {
                 .type = type,
-                .expr = x,
+                .expr = expr,
             },
         };
-        x = memdup(&y, sizeof(y));
+        return memdup(&y, sizeof(y));
     }
-    return x;
+    return unary_expression(p);
 }
 
 static expr_t *_binary_expression(expr_t *x, token_t op, expr_t *y) {
