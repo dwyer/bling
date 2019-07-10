@@ -146,7 +146,7 @@ extern expr_t *primary_expression(parser_t *p) {
     }
 }
 
-static expr_t *postfix_expression(parser_t *p, expr_t *x) {
+static expr_t *postfix_expression(parser_t *p) {
     // postfix_expression
     //         : primary_expression
     //         | postfix_expression '[' expression ']'
@@ -154,9 +154,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
     //         | postfix_expression '.' IDENTIFIER
     //         | postfix_expression '->' IDENTIFIER
     //         ;
-    if (x == NULL) {
-        x = primary_expression(p);
-    }
+    expr_t *x = primary_expression(p);
     for (;;) {
         switch (p->tok) {
         case token_LBRACK:
@@ -264,7 +262,7 @@ static expr_t *unary_expression(parser_t *p) {
         parser_error(p, "unary `%s` not supported in subc", token_string(p->tok));
         break;
     default:
-        x = postfix_expression(p, NULL);
+        x = postfix_expression(p);
         break;
     }
     return x;
@@ -275,16 +273,6 @@ static expr_t *cast_expression(parser_t *p) {
     //         : unary_expression
     //         | AS '(' cast_expression ',' type_name ')'
     //         ;
-    if (accept(p, token_LPAREN)) {
-        expr_t x = {
-            .type = ast_EXPR_PAREN,
-            .paren = {
-                .x = expression(p),
-            },
-        };
-        expect(p, token_RPAREN);
-        return postfix_expression(p, memdup(&x, sizeof(x)));
-    }
     if (accept(p, token_AS)) {
         expect(p, token_LPAREN);
         expr_t *expr = cast_expression(p);
