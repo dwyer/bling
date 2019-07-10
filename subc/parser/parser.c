@@ -116,20 +116,6 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                 x = memdup(&y, sizeof(y));
             }
             break;
-        case token_INC:
-        case token_DEC:
-            {
-                expr_t y = {
-                    .type = ast_EXPR_INCDEC,
-                    .incdec = {
-                        .x = x,
-                        .tok = p->tok,
-                    },
-                };
-                parser_next(p);
-                x = memdup(&y, sizeof(y));
-            }
-            break;
         default:
             goto done;
         }
@@ -272,21 +258,16 @@ static expr_t *ternary_expression(parser_t *p) {
     return x;
 }
 
-static token_t assignment_operator(parser_t *p) {
-    // assignment_operator
-    //         : '='
-    //         | MUL_ASSIGN
-    //         | DIV_ASSIGN
-    //         | MOD_ASSIGN
-    //         | ADD_ASSIGN
-    //         | SUB_ASSIGN
-    //         | LEFT_ASSIGN
-    //         | RIGHT_ASSIGN
-    //         | AND_ASSIGN
-    //         | XOR_ASSIGN
-    //         | OR_ASSIGN
+static expr_t *assignment_expression(parser_t *p) {
+    // assignment_expression
+    //         : ternary_expression
+    //         | unary_expression assignment_operator assignment_expression
+    //         | unary_expression INC_OP
+    //         | unary_expression DEC_OP
     //         ;
-    switch (p->tok) {
+    expr_t *x = ternary_expression(p);
+    token_t op = p->tok;
+    switch (op) {
     case token_ADD_ASSIGN:
     case token_ASSIGN:
     case token_DIV_ASSIGN:
@@ -296,22 +277,25 @@ static token_t assignment_operator(parser_t *p) {
     case token_SHR_ASSIGN:
     case token_SUB_ASSIGN:
     case token_XOR_ASSIGN:
-        return p->tok;
-    default:
-        return token_ILLEGAL;
-    }
-}
-
-static expr_t *assignment_expression(parser_t *p) {
-    // assignment_expression
-    //         : ternary_expression
-    //         | unary_expression assignment_operator assignment_expression
-    //         ;
-    expr_t *x = ternary_expression(p);
-    token_t op = assignment_operator(p);
-    if (op != token_ILLEGAL) {
         parser_next(p);
         x = _binary_expression(x, op, assignment_expression(p));
+        break;
+    case token_INC:
+    case token_DEC:
+        {
+            parser_next(p);
+            expr_t y = {
+                .type = ast_EXPR_INCDEC,
+                .incdec = {
+                    .x = x,
+                    .tok = op,
+                },
+            };
+            x = memdup(&y, sizeof(y));
+        }
+        break;
+    default:
+        break;
     }
     return x;
 }

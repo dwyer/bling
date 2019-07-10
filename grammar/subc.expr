@@ -11,8 +11,6 @@ postfix_expression
 	| postfix_expression '(' argument_expression_list? ')'
 	| postfix_expression '.' IDENTIFIER
 	| postfix_expression PTR_OP IDENTIFIER
-	| postfix_expression INC_OP
-	| postfix_expression DEC_OP
 	;
 
 argument_expression_list
@@ -54,6 +52,8 @@ conditional_expression
 assignment_expression
 	: conditional_expression
 	| unary_expression assignment_operator assignment_expression
+        | unary_expression INC_OP
+        | unary_expression DEC_OP
 	;
 
 assignment_operator
