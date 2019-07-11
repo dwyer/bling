@@ -3,8 +3,10 @@
 #include "bling/parser/parser.h"
 #include "subc/parser/parser.h"
 #include "subc/emitter/emit.h"
+#include "path/path.h"
 
 $import("bling/parser");
+$import("path");
 $import("subc/parser");
 $import("subc/emitter");
 
@@ -25,6 +27,10 @@ static char *types[] = {
 
     NULL,
 };
+
+bool is_ext(const char *filename, const char *ext) {
+    return streq(path_ext(filename), ext);
+}
 
 void usage(const char *progname) {
     panic("usage: %s -o DST SRCS", progname);

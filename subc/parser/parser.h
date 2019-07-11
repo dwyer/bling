@@ -5,10 +5,10 @@
 #include "bling/token/token.h"
 #include "bling/parser/parser.h"
 
-$import("io/ioutil");
 $import("bling/ast");
+$import("bling/parser");
 $import("bling/scanner");
 $import("bling/token");
-$import("bling/parser");
+$import("io/ioutil");
 
 extern file_t *parser_parse_cfile(char *filename, scope_t *pkg_scope);

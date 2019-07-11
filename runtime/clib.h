@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <libgen.h> // basename, dirname
+
 #include <assert.h> // assert
 #include <ctype.h> // isspace
 #include <time.h> // clock

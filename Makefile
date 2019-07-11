@@ -7,6 +7,7 @@ BLINGC=bazel-bin/cmd/blingc/blingc
 SRCS=runtime/runtime.h \
      runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \
      builtin/builtin.h builtin/builtin.c \
+     path/path.h path/path.c \
      os/os.h os/os.c \
      fmt/fmt.h fmt/fmt.c \
      io/ioutil/ioutil.h io/ioutil/ioutil.c \

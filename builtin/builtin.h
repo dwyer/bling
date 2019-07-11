@@ -24,6 +24,3 @@ extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc);
 
 extern error_t *make_error(const char *error);
 extern void free_error(error_t *error);
-
-extern const char *filepath_ext(const char *filename); // TODO move this
-extern bool is_ext(const char *filename, const char *ext); // TODO move this

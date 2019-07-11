@@ -5,6 +5,7 @@ cc_binary(
     ],
     deps = [
         "//bling/parser",
+        "//path",
         "//subc/parser",
         "//subc/emitter",
     ],

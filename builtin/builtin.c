@@ -63,10 +63,3 @@ extern void free_error(error_t *error) {
 extern bool streq(const char *a, const char *b) {
     return strcmp(a, b) == 0;
 }
-
-extern bool is_ext(const char *filename, const char *ext) {
-    while (*filename && *filename != '.') {
-        filename++;
-    }
-    return streq(filename, ext);
-}

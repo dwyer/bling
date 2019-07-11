@@ -30,3 +30,9 @@ extern object_t *scope_lookup(scope_t *s, char *name) {
     map_get(&s->objects, name, &obj);
     return obj;
 }
+
+extern void walk_file(file_t *file) {
+    for (int i = 0; file->decls != NULL && file->decls[i] != NULL; i++) {
+        fprintf(stderr, "decl: %p\n", file->decls[i]);
+    }
+}

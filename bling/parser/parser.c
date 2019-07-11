@@ -1,5 +1,7 @@
 #include "bling/parser/parser.h"
 
+#include "path/path.h"
+
 extern void parser_init(parser_t *p, char *filename, char *src) {
     p->filename = filename;
     p->lit = NULL;
@@ -985,7 +987,7 @@ static void import(parser_t *p, const char *dirname, slice_t *decls) {
     os_FileInfo **files = ioutil_read_dir(dirname, NULL);
     while (*files != NULL) {
         char *name = (*files)->name;
-        if (is_ext(name, ".bling")) {
+        if (streq(path_ext(name), ".bling")) {
             file_t *file = parser_parse_file(name, p->pkg_scope);
             for (int i = 0; file->decls[i] != NULL; i++) {
                 *decls = append(*decls, &file->decls[i]);

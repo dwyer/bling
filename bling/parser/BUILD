@@ -8,10 +8,11 @@ cc_library(
         "parser.h",
     ],
     deps = [
-        "//io/ioutil",
-        "//bling/token",
         "//bling/ast",
         "//bling/scanner",
+        "//bling/token",
+        "//io/ioutil",
+        "//path",
     ],
     visibility = ["//visibility:public"],
 )
