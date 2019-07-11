@@ -133,7 +133,7 @@ extern expr_t *primary_expression(parser_t *p) {
         return basic_lit(p, p->tok);
     case token_LPAREN:
         if (p->c_mode) {
-            panic("unreachable");
+            parser_error(p, "unreachable");
         } else {
             expect(p, token_LPAREN);
             expr_t x = {
@@ -968,7 +968,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
             return memdup(&decl, sizeof(decl));
         }
     default:
-        panic("cant handle it: %s", token_string(p->tok));
+        parser_error(p, "cant handle it: %s", token_string(p->tok));
         return NULL;
     }
 }
