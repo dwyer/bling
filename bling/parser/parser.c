@@ -103,6 +103,19 @@ extern expr_t *identifier(parser_t *p) {
     return expr;
 }
 
+static expr_t *basic_lit(parser_t *p, token_t kind) {
+    char *value = p->lit;
+    expect(p, kind);
+    expr_t x = {
+        .type = ast_EXPR_BASIC_LIT,
+        .basic_lit = {
+            .kind = kind,
+            .value = strdup(value),
+        },
+    };
+    return memdup(&x, sizeof(x));
+}
+
 extern expr_t *primary_expression(parser_t *p) {
     // primary_expression
     //         : IDENTIFIER
@@ -117,17 +130,7 @@ extern expr_t *primary_expression(parser_t *p) {
     case token_FLOAT:
     case token_INT:
     case token_STRING:
-        {
-            expr_t x = {
-                .type = ast_EXPR_BASIC_LIT,
-                .basic_lit = {
-                    .kind = p->tok,
-                    .value = strdup(p->lit),
-                },
-            };
-            parser_next(p);
-            return memdup(&x, sizeof(x));
-        }
+        return basic_lit(p, p->tok);
     case token_LPAREN:
         if (p->c_mode) {
             panic("unreachable");
@@ -970,16 +973,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
     }
 }
 
-static void import(parser_t *p, expr_t *path, slice_t *decls) {
-    assert(path->type == ast_EXPR_BASIC_LIT);
-    assert(path->basic_lit.kind == token_STRING);
-    const char *lit = path->basic_lit.value;
-    int n = strlen(lit) - 2;
-    char *dirname = malloc(n + 1);
-    for (int i = 0; i < n; i++) {
-        dirname[i] = lit[i+1];
-    }
-    dirname[n] = '\0';
+static void import(parser_t *p, const char *dirname, slice_t *decls) {
     for (int i = 0; i < len(p->pkg_scope->filenames); i++) {
         char *s = NULL;
         slice_get(&p->pkg_scope->filenames, i, &s);
@@ -1010,11 +1004,19 @@ static file_t *parse_file(parser_t *p) {
         expect(p, token_RPAREN);
         expect(p, token_SEMICOLON);
     }
+    import(p, "builtin", &decls);
     while (p->tok == token_IMPORT) {
         expect(p, token_IMPORT);
-        expr_t *path = primary_expression(p);
+        expr_t *path = basic_lit(p, token_STRING);
         expect(p, token_SEMICOLON);
-        import(p, path, &decls);
+        const char *lit = path->basic_lit.value;
+        int n = strlen(lit) - 2;
+        char *dirname = malloc(n + 1);
+        for (int i = 0; i < n; i++) {
+            dirname[i] = lit[i+1];
+        }
+        dirname[n] = '\0';
+        import(p, dirname, &decls);
     }
     while (p->tok != token_EOF) {
         decl_t *decl = parse_decl(p, true);
