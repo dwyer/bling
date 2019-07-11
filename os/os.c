@@ -31,7 +31,7 @@ extern os_File *os_create(const char *filename, error_t *error) {
     return os_openFile(filename, O_CREAT|O_TRUNC|O_RDWR, 0666, error);
 }
 
-extern int os_read(os_File *file, char *b, int n) {
+extern int os_read(os_File *file, char *b, int n, error_t *error) {
     return read(file->fd, b, n);
 }
 

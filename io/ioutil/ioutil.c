@@ -19,11 +19,15 @@ extern os_FileInfo **ioutil_read_dir(const char *dirname) {
 }
 
 char *ioutil_read_file(const char *filename) {
-    os_File *file = os_open(filename, NULL);
+    error_t *error = NULL;
+    os_File *file = os_open(filename, error);
+    if (error) {
+        return NULL;
+    }
     slice_t str = {.size = sizeof(char), .cap = 1024};
     for (;;) {
         char buf[BUFSIZ];
-        int n = os_read(file, buf, BUFSIZ);
+        int n = os_read(file, buf, BUFSIZ, error);
         for (int i = 0; i < n; i++) {
             str = append(str, &buf[i]);
         }
