@@ -488,9 +488,8 @@ static void print_decl(emitter_t *p, decl_t *decl) {
 }
 
 extern void printer_print_file(emitter_t *p, file_t *file) {
-    emit_string(p, "// ");
+    emit_string(p, "//");
     emit_string(p, file->filename);
-    emit_newline(p);
     emit_newline(p);
     for (spec_t **imports = file->imports; imports && *imports; imports++) {
         emit_token(p, token_IMPORT);
@@ -500,8 +499,8 @@ extern void printer_print_file(emitter_t *p, file_t *file) {
         emit_newline(p);
     }
     for (decl_t **decls = file->decls; decls && *decls; decls++) {
-        print_decl(p, *decls);
         emit_newline(p);
+        print_decl(p, *decls);
         emit_newline(p);
     }
 }
