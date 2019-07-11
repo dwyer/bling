@@ -103,39 +103,51 @@ extern char **os_readdirnames(os_File *file, error_t **error) {
 }
 
 extern void error_move(error_t *src, error_t **dst) {
-    if (dst) {
+    if (dst != NULL) {
         *dst = src;
     }
 }
 
-extern os_FileInfo **os_readdir(const char *name, error_t **error) {
+extern os_FileInfo **os_readdir_new(os_File *file, error_t **error) {
     error_t *err = NULL;
-    os_File *file = os_openDir(name, &err);
-    if (err) {
-        error_move(err, error);
-        return NULL;
-    }
     char **names = os_readdirnames(file, &err);
-    if (err) {
+    if (err != NULL) {
         os_close(file, NULL);
-        error_move(err, error);
-        return NULL;
-    }
-    os_close(file, &err);
-    if (err) {
         error_move(err, error);
         return NULL;
     }
     slice_t arr = {.size = sizeof(uintptr_t)};
     for (int i = 0; names[i] != NULL; i++) {
-        char *path = path_join2(name, names[i]);
+        char *path = path_join2(file->name, names[i]);
         free(names[i]);
         os_FileInfo info = os_stat(path);
         os_FileInfo *ptr = memdup(&info, sizeof(info));
         arr = append(arr, &ptr);
     }
     free(names);
-    void *nil = NULL;
+    const void *nil = NULL;
     arr = append(arr, &nil);
     return arr.array;
 }
+
+extern os_FileInfo **os_readdir(const char *name, error_t **error) {
+    error_t *err = NULL;
+    os_File *file = os_openDir(name, &err);
+    if (err != NULL) {
+        error_move(err, error);
+        return NULL;
+    }
+    os_FileInfo **info = os_readdir_new(file, &err);
+    if (err != NULL) {
+        os_close(file, NULL);
+        error_move(err, error);
+        return NULL;
+    }
+    os_close(file, &err);
+    if (err != NULL) {
+        error_move(err, error);
+        return NULL;
+    }
+    return info;
+}
+
