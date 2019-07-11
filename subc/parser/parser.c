@@ -22,7 +22,7 @@ static expr_t *specifier_qualifier_list(parser_t *p);
 static expr_t *declaration_specifiers(parser_t *p, bool is_top);
 static decl_t *declaration(parser_t *p, bool is_external);
 
-static field_t *parse_field(parser_t *p);
+static field_t *parameter_declaration(parser_t *p);
 
 static bool is_type(parser_t *p) {
     switch (p->tok) {
@@ -516,7 +516,7 @@ static field_t **parameter_type_list(parser_t *p) {
         // parameter_declaration
         //         : declaration_specifiers (declarator | abstract_declarator)?
         //         ;
-        field_t *param = parse_field(p);
+        field_t *param = parameter_declaration(p);
         params = append(params, &param);
         if (!accept(p, token_COMMA)) {
             break;
@@ -917,7 +917,7 @@ static stmt_t *compound_statement(parser_t *p) {
     return stmt;
 }
 
-static field_t *parse_field(parser_t *p) {
+static field_t *parameter_declaration(parser_t *p) {
     field_t field = {};
     field.is_const = accept(p, token_CONST);
     field.type = type_specifier(p);
@@ -1109,7 +1109,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
     }
 }
 
-static file_t *parse_file(parser_t *p) {
+static file_t *parse_cfile(parser_t *p) {
     slice_t decls = {.size = sizeof(decl_t *)};
     expr_t *name = NULL;
     if (accept(p, token_PACKAGE)) {
@@ -1160,7 +1160,7 @@ extern file_t *parser_parse_cfile(char *filename, scope_t *pkg_scope) {
     parser_init(&p, filename, src);
     p.pkg_scope = pkg_scope;
     p.c_mode = true;
-    file_t *file = parse_file(&p);
+    file_t *file = parse_cfile(&p);
     free(src);
     return file;
 }
