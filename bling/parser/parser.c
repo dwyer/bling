@@ -292,19 +292,7 @@ static expr_t *parse_cast_expr(parser_t *p) {
     return parse_unary_expr(p);
 }
 
-static expr_t *_binary_expression(expr_t *x, token_t op, expr_t *y) {
-    expr_t z = {
-        .type = ast_EXPR_BINARY,
-        .binary = {
-            .x = x,
-            .op = op,
-            .y = y,
-        },
-    };
-    return memdup(&z, sizeof(z));
-}
-
-static expr_t *binary_expression(parser_t *p, int prec1) {
+static expr_t *parse_binary_expression(parser_t *p, int prec1) {
     expr_t *x = parse_cast_expr(p);
     for (;;) {
         token_t op = p->tok;
@@ -313,7 +301,16 @@ static expr_t *binary_expression(parser_t *p, int prec1) {
             return x;
         }
         expect(p, op);
-        x = _binary_expression(x, op, binary_expression(p, oprec + 1));
+        expr_t *y = parse_binary_expression(p, oprec + 1);
+        expr_t z = {
+            .type = ast_EXPR_BINARY,
+            .binary = {
+                .x = x,
+                .op = op,
+                .y = y,
+            },
+        };
+        x = memdup(&z, sizeof(z));
     }
 }
 
@@ -322,7 +319,7 @@ static expr_t *ternary_expression(parser_t *p) {
     //         : binary_expression
     //         | binary_expression '?' expression ':' ternary_expression
     //         ;
-    expr_t *x = binary_expression(p, token_lowest_prec + 1);
+    expr_t *x = parse_binary_expression(p, token_lowest_prec + 1);
     if (accept(p, token_QUESTION_MARK)) {
         expr_t *consequence = parse_expr(p);
         expect(p, token_COLON);
@@ -359,8 +356,19 @@ static expr_t *assignment_expression(parser_t *p) {
     case token_SHR_ASSIGN:
     case token_SUB_ASSIGN:
     case token_XOR_ASSIGN:
-        parser_next(p);
-        x = _binary_expression(x, op, assignment_expression(p));
+        {
+            parser_next(p);
+            expr_t *y = parse_expr(p);
+            expr_t z = {
+                .type = ast_EXPR_BINARY,
+                .binary = {
+                    .x = x,
+                    .op = op,
+                    .y = y,
+                },
+            };
+            x = memdup(&z, sizeof(z));
+        }
         break;
     case token_INC:
     case token_DEC:

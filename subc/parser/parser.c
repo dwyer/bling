@@ -208,18 +208,6 @@ static expr_t *cast_expression(parser_t *p) {
     return unary_expression(p);
 }
 
-static expr_t *_binary_expression(expr_t *x, token_t op, expr_t *y) {
-    expr_t z = {
-        .type = ast_EXPR_BINARY,
-        .binary = {
-            .x = x,
-            .op = op,
-            .y = y,
-        },
-    };
-    return memdup(&z, sizeof(z));
-}
-
 static expr_t *binary_expression(parser_t *p, int prec1) {
     expr_t *x = cast_expression(p);
     for (;;) {
@@ -229,7 +217,16 @@ static expr_t *binary_expression(parser_t *p, int prec1) {
             return x;
         }
         expect(p, op);
-        x = _binary_expression(x, op, binary_expression(p, oprec + 1));
+        expr_t *y = binary_expression(p, oprec + 1);
+        expr_t z = {
+            .type = ast_EXPR_BINARY,
+            .binary = {
+                .x = x,
+                .op = op,
+                .y = y,
+            },
+        };
+        x = memdup(&z, sizeof(z));
     }
 }
 
@@ -276,7 +273,18 @@ static expr_t *assignment_expression(parser_t *p) {
     case token_SUB_ASSIGN:
     case token_XOR_ASSIGN:
         parser_next(p);
-        x = _binary_expression(x, op, assignment_expression(p));
+        {
+            expr_t *y = assignment_expression(p);
+            expr_t z = {
+                .type = ast_EXPR_BINARY,
+                .binary = {
+                    .x = x,
+                    .op = op,
+                    .y = y,
+                },
+            };
+            x = memdup(&z, sizeof(z));
+        }
         break;
     case token_INC:
     case token_DEC:
