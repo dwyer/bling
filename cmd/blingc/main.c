@@ -51,8 +51,9 @@ int main(int argc, char *argv[]) {
         scope_insert(scope, obj);
     }
     emitter_t emitter = {.file = os_stdout};
+    error_t err = NULL;
     if (dst) {
-        emitter.file = os_create(dst, NULL);
+        emitter.file = os_create(dst, &err);
         emit_as_bling = is_ext(dst, ".bling");
     }
     if (!emit_as_bling) {
@@ -80,7 +81,7 @@ int main(int argc, char *argv[]) {
         argv++;
     }
     if (dst) {
-        os_close(emitter.file);
+        os_close(emitter.file, &err);
     }
     return 0;
 }

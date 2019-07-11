@@ -35,7 +35,7 @@ char *ioutil_read_file(const char *filename) {
             break;
         }
     }
-    os_close(file);
+    os_close(file, error);
     int ch = 0;
     str = append(str, &ch);
     return (char *)str.array;

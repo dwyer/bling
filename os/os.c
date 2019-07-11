@@ -39,7 +39,7 @@ extern int os_write(os_File *file, const char *b, error_t *error) {
     return write(file->fd, b, strlen(b));
 }
 
-extern void os_close(os_File *file) {
+extern void os_close(os_File *file, error_t *error) {
     close(file->fd);
 }
 

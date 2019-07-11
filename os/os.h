@@ -17,7 +17,7 @@ extern os_File *os_stderr;
 extern os_File *os_newFile(uintptr_t fd, const char *name);
 
 extern os_File *os_openFile(const char *filename, int mode, int perm, error_t *error);
-extern void os_close(os_File *file);
+extern void os_close(os_File *file, error_t *error);
 
 extern os_File *os_open(const char *filename, error_t *error);
 extern os_File *os_create(const char *filename, error_t *error);
