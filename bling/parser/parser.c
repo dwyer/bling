@@ -982,7 +982,7 @@ static void import(parser_t *p, const char *dirname, slice_t *decls) {
         }
     }
     p->pkg_scope->filenames = append(p->pkg_scope->filenames, &dirname);
-    os_FileInfo **files = ioutil_read_dir(dirname);
+    os_FileInfo **files = ioutil_read_dir(dirname, NULL);
     while (*files != NULL) {
         char *name = (*files)->name;
         if (is_ext(name, ".bling")) {
@@ -1031,7 +1031,7 @@ static file_t *parse_file(parser_t *p) {
 }
 
 extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {
-    char *src = ioutil_read_file(filename);
+    char *src = ioutil_read_file(filename, NULL);
     parser_t p = {};
     parser_init(&p, filename, src);
     p.pkg_scope = pkg_scope;

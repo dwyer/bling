@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
         emit_as_bling = is_ext(dst, ".bling");
     }
     if (!emit_as_bling) {
-        char *src = ioutil_read_file("runtime/clib.h");
+        char *src = ioutil_read_file("runtime/clib.h", &err);
         emit_string(&emitter, src);
         free(src);
     }

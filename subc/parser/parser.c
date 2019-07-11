@@ -1153,7 +1153,7 @@ static file_t *parse_cfile(parser_t *p) {
 }
 
 extern file_t *parser_parse_cfile(char *filename, scope_t *pkg_scope) {
-    char *src = ioutil_read_file(filename);
+    char *src = ioutil_read_file(filename, NULL);
     parser_t p;
     parser_init(&p, filename, src);
     p.pkg_scope = pkg_scope;
