@@ -1,6 +1,7 @@
 #pragma once
-#include "builtin/builtin.h"
 #include "bling/token/token.h"
+
+$import("bling/token");
 
 typedef struct {
     char *src;

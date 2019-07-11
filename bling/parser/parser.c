@@ -970,6 +970,37 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
     }
 }
 
+static void import(parser_t *p, expr_t *path, slice_t *decls) {
+    assert(path->type == ast_EXPR_BASIC_LIT);
+    assert(path->basic_lit.kind == token_STRING);
+    const char *lit = path->basic_lit.value;
+    int n = strlen(lit) - 2;
+    char *dirname = malloc(n + 1);
+    for (int i = 0; i < n; i++) {
+        dirname[i] = lit[i+1];
+    }
+    dirname[n] = '\0';
+    for (int i = 0; i < len(p->pkg_scope->filenames); i++) {
+        char *s = NULL;
+        slice_get(&p->pkg_scope->filenames, i, &s);
+        if (streq(dirname, s)) {
+            return;
+        }
+    }
+    p->pkg_scope->filenames = append(p->pkg_scope->filenames, &dirname);
+    os_FileInfo **files = ioutil_read_dir(dirname);
+    while (*files != NULL) {
+        char *name = (*files)->name;
+        if (is_ext(name, ".bling")) {
+            file_t *file = parser_parse_file(name, p->pkg_scope);
+            for (int i = 0; file->decls[i] != NULL; i++) {
+                *decls = append(*decls, &file->decls[i]);
+            }
+        }
+        files++;
+    }
+}
+
 static file_t *parse_file(parser_t *p) {
     slice_t decls = {.size = sizeof(decl_t *)};
     expr_t *name = NULL;
@@ -981,24 +1012,9 @@ static file_t *parse_file(parser_t *p) {
     }
     while (p->tok == token_IMPORT) {
         expect(p, token_IMPORT);
-        expect(p, token_LPAREN);
-        expr_t *s = primary_expression(p);
-        expect(p, token_RPAREN);
+        expr_t *path = primary_expression(p);
         expect(p, token_SEMICOLON);
-        assert(s->type == ast_EXPR_BASIC_LIT);
-        assert(s->basic_lit.kind == token_STRING);
-        const char *lit = s->basic_lit.value;
-        int n = strlen(lit) - 2;
-        char *dirname = malloc(n + 1);
-        for (int i = 0; i < n; i++) {
-            dirname[i] = lit[i+1];
-        }
-        dirname[n] = '\0';
-        os_FileInfo **files = ioutil_read_dir(dirname);
-        while (*files != NULL) {
-            print("import: %s", (*files)->name);
-            files++;
-        }
+        import(p, path, &decls);
     }
     while (p->tok != token_EOF) {
         decl_t *decl = parse_decl(p, true);
@@ -1014,7 +1030,7 @@ static file_t *parse_file(parser_t *p) {
 
 extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {
     char *src = ioutil_read_file(filename);
-    parser_t p;
+    parser_t p = {};
     parser_init(&p, filename, src);
     p.pkg_scope = pkg_scope;
     file_t *file = parse_file(&p);

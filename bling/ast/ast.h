@@ -1,6 +1,7 @@
 #pragma once
-#include "builtin/builtin.h"
 #include "bling/token/token.h"
+
+$import("bling/token");
 
 typedef enum {
 
@@ -25,6 +26,7 @@ typedef enum {
     ast_EXPR_SIZEOF,
     ast_EXPR_INIT_DECL,
 
+    ast_SPEC_IMPORT,
     ast_SPEC_STORAGE,
     ast_SPEC_TYPEDEF,
     ast_SPEC_VALUE,
@@ -256,6 +258,10 @@ struct spec_t {
     union {
 
         struct {
+            expr_t *path;
+        } import;
+
+        struct {
             expr_t *type;
             expr_t *name;
         } typedef_;
@@ -284,6 +290,7 @@ typedef struct scope scope_t;
 struct scope {
     scope_t *outer;
     map_t objects;
+    slice_t filenames;
 };
 
 extern scope_t *scope_new(scope_t *outer);
@@ -296,6 +303,7 @@ typedef struct {
     expr_t *name;
     decl_t **decls;
     scope_t *scope;
+    spec_t **imports;
 } file_t;
 
 typedef struct {

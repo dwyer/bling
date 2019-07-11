@@ -4,6 +4,10 @@
 #include "subc/parser/parser.h"
 #include "subc/emitter/emit.h"
 
+$import("bling/parser");
+$import("subc/parser");
+$import("subc/emitter");
+
 static char *types[] = {
     // native types
     "char",
@@ -21,13 +25,6 @@ static char *types[] = {
 
     NULL,
 };
-
-bool is_ext(const char *filename, const char *ext) {
-    while (*filename && *filename != '.') {
-        filename++;
-    }
-    return streq(filename, ext);
-}
 
 void usage(const char *progname) {
     panic("usage: %s -o DST SRCS", progname);

@@ -38,8 +38,11 @@ extern os_FileInfo os_stat(const char *filename) {
 }
 
 extern char **os_listdir(const char *dirname) {
-    slice_t arr = {.size = sizeof(uintptr_t), .cap = 4};
+    slice_t arr = {.size = sizeof(char *)};
     DIR *dp = opendir(dirname);
+    if (dp == NULL) {
+        panic("bad dirname: %s", dirname);
+    }
     if (dp != NULL) {
         for (;;) {
             struct dirent *dirent = readdir(dp);

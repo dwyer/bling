@@ -1,6 +1,8 @@
 #pragma once
 #include "bling/ast/ast.h"
 
+$import("bling/ast");
+
 typedef struct {
     FILE *fp;
     int indent;

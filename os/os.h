@@ -1,6 +1,8 @@
 #pragma once
 #include "builtin/builtin.h"
 
+$import("builtin");
+
 typedef uint64_t time_Time;
 
 typedef uint32_t os_FileMode;

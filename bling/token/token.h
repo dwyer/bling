@@ -2,6 +2,7 @@
 #include "builtin/builtin.h"
 
 $package(token);
+$import("builtin");
 
 typedef enum {
     token_ILLEGAL = 0,

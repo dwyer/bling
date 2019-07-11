@@ -1,10 +1,10 @@
+*.bling
 *.dSYM
 *.o
 /b2c
 /bcc
 /c2c
 a.out
-all.bling
 all.c
 bazel-*
 t8.shakespeare.txt

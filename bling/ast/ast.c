@@ -8,6 +8,7 @@ extern scope_t *scope_new(scope_t *outer) {
     scope_t *s = malloc(sizeof(scope_t));
     s->outer = outer;
     s->objects = make_map(&desc_str, &_object_desc);
+    s->filenames = make_slice(sizeof(char *), 0, 0);
     return s;
 }
 

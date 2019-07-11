@@ -20,11 +20,15 @@ SRCS=runtime/runtime.h \
      cmd/blingc/main.c
 
 a.out: $(BLINGC) all.bling
-	$(BLINGC) -o all.c all.bling
+	./splitall.py
+	$(BLINGC) -o all.c cmd/blingc/blingc.bling
 	cc all.c
 
 all.bling: $(BLINGC)
 	$(BLINGC) -o all.bling $(SRCS)
+
+debug: $(BLINGC)
+	lldb $(BLINGC)
 
 $(BLINGC):
 	bazel build --copt="-g0" cmd/blingc

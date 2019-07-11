@@ -1111,6 +1111,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
 
 static file_t *parse_cfile(parser_t *p) {
     slice_t decls = {.size = sizeof(decl_t *)};
+    slice_t imports = {.size = sizeof(spec_t *)};
     expr_t *name = NULL;
     if (accept(p, token_PACKAGE)) {
         expect(p, token_LPAREN);
@@ -1121,23 +1122,19 @@ static file_t *parse_cfile(parser_t *p) {
     while (p->tok == token_IMPORT) {
         expect(p, token_IMPORT);
         expect(p, token_LPAREN);
-        expr_t *s = primary_expression(p);
+        expr_t *path = primary_expression(p);
         expect(p, token_RPAREN);
         expect(p, token_SEMICOLON);
-        assert(s->type == ast_EXPR_BASIC_LIT);
-        assert(s->basic_lit.kind == token_STRING);
-        const char *lit = s->basic_lit.value;
-        int n = strlen(lit) - 2;
-        char *dirname = malloc(n + 1);
-        for (int i = 0; i < n; i++) {
-            dirname[i] = lit[i+1];
-        }
-        dirname[n] = '\0';
-        os_FileInfo **files = ioutil_read_dir(dirname);
-        while (*files != NULL) {
-            print("import: %s", (*files)->name);
-            files++;
-        }
+        assert(path->type == ast_EXPR_BASIC_LIT);
+        assert(path->basic_lit.kind == token_STRING);
+        spec_t spec = {
+            .type = ast_SPEC_IMPORT,
+            .import = {
+                .path = path,
+            },
+        };
+        spec_t *spec_p = memdup(&spec, sizeof(spec_t));
+        imports = append(imports, &spec_p);
     }
     while (p->tok != token_EOF) {
         // translation_unit
@@ -1150,6 +1147,7 @@ static file_t *parse_cfile(parser_t *p) {
         .filename = p->filename,
         .name = name,
         .decls = slice_to_nil_array(decls),
+        .imports = slice_to_nil_array(imports),
     };
     return memdup(&file, sizeof(file));
 }

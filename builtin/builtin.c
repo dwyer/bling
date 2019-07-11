@@ -51,3 +51,10 @@ extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc) {
 extern bool streq(const char *a, const char *b) {
     return strcmp(a, b) == 0;
 }
+
+extern bool is_ext(const char *filename, const char *ext) {
+    while (*filename && *filename != '.') {
+        filename++;
+    }
+    return streq(filename, ext);
+}
