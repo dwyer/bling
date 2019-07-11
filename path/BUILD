@@ -1,7 +1,6 @@
 cc_library(
     name = "path",
     srcs = [
-        "path.h",
         "path.c",
     ],
     hdrs = [

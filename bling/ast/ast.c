@@ -31,6 +31,13 @@ extern object_t *scope_lookup(scope_t *s, char *name) {
     return obj;
 }
 
+static void walk_decl(decl_t *decl) {
+    switch (decl->type) {
+    default:
+        panic("not implemented");
+    }
+}
+
 extern void walk_file(file_t *file) {
     for (int i = 0; file->decls != NULL && file->decls[i] != NULL; i++) {
         fprintf(stderr, "decl: %p\n", file->decls[i]);
