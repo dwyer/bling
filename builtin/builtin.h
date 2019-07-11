@@ -23,4 +23,5 @@ extern slice_t make_slice(int size, int len, int cap);
 extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc);
 
 extern error_t *make_error(const char *error);
-extern void free_error(error_t *error);
+extern void error_move(error_t *src, error_t **dst);
+extern void error_free(error_t *error);

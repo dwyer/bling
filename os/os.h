@@ -40,4 +40,4 @@ typedef struct {
 extern os_FileInfo os_stat(const char *filename);
 
 extern os_File *os_openDir(const char *filename, error_t **error);
-extern os_FileInfo **os_readdir(const char *dirname, error_t **error);
+extern os_FileInfo **os_readdir(os_File *file, error_t **error);

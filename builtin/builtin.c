@@ -55,7 +55,13 @@ extern error_t *make_error(const char *error) {
     return memdup(&err, sizeof(error_t));
 }
 
-extern void free_error(error_t *error) {
+extern void error_move(error_t *src, error_t **dst) {
+    if (dst != NULL) {
+        *dst = src;
+    }
+}
+
+extern void error_free(error_t *error) {
     free(error->error);
     free(error);
 }
