@@ -47,3 +47,7 @@ extern slice_t make_slice(int size, int len, int cap) {
 extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc) {
     return map_init(key_desc, val_desc);
 }
+
+extern bool streq(const char *a, const char *b) {
+    return strcmp(a, b) == 0;
+}

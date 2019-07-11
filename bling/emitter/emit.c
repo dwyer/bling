@@ -331,14 +331,6 @@ static void print_spec(emitter_t *p, spec_t *spec) {
     }
 }
 
-extern bool streq(const char *a, const char *b) {
-    return strcmp(a, b) == 0;
-}
-
-extern bool strneq(const char *a, const char *b) {
-    return !streq(a, b);
-}
-
 static bool is_void(expr_t *type) {
     return type->type == ast_EXPR_IDENT && streq(type->ident.name, "void");
 }

@@ -26,7 +26,7 @@ bool is_ext(const char *filename, const char *ext) {
     while (*filename && *filename != '.') {
         filename++;
     }
-    return !strcmp(filename, ext);
+    return streq(filename, ext);
 }
 
 void usage(const char *progname) {
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
         usage(progname);
     }
     const char *dst = NULL;
-    if (!strcmp(*argv, "-o")) {
+    if (streq(*argv, "-o")) {
         argv++;
         dst = *argv;
         argv++;
