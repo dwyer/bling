@@ -1,6 +1,8 @@
 #pragma once
 #include "builtin/builtin.h"
 
+$import("path");
+
 typedef uint64_t time_Time;
 
 typedef uint32_t os_FileMode;
@@ -37,3 +39,4 @@ typedef struct {
 } os_FileInfo;
 
 extern os_FileInfo os_stat(const char *filename);
+extern os_FileInfo **os_readdir(const char *dirname, error_t **error);

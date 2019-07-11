@@ -8,7 +8,6 @@ cc_library(
     ],
     deps = [
         "//os",
-        "//path",
     ],
     visibility = ["//visibility:public"],
 )

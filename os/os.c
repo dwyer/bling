@@ -1,5 +1,7 @@
 #include "os/os.h"
 
+#include "path/path.h"
+
 #include <sys/stat.h>
 #include <dirent.h>
 
@@ -57,32 +59,6 @@ extern os_FileInfo os_stat(const char *filename) {
     return info;
 }
 
-extern char **os_readDirNames(const char *dirname, error_t **error) {
-    slice_t arr = {.size = sizeof(char *)};
-    DIR *dp = opendir(dirname);
-    if (dp == NULL) {
-        *error = make_error("bad dirname");
-        return NULL;
-    }
-    if (dp != NULL) {
-        for (;;) {
-            struct dirent *dirent = readdir(dp);
-            if (dirent == NULL) {
-                break;
-            }
-            if (dirent->d_name[0] == '.') {
-                continue;
-            }
-            char *name = strdup(dirent->d_name);
-            arr = append(arr, &name);
-        }
-    }
-    closedir(dp);
-    char *nil = NULL;
-    arr = append(arr, &nil);
-    return arr.array;
-}
-
 extern char **os_listdir(const char *dirname) {
     slice_t arr = {.size = sizeof(char *)};
     DIR *dp = opendir(dirname);
@@ -104,6 +80,22 @@ extern char **os_listdir(const char *dirname) {
     }
     closedir(dp);
     char *nil = NULL;
+    arr = append(arr, &nil);
+    return arr.array;
+}
+
+extern os_FileInfo **os_readdir(const char *dirname, error_t **error) {
+    slice_t arr = {.size = sizeof(uintptr_t), .cap = 4};
+    char **names = os_listdir(dirname);
+    for (int i = 0; names[i] != NULL; i++) {
+        char *path = path_join2(dirname, names[i]);
+        free(names[i]);
+        os_FileInfo info = os_stat(path);
+        os_FileInfo *ptr = memdup(&info, sizeof(info));
+        arr = append(arr, &ptr);
+    }
+    free(names);
+    void *nil = NULL;
     arr = append(arr, &nil);
     return arr.array;
 }

@@ -7,7 +7,7 @@ cc_library(
         "os.h",
     ],
     deps = [
-        "//builtin",
+        "//path",
     ],
     visibility = ["//visibility:public"],
 )
