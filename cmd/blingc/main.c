@@ -50,9 +50,9 @@ int main(int argc, char *argv[]) {
         obj->name = *names;
         scope_insert(scope, obj);
     }
-    emitter_t emitter = {.fp = stdout};
+    emitter_t emitter = {.file = os_stdout};
     if (dst) {
-        emitter.fp = fopen(dst, "w");
+        emitter.file = os_create(dst, NULL);
         emit_as_bling = is_ext(dst, ".bling");
     }
     if (!emit_as_bling) {
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
         argv++;
     }
     if (dst) {
-        fclose(emitter.fp);
+        os_close(emitter.file);
     }
     return 0;
 }
