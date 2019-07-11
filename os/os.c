@@ -3,8 +3,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-extern os_File *os_open(const char *filename) {
-    int fd = open(filename, O_RDONLY);
+extern os_File *os_openFile(const char *filename, int mode, int perm, error_t *error) {
+    int fd = open(filename, mode, perm);
     if (fd == 0) {
         panic("couldn't open file: %s", filename);
     }
@@ -13,6 +13,14 @@ extern os_File *os_open(const char *filename) {
         .fd = fd,
     };
     return memdup(&file, sizeof(file));
+}
+
+extern os_File *os_open(const char *filename, error_t *error) {
+    return os_openFile(filename, O_RDONLY, 0, error);
+}
+
+extern os_File *os_create(const char *filename, error_t *error) {
+    return os_openFile(filename, O_CREAT|O_RDWR, 0666, error);
 }
 
 extern int os_read(os_File *file, char *b, int n) {

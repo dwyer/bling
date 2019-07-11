@@ -19,7 +19,7 @@ extern os_FileInfo **ioutil_read_dir(const char *dirname) {
 }
 
 char *ioutil_read_file(const char *filename) {
-    os_File *file = os_open(filename);
+    os_File *file = os_open(filename, NULL);
     slice_t str = {.size = sizeof(char), .cap = 1024};
     for (;;) {
         char buf[BUFSIZ];

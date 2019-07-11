@@ -7,6 +7,8 @@
 
 $import("runtime");
 
+typedef void *error_t;
+
 extern int len(slice_t s);
 extern int cap(slice_t s);
 extern void *get_ptr(slice_t s, int index);
