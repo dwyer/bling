@@ -7,7 +7,9 @@
 
 $import("runtime");
 
-typedef void *error_t;
+typedef struct {
+    void *_;
+} error_t;
 
 extern int len(slice_t s);
 extern int cap(slice_t s);

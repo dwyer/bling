@@ -2,7 +2,7 @@
 
 #include "fmt/fmt.h"
 
-extern os_FileInfo **ioutil_read_dir(const char *dirname, error_t *error) {
+extern os_FileInfo **ioutil_read_dir(const char *dirname, error_t **error) {
     slice_t arr = {.size = sizeof(uintptr_t), .cap = 4};
     char **names = os_listdir(dirname);
     for (int i = 0; names[i] != NULL; i++) {
@@ -18,7 +18,7 @@ extern os_FileInfo **ioutil_read_dir(const char *dirname, error_t *error) {
     return arr.array;
 }
 
-char *ioutil_read_file(const char *filename, error_t *error) {
+char *ioutil_read_file(const char *filename, error_t **error) {
     os_File *file = os_open(filename, error);
     slice_t str = {.size = sizeof(char), .cap = 1024};
     for (;;) {

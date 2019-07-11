@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
         scope_insert(scope, obj);
     }
     emitter_t emitter = {.file = os_stdout};
-    error_t err = NULL;
+    error_t *err = NULL;
     if (dst) {
         emitter.file = os_create(dst, &err);
         emit_as_bling = is_ext(dst, ".bling");
