@@ -57,6 +57,32 @@ extern os_FileInfo os_stat(const char *filename) {
     return info;
 }
 
+extern char **os_readDirNames(const char *dirname, error_t **error) {
+    slice_t arr = {.size = sizeof(char *)};
+    DIR *dp = opendir(dirname);
+    if (dp == NULL) {
+        *error = make_error("bad dirname");
+        return NULL;
+    }
+    if (dp != NULL) {
+        for (;;) {
+            struct dirent *dirent = readdir(dp);
+            if (dirent == NULL) {
+                break;
+            }
+            if (dirent->d_name[0] == '.') {
+                continue;
+            }
+            char *name = strdup(dirent->d_name);
+            arr = append(arr, &name);
+        }
+    }
+    closedir(dp);
+    char *nil = NULL;
+    arr = append(arr, &nil);
+    return arr.array;
+}
+
 extern char **os_listdir(const char *dirname) {
     slice_t arr = {.size = sizeof(char *)};
     DIR *dp = opendir(dirname);

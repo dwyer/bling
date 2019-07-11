@@ -48,6 +48,18 @@ extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc) {
     return map_init(key_desc, val_desc);
 }
 
+extern error_t *make_error(const char *error) {
+    error_t err = {
+        .error = strdup(error),
+    };
+    return memdup(&err, sizeof(error_t));
+}
+
+extern void free_error(error_t *error) {
+    free(error->error);
+    free(error);
+}
+
 extern bool streq(const char *a, const char *b) {
     return strcmp(a, b) == 0;
 }
