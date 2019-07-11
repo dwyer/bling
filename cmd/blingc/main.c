@@ -1,6 +1,7 @@
 #include "builtin/builtin.h"
 
 #include "bling/parser/parser.h"
+#include "subc/parser/parser.h"
 #include "subc/emitter/emit.h"
 
 static char *types[] = {
@@ -21,9 +22,29 @@ static char *types[] = {
     NULL,
 };
 
+bool is_ext(const char *filename, const char *ext) {
+    while (*filename && *filename != '.') {
+        filename++;
+    }
+    return !strcmp(filename, ext);
+}
+
+void usage(const char *progname) {
+    panic("usage: %s -o DST SRCS", progname);
+}
+
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        panic("usage: main SOURCE_FILE");
+    char *progname = *argv;
+    bool emit_as_bling = false;
+    argv++;
+    if (!*argv) {
+        usage(progname);
+    }
+    const char *dst = NULL;
+    if (!strcmp(*argv, "-o")) {
+        argv++;
+        dst = *argv;
+        argv++;
     }
     scope_t *scope = scope_new(NULL);
     for (char **names = types; *names; names++) {
@@ -32,15 +53,37 @@ int main(int argc, char *argv[]) {
         obj->name = *names;
         scope_insert(scope, obj);
     }
-    emitter_t printer = {.fp = stdout};
-    char *src = ioutil_read_file("runtime/clib.h");
-    fputs(src, printer.fp);
-    free(src);
-    for (int i = 1; i < argc; i++) {
-        file_t *file = parser_parse_file(argv[i], scope);
-        emitter_emit_file(&printer, file);
+    emitter_t emitter = {.fp = stdout};
+    if (dst) {
+        emitter.fp = fopen(dst, "w");
+        emit_as_bling = is_ext(dst, ".bling");
+    }
+    if (!emit_as_bling) {
+        char *src = ioutil_read_file("runtime/clib.h");
+        emit_string(&emitter, src);
+        free(src);
+    }
+    while (*argv) {
+        char *filename = *argv;
+        file_t *file = NULL;
+        if (is_ext(filename, ".bling")) {
+            file = parser_parse_file(filename, scope);
+        } else if (is_ext(filename, ".c") || is_ext(filename, ".h")) {
+            file = parser_parse_cfile(filename, scope);
+        } else {
+            panic("unknown file type: %s", filename);
+        }
+        if (emit_as_bling) {
+            printer_print_file(&emitter, file);
+        } else {
+            emitter_emit_file(&emitter, file);
+        }
         free(file->decls);
         free(file);
+        argv++;
+    }
+    if (dst) {
+        fclose(emitter.fp);
     }
     return 0;
 }

@@ -1,6 +1,8 @@
 CFLAGS=-I.
 
-.PHONY: bazel-bin/cmd/c2bling/c2bling bazel-bin/cmd/c2c/c2c test bazel-bin/cmd/blingc/blingc
+BLINGC=bazel-bin/cmd/blingc/blingc
+
+.PHONY: test $(BLINGC)
 
 SRCS=runtime/runtime.h \
      runtime/desc.c runtime/map.c runtime/slice.c runtime/types.c \
@@ -17,25 +19,15 @@ SRCS=runtime/runtime.h \
      subc/emitter/emit.h subc/emitter/emit.c \
      cmd/blingc/main.c
 
-a.out: bazel-bin/cmd/blingc/blingc all.bling
-	bazel-bin/cmd/blingc/blingc all.bling >all.c
+a.out: $(BLINGC) all.bling
+	$(BLINGC) -o all.c all.bling
 	cc all.c
 
-all.bling: bazel-bin/cmd/c2bling/c2bling
-	bazel-bin/cmd/c2bling/c2bling $(SRCS) >all.bling
+all.bling: $(BLINGC)
+	$(BLINGC) -o all.bling $(SRCS)
 
-all.c: bazel-bin/cmd/c2c/c2c
-	bazel-bin/cmd/c2c/c2c $(SRCS) >all.c
-
-bazel-bin/cmd/blingc/blingc:
+$(BLINGC):
 	bazel build --copt="-g0" cmd/blingc
-
-bazel-bin/cmd/c2bling/c2bling:
-	bazel build --copt="-g0" cmd/c2bling
-
-bazel-bin/cmd/c2c/c2c:
-	bazel build --copt="-g0" cmd/c2c
-
 
 clean:
 	bazel clean
