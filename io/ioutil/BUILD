@@ -7,8 +7,8 @@ cc_library(
         "ioutil.h",
     ],
     deps = [
-        "//fmt",
         "//os",
+        "//path",
     ],
     visibility = ["//visibility:public"],
 )

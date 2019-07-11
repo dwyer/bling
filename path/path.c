@@ -1,5 +1,8 @@
 #include "path/path.h"
 
+static const char SEP = '/';
+static const char END = '\0';
+
 extern char *path_base(const char *path) {
     char *p = strdup(path);
     return basename(p);
@@ -30,8 +33,17 @@ extern char *path_join(int n, ...) {
     return NULL;
 }
 
-extern char *path_join2(int n, const char *elem1, const char *elem2) {
-    return NULL;
+extern char *path_join2(const char *elem1, const char *elem2) {
+    slice_t buf = {.size = sizeof(char)};
+    for (int i = 0; elem1[i]; i++) {
+        buf = append(buf, &elem1[i]);
+    }
+    buf = append(buf, &SEP);
+    for (int i = 0; elem2[i]; i++) {
+        buf = append(buf, &elem2[i]);
+    }
+    buf = append(buf, &END);
+    return buf.array;
 }
 
 extern char *path_match(const char *pattern, const char *name, error_t **error) {

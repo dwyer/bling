@@ -35,7 +35,7 @@ extern void *get_ptr(slice_t s, int index) {
     return slice_ref(&s, index);
 }
 
-extern slice_t append(slice_t s, void *obj) {
+extern slice_t append(slice_t s, const void *obj) {
     slice_append(&s, obj);
     return s;
 }
