@@ -15,21 +15,21 @@ extern void parser_declare(parser_t *p, scope_t *s, obj_kind_t kind, char *name)
     scope_insert(s, memdup(&obj, sizeof(obj)));
 }
 
-static expr_t *cast_expression(parser_t *p);
-static expr_t *expression(parser_t *p);
-static expr_t *constant_expression(parser_t *p);
-static expr_t *initializer(parser_t *p);
+static expr_t *parse_cast_expr(parser_t *p);
+static expr_t *parse_expr(parser_t *p);
+static expr_t *parse_const_expr(parser_t *p);
+static expr_t *parse_init_expr(parser_t *p);
 
-static expr_t *parse_type(parser_t *p);
-static expr_t *struct_or_union_specifier(parser_t *p);
-static expr_t *enum_specifier(parser_t *p);
-static expr_t *pointer(parser_t *p);
+static expr_t *parse_type_spec(parser_t *p);
+static expr_t *parse_struct_or_union_spec(parser_t *p);
+static expr_t *parse_enum_spec(parser_t *p);
+static expr_t *parse_pointer(parser_t *p);
 static field_t **parameter_type_list(parser_t *p, bool anon);
 
-static stmt_t *statement(parser_t *p);
-static stmt_t *compound_statement(parser_t *p);
+static stmt_t *parse_stmt(parser_t *p);
+static stmt_t *parse_block_stmt(parser_t *p);
 
-static decl_t *declaration(parser_t *p, bool is_external);
+static decl_t *parse_decl(parser_t *p, bool is_external);
 static field_t *parse_field(parser_t *p, bool anon);
 
 extern void parser_error(parser_t *p, char *fmt, ...) {
@@ -136,7 +136,7 @@ extern expr_t *primary_expression(parser_t *p) {
             expr_t x = {
                 .type = ast_EXPR_PAREN,
                 .paren = {
-                    .x = expression(p),
+                    .x = parse_expr(p),
                 },
             };
             expect(p, token_RPAREN);
@@ -166,7 +166,7 @@ static expr_t *postfix_expression(parser_t *p) {
                     .type = ast_EXPR_INDEX,
                     .index = {
                         .x = x,
-                        .index = expression(p),
+                        .index = parse_expr(p),
                     },
                 };
                 expect(p, token_RBRACK);
@@ -182,7 +182,7 @@ static expr_t *postfix_expression(parser_t *p) {
                 //         | argument_expression_list ',' assignment_expression
                 //         ;
                 while (p->tok != token_RPAREN) {
-                    expr_t *x = expression(p);
+                    expr_t *x = parse_expr(p);
                     args = append(args, &x);
                     if (!accept(p, token_COMMA)) {
                         break;
@@ -223,7 +223,7 @@ done:
     return x;
 }
 
-static expr_t *unary_expression(parser_t *p) {
+static expr_t *parse_unary_expr(parser_t *p) {
     // unary_expression
     //         : postfix_expression
     //         | unary_operator cast_expression
@@ -249,14 +249,14 @@ static expr_t *unary_expression(parser_t *p) {
         x->type = ast_EXPR_UNARY;
         x->unary.op = p->tok;
         parser_next(p);
-        x->unary.x = cast_expression(p);
+        x->unary.x = parse_cast_expr(p);
         break;
     case token_SIZEOF:
         x = malloc(sizeof(expr_t));
         x->type = ast_EXPR_SIZEOF;
         expect(p, token_SIZEOF);
         expect(p, token_LPAREN);
-        x->sizeof_.x = parse_type(p);
+        x->sizeof_.x = parse_type_spec(p);
         expect(p, token_RPAREN);
         break;
     case token_DEC:
@@ -270,17 +270,16 @@ static expr_t *unary_expression(parser_t *p) {
     return x;
 }
 
-static expr_t *cast_expression(parser_t *p) {
+static expr_t *parse_cast_expr(parser_t *p) {
     // cast_expression
     //         : unary_expression
     //         | AS '(' cast_expression ',' type_name ')'
     //         ;
     if (accept(p, token_AS)) {
         expect(p, token_LPAREN);
-        expr_t *type = parse_type(p);
-        expect(p, token_COMMA);
-        expr_t *expr = cast_expression(p);
+        expr_t *type = parse_type_spec(p);
         expect(p, token_RPAREN);
+        expr_t *expr = parse_cast_expr(p);
         expr_t y = {
             .type = ast_EXPR_CAST,
             .cast = {
@@ -290,7 +289,7 @@ static expr_t *cast_expression(parser_t *p) {
         };
         return memdup(&y, sizeof(y));
     }
-    return unary_expression(p);
+    return parse_unary_expr(p);
 }
 
 static expr_t *_binary_expression(expr_t *x, token_t op, expr_t *y) {
@@ -306,7 +305,7 @@ static expr_t *_binary_expression(expr_t *x, token_t op, expr_t *y) {
 }
 
 static expr_t *binary_expression(parser_t *p, int prec1) {
-    expr_t *x = cast_expression(p);
+    expr_t *x = parse_cast_expr(p);
     for (;;) {
         token_t op = p->tok;
         int oprec = token_precedence(op);
@@ -325,7 +324,7 @@ static expr_t *ternary_expression(parser_t *p) {
     //         ;
     expr_t *x = binary_expression(p, token_lowest_prec + 1);
     if (accept(p, token_QUESTION_MARK)) {
-        expr_t *consequence = expression(p);
+        expr_t *consequence = parse_expr(p);
         expect(p, token_COLON);
         expr_t *alternative = ternary_expression(p);
         expr_t conditional = {
@@ -383,17 +382,17 @@ static expr_t *assignment_expression(parser_t *p) {
     return x;
 }
 
-static expr_t *expression(parser_t *p) {
+static expr_t *parse_expr(parser_t *p) {
     // expression : ternary_expression ;
     return ternary_expression(p);
 }
 
-static expr_t *constant_expression(parser_t *p) {
+static expr_t *parse_const_expr(parser_t *p) {
     // constant_expression : ternary_expression ;
     return ternary_expression(p);
 }
 
-static expr_t *struct_or_union_specifier(parser_t *p) {
+static expr_t *parse_struct_or_union_spec(parser_t *p) {
     // struct_or_union_specifier
     //         : struct_or_union IDENTIFIER
     //         | struct_or_union IDENTIFIER '{' struct_declaration_list '}'
@@ -420,10 +419,10 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
             field_t f = {};
             if (p->tok == token_UNION) {
                 // anonymous union
-                f.type = parse_type(p);
+                f.type = parse_type_spec(p);
             } else {
                 f.name = identifier(p);
-                f.type = parse_type(p);
+                f.type = parse_type_spec(p);
             }
             expect(p, token_SEMICOLON);
             field_t *field = memdup(&f, sizeof(f));
@@ -447,7 +446,7 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
     return memdup(&x, sizeof(x));
 }
 
-static expr_t *enum_specifier(parser_t *p) {
+static expr_t *parse_enum_spec(parser_t *p) {
     // enum_specifier
     //         : ENUM '{' enumerator_list '}'
     //         | ENUM IDENTIFIER '{' enumerator_list '}'
@@ -468,7 +467,7 @@ static expr_t *enum_specifier(parser_t *p) {
             enumerator->name = identifier(p);
             enumerator->value = NULL;
             if (accept(p, token_ASSIGN)) {
-                enumerator->value = constant_expression(p);
+                enumerator->value = parse_const_expr(p);
             }
             list = append(list, &enumerator);
             if (!accept(p, token_COMMA) || p->tok == token_RBRACE) {
@@ -488,12 +487,12 @@ static expr_t *enum_specifier(parser_t *p) {
     return memdup(&x, sizeof(x));
 }
 
-static expr_t *pointer(parser_t *p) {
+static expr_t *parse_pointer(parser_t *p) {
     expect(p, token_MUL);
     expr_t x = {
         .type = ast_TYPE_PTR,
         .ptr = {
-            .type = parse_type(p),
+            .type = parse_type_spec(p),
         },
     };
     return memdup(&x, sizeof(x));
@@ -526,14 +525,14 @@ static expr_t *initializer_list(parser_t *p) {
     expect(p, token_LBRACE);
     slice_t list = {.size = sizeof(expr_t *)};
     while (p->tok != token_RBRACE && p->tok != token_EOF) {
-        expr_t *value = initializer(p);
+        expr_t *value = parse_init_expr(p);
         if (value->type == ast_EXPR_IDENT && accept(p, token_COLON)) {
             expr_t *key = value;
             expr_t x = {
                 .type = ast_EXPR_KEY_VALUE,
                 .key_value = {
                     .key = key,
-                    .value = initializer(p),
+                    .value = parse_init_expr(p),
                 },
             };
             value = memdup(&x, sizeof(x));
@@ -553,7 +552,7 @@ static expr_t *initializer_list(parser_t *p) {
     return memdup(&expr, sizeof(expr));
 }
 
-static expr_t *initializer(parser_t *p) {
+static expr_t *parse_init_expr(parser_t *p) {
     // initializer
     //         : assignment_expression
     //         | '{' initializer_list ','? '}'
@@ -564,7 +563,7 @@ static expr_t *initializer(parser_t *p) {
     return ternary_expression(p);
 }
 
-static stmt_t *statement(parser_t *p) {
+static stmt_t *parse_stmt(parser_t *p) {
     // statement
     //         : declaration
     //         | compound_statement
@@ -580,7 +579,7 @@ static stmt_t *statement(parser_t *p) {
     if (p->tok == token_VAR) {
         stmt_t stmt = {
             .type = ast_STMT_DECL,
-            .decl = declaration(p, false),
+            .decl = parse_decl(p, false),
         };
         return memdup(&stmt, sizeof(stmt));
     }
@@ -591,18 +590,18 @@ static stmt_t *statement(parser_t *p) {
         //              compound_statement ;
         stmt_t *init = NULL;
         if (!accept(p, token_SEMICOLON)) {
-            init = statement(p);
+            init = parse_stmt(p);
         }
         expr_t *cond = NULL;
         if (p->tok != token_SEMICOLON) {
-            cond = expression(p);
+            cond = parse_expr(p);
         }
         expect(p, token_SEMICOLON);
         expr_t *post = NULL;
         if (p->tok != token_LBRACE) {
             post = assignment_expression(p);
         }
-        stmt_t *body = compound_statement(p);
+        stmt_t *body = parse_block_stmt(p);
         stmt_t stmt = {
             .type = ast_STMT_ITER,
             .iter = {
@@ -622,17 +621,17 @@ static stmt_t *statement(parser_t *p) {
         //         | IF expression compound_statement ELSE compound_statement
         //         | IF expression compound_statement ELSE if_statement
         //         ;
-        expr_t *cond = expression(p);
+        expr_t *cond = parse_expr(p);
         if (p->tok != token_LBRACE) {
             parser_error(p, "`if` must be followed by a compound_statement");
         }
-        stmt_t *body = compound_statement(p);
+        stmt_t *body = parse_block_stmt(p);
         stmt_t *else_ = NULL;
         if (accept(p, token_ELSE)) {
             if (p->tok == token_IF) {
-                else_ = statement(p);
+                else_ = parse_stmt(p);
             } else if (p->tok == token_LBRACE) {
-                else_ = compound_statement(p);
+                else_ = parse_block_stmt(p);
             } else {
                 parser_error(p, "`else` must be followed by an if_statement or compound_statement");
             }
@@ -654,7 +653,7 @@ static stmt_t *statement(parser_t *p) {
         //         ;
         expr_t *x = NULL;
         if (p->tok != token_SEMICOLON) {
-            x = expression(p);
+            x = parse_expr(p);
         }
         expect(p, token_SEMICOLON);
         stmt_t *stmt = malloc(sizeof(stmt_t));
@@ -665,7 +664,7 @@ static stmt_t *statement(parser_t *p) {
 
     if (accept(p, token_SWITCH)) {
         // switch_statement | SWITCH expression case_statement* ;
-        expr_t *tag = expression(p);
+        expr_t *tag = parse_expr(p);
         expect(p, token_LBRACE);
         slice_t clauses = {.size = sizeof(stmt_t *)};
         while (p->tok == token_CASE || p->tok == token_DEFAULT) {
@@ -675,7 +674,7 @@ static stmt_t *statement(parser_t *p) {
             //         ;
             expr_t *expr = NULL;
             if (accept(p, token_CASE)) {
-                expr = constant_expression(p);
+                expr = parse_const_expr(p);
             } else {
                 expect(p, token_DEFAULT);
             }
@@ -693,7 +692,7 @@ static stmt_t *statement(parser_t *p) {
                     break;
                 }
                 if (loop) {
-                    stmt_t *stmt = statement(p);
+                    stmt_t *stmt = parse_stmt(p);
                     stmts = append(stmts, &stmt);
                 }
             }
@@ -720,8 +719,8 @@ static stmt_t *statement(parser_t *p) {
 
     if (accept(p, token_WHILE)) {
         // while_statement : WHILE expression compound_statement ;
-        expr_t *cond = expression(p);
-        stmt_t *body = compound_statement(p);
+        expr_t *cond = parse_expr(p);
+        stmt_t *body = parse_block_stmt(p);
         stmt_t stmt = {
             .type = ast_STMT_ITER,
             .iter = {
@@ -760,7 +759,7 @@ static stmt_t *statement(parser_t *p) {
             return memdup(&stmt, sizeof(stmt));
         }
     case token_LBRACE:
-        return compound_statement(p);
+        return parse_block_stmt(p);
     default:
         break;
     }
@@ -794,14 +793,14 @@ static stmt_t *statement(parser_t *p) {
     return memdup(&stmt, sizeof(stmt));
 }
 
-static stmt_t *compound_statement(parser_t *p) {
+static stmt_t *parse_block_stmt(parser_t *p) {
     // compound_statement : '{' statement_list? '}' ;
     stmt_t *stmt = NULL;
     slice_t stmts = {.size = sizeof(stmt_t *)};
     expect(p, token_LBRACE);
     // statement_list : statement+ ;
     while (p->tok != token_RBRACE) {
-        stmt = statement(p);
+        stmt = parse_stmt(p);
         stmts = append(stmts, &stmt);
     }
     expect(p, token_RBRACE);
@@ -821,7 +820,7 @@ static field_t *parse_field(parser_t *p, bool anon) {
         field.type = field.name;
         field.name = NULL;
     } else {
-        field.type = parse_type(p);
+        field.type = parse_type_spec(p);
     }
     return memdup(&field, sizeof(field));
 }
@@ -833,7 +832,7 @@ static expr_t *func_type(parser_t *p) {
     expect(p, token_RPAREN);
     expr_t *result = NULL;
     if (p->tok != token_SEMICOLON) {
-        result = parse_type(p);
+        result = parse_type_spec(p);
     }
     expr_t type = {
         .type = ast_TYPE_FUNC,
@@ -851,21 +850,21 @@ static expr_t *func_type(parser_t *p) {
     return memdup(&ptr, sizeof(ptr));
 }
 
-static expr_t *parse_type(parser_t *p) {
+static expr_t *parse_type_spec(parser_t *p) {
     expr_t *x = NULL;
     switch (p->tok) {
     case token_IDENT:
         x = identifier(p);
         break;
     case token_MUL:
-        x = pointer(p);
+        x = parse_pointer(p);
         break;
     case token_STRUCT:
     case token_UNION:
-        x = struct_or_union_specifier(p);
+        x = parse_struct_or_union_spec(p);
         break;
     case token_ENUM:
-        x = enum_specifier(p);
+        x = parse_enum_spec(p);
         break;
     case token_FUNC:
         x = func_type(p);
@@ -875,13 +874,13 @@ static expr_t *parse_type(parser_t *p) {
             expect(p, token_LBRACK);
             expr_t *len = NULL;
             if (p->tok != token_RBRACK) {
-                len = constant_expression(p);
+                len = parse_const_expr(p);
             }
             expect(p, token_RBRACK);
             expr_t type = {
                 .type = ast_TYPE_ARRAY,
                 .array = {
-                    .elt = parse_type(p),
+                    .elt = parse_type_spec(p),
                     .len = len,
                 },
             };
@@ -895,14 +894,14 @@ static expr_t *parse_type(parser_t *p) {
     return x;
 }
 
-static decl_t *declaration(parser_t *p, bool is_external) {
+static decl_t *parse_decl(parser_t *p, bool is_external) {
     switch (p->tok) {
     case token_TYPEDEF:
         {
             token_t keyword = p->tok;
             expect(p, keyword);
             expr_t *ident = identifier(p);
-            expr_t *type = parse_type(p);
+            expr_t *type = parse_type_spec(p);
             expect(p, token_SEMICOLON);
             spec_t spec = {
                 .type = ast_SPEC_TYPEDEF,
@@ -921,10 +920,10 @@ static decl_t *declaration(parser_t *p, bool is_external) {
         {
             expect(p, token_VAR);
             expr_t *ident = identifier(p);
-            expr_t *type = parse_type(p);
+            expr_t *type = parse_type_spec(p);
             expr_t *value = NULL;
             if (accept(p, token_ASSIGN)) {
-                value = initializer(p);
+                value = parse_init_expr(p);
             }
             expect(p, token_SEMICOLON);
             spec_t spec = {
@@ -951,11 +950,11 @@ static decl_t *declaration(parser_t *p, bool is_external) {
             type.func.params = parameter_type_list(p, false);
             expect(p, token_RPAREN);
             if (p->tok != token_LBRACE && p->tok != token_SEMICOLON) {
-                type.func.result = parse_type(p);
+                type.func.result = parse_type_spec(p);
             }
             decl.func.type = memdup(&type, sizeof(type));
             if (p->tok == token_LBRACE) {
-                decl.func.body = compound_statement(p);
+                decl.func.body = parse_block_stmt(p);
             } else {
                 expect(p, token_SEMICOLON);
             }
@@ -998,7 +997,7 @@ static file_t *parse_file(parser_t *p) {
         }
     }
     while (p->tok != token_EOF) {
-        decl_t *decl = declaration(p, true);
+        decl_t *decl = parse_decl(p, true);
         decls = append(decls, &decl);
     }
     file_t file = {

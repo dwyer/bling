@@ -83,10 +83,9 @@ static void print_expr(emitter_t *p, expr_t *expr) {
         print_token(p, token_AS);
         print_token(p, token_LPAREN);
         print_expr(p, expr->cast.type);
-        print_token(p, token_COMMA);
+        print_token(p, token_RPAREN);
         emit_space(p);
         print_expr(p, expr->cast.expr);
-        print_token(p, token_RPAREN);
         break;
 
     case ast_EXPR_COMPOUND:
