@@ -1021,15 +1021,16 @@ static decl_t *declaration(parser_t *p, bool is_external) {
         expr_t *type = declaration_specifiers(p, true);
         expr_t *name = declarator(p, &type);
         expect(p, token_SEMICOLON);
-        parser_declare(p, p->pkg_scope, obj_kind_TYPE, name);
-        decl_t decl = {
+        decl_t declref = {
             .type = ast_DECL_TYPEDEF,
             .typedef_ = {
                 .name = name,
                 .type = type,
             },
         };
-        return memdup(&decl, sizeof(decl));
+        decl_t *decl = memdup(&declref, sizeof(decl_t));
+        parser_declare(p, p->pkg_scope, decl, obj_kind_TYPE, name);
+        return decl;
     }
     expr_t *type = declaration_specifiers(p, true);
     expr_t *name = declarator(p, &type);
