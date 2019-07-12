@@ -56,16 +56,13 @@ extern void os_close(os_File *file, error_t **error) {
     }
 }
 
-extern os_FileInfo os_stat(const char *filename) {
+extern os_FileInfo os_stat(const char *filename, error_t **error) {
     struct stat st;
     stat(filename, &st);
+    // TODO check error
     os_FileInfo info = {
         .name = strdup(filename),
-        .size = st.st_size,
-        .mode = st.st_mode,
-        .mod_time = st.st_mtime,
-        .is_dir = S_ISDIR(st.st_mode),
-        .sys = NULL,
+        .sys = memdup(&st, sizeof(struct stat)),
     };
     return info;
 }
@@ -114,7 +111,12 @@ extern os_FileInfo **os_readdir(os_File *file, error_t **error) {
     for (int i = 0; names[i] != NULL; i++) {
         char *path = path_join(file->name, names[i], NULL);
         free(names[i]);
-        os_FileInfo info = os_stat(path);
+        os_FileInfo info = os_stat(path, &err);
+        if (err != NULL) {
+            os_close(file, NULL);
+            error_move(err, error);
+            return NULL;
+        }
         os_FileInfo *ptr = memdup(&info, sizeof(info));
         arr = append(arr, &ptr);
     }
@@ -122,4 +124,32 @@ extern os_FileInfo **os_readdir(os_File *file, error_t **error) {
     const void *nil = NULL;
     arr = append(arr, &nil);
     return arr.array;
+}
+
+extern char *os_FileInfo_name(os_FileInfo *info) {
+    return info->name;
+}
+
+extern uint64_t os_FileInfo_size(os_FileInfo *info) {
+    struct stat st = *(struct stat *)os_FileInfo_sys(info);
+    return st.st_size;
+}
+
+extern os_FileMode os_FileInfo_mode(os_FileInfo *info) {
+    struct stat st = *(struct stat *)os_FileInfo_sys(info);
+    return st.st_mode;
+}
+
+extern time_Time os_FileInfo_mod_time(os_FileInfo *info) {
+    struct stat st = *(struct stat *)os_FileInfo_sys(info);
+    return st.st_mtime;
+}
+
+extern bool os_FileInfo_is_dir(os_FileInfo *info) {
+    struct stat st = *(struct stat *)os_FileInfo_sys(info);
+    return S_ISDIR(st.st_mode);
+}
+
+extern void *os_FileInfo_sys(os_FileInfo *info) {
+    return info->sys;
 }
