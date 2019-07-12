@@ -1022,16 +1022,12 @@ static decl_t *declaration(parser_t *p, bool is_external) {
         expr_t *ident = declarator(p, &type);
         expect(p, token_SEMICOLON);
         parser_declare(p, p->pkg_scope, obj_kind_TYPE, ident->ident.name);
-        spec_t spec = {
-            .type = ast_SPEC_TYPEDEF,
+        decl_t decl = {
+            .type = ast_DECL_TYPEDEF,
             .typedef_ = {
                 .name = ident,
                 .type = type,
             },
-        };
-        decl_t decl = {
-            .type = ast_DECL_GEN,
-            .gen = {.spec = memdup(&spec, sizeof(spec))},
         };
         return memdup(&decl, sizeof(decl));
     }
@@ -1068,18 +1064,12 @@ static decl_t *declaration(parser_t *p, bool is_external) {
     }
     expect(p, token_SEMICOLON);
     if (name != NULL) {
-        spec_t spec = {
-            .type = ast_SPEC_VALUE,
+        decl_t decl = {
+            .type = ast_DECL_VALUE,
             .value = {
                 .type = type,
                 .name = name,
                 .value = value,
-            },
-        };
-        decl_t decl = {
-            .type = ast_DECL_GEN,
-            .gen = {
-                .spec = memdup(&spec, sizeof(spec)),
             },
         };
         return memdup(&decl, sizeof(decl));
@@ -1092,17 +1082,11 @@ static decl_t *declaration(parser_t *p, bool is_external) {
             panic("FUCK: %d", type->type);
             break;
         }
-        spec_t spec = {
-            .type = ast_SPEC_TYPEDEF,
+        decl_t decl = {
+            .type = ast_DECL_TYPEDEF,
             .typedef_ = {
                 .type = type,
                 .name = name,
-            },
-        };
-        decl_t decl = {
-            .type = ast_DECL_GEN,
-            .gen = {
-                .spec = memdup(&spec, sizeof(spec)),
             },
         };
         return memdup(&decl, sizeof(decl));
@@ -1111,7 +1095,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
 
 static file_t *parse_cfile(parser_t *p) {
     slice_t decls = {.size = sizeof(decl_t *)};
-    slice_t imports = {.size = sizeof(spec_t *)};
+    slice_t imports = {.size = sizeof(decl_t *)};
     expr_t *name = NULL;
     if (accept(p, token_PACKAGE)) {
         expect(p, token_LPAREN);
@@ -1127,14 +1111,14 @@ static file_t *parse_cfile(parser_t *p) {
         expect(p, token_SEMICOLON);
         assert(path->type == ast_EXPR_BASIC_LIT);
         assert(path->basic_lit.kind == token_STRING);
-        spec_t spec = {
-            .type = ast_SPEC_IMPORT,
+        decl_t decl = {
+            .type = ast_DECL_IMPORT,
             .import = {
                 .path = path,
             },
         };
-        spec_t *spec_p = memdup(&spec, sizeof(spec_t));
-        imports = append(imports, &spec_p);
+        decl_t *declp = memdup(&decl, sizeof(decl_t));
+        imports = append(imports, &declp);
     }
     while (p->tok != token_EOF) {
         // translation_unit

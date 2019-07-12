@@ -912,16 +912,12 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
             expr_t *ident = identifier(p);
             expr_t *type = parse_type_spec(p);
             expect(p, token_SEMICOLON);
-            spec_t spec = {
-                .type = ast_SPEC_TYPEDEF,
+            decl_t decl = {
+                .type = ast_DECL_TYPEDEF,
                 .typedef_ = {
                     .name = ident,
                     .type = type,
                 },
-            };
-            decl_t decl = {
-                .type = ast_DECL_GEN,
-                .gen = {.spec = memdup(&spec, sizeof(spec))},
             };
             return memdup(&decl, sizeof(decl));
         }
@@ -942,17 +938,13 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
                 value = parse_init_expr(p);
             }
             expect(p, token_SEMICOLON);
-            spec_t spec = {
-                .type = ast_SPEC_VALUE,
+            decl_t decl = {
+                .type = ast_DECL_VALUE,
                 .value = {
                     .name = ident,
                     .type = type,
                     .value = value,
                 },
-            };
-            decl_t decl = {
-                .type = ast_DECL_GEN,
-                .gen = {.spec = memdup(&spec, sizeof(spec))},
             };
             return memdup(&decl, sizeof(decl));
         }

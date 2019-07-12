@@ -271,34 +271,6 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
     }
 }
 
-static void emit_spec(emitter_t *e, spec_t *spec) {
-    switch (spec->type) {
-
-    case ast_SPEC_TYPEDEF:
-        emit_token(e, token_TYPEDEF);
-        emit_space(e);
-        emit_c_type(e, spec->typedef_.type, spec->typedef_.name);
-        emit_token(e, token_SEMICOLON);
-        break;
-
-    case ast_SPEC_VALUE:
-        emit_c_type(e, spec->value.type, spec->value.name);
-        if (spec->value.value) {
-            emit_space(e);
-            emit_token(e, token_ASSIGN);
-            emit_space(e);
-            emit_c_expr(e, spec->value.value);
-        }
-        emit_token(e, token_SEMICOLON);
-        break;
-
-    default:
-        emit_string(e, "/* [UNKNOWN SPEC] */");
-        break;
-
-    }
-}
-
 static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
     if (type == NULL) {
         panic("emit_c_type: type is nil");
@@ -458,8 +430,22 @@ static void emit_c_decl(emitter_t *e, decl_t *decl) {
         }
         break;
 
-    case ast_DECL_GEN:
-        emit_spec(e, decl->gen.spec);
+    case ast_DECL_TYPEDEF:
+        emit_token(e, token_TYPEDEF);
+        emit_space(e);
+        emit_c_type(e, decl->typedef_.type, decl->typedef_.name);
+        emit_token(e, token_SEMICOLON);
+        break;
+
+    case ast_DECL_VALUE:
+        emit_c_type(e, decl->value.type, decl->value.name);
+        if (decl->value.value) {
+            emit_space(e);
+            emit_token(e, token_ASSIGN);
+            emit_space(e);
+            emit_c_expr(e, decl->value.value);
+        }
+        emit_token(e, token_SEMICOLON);
         break;
 
     default:

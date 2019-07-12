@@ -35,24 +35,12 @@ typedef struct {
     scope_t *topScope;
 } walker_t;
 
-static void walk_spec(walker_t *w, spec_t *spec) {
-    switch (spec->type) {
-    case ast_SPEC_IMPORT:
-    case ast_SPEC_TYPEDEF:
-        break;
-    case ast_SPEC_VALUE:
-        break;
-    default:
-        panic("walk_spec: not implemented: %d", spec->type);
-    }
-}
-
 static void walk_decl(walker_t *w, decl_t *decl) {
     switch (decl->type) {
-    case ast_DECL_GEN:
-        walk_spec(w, decl->gen.spec);
-        break;
     case ast_DECL_FUNC:
+    case ast_DECL_IMPORT:
+    case ast_DECL_TYPEDEF:
+    case ast_DECL_VALUE:
         break;
     default:
         panic("walk_decl: not implemented: %d", decl->type);

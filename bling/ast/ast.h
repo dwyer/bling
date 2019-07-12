@@ -8,7 +8,10 @@ typedef enum {
     ast_NODE_ILLEGAL = 0,
 
     ast_DECL_FUNC,
-    ast_DECL_GEN,
+    ast_DECL_IMPORT,
+    ast_DECL_STORAGE,
+    ast_DECL_TYPEDEF,
+    ast_DECL_VALUE,
 
     ast_EXPR_BASIC_LIT,
     ast_EXPR_BINARY,
@@ -25,11 +28,6 @@ typedef enum {
     ast_EXPR_SELECTOR,
     ast_EXPR_SIZEOF,
     ast_EXPR_INIT_DECL,
-
-    ast_SPEC_IMPORT,
-    ast_SPEC_STORAGE,
-    ast_SPEC_TYPEDEF,
-    ast_SPEC_VALUE,
 
     ast_STMT_BLOCK,
     ast_STMT_CASE,
@@ -54,7 +52,6 @@ typedef enum {
 
 typedef struct decl_t decl_t;
 typedef struct expr_t expr_t;
-typedef struct spec_t spec_t;
 typedef struct stmt_t stmt_t;
 
 typedef struct {
@@ -74,10 +71,19 @@ struct decl_t {
     union {
 
         struct {
-            spec_t *spec;
-            // TODO: spec_t **specs;
-            token_t store;
-        } gen;
+            expr_t *path;
+        } import;
+
+        struct {
+            expr_t *type;
+            expr_t *name;
+        } typedef_;
+
+        struct {
+            expr_t *type;
+            expr_t *name;
+            expr_t *value;
+        } value;
 
         struct {
             expr_t *type;
@@ -253,28 +259,6 @@ struct stmt_t {
     };
 };
 
-struct spec_t {
-    ast_node_type_t type;
-    union {
-
-        struct {
-            expr_t *path;
-        } import;
-
-        struct {
-            expr_t *type;
-            expr_t *name;
-        } typedef_;
-
-        struct {
-            expr_t *type;
-            expr_t *name;
-            expr_t *value;
-        } value;
-
-    };
-};
-
 typedef enum {
     obj_kind_BAD,
     obj_kind_TYPE,
@@ -303,7 +287,7 @@ typedef struct {
     expr_t *name;
     decl_t **decls;
     scope_t *scope;
-    spec_t **imports;
+    decl_t **imports;
 } file_t;
 
 typedef struct {

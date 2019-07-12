@@ -295,42 +295,6 @@ static void print_stmt(emitter_t *p, stmt_t *stmt) {
     }
 }
 
-static void print_spec(emitter_t *p, spec_t *spec) {
-    switch (spec->type) {
-
-    case ast_SPEC_TYPEDEF:
-        print_token(p, token_TYPEDEF);
-        emit_space(p);
-        print_expr(p, spec->typedef_.name);
-        emit_space(p);
-        print_type(p, spec->typedef_.type);
-        print_token(p, token_SEMICOLON);
-        break;
-
-    case ast_SPEC_VALUE:
-        print_token(p, token_VAR);
-        if (spec->value.name) {
-            emit_space(p);
-            print_expr(p, spec->value.name);
-        }
-        emit_space(p);
-        print_type(p, spec->value.type);
-        if (spec->value.value) {
-            emit_space(p);
-            print_token(p, token_ASSIGN);
-            emit_space(p);
-            print_expr(p, spec->value.value);
-        }
-        print_token(p, token_SEMICOLON);
-        break;
-
-    default:
-        emit_string(p, "/* [UNKNOWN SPEC] */");
-        break;
-
-    }
-}
-
 static bool is_void(expr_t *type) {
     return type->type == ast_EXPR_IDENT && streq(type->ident.name, "void");
 }
@@ -477,8 +441,30 @@ static void print_decl(emitter_t *p, decl_t *decl) {
         }
         break;
 
-    case ast_DECL_GEN:
-        print_spec(p, decl->gen.spec);
+    case ast_DECL_TYPEDEF:
+        print_token(p, token_TYPEDEF);
+        emit_space(p);
+        print_expr(p, decl->typedef_.name);
+        emit_space(p);
+        print_type(p, decl->typedef_.type);
+        print_token(p, token_SEMICOLON);
+        break;
+
+    case ast_DECL_VALUE:
+        print_token(p, token_VAR);
+        if (decl->value.name) {
+            emit_space(p);
+            print_expr(p, decl->value.name);
+        }
+        emit_space(p);
+        print_type(p, decl->value.type);
+        if (decl->value.value) {
+            emit_space(p);
+            print_token(p, token_ASSIGN);
+            emit_space(p);
+            print_expr(p, decl->value.value);
+        }
+        print_token(p, token_SEMICOLON);
         break;
 
     default:
@@ -491,7 +477,7 @@ extern void printer_print_file(emitter_t *p, file_t *file) {
     emit_string(p, "//");
     emit_string(p, file->filename);
     emit_newline(p);
-    for (spec_t **imports = file->imports; imports && *imports; imports++) {
+    for (decl_t **imports = file->imports; imports && *imports; imports++) {
         emit_token(p, token_IMPORT);
         emit_space(p);
         print_expr(p, (*imports)->import.path);
