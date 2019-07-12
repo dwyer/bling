@@ -975,6 +975,14 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
     }
 }
 
+static bool isBlingFile(const char *name) {
+    return path_matchExt(".bling", name);
+}
+
+static bool isTestFile(const char *name) {
+    return path_match("*_test.bling", name);
+}
+
 static void import(parser_t *p, const char *dirname, slice_t *decls) {
     for (int i = 0; i < len(p->pkg_scope->filenames); i++) {
         char *s = NULL;
@@ -987,7 +995,7 @@ static void import(parser_t *p, const char *dirname, slice_t *decls) {
     os_FileInfo **files = ioutil_read_dir(dirname, NULL);
     while (*files != NULL) {
         char *name = (*files)->name;
-        if (path_matchExt(".bling", name)) {
+        if (isBlingFile(name) && !isTestFile(name)) {
             file_t *file = parser_parse_file(name, p->pkg_scope);
             for (int i = 0; file->decls[i] != NULL; i++) {
                 *decls = append(*decls, &file->decls[i]);
