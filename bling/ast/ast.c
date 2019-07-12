@@ -80,6 +80,7 @@ static expr_t *find_type(walker_t *w, expr_t *expr) {
 }
 
 extern void scope_declare(scope_t *s, obj_kind_t kind, expr_t *name) {
+    assert(s != NULL);
     assert(name->type == ast_EXPR_IDENT);
     scope_insert(s, object_new(kind, name->ident.name));
 }
@@ -95,7 +96,7 @@ static void walk_decl(walker_t *w, decl_t *decl) {
             decl->value.type = find_type(w, decl->value.value);
         }
         assert(decl->value.name->type == ast_EXPR_IDENT);
-        //scope_declare(w->topScope, obj_kind_VALUE, decl->value.name->ident.name);
+        scope_declare(w->topScope, obj_kind_VALUE, decl->value.name);
         break;
     default:
         panic("walk_decl: not implemented: %d", decl->type);

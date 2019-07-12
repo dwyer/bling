@@ -1143,6 +1143,7 @@ extern file_t *parser_parse_cfile(char *filename, scope_t *pkg_scope) {
     p.pkg_scope = pkg_scope;
     p.c_mode = true;
     file_t *file = parse_cfile(&p);
+    file->scope = p.pkg_scope;
     free(src);
     return file;
 }
