@@ -31,15 +31,37 @@ extern object_t *scope_lookup(scope_t *s, char *name) {
     return obj;
 }
 
-static void walk_decl(decl_t *decl) {
-    switch (decl->type) {
+typedef struct {
+    scope_t *topScope;
+} walker_t;
+
+static void walk_spec(walker_t *w, spec_t *spec) {
+    switch (spec->type) {
+    case ast_SPEC_IMPORT:
+    case ast_SPEC_TYPEDEF:
+        break;
+    case ast_SPEC_VALUE:
+        break;
     default:
-        panic("not implemented");
+        panic("walk_spec: not implemented: %d", spec->type);
+    }
+}
+
+static void walk_decl(walker_t *w, decl_t *decl) {
+    switch (decl->type) {
+    case ast_DECL_GEN:
+        walk_spec(w, decl->gen.spec);
+        break;
+    case ast_DECL_FUNC:
+        break;
+    default:
+        panic("walk_decl: not implemented: %d", decl->type);
     }
 }
 
 extern void walk_file(file_t *file) {
+    walker_t w = {};
     for (int i = 0; file->decls != NULL && file->decls[i] != NULL; i++) {
-        fprintf(stderr, "decl: %p\n", file->decls[i]);
+        walk_decl(&w, file->decls[i]);
     }
 }

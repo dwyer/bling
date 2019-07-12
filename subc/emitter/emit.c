@@ -300,6 +300,9 @@ static void emit_spec(emitter_t *e, spec_t *spec) {
 }
 
 static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
+    if (type == NULL) {
+        panic("emit_c_type: type is nil");
+    }
     switch (type->type) {
     case ast_TYPE_ARRAY:
         emit_c_type(e, type->array.elt, name);
