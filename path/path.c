@@ -56,7 +56,22 @@ extern char **path_split(const char *path) {
 }
 
 extern bool path_match(const char *pattern, const char *path) {
-    panic("not implmented");
+    if (pattern[0] == '\0' && path[0] == '\0') {
+        return true;
+    }
+    if (pattern[0] == '\0' || path[0] == '\0') {
+        return false;
+    }
+    if (pattern[0] == '*') {
+        bool res = path_match(pattern+1, path);
+        if (res) {
+            return true;
+        }
+        return path_match(pattern, path+1);
+    }
+    if (pattern[0] == path[0]) {
+        return path_match(pattern+1, path+1);
+    }
     return false;
 }
 
