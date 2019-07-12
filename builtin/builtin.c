@@ -55,6 +55,10 @@ extern error_t *make_error(const char *error) {
     return memdup(&err, sizeof(error_t));
 }
 
+extern error_t *make_sysError(void) {
+    return make_error(strerror(errno));
+}
+
 extern void error_move(error_t *src, error_t **dst) {
     if (dst != NULL) {
         *dst = src;

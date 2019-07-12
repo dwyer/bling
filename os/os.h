@@ -33,12 +33,14 @@ typedef struct {
     void *_sys;
 } os_FileInfo;
 
-extern char *os_FileInfo_name(os_FileInfo *info);
-extern uint64_t os_FileInfo_size(os_FileInfo *info);
-extern os_FileMode os_FileInfo_mode(os_FileInfo *info);
-extern time_Time os_FileInfo_mod_time(os_FileInfo *info);
-extern bool os_FileInfo_is_dir(os_FileInfo *info);
-extern void *os_FileInfo_sys(os_FileInfo *info);
+extern char *os_FileInfo_name(os_FileInfo info);
+extern uint64_t os_FileInfo_size(os_FileInfo info);
+extern os_FileMode os_FileInfo_mode(os_FileInfo info);
+extern time_Time os_FileInfo_mod_time(os_FileInfo info);
+extern bool os_FileInfo_is_dir(os_FileInfo info);
+extern void *os_FileInfo_sys(os_FileInfo info);
+
+extern void os_FileInfo_free(os_FileInfo info);
 
 extern os_FileInfo os_stat(const char *filename, error_t **error);
 

@@ -993,16 +993,16 @@ static void import(parser_t *p, const char *dirname, slice_t *decls) {
     }
     p->pkg_scope->filenames = append(p->pkg_scope->filenames, &dirname);
     error_t *err = NULL;
-    os_FileInfo **files = ioutil_read_dir(dirname, &err);
-    while (*files != NULL) {
-        char *name = os_FileInfo_name(*files);
+    os_FileInfo **infos = ioutil_read_dir(dirname, &err);
+    while (*infos != NULL) {
+        char *name = os_FileInfo_name(**infos);
         if (isBlingFile(name) && !isTestFile(name)) {
             file_t *file = parser_parse_file(name, p->pkg_scope);
             for (int i = 0; file->decls[i] != NULL; i++) {
                 *decls = append(*decls, &file->decls[i]);
             }
         }
-        files++;
+        infos++;
     }
 }
 

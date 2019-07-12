@@ -19,4 +19,6 @@
 #include <ctype.h> // isspace
 #include <time.h> // clock
 
+#include <errno.h>
+
 #endif

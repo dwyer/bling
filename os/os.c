@@ -56,15 +56,23 @@ extern void os_close(os_File *file, error_t **error) {
     }
 }
 
-extern os_FileInfo os_stat(const char *filename, error_t **error) {
+extern os_FileInfo os_stat(const char *name, error_t **error) {
     struct stat st;
-    stat(filename, &st);
-    // TODO check error
-    os_FileInfo info = {
-        ._name = strdup(filename),
-        ._sys = memdup(&st, sizeof(struct stat)),
-    };
+    os_FileInfo info = {};
+    if (stat(name, &st) != 0) {
+        if (error != NULL) {
+            *error = make_sysError();
+        }
+        return info;
+    }
+    info._name = strdup(name);
+    info._sys = memdup(&st, sizeof(struct stat));
     return info;
+}
+
+extern void os_FileInfo_free(os_FileInfo info) {
+    free(info._name);
+    free(info._sys);
 }
 
 extern os_File *os_openDir(const char *name, error_t **error) {
@@ -126,30 +134,30 @@ extern os_FileInfo **os_readdir(os_File *file, error_t **error) {
     return arr.array;
 }
 
-extern char *os_FileInfo_name(os_FileInfo *info) {
-    return info->_name;
+extern char *os_FileInfo_name(os_FileInfo info) {
+    return info._name;
 }
 
-extern uint64_t os_FileInfo_size(os_FileInfo *info) {
+extern uint64_t os_FileInfo_size(os_FileInfo info) {
     struct stat st = *(struct stat *)os_FileInfo_sys(info);
     return st.st_size;
 }
 
-extern os_FileMode os_FileInfo_mode(os_FileInfo *info) {
+extern os_FileMode os_FileInfo_mode(os_FileInfo info) {
     struct stat st = *(struct stat *)os_FileInfo_sys(info);
     return st.st_mode;
 }
 
-extern time_Time os_FileInfo_mod_time(os_FileInfo *info) {
+extern time_Time os_FileInfo_mod_time(os_FileInfo info) {
     struct stat st = *(struct stat *)os_FileInfo_sys(info);
     return st.st_mtime;
 }
 
-extern bool os_FileInfo_is_dir(os_FileInfo *info) {
+extern bool os_FileInfo_is_dir(os_FileInfo info) {
     struct stat st = *(struct stat *)os_FileInfo_sys(info);
     return S_ISDIR(st.st_mode);
 }
 
-extern void *os_FileInfo_sys(os_FileInfo *info) {
-    return info->_sys;
+extern void *os_FileInfo_sys(os_FileInfo info) {
+    return info._sys;
 }
