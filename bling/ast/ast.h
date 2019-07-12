@@ -54,6 +54,18 @@ typedef struct decl_t decl_t;
 typedef struct expr_t expr_t;
 typedef struct stmt_t stmt_t;
 
+typedef enum {
+    obj_kind_BAD,
+    obj_kind_TYPE,
+    obj_kind_VALUE,
+} obj_kind_t;
+
+typedef struct {
+    obj_kind_t kind;
+    char *name;
+    decl_t *decl;
+} object_t;
+
 typedef struct {
     expr_t *name;
     expr_t *value;
@@ -147,6 +159,7 @@ struct expr_t {
 
         struct {
             char *name;
+            object_t *obj;
         } ident;
 
         struct {
@@ -259,18 +272,6 @@ struct stmt_t {
     };
 };
 
-typedef enum {
-    obj_kind_BAD,
-    obj_kind_TYPE,
-    obj_kind_VALUE,
-} obj_kind_t;
-
-typedef struct {
-    obj_kind_t kind;
-    char *name;
-    decl_t *decl;
-} object_t;
-
 extern object_t *object_new(obj_kind_t kind, char *name);
 
 typedef struct scope scope_t;
@@ -300,3 +301,5 @@ typedef struct {
     scope_t *scope;
     slice_t files;
 } package_t;
+
+extern void walk_file(file_t *file);

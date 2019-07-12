@@ -82,6 +82,7 @@ static expr_t *find_type(walker_t *w, expr_t *expr) {
 extern void scope_declare(scope_t *s, obj_kind_t kind, expr_t *name) {
     assert(s != NULL);
     assert(name->type == ast_EXPR_IDENT);
+    assert(name->ident.obj == NULL);
     scope_insert(s, object_new(kind, name->ident.name));
 }
 

@@ -86,19 +86,14 @@ extern void expect(parser_t *p, token_t tok) {
 }
 
 extern expr_t *identifier(parser_t *p) {
-    expr_t *expr = NULL;
-    switch (p->tok) {
-    case token_IDENT:
-        expr = malloc(sizeof(expr_t));
-        expr->type = ast_EXPR_IDENT;
-        expr->ident.name = strdup(p->lit);
-        break;
-    default:
-        expect(p, token_IDENT);
-        break;
+    expr_t x = {
+        .type = ast_EXPR_IDENT,
+    };
+    if (p->tok == token_IDENT) {
+        x.ident.name = strdup(p->lit);
     }
-    parser_next(p);
-    return expr;
+    expect(p, token_IDENT);
+    return memdup(&x, sizeof(expr_t));
 }
 
 static expr_t *basic_lit(parser_t *p, token_t kind) {
