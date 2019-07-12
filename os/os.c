@@ -112,7 +112,7 @@ extern os_FileInfo **os_readdir(os_File *file, error_t **error) {
     }
     slice_t arr = {.size = sizeof(uintptr_t)};
     for (int i = 0; names[i] != NULL; i++) {
-        char *path = path_join2(file->name, names[i]);
+        char *path = path_join(file->name, names[i], NULL);
         free(names[i]);
         os_FileInfo info = os_stat(path);
         os_FileInfo *ptr = memdup(&info, sizeof(info));
