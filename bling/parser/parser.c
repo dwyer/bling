@@ -983,7 +983,7 @@ static bool isTestFile(const char *name) {
     return path_match("*_test.bling", name);
 }
 
-static void import(parser_t *p, const char *dirname, slice_t *decls) {
+static void parser_import(parser_t *p, const char *dirname, slice_t *decls) {
     for (int i = 0; i < len(p->pkg_scope->filenames); i++) {
         char *s = NULL;
         slice_get(&p->pkg_scope->filenames, i, &s);
@@ -1015,7 +1015,7 @@ static file_t *parse_file(parser_t *p) {
         expect(p, token_RPAREN);
         expect(p, token_SEMICOLON);
     }
-    import(p, "builtin", &decls);
+    parser_import(p, "builtin", &decls);
     while (p->tok == token_IMPORT) {
         expect(p, token_IMPORT);
         expr_t *path = basic_lit(p, token_STRING);
@@ -1027,7 +1027,7 @@ static file_t *parse_file(parser_t *p) {
             dirname[i] = lit[i+1];
         }
         dirname[n] = '\0';
-        import(p, dirname, &decls);
+        parser_import(p, dirname, &decls);
     }
     while (p->tok != token_EOF) {
         decl_t *decl = parse_decl(p, true);
