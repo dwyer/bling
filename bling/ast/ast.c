@@ -39,8 +39,22 @@ extern object_t *scope_lookup(scope_t *s, char *name) {
     return obj;
 }
 
-extern void scope_declare(scope_t *s, decl_t *decl, obj_kind_t kind, expr_t *ident) {
-    assert(s != NULL);
+static void scope_declare(scope_t *s, decl_t *decl) {
+    obj_kind_t kind;
+    expr_t *ident = NULL;
+    switch (decl->type) {
+    case ast_DECL_TYPEDEF:
+        kind = obj_kind_TYPE;
+        ident = decl->typedef_.name;
+        break;
+    case ast_DECL_VALUE:
+        kind = obj_kind_VALUE;
+        ident = decl->value.name;
+        break;
+    default:
+        panic("scope_declare: bad decl: %d", decl->type);
+        return;
+    }
     assert(ident->type == ast_EXPR_IDENT);
     if (ident->ident.obj != NULL) {
         panic("already declared: %s", ident->ident.name);
@@ -116,13 +130,13 @@ static void walk_decl(walker_t *w, decl_t *decl) {
     case ast_DECL_IMPORT:
         break;
     case ast_DECL_TYPEDEF:
-        scope_declare(w->topScope, decl, obj_kind_TYPE, decl->typedef_.name);
+        scope_declare(w->topScope, decl);
         break;
     case ast_DECL_VALUE:
         if (decl->value.type == NULL) {
             decl->value.type = find_type(w, decl->value.value);
         }
-        scope_declare(w->topScope, decl, obj_kind_VALUE, decl->value.name);
+        scope_declare(w->topScope, decl);
         break;
     default:
         panic("walk_decl: not implemented: %d", decl->type);
