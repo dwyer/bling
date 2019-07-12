@@ -1,5 +1,13 @@
 #include "bling/ast/ast.h"
 
+extern object_t *object_new(obj_kind_t kind, char *name) {
+    object_t obj = {
+        .kind = kind,
+        .name = name,
+    };
+    return memdup(&obj, sizeof(obj));
+}
+
 static const desc_t _object_desc = {
     .size = sizeof(object_t),
 };
@@ -73,11 +81,7 @@ static expr_t *find_type(walker_t *w, expr_t *expr) {
 
 extern void scope_declare(scope_t *s, obj_kind_t kind, expr_t *name) {
     assert(name->type == ast_EXPR_IDENT);
-    object_t obj = {
-        .kind = kind,
-        .name = name->ident.name,
-    };
-    scope_insert(s, memdup(&obj, sizeof(obj)));
+    scope_insert(s, object_new(kind, name->ident.name));
 }
 
 static void walk_decl(walker_t *w, decl_t *decl) {

@@ -268,7 +268,10 @@ typedef enum {
 typedef struct {
     obj_kind_t kind;
     char *name;
+    decl_t *decl;
 } object_t;
+
+extern object_t *object_new(obj_kind_t kind, char *name);
 
 typedef struct scope scope_t;
 
