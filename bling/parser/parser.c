@@ -987,7 +987,7 @@ static void import(parser_t *p, const char *dirname, slice_t *decls) {
     os_FileInfo **files = ioutil_read_dir(dirname, NULL);
     while (*files != NULL) {
         char *name = (*files)->name;
-        if (streq(path_ext(name), ".bling")) {
+        if (path_matchExt(".bling", name)) {
             file_t *file = parser_parse_file(name, p->pkg_scope);
             for (int i = 0; file->decls[i] != NULL; i++) {
                 *decls = append(*decls, &file->decls[i]);

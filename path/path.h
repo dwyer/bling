@@ -8,3 +8,6 @@ extern char *path_ext(const char *path);
 extern bool path_isAbs(const char *path);
 extern char *path_join(const char *elem, ...);
 extern char **path_split(const char *path);
+
+extern bool path_match(const char *pattern, const char *path);
+extern bool path_matchExt(const char *ext, const char *path);

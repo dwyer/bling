@@ -28,8 +28,8 @@ static char *types[] = {
     NULL,
 };
 
-bool is_ext(const char *filename, const char *ext) {
-    return streq(path_ext(filename), ext);
+bool is_ext(const char *path, const char *ext) {
+    return path_matchExt(ext, path);
 }
 
 void usage(const char *progname) {
