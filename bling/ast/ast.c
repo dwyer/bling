@@ -35,12 +35,63 @@ typedef struct {
     scope_t *topScope;
 } walker_t;
 
+static expr_t *find_basic_type(token_t kind) {
+    const char *name = NULL;
+    switch (kind) {
+    case token_INT:
+        name = "int";
+        break;
+    case token_STRING:
+        name = "string";
+        break;
+    default:
+        panic("!");
+    }
+    expr_t x = {
+        .type = ast_EXPR_IDENT,
+        .ident = {
+            .name = strdup(name),
+        }
+    };
+    expr_t *y = memdup(&x, sizeof(expr_t));
+    return y;
+}
+
+static expr_t *find_type(walker_t *w, expr_t *expr) {
+    assert(expr);
+    switch (expr->type) {
+    case ast_EXPR_BASIC_LIT:
+        return find_basic_type(expr->basic_lit.kind);
+    case ast_EXPR_IDENT:
+        break;
+    default:
+        panic("find_type: unknown expr: %d", expr->type);
+        break;
+    }
+    return NULL;
+}
+
+extern void scope_declare(scope_t *s, obj_kind_t kind, expr_t *name) {
+    assert(name->type == ast_EXPR_IDENT);
+    object_t obj = {
+        .kind = kind,
+        .name = name->ident.name,
+    };
+    scope_insert(s, memdup(&obj, sizeof(obj)));
+}
+
 static void walk_decl(walker_t *w, decl_t *decl) {
     switch (decl->type) {
     case ast_DECL_FUNC:
     case ast_DECL_IMPORT:
     case ast_DECL_TYPEDEF:
+        break;
     case ast_DECL_VALUE:
+        if (decl->value.type == NULL) {
+            decl->value.type = find_type(w, decl->value.value);
+        }
+        assert(decl->value.name->type == ast_EXPR_IDENT);
+        //scope_declare(w->topScope, obj_kind_VALUE, decl->value.name->ident.name);
         break;
     default:
         panic("walk_decl: not implemented: %d", decl->type);
@@ -48,7 +99,7 @@ static void walk_decl(walker_t *w, decl_t *decl) {
 }
 
 extern void walk_file(file_t *file) {
-    walker_t w = {};
+    walker_t w = {.topScope = file->scope};
     for (int i = 0; file->decls != NULL && file->decls[i] != NULL; i++) {
         walk_decl(&w, file->decls[i]);
     }

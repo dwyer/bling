@@ -24,7 +24,7 @@ a.out: $(BLINGC) all.bling
 	./splitall.py
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
 	cc all.c
-	# ./a.out syntax_test.bling
+	./a.out syntax_test.bling
 
 all.bling: $(BLINGC)
 	$(BLINGC) -o all.bling $(SRCS)

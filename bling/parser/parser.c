@@ -9,12 +9,8 @@ extern void parser_init(parser_t *p, char *filename, char *src) {
     parser_next(p);
 }
 
-extern void parser_declare(parser_t *p, scope_t *s, obj_kind_t kind, char *name) {
-    object_t obj = {
-        .kind = kind,
-        .name = name,
-    };
-    scope_insert(s, memdup(&obj, sizeof(obj)));
+extern void parser_declare(parser_t *p, scope_t *s, obj_kind_t kind, expr_t *name) {
+    scope_declare(s, kind, name);
 }
 
 static expr_t *parse_cast_expr(parser_t *p);
@@ -1049,6 +1045,7 @@ extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {
     parser_init(&p, filename, src);
     p.pkg_scope = pkg_scope;
     file_t *file = parse_file(&p);
+    file->scope = p.pkg_scope;
     free(src);
     return file;
 }

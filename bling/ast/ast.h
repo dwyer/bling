@@ -262,6 +262,7 @@ struct stmt_t {
 typedef enum {
     obj_kind_BAD,
     obj_kind_TYPE,
+    obj_kind_VALUE,
 } obj_kind_t;
 
 typedef struct {
@@ -281,6 +282,7 @@ extern scope_t *scope_new(scope_t *outer);
 extern void scope_deinit(scope_t *s);
 extern object_t *scope_insert(scope_t *s, object_t *obj);
 extern object_t *scope_lookup(scope_t *s, char *name);
+extern void scope_declare(scope_t *s, obj_kind_t kind, expr_t *name);
 
 typedef struct {
     const char *filename;

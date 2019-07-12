@@ -1019,13 +1019,13 @@ static decl_t *declaration(parser_t *p, bool is_external) {
         token_t keyword = p->tok;
         expect(p, keyword);
         expr_t *type = declaration_specifiers(p, true);
-        expr_t *ident = declarator(p, &type);
+        expr_t *name = declarator(p, &type);
         expect(p, token_SEMICOLON);
-        parser_declare(p, p->pkg_scope, obj_kind_TYPE, ident->ident.name);
+        parser_declare(p, p->pkg_scope, obj_kind_TYPE, name);
         decl_t decl = {
             .type = ast_DECL_TYPEDEF,
             .typedef_ = {
-                .name = ident,
+                .name = name,
                 .type = type,
             },
         };
