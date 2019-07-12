@@ -29,8 +29,8 @@ extern int os_read(os_File *file, char *b, int n, error_t **error);
 extern int os_write(os_File *file, const char *b, error_t **error);
 
 typedef struct {
-    char *name;
-    void *sys;
+    char *_name;
+    void *_sys;
 } os_FileInfo;
 
 extern char *os_FileInfo_name(os_FileInfo *info);

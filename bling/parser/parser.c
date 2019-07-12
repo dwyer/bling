@@ -992,9 +992,10 @@ static void import(parser_t *p, const char *dirname, slice_t *decls) {
         }
     }
     p->pkg_scope->filenames = append(p->pkg_scope->filenames, &dirname);
-    os_FileInfo **files = ioutil_read_dir(dirname, NULL);
+    error_t *err = NULL;
+    os_FileInfo **files = ioutil_read_dir(dirname, &err);
     while (*files != NULL) {
-        char *name = (*files)->name;
+        char *name = os_FileInfo_name(*files);
         if (isBlingFile(name) && !isTestFile(name)) {
             file_t *file = parser_parse_file(name, p->pkg_scope);
             for (int i = 0; file->decls[i] != NULL; i++) {

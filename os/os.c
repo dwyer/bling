@@ -61,8 +61,8 @@ extern os_FileInfo os_stat(const char *filename, error_t **error) {
     stat(filename, &st);
     // TODO check error
     os_FileInfo info = {
-        .name = strdup(filename),
-        .sys = memdup(&st, sizeof(struct stat)),
+        ._name = strdup(filename),
+        ._sys = memdup(&st, sizeof(struct stat)),
     };
     return info;
 }
@@ -127,7 +127,7 @@ extern os_FileInfo **os_readdir(os_File *file, error_t **error) {
 }
 
 extern char *os_FileInfo_name(os_FileInfo *info) {
-    return info->name;
+    return info->_name;
 }
 
 extern uint64_t os_FileInfo_size(os_FileInfo *info) {
@@ -151,5 +151,5 @@ extern bool os_FileInfo_is_dir(os_FileInfo *info) {
 }
 
 extern void *os_FileInfo_sys(os_FileInfo *info) {
-    return info->sys;
+    return info->_sys;
 }
