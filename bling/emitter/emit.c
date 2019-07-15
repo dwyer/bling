@@ -31,18 +31,6 @@ static void print_token(emitter_t *p, token_t tok) {
     emit_string(p, token_string(tok));
 }
 
-static void print_field(emitter_t *p, decl_t *field) {
-    if (field->field.type == NULL && field->field.name == NULL) {
-        emit_string(p, "...");
-    } else {
-        if (field->field.name != NULL) {
-            print_expr(p, field->field.name);
-            emit_space(p);
-        }
-        print_type(p, field->field.type);
-    }
-}
-
 static void print_expr(emitter_t *p, expr_t *expr) {
     if (!expr) {
         panic("print_expr: expr is NULL");
@@ -309,7 +297,7 @@ static void print_type(emitter_t *p, expr_t *type) {
     case ast_TYPE_FUNC:
         print_token(p, token_LPAREN);
         for (decl_t **params = type->func.params; params && *params; ) {
-            print_field(p, *params);
+            print_decl(p, *params);
             params++;
             if (*params != NULL) {
                 print_token(p, token_COMMA);
@@ -364,7 +352,7 @@ static void print_type(emitter_t *p, expr_t *type) {
             print_token(p, token_FUNC);
             print_token(p, token_LPAREN);
             for (decl_t **params = type->func.params; params && *params; ) {
-                print_field(p, *params);
+                print_decl(p, *params);
                 params++;
                 if (*params != NULL) {
                     print_token(p, token_COMMA);
@@ -402,7 +390,7 @@ static void print_type(emitter_t *p, expr_t *type) {
             for (decl_t **fields = type->struct_.fields; fields && *fields;
                     fields++) {
                 emit_tabs(p);
-                print_field(p, *fields);
+                print_decl(p, *fields);
                 print_token(p, token_SEMICOLON);
                 emit_newline(p);
             }
@@ -423,6 +411,18 @@ static void print_type(emitter_t *p, expr_t *type) {
 
 static void print_decl(emitter_t *p, decl_t *decl) {
     switch (decl->type) {
+
+    case ast_DECL_FIELD:
+        if (decl->field.type == NULL && decl->field.name == NULL) {
+            emit_string(p, "...");
+        } else {
+            if (decl->field.name != NULL) {
+                print_expr(p, decl->field.name);
+                emit_space(p);
+            }
+            print_type(p, decl->field.type);
+        }
+        break;
 
     case ast_DECL_FUNC:
         print_token(p, token_FUNC);

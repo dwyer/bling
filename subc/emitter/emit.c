@@ -5,14 +5,6 @@ static void emit_c_decl(emitter_t *e, decl_t *decl);
 static void emit_c_expr(emitter_t *e, expr_t *expr);
 static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name);
 
-static void emit_field(emitter_t *e, decl_t *field) {
-    if (field->field.type == NULL && field->field.name == NULL) {
-        emit_string(e, "...");
-    } else {
-        emit_c_type(e, field->field.type, field->field.name);
-    }
-}
-
 static void emit_c_expr(emitter_t *e, expr_t *expr) {
     if (!expr) {
         panic("emit_c_expr: expr is NULL");
@@ -292,7 +284,7 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
         }
         emit_token(e, token_LPAREN);
         for (decl_t **params = type->func.params; params && *params; ) {
-            emit_field(e, *params);
+            emit_c_decl(e, *params);
             params++;
             if (*params != NULL) {
                 emit_token(e, token_COMMA);
@@ -350,7 +342,7 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
             emit_token(e, token_RPAREN);
             emit_token(e, token_LPAREN);
             for (decl_t **params = type->func.params; params && *params; ) {
-                emit_field(e, *params);
+                emit_c_decl(e, *params);
                 params++;
                 if (*params != NULL) {
                     emit_token(e, token_COMMA);
@@ -386,7 +378,7 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
             for (decl_t **fields = type->struct_.fields; fields && *fields;
                     fields++) {
                 emit_tabs(e);
-                emit_field(e, *fields);
+                emit_c_decl(e, *fields);
                 emit_token(e, token_SEMICOLON);
                 emit_newline(e);
             }
@@ -415,6 +407,14 @@ static void emit_c_decl(emitter_t *e, decl_t *decl) {
         emit_token(e, decl->store);
     }
     switch (decl->type) {
+
+    case ast_DECL_FIELD:
+        if (decl->field.type == NULL && decl->field.name == NULL) {
+            emit_string(e, "...");
+        } else {
+            emit_c_type(e, decl->field.type, decl->field.name);
+        }
+        break;
 
     case ast_DECL_FUNC:
         emit_c_type(e, decl->func.type, decl->func.name);
