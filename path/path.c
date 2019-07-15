@@ -9,7 +9,7 @@ extern char *path_base(const char *path) {
 }
 
 extern char *path_clean(const char *path) {
-    return path;
+    return NULL;
 }
 
 extern char *path_dir(const char *path) {
@@ -17,7 +17,7 @@ extern char *path_dir(const char *path) {
     return dirname(p);
 }
 
-extern char *path_ext(const char *path) {
+extern const char *path_ext(const char *path) {
     int n = strlen(path) - 1;
     while (n > 0 && path[n] != '.') {
         n--;
