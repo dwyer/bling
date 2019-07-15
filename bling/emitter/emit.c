@@ -383,8 +383,8 @@ static void print_type(emitter_t *p, expr_t *type) {
         break;
 
     case ast_TYPE_QUAL:
-        //print_token(p, type->qual.qual);
-        //emit_space(p);
+        print_token(p, type->qual.qual);
+        emit_space(p);
         print_type(p, type->qual.type);
         break;
 

@@ -853,9 +853,24 @@ static expr_t *parse_func_type(parser_t *p) {
     return memdup(&ptr, sizeof(ptr));
 }
 
+static expr_t *parse_type_qualifier(parser_t *p, token_t tok) {
+    expect(p, tok);
+    expr_t x = {
+        .type = ast_TYPE_QUAL,
+        .qual = {
+            .qual = tok,
+            .type = parse_type_spec(p),
+        },
+    };
+    return memdup(&x, sizeof(expr_t));
+}
+
 static expr_t *parse_type_spec(parser_t *p) {
     expr_t *x = NULL;
     switch (p->tok) {
+    case token_CONST:
+        x = parse_type_qualifier(p, p->tok);
+        break;
     case token_IDENT:
         x = identifier(p);
         break;
