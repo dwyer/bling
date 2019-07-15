@@ -418,8 +418,8 @@ static void emit_c_decl(emitter_t *e, decl_t *decl) {
 
     case ast_DECL_FUNC:
         emit_c_type(e, decl->func.type, decl->func.name);
-        emit_space(e);
         if (decl->func.body) {
+            emit_space(e);
             emit_stmt(e, decl->func.body);
         } else {
             emit_token(e, token_SEMICOLON);

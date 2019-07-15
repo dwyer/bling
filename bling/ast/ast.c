@@ -5,7 +5,7 @@ extern object_t *object_new(obj_kind_t kind, char *name) {
         .kind = kind,
         .name = name,
     };
-    return memdup(&obj, sizeof(obj));
+    return memdup(&obj, sizeof(object_t));
 }
 
 static const desc_t _object_desc = {

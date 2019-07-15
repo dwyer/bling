@@ -110,7 +110,7 @@ static expr_t *basic_lit(parser_t *p, token_t kind) {
             .value = strdup(value),
         },
     };
-    return memdup(&x, sizeof(x));
+    return memdup(&x, sizeof(expr_t));
 }
 
 extern expr_t *primary_expression(parser_t *p) {
@@ -140,7 +140,7 @@ extern expr_t *primary_expression(parser_t *p) {
                 },
             };
             expect(p, token_RPAREN);
-            return memdup(&x, sizeof(x));
+            return memdup(&x, sizeof(expr_t));
         }
     default:
         parser_error(p, "bad expr: %s: %s", token_string(p->tok), p->lit);
@@ -170,7 +170,7 @@ static expr_t *parse_postfix_expr(parser_t *p) {
                     },
                 };
                 expect(p, token_RBRACK);
-                x = memdup(&y, sizeof(y));
+                x = memdup(&y, sizeof(expr_t));
             }
             break;
         case token_LPAREN:
@@ -196,7 +196,7 @@ static expr_t *parse_postfix_expr(parser_t *p) {
                         .args = slice_to_nil_array(args),
                     },
                 };
-                x = memdup(&call, sizeof(call));
+                x = memdup(&call, sizeof(expr_t));
             }
             break;
         case token_ARROW:
@@ -212,7 +212,7 @@ static expr_t *parse_postfix_expr(parser_t *p) {
                         .sel = identifier(p),
                     },
                 };
-                x = memdup(&y, sizeof(y));
+                x = memdup(&y, sizeof(expr_t));
             }
             break;
         default:
@@ -287,7 +287,7 @@ static expr_t *parse_cast_expr(parser_t *p) {
                 .expr = expr,
             },
         };
-        return memdup(&y, sizeof(y));
+        return memdup(&y, sizeof(expr_t));
     }
     return parse_unary_expr(p);
 }
@@ -310,7 +310,7 @@ static expr_t *parse_binary_expr(parser_t *p, int prec1) {
                 .y = y,
             },
         };
-        x = memdup(&z, sizeof(z));
+        x = memdup(&z, sizeof(expr_t));
     }
 }
 
@@ -332,7 +332,7 @@ static expr_t *parse_ternary_expr(parser_t *p) {
                 .alternative = alternative,
             },
         };
-        x = memdup(&conditional, sizeof(conditional));
+        x = memdup(&conditional, sizeof(expr_t));
     }
     return x;
 }
@@ -367,7 +367,7 @@ static expr_t *parse_assign_expr(parser_t *p) {
                     .y = y,
                 },
             };
-            x = memdup(&z, sizeof(z));
+            x = memdup(&z, sizeof(expr_t));
         }
         break;
     case token_INC:
@@ -381,7 +381,7 @@ static expr_t *parse_assign_expr(parser_t *p) {
                     .tok = op,
                 },
             };
-            x = memdup(&y, sizeof(y));
+            x = memdup(&y, sizeof(expr_t));
         }
         break;
     default:
@@ -433,7 +433,7 @@ static expr_t *parse_struct_or_union_spec(parser_t *p) {
                 f.type = parse_type_spec(p);
             }
             expect(p, token_SEMICOLON);
-            field_t *field = memdup(&f, sizeof(f));
+            field_t *field = memdup(&f, sizeof(field_t));
             slice = append(slice, &field);
             if (p->tok == token_RBRACE) {
                 break;
@@ -451,7 +451,7 @@ static expr_t *parse_struct_or_union_spec(parser_t *p) {
             .fields = fields,
         },
     };
-    return memdup(&x, sizeof(x));
+    return memdup(&x, sizeof(expr_t));
 }
 
 static expr_t *parse_enum_spec(parser_t *p) {
@@ -492,7 +492,7 @@ static expr_t *parse_enum_spec(parser_t *p) {
             .enumerators = enums,
         },
     };
-    return memdup(&x, sizeof(x));
+    return memdup(&x, sizeof(expr_t));
 }
 
 static expr_t *parse_pointer(parser_t *p) {
@@ -503,7 +503,7 @@ static expr_t *parse_pointer(parser_t *p) {
             .type = parse_type_spec(p),
         },
     };
-    return memdup(&x, sizeof(x));
+    return memdup(&x, sizeof(expr_t));
 }
 
 static field_t **parse_param_type_list(parser_t *p, bool anon) {
@@ -548,7 +548,7 @@ static expr_t *parse_init_expr(parser_t *p) {
                         .value = parse_init_expr(p),
                     },
                 };
-                value = memdup(&x, sizeof(x));
+                value = memdup(&x, sizeof(expr_t));
             }
             list = append(list, &value);
             if (!accept(p, token_COMMA)) {
@@ -562,7 +562,7 @@ static expr_t *parse_init_expr(parser_t *p) {
                 .list = slice_to_nil_array(list),
             },
         };
-        return memdup(&expr, sizeof(expr));
+        return memdup(&expr, sizeof(expr_t));
     }
     return parse_ternary_expr(p);
 }
@@ -585,7 +585,7 @@ static stmt_t *parse_stmt(parser_t *p) {
             .type = ast_STMT_DECL,
             .decl = parse_decl(p, false),
         };
-        return memdup(&stmt, sizeof(stmt));
+        return memdup(&stmt, sizeof(stmt_t));
     }
 
     if (accept(p, token_FOR)) {
@@ -616,7 +616,7 @@ static stmt_t *parse_stmt(parser_t *p) {
                 .body = body,
             },
         };
-        return memdup(&stmt, sizeof(stmt));
+        return memdup(&stmt, sizeof(stmt_t));
     }
 
     if (accept(p, token_IF)) {
@@ -648,7 +648,7 @@ static stmt_t *parse_stmt(parser_t *p) {
                 .else_ = else_,
             },
         };
-        return memdup(&stmt, sizeof(stmt));
+        return memdup(&stmt, sizeof(stmt_t));
     }
 
     if (accept(p, token_RETURN)) {
@@ -707,7 +707,7 @@ static stmt_t *parse_stmt(parser_t *p) {
                     .stmts = slice_to_nil_array(stmts),
                 },
             };
-            stmt_t *clause = memdup(&stmt, sizeof(stmt));
+            stmt_t *clause = memdup(&stmt, sizeof(stmt_t));
             clauses = append(clauses, &clause);
         }
         expect(p, token_RBRACE);
@@ -718,7 +718,7 @@ static stmt_t *parse_stmt(parser_t *p) {
                 .stmts = slice_to_nil_array(clauses),
             },
         };
-        return memdup(&stmt, sizeof(stmt));
+        return memdup(&stmt, sizeof(stmt_t));
     }
 
     if (accept(p, token_WHILE)) {
@@ -733,7 +733,7 @@ static stmt_t *parse_stmt(parser_t *p) {
                 .body = body,
             },
         };
-        return memdup(&stmt, sizeof(stmt));
+        return memdup(&stmt, sizeof(stmt_t));
     }
 
     switch (p->tok) {
@@ -760,7 +760,7 @@ static stmt_t *parse_stmt(parser_t *p) {
                     .label = label,
                 },
             };
-            return memdup(&stmt, sizeof(stmt));
+            return memdup(&stmt, sizeof(stmt_t));
         }
     case token_LBRACE:
         return parse_block_stmt(p);
@@ -785,7 +785,7 @@ static stmt_t *parse_stmt(parser_t *p) {
                     .label = x,
                 },
             };
-            return memdup(&stmt, sizeof(stmt));
+            return memdup(&stmt, sizeof(stmt_t));
         }
     }
     // expression_statement : expression? ';' ;
@@ -794,7 +794,7 @@ static stmt_t *parse_stmt(parser_t *p) {
         .expr = {.x = x},
     };
     expect(p, token_SEMICOLON);
-    return memdup(&stmt, sizeof(stmt));
+    return memdup(&stmt, sizeof(stmt_t));
 }
 
 static stmt_t *parse_block_stmt(parser_t *p) {
@@ -825,7 +825,7 @@ static field_t *parse_field(parser_t *p, bool anon) {
     } else {
         field.type = parse_type_spec(p);
     }
-    return memdup(&field, sizeof(field));
+    return memdup(&field, sizeof(field_t));
 }
 
 static expr_t *parse_func_type(parser_t *p) {
@@ -847,10 +847,10 @@ static expr_t *parse_func_type(parser_t *p) {
     expr_t ptr = {
         .type = ast_TYPE_PTR,
         .ptr = {
-            .type = memdup(&type, sizeof(type)),
+            .type = memdup(&type, sizeof(expr_t)),
         },
     };
-    return memdup(&ptr, sizeof(ptr));
+    return memdup(&ptr, sizeof(expr_t));
 }
 
 static expr_t *parse_type_qualifier(parser_t *p, token_t tok) {
@@ -902,7 +902,7 @@ static expr_t *parse_type_spec(parser_t *p) {
                     .len = len,
                 },
             };
-            x = memdup(&type, sizeof(type));
+            x = memdup(&type, sizeof(expr_t));
         }
         break;
     default:
@@ -928,7 +928,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
                     .type = type,
                 },
             };
-            return memdup(&decl, sizeof(decl));
+            return memdup(&decl, sizeof(decl_t));
         }
     case token_VAR:
         {
@@ -955,7 +955,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
                     .value = value,
                 },
             };
-            return memdup(&decl, sizeof(decl));
+            return memdup(&decl, sizeof(decl_t));
         }
     case token_FUNC:
         {
@@ -969,13 +969,13 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
             if (p->tok != token_LBRACE && p->tok != token_SEMICOLON) {
                 type.func.result = parse_type_spec(p);
             }
-            decl.func.type = memdup(&type, sizeof(type));
+            decl.func.type = memdup(&type, sizeof(expr_t));
             if (p->tok == token_LBRACE) {
                 decl.func.body = parse_block_stmt(p);
             } else {
                 expect(p, token_SEMICOLON);
             }
-            return memdup(&decl, sizeof(decl));
+            return memdup(&decl, sizeof(decl_t));
         }
     default:
         parser_error(p, "cant handle it: %s", token_string(p->tok));
@@ -1049,7 +1049,7 @@ static file_t *parse_file(parser_t *p) {
         .name = name,
         .decls = slice_to_nil_array(decls),
     };
-    return memdup(&file, sizeof(file));
+    return memdup(&file, sizeof(file_t));
 }
 
 extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {
