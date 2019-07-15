@@ -35,10 +35,6 @@ static void print_field(emitter_t *p, field_t *field) {
     if (field->type == NULL && field->name == NULL) {
         emit_string(p, "...");
     } else {
-        if (field->is_const) {
-            print_token(p, token_CONST);
-            emit_space(p);
-        }
         if (field->name != NULL) {
             print_expr(p, field->name);
             emit_space(p);

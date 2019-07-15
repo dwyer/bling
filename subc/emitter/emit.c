@@ -9,10 +9,6 @@ static void emit_field(emitter_t *e, field_t *field) {
     if (field->type == NULL && field->name == NULL) {
         emit_string(e, "...");
     } else {
-        if (field->is_const) {
-            emit_token(e, token_CONST);
-            emit_space(e);
-        }
         emit_c_type(e, field->type, field->name);
     }
 }

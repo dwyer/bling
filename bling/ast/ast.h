@@ -74,7 +74,6 @@ typedef struct {
 typedef struct {
     expr_t *type;
     expr_t *name;
-    bool is_const;
 } field_t;
 
 struct decl_t {

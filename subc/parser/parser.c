@@ -487,10 +487,24 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
     return name;
 }
 
+static expr_t *type_qualifier(parser_t *p, expr_t *type) {
+    // type_qualifier_list : type_qualifier+ ;
+    if (accept(p, token_CONST)) {
+        expr_t x = {
+            .type = ast_TYPE_QUAL,
+            .qual = {
+                .qual = token_CONST,
+                .type = type,
+            }
+        };
+        type = memdup(&x, sizeof(x));
+    }
+    return type;
+}
+
 static expr_t *pointer(parser_t *p, expr_t *type) {
     // pointer : '*' type_qualifier_list? pointer? ;
     while (accept(p, token_MUL)) {
-        // type_qualifier_list : type_qualifier+ ;
         expr_t x = {
             .type = ast_TYPE_PTR,
             .ptr = {
@@ -498,6 +512,7 @@ static expr_t *pointer(parser_t *p, expr_t *type) {
             },
         };
         type = memdup(&x, sizeof(x));
+        type = type_qualifier(p, type);
     }
     return type;
 }
@@ -919,8 +934,7 @@ static stmt_t *compound_statement(parser_t *p) {
 
 static field_t *parameter_declaration(parser_t *p) {
     field_t field = {};
-    field.is_const = accept(p, token_CONST);
-    field.type = type_specifier(p);
+    field.type = declaration_specifiers(p, false);
     field.name = declarator(p, &field.type);
     return memdup(&field, sizeof(field));
 }
@@ -953,14 +967,15 @@ static expr_t *type_specifier(parser_t *p) {
     case token_ENUM:
         x = enum_specifier(p);
         break;
-    case token_IDENT:
-        x = identifier(p);
-        break;
     default:
-        if (p->lit) {
-            parser_error(p, "expected type, got %s", p->lit);
+        if (is_type(p)) {
+            x = identifier(p);
         } else {
-            parser_error(p, "expected type, got %s", token_string(p->tok));
+            if (p->lit) {
+                parser_error(p, "expected type, got %s", p->lit);
+            } else {
+                parser_error(p, "expected type, got %s", token_string(p->tok));
+            }
         }
         break;
     }
@@ -983,15 +998,7 @@ static expr_t *declaration_specifiers(parser_t *p, bool is_top) {
         }
     }
     // type_qualifier : CONST | VOLATILE ;
-    bool is_const = false;
-    switch (p->tok) {
-    case token_CONST:
-        is_const = true;
-        parser_next(p);
-        break;
-    default:
-        break;
-    }
+    bool is_const = accept(p, token_CONST);
     expr_t *type = type_specifier(p);
     if (is_const) {
         expr_t x = {

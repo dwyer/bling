@@ -816,7 +816,6 @@ static stmt_t *parse_block_stmt(parser_t *p) {
 
 static field_t *parse_field(parser_t *p, bool anon) {
     field_t field = {};
-    field.is_const = accept(p, token_CONST);
     if (p->tok == token_IDENT) {
         field.name = identifier(p);
     }
