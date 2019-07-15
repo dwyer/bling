@@ -1,5 +1,21 @@
 #include "strings.h"
 
+extern char *strings_join(const char *a[], int size, const char *sep) {
+    switch (size) {
+    case 0:
+        return strdup("");
+    case 1:
+        return strdup(a[0]);
+    }
+    strings_Builder b = {};
+    strings_Builder_write(&b, a[0], strlen(a[0]), NULL);
+    for (int i = 1; i < size; i++) {
+        strings_Builder_write(&b, sep, strlen(sep), NULL);
+        strings_Builder_write(&b, a[i], strlen(a[i]), NULL);
+    }
+    return strings_Builder_string(&b);
+}
+
 static void strings_Builder_init(strings_Builder *b) {
     if (b->_buf.size == 0) {
         b->_buf.size = sizeof(char);

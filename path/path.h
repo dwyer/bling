@@ -1,5 +1,7 @@
 #pragma once
-#include "builtin/builtin.h"
+#include "strings/strings.h"
+
+$import("strings");
 
 extern char *path_base(const char *path);
 extern char *path_clean(const char *path);

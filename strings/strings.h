@@ -2,6 +2,8 @@
 
 #include "builtin/builtin.h"
 
+extern char *strings_join(const char *a[], int size, const char *sep);
+
 typedef struct {
     slice_t _buf;
 } strings_Builder;

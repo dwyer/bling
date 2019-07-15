@@ -7,7 +7,7 @@ cc_library(
         "path.h",
     ],
     deps = [
-        "//builtin",
+        "//strings",
     ],
     visibility = ["//visibility:public"],
 )

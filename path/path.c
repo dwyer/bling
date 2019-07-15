@@ -1,8 +1,5 @@
 #include "path/path.h"
 
-static const char SEP = '/';
-static const char END = '\0';
-
 extern char *path_base(const char *path) {
     char *p = strdup(path);
     return basename(p);
@@ -32,20 +29,16 @@ extern bool path_isAbs(const char *path) {
 extern char *path_join(const char *elem, ...) {
     va_list ap;
     va_start(ap, elem);
-    slice_t buf = {.size = sizeof(char)};
+    slice_t elems = {.size = sizeof(char *)};
     for (;;) {
-        for (int i = 0; elem[i]; i++) {
-            buf = append(buf, &elem[i]);
-        }
+        elems = append(elems, &elem);
         elem = (char *)va_arg(ap, uintptr_t);
         if (elem == NULL) {
             break;
         }
-        buf = append(buf, &SEP);
     }
     va_end(ap);
-    buf = append(buf, &END);
-    return buf.array;
+    return strings_join(elems.array, len(elems), "/");
 }
 
 extern char **path_split(const char *path) {
