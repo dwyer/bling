@@ -77,10 +77,10 @@ int main(int argc, char *argv[]) {
         } else {
             panic("unknown file type: %s", filename);
         }
-        walk_file(file);
         if (emit_as_bling) {
             printer_print_file(&emitter, file);
         } else {
+            walk_file(file);
             emitter_emit_file(&emitter, file);
         }
         free(file->decls);

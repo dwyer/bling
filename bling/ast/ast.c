@@ -26,7 +26,7 @@ extern void scope_deinit(scope_t *s) {
 
 extern object_t *scope_insert(scope_t *s, object_t *obj) {
     object_t *alt = NULL;
-    map_get(&s->objects, obj->name, &obj);
+    map_get(&s->objects, obj->name, &alt);
     if (alt == NULL) {
         map_set(&s->objects, obj->name, &obj);
     }
@@ -62,7 +62,28 @@ static void scope_declare(scope_t *s, decl_t *decl) {
     object_t *obj = object_new(kind, ident->ident.name);
     obj->decl = decl;
     ident->ident.obj = obj;
-    scope_insert(s, obj);
+    object_t *alt = scope_insert(s, obj);
+    if (alt != NULL) {
+        bool warn = false;
+        if (alt->kind == kind) {
+            switch (kind) {
+            case obj_kind_TYPE:
+                warn = true;
+                break;
+            case obj_kind_VALUE:
+                warn = alt->decl->value.value == NULL &&
+                    decl->value.value != NULL;
+                break;
+            default:
+                break;
+            }
+        }
+        if (warn) {
+            print("warning: already declared: %s", ident->ident.name);
+        } else {
+            panic("already declared: %s", ident->ident.name);
+        }
+    }
 }
 
 static void scope_resolve(scope_t *s, expr_t *x) {
@@ -87,11 +108,11 @@ static expr_t *find_basic_type(token_t kind) {
     case token_INT:
         name = "int";
         break;
-    case token_STRING:
-        name = "string";
+    case token_FLOAT:
+        name = "float";
         break;
     default:
-        panic("!");
+        panic("find_basic_type: bad kind: %s", token_string(kind));
     }
     expr_t x = {
         .type = ast_EXPR_IDENT,
@@ -124,6 +145,13 @@ static expr_t *find_type(walker_t *w, expr_t *expr) {
     return NULL;
 }
 
+static bool match_types(expr_t *t1, expr_t *t2) {
+    if (t1->type == ast_EXPR_IDENT && t2->type == ast_EXPR_IDENT) {
+        return streq(t1->ident.name, t2->ident.name);
+    }
+    return false;
+}
+
 static void walk_decl(walker_t *w, decl_t *decl) {
     switch (decl->type) {
     case ast_DECL_FUNC:
@@ -135,6 +163,8 @@ static void walk_decl(walker_t *w, decl_t *decl) {
     case ast_DECL_VALUE:
         if (decl->value.type == NULL) {
             decl->value.type = find_type(w, decl->value.value);
+        } else if (decl->value.value != NULL) {
+            assert(match_types(decl->value.type, find_type(w, decl->value.value)));
         }
         scope_declare(w->topScope, decl);
         break;

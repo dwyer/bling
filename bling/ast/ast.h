@@ -138,6 +138,7 @@ struct expr_t {
         } cast;
 
         struct {
+            expr_t *type;
             expr_t **list;
         } compound;
 
