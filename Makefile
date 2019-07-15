@@ -9,6 +9,7 @@ SRCS=runtime/runtime.h \
      builtin/builtin.h builtin/builtin.c \
      path/path.h path/path.c \
      os/os.h os/os.c \
+     strings/strings.h strings/strings.c \
      fmt/fmt.h fmt/fmt.c \
      io/ioutil/ioutil.h io/ioutil/ioutil.c \
      bling/token/token.h bling/token/token.c \

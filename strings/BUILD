@@ -1,14 +1,13 @@
 cc_library(
-    name = "ioutil",
+    name = "strings",
     srcs = [
-        "ioutil.c",
+        "strings.c",
     ],
     hdrs = [
-        "ioutil.h",
+        "strings.h",
     ],
     deps = [
-        "//os",
-        "//strings",
+        "//builtin",
     ],
     visibility = ["//visibility:public"],
 )

@@ -23,19 +23,15 @@ extern os_FileInfo **ioutil_read_dir(const char *name, error_t **error) {
 
 extern char *ioutil_read_file(const char *name, error_t **error) {
     os_File *file = os_open(name, error);
-    slice_t str = {.size = sizeof(char), .cap = BUFSIZ};
+    strings_Builder builder = {};
     for (;;) {
         char buf[BUFSIZ];
         int n = os_read(file, buf, BUFSIZ, error);
-        for (int i = 0; i < n; i++) {
-            str = append(str, &buf[i]);
-        }
+        strings_Builder_write(&builder, buf, n, error);
         if (n < BUFSIZ) {
             break;
         }
     }
     os_close(file, error);
-    int ch = 0;
-    str = append(str, &ch);
-    return (char *)str.array;
+    return strings_Builder_string(&builder);
 }
