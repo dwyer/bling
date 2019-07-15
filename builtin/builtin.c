@@ -1,18 +1,18 @@
 #include "builtin/builtin.h"
 
-static void vprint(char *fmt, va_list ap) {
+static void vprint(const char *fmt, va_list ap) {
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
 }
 
-extern void print(char *fmt, ...) {
+extern void print(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vprint(fmt, ap);
     va_end(ap);
 }
 
-extern void panic(char *fmt, ...) {
+extern void panic(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vprint(fmt, ap);

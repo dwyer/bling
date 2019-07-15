@@ -14,7 +14,7 @@ static void skip_whitespace(scanner_t *s) {
 }
 
 static void skip_line(scanner_t *s) {
-    while (s->ch && s->ch != '\n') {
+    while (s->ch >= 0 && s->ch != '\n') {
         next0(s);
     }
 }
@@ -122,6 +122,34 @@ static char *scan_string(scanner_t *s) {
     return make_string_slice(s, offs, s->offset);
 }
 
+static void scanner_error(scanner_t *s, int offs, const char *msg) {
+    panic("scanner error: offset %d: %s", offs, msg);
+}
+
+static void scan_comment(scanner_t *s) {
+    int offs = s->offset - 1;
+    switch (s->ch) {
+    case '/':
+        skip_line(s);
+        break;
+    case '*':
+        next0(s);
+        while (s->ch >= 0) {
+            int ch = s->ch;
+            next0(s);
+            if (ch == '*' && s->ch == '/') {
+                next0(s);
+                return;
+            }
+        }
+        scanner_error(s, offs, "comment not terminated");
+        break;
+    default:
+        panic("not a comment");
+        break;
+    }
+}
+
 extern token_t scanner_scan(scanner_t *s, char **lit) {
     token_t tok;
 scan_again:
@@ -140,33 +168,6 @@ scan_again:
     } else if (s->ch == '"') {
         *lit = scan_string(s);
         tok = token_STRING;
-    } else if (s->ch == '.') {
-        next0(s);
-        if (s->ch == '.') {
-            next0(s);
-            if (s->ch == '.') {
-                next0(s);
-                tok = token_ELLIPSIS;
-            }
-        } else {
-            tok = token_PERIOD;
-        }
-    } else if (s->ch == '/') {
-        next0(s);
-        if (s->ch == '/') {
-            skip_line(s);
-            goto scan_again;
-        } else {
-            tok = switch2(s, token_DIV, token_DIV_ASSIGN);
-        }
-    } else if (s->ch == '-') {
-        next0(s);
-        if (s->ch == '>') {
-            next0(s);
-            tok = token_ARROW;
-        } else {
-            tok = switch3(s, token_SUB, token_SUB_ASSIGN, '-', token_DEC);
-        }
     } else {
         int ch = s->ch;
         next0(s);
@@ -209,6 +210,7 @@ scan_again:
         case '}':
             tok = token_RBRACE;
             break;
+
             // operators
         case '!':
             tok = switch2(s, token_NOT, token_NOT_EQUAL);
@@ -224,6 +226,33 @@ scan_again:
             break;
         case '+':
             tok = switch3(s, token_ADD, token_ADD_ASSIGN, '+', token_INC);
+            break;
+        case '-':
+            if (s->ch == '>') {
+                next0(s);
+                tok = token_ARROW;
+            } else {
+                tok = switch3(s, token_SUB, token_SUB_ASSIGN, '-', token_DEC);
+            }
+            break;
+        case '.':
+            if (s->ch == '.') {
+                next0(s);
+                if (s->ch == '.') {
+                    next0(s);
+                    tok = token_ELLIPSIS;
+                }
+            } else {
+                tok = token_PERIOD;
+            }
+            break;
+        case '/':
+            if (s->ch == '/' || s->ch == '*') {
+                scan_comment(s);
+                goto scan_again;
+            } else {
+                tok = switch2(s, token_DIV, token_DIV_ASSIGN);
+            }
             break;
         case '<':
             tok = switch4(s, token_LT, token_LT_EQUAL, '<', token_SHL, token_SHL_ASSIGN);
