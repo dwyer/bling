@@ -9,11 +9,11 @@ static expr_t *type_specifier(parser_t *p);
 static expr_t *struct_or_union_specifier(parser_t *p);
 static expr_t *enum_specifier(parser_t *p);
 static expr_t *pointer(parser_t *p, expr_t *type);
-static field_t **parameter_type_list(parser_t *p);
+static decl_t **parameter_type_list(parser_t *p);
 static expr_t *type_name(parser_t *p);
 
 static expr_t *declarator(parser_t *p, expr_t **type_ptr);
-static field_t *abstract_declarator(parser_t *p, expr_t *type);
+static decl_t *abstract_declarator(parser_t *p, expr_t *type);
 
 static stmt_t *statement(parser_t *p);
 static stmt_t *compound_statement(parser_t *p);
@@ -22,7 +22,7 @@ static expr_t *specifier_qualifier_list(parser_t *p);
 static expr_t *declaration_specifiers(parser_t *p, bool is_top);
 static decl_t *declaration(parser_t *p, bool is_external);
 
-static field_t *parameter_declaration(parser_t *p);
+static decl_t *parameter_declaration(parser_t *p);
 
 static bool is_type(parser_t *p) {
     switch (p->tok) {
@@ -329,7 +329,7 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
     if (p->tok == token_IDENT) {
         name = identifier(p);
     }
-    field_t **fields = NULL;
+    decl_t **fields = NULL;
     if (accept(p, token_LBRACE)) {
         // struct_declaration_list
         //         : struct_declaration
@@ -338,7 +338,7 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
         // struct_declaration
         //         : specifier_qualifier_list struct_declarator_list ';'
         //         ;
-        slice_t slice = {.size = sizeof(field_t *)};
+        slice_t slice = {.size = sizeof(decl_t *)};
         for (;;) {
             // struct_declarator_list
             //         : struct_declarator
@@ -351,12 +351,15 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
             //         ;
             expr_t *type = specifier_qualifier_list(p);
             expr_t *name = declarator(p, &type);
-            field_t f = {
-                .type = type,
-                .name = name,
+            decl_t f = {
+                .type = ast_DECL_FIELD,
+                .field = {
+                    .type = type,
+                    .name = name,
+                },
             };
             expect(p, token_SEMICOLON);
-            field_t *field = memdup(&f, sizeof(f));
+            decl_t *field = memdup(&f, sizeof(f));
             slice = append(slice, &field);
             if (p->tok == token_RBRACE) {
                 break;
@@ -461,7 +464,7 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
         expect(p, token_RBRACK);
         *type_ptr = memdup(&type, sizeof(type));
     } else if (accept(p, token_LPAREN)) {
-        field_t **params = NULL;
+        decl_t **params = NULL;
         if (p->tok != token_RPAREN) {
             params = parameter_type_list(p);
         }
@@ -517,7 +520,7 @@ static expr_t *pointer(parser_t *p, expr_t *type) {
     return type;
 }
 
-static field_t **parameter_type_list(parser_t *p) {
+static decl_t **parameter_type_list(parser_t *p) {
     // parameter_type_list
     //         : parameter_list
     //         | parameter_list ',' '...'
@@ -526,20 +529,21 @@ static field_t **parameter_type_list(parser_t *p) {
     //         : parameter_declaration
     //         | parameter_list ',' parameter_declaration
     //         ;
-    slice_t params = {.size = sizeof(field_t *)};
+    slice_t params = {.size = sizeof(decl_t *)};
     while (p->tok != token_RPAREN) {
         // parameter_declaration
         //         : declaration_specifiers (declarator | abstract_declarator)?
         //         ;
-        field_t *param = parameter_declaration(p);
+        decl_t *param = parameter_declaration(p);
         params = append(params, &param);
         if (!accept(p, token_COMMA)) {
             break;
         }
         if (accept(p, token_ELLIPSIS)) {
-            field_t *param = malloc(sizeof(field_t));
-            param->type = NULL;
-            param->name = NULL;
+            decl_t decl = {
+                .type = ast_DECL_FIELD,
+            };
+            decl_t *param = memdup(&decl, sizeof(decl_t));
             params = append(params, &param);
             break;
         }
@@ -553,8 +557,8 @@ static expr_t *type_name(parser_t *p) {
     //         | specifier_qualifier_list abstract_declarator
     //         ;
     expr_t *type = specifier_qualifier_list(p);
-    field_t *declarator = abstract_declarator(p, type);
-    type = declarator->type;
+    decl_t *decl = abstract_declarator(p, type);
+    type = decl->field.type;
     expr_t x = {
         .type = ast_TYPE_NAME,
         .type_name = {
@@ -564,7 +568,7 @@ static expr_t *type_name(parser_t *p) {
     return memdup(&x, sizeof(x));
 }
 
-static field_t *abstract_declarator(parser_t *p, expr_t *type) {
+static decl_t *abstract_declarator(parser_t *p, expr_t *type) {
     // abstract_declarator
     //         : pointer? direct_abstract_declarator?
     //         ;
@@ -598,7 +602,7 @@ static field_t *abstract_declarator(parser_t *p, expr_t *type) {
             expect(p, token_RBRACK);
             type = memdup(&t, sizeof(t));
         } else if (accept(p, token_LPAREN)) {
-            field_t **params = NULL;
+            decl_t **params = NULL;
             if (p->tok != token_RPAREN) {
                 params = parameter_type_list(p);
             }
@@ -624,8 +628,11 @@ static field_t *abstract_declarator(parser_t *p, expr_t *type) {
         };
         type = memdup(&tmp, sizeof(tmp));
     }
-    field_t declarator = {
-        .type = type,
+    decl_t declarator = {
+        .type = ast_DECL_FIELD,
+        .field = {
+            .type = type,
+        },
     };
     return memdup(&declarator, sizeof(declarator));
 }
@@ -932,11 +939,13 @@ static stmt_t *compound_statement(parser_t *p) {
     return stmt;
 }
 
-static field_t *parameter_declaration(parser_t *p) {
-    field_t field = {};
-    field.type = declaration_specifiers(p, false);
-    field.name = declarator(p, &field.type);
-    return memdup(&field, sizeof(field));
+static decl_t *parameter_declaration(parser_t *p) {
+    decl_t decl = {
+        .type = ast_DECL_FIELD,
+    };
+    decl.field.type = declaration_specifiers(p, false);
+    decl.field.name = declarator(p, &decl.field.type);
+    return memdup(&decl, sizeof(decl_t));
 }
 
 static expr_t *type_specifier(parser_t *p) {

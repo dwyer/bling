@@ -5,11 +5,11 @@ static void emit_c_decl(emitter_t *e, decl_t *decl);
 static void emit_c_expr(emitter_t *e, expr_t *expr);
 static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name);
 
-static void emit_field(emitter_t *e, field_t *field) {
-    if (field->type == NULL && field->name == NULL) {
+static void emit_field(emitter_t *e, decl_t *field) {
+    if (field->field.type == NULL && field->field.name == NULL) {
         emit_string(e, "...");
     } else {
-        emit_c_type(e, field->type, field->name);
+        emit_c_type(e, field->field.type, field->field.name);
     }
 }
 
@@ -291,7 +291,7 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
             emit_c_expr(e, name);
         }
         emit_token(e, token_LPAREN);
-        for (field_t **params = type->func.params; params && *params; ) {
+        for (decl_t **params = type->func.params; params && *params; ) {
             emit_field(e, *params);
             params++;
             if (*params != NULL) {
@@ -349,7 +349,7 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
             }
             emit_token(e, token_RPAREN);
             emit_token(e, token_LPAREN);
-            for (field_t **params = type->func.params; params && *params; ) {
+            for (decl_t **params = type->func.params; params && *params; ) {
                 emit_field(e, *params);
                 params++;
                 if (*params != NULL) {
@@ -383,7 +383,7 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
             emit_token(e, token_LBRACE);
             emit_newline(e);
             e->indent++;
-            for (field_t **fields = type->struct_.fields; fields && *fields;
+            for (decl_t **fields = type->struct_.fields; fields && *fields;
                     fields++) {
                 emit_tabs(e);
                 emit_field(e, *fields);

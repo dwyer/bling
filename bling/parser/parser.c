@@ -26,13 +26,13 @@ static expr_t *parse_type_spec(parser_t *p);
 static expr_t *parse_struct_or_union_spec(parser_t *p);
 static expr_t *parse_enum_spec(parser_t *p);
 static expr_t *parse_pointer(parser_t *p);
-static field_t **parse_param_type_list(parser_t *p, bool anon);
+static decl_t **parse_param_type_list(parser_t *p, bool anon);
 
 static stmt_t *parse_stmt(parser_t *p);
 static stmt_t *parse_block_stmt(parser_t *p);
 
 static decl_t *parse_decl(parser_t *p, bool is_external);
-static field_t *parse_field(parser_t *p, bool anon);
+static decl_t *parse_field(parser_t *p, bool anon);
 
 extern void parser_error(parser_t *p, char *fmt, ...) {
     int line = 1;
@@ -413,7 +413,7 @@ static expr_t *parse_struct_or_union_spec(parser_t *p) {
     if (p->tok == token_IDENT) {
         name = identifier(p);
     }
-    field_t **fields = NULL;
+    decl_t **fields = NULL;
     if (accept(p, token_LBRACE)) {
         // struct_declaration_list
         //         : struct_declaration
@@ -422,18 +422,20 @@ static expr_t *parse_struct_or_union_spec(parser_t *p) {
         // struct_declaration
         //         : specifier_qualifier_list struct_declarator_list ';'
         //         ;
-        slice_t slice = {.size = sizeof(field_t *)};
+        slice_t slice = {.size = sizeof(decl_t *)};
         for (;;) {
-            field_t f = {};
+            decl_t decl = {
+                .type = ast_DECL_FIELD,
+            };
             if (p->tok == token_UNION) {
                 // anonymous union
-                f.type = parse_type_spec(p);
+                decl.field.type = parse_type_spec(p);
             } else {
-                f.name = identifier(p);
-                f.type = parse_type_spec(p);
+                decl.field.name = identifier(p);
+                decl.field.type = parse_type_spec(p);
             }
             expect(p, token_SEMICOLON);
-            field_t *field = memdup(&f, sizeof(field_t));
+            decl_t *field = memdup(&decl, sizeof(decl_t));
             slice = append(slice, &field);
             if (p->tok == token_RBRACE) {
                 break;
@@ -506,18 +508,20 @@ static expr_t *parse_pointer(parser_t *p) {
     return memdup(&x, sizeof(expr_t));
 }
 
-static field_t **parse_param_type_list(parser_t *p, bool anon) {
-    slice_t params = {.size = sizeof(field_t *)};
+static decl_t **parse_param_type_list(parser_t *p, bool anon) {
+    slice_t params = {.size = sizeof(decl_t *)};
     while (p->tok != token_RPAREN) {
-        field_t *param = parse_field(p, anon);
+        decl_t *param = parse_field(p, anon);
         params = append(params, &param);
         if (!accept(p, token_COMMA)) {
             break;
         }
         if (accept(p, token_ELLIPSIS)) {
-            field_t *param = malloc(sizeof(field_t));
-            param->type = NULL;
-            param->name = NULL;
+            // TODO make this a type
+            decl_t decl = {
+                .type = ast_DECL_FIELD,
+            };
+            decl_t *param = memdup(&decl, sizeof(decl_t));
             params = append(params, &param);
             break;
         }
@@ -814,24 +818,26 @@ static stmt_t *parse_block_stmt(parser_t *p) {
     return stmt;
 }
 
-static field_t *parse_field(parser_t *p, bool anon) {
-    field_t field = {};
+static decl_t *parse_field(parser_t *p, bool anon) {
+    decl_t decl = {
+        .type = ast_DECL_FIELD,
+    };
     if (p->tok == token_IDENT) {
-        field.name = identifier(p);
+        decl.field.name = identifier(p);
     }
-    if (field.name != NULL && (p->tok == token_COMMA || p->tok == token_RPAREN)) {
-        field.type = field.name;
-        field.name = NULL;
+    if (decl.field.name != NULL && (p->tok == token_COMMA || p->tok == token_RPAREN)) {
+        decl.field.type = decl.field.name;
+        decl.field.name = NULL;
     } else {
-        field.type = parse_type_spec(p);
+        decl.field.type = parse_type_spec(p);
     }
-    return memdup(&field, sizeof(field_t));
+    return memdup(&decl, sizeof(decl_t));
 }
 
 static expr_t *parse_func_type(parser_t *p) {
     expect(p, token_FUNC);
     expect(p, token_LPAREN);
-    field_t **params = parse_param_type_list(p, false);
+    decl_t **params = parse_param_type_list(p, false);
     expect(p, token_RPAREN);
     expr_t *result = NULL;
     if (p->tok != token_SEMICOLON) {

@@ -31,15 +31,15 @@ static void print_token(emitter_t *p, token_t tok) {
     emit_string(p, token_string(tok));
 }
 
-static void print_field(emitter_t *p, field_t *field) {
-    if (field->type == NULL && field->name == NULL) {
+static void print_field(emitter_t *p, decl_t *field) {
+    if (field->field.type == NULL && field->field.name == NULL) {
         emit_string(p, "...");
     } else {
-        if (field->name != NULL) {
-            print_expr(p, field->name);
+        if (field->field.name != NULL) {
+            print_expr(p, field->field.name);
             emit_space(p);
         }
-        print_type(p, field->type);
+        print_type(p, field->field.type);
     }
 }
 
@@ -308,7 +308,7 @@ static void print_type(emitter_t *p, expr_t *type) {
 
     case ast_TYPE_FUNC:
         print_token(p, token_LPAREN);
-        for (field_t **params = type->func.params; params && *params; ) {
+        for (decl_t **params = type->func.params; params && *params; ) {
             print_field(p, *params);
             params++;
             if (*params != NULL) {
@@ -363,7 +363,7 @@ static void print_type(emitter_t *p, expr_t *type) {
         if (type->type == ast_TYPE_FUNC) {
             print_token(p, token_FUNC);
             print_token(p, token_LPAREN);
-            for (field_t **params = type->func.params; params && *params; ) {
+            for (decl_t **params = type->func.params; params && *params; ) {
                 print_field(p, *params);
                 params++;
                 if (*params != NULL) {
@@ -399,7 +399,7 @@ static void print_type(emitter_t *p, expr_t *type) {
             print_token(p, token_LBRACE);
             emit_newline(p);
             p->indent++;
-            for (field_t **fields = type->struct_.fields; fields && *fields;
+            for (decl_t **fields = type->struct_.fields; fields && *fields;
                     fields++) {
                 emit_tabs(p);
                 print_field(p, *fields);
