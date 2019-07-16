@@ -47,6 +47,10 @@ static void scope_declare(scope_t *s, decl_t *decl) {
     obj_kind_t kind;
     expr_t *ident = NULL;
     switch (decl->type) {
+    case ast_DECL_ENUM:
+        kind = obj_kind_VALUE;
+        ident = decl->enum_.name;
+        break;
     case ast_DECL_FIELD:
         kind = obj_kind_VALUE;
         ident = decl->field.name;
@@ -179,6 +183,17 @@ static bool match_types(expr_t *a, expr_t *b) {
     return false;
 }
 
+static expr_t *type_from_ident(expr_t *ident) {
+    print("type_from_ident: %s", ident->ident.name);
+    assert(ident->ident.obj);
+    decl_t *decl = ident->ident.obj->decl;
+    switch (decl->type) {
+    default:
+        panic("type_from_ident: bad decl: %d", decl->type);
+    }
+    return NULL;
+}
+
 static void walk_expr(walker_t *w, expr_t *expr) {
     switch (expr->type) {
     case ast_EXPR_BASIC_LIT:
@@ -199,7 +214,7 @@ static void walk_expr(walker_t *w, expr_t *expr) {
             }
             for (;;) {
                 if (type->type == ast_EXPR_IDENT) {
-                    type = find_type(w, NULL, type);
+                    type = type_from_ident(type);
                 } else if (type->type == ast_TYPE_QUAL) {
                     type = type->qual.type;
                 } else {
@@ -217,6 +232,12 @@ static void walk_expr(walker_t *w, expr_t *expr) {
         for (int i = 0; expr->enum_.enums[i]; i++) {
             scope_declare(w->topScope, expr->enum_.enums[i]);
         }
+        break;
+    case ast_TYPE_PTR:
+        walk_expr(w, expr->ptr.type);
+        break;
+    case ast_TYPE_QUAL:
+        walk_expr(w, expr->qual.type);
         break;
     case ast_TYPE_STRUCT:
         w->topScope = scope_new(w->topScope);
@@ -260,6 +281,7 @@ static void walk_decl(walker_t *w, decl_t *decl) {
     case ast_DECL_IMPORT:
         break;
     case ast_DECL_TYPEDEF:
+        print("walk_decl: walking typedef %s", decl->typedef_.name->ident.name);
         walk_expr(w, decl->typedef_.type);
         scope_declare(w->topScope, decl);
         break;
@@ -282,9 +304,16 @@ static void walk_decl(walker_t *w, decl_t *decl) {
 
 static void walk_func(walker_t *w, decl_t *decl) {
     if (decl->type == ast_DECL_FUNC && decl->func.body) {
+        print("walk_func: walking %s", decl->func.name->ident.name);
         w->topScope = scope_new(w->topScope);
         for (int i = 0; decl->func.type->func.params[i]; i++) {
-            scope_declare(w->topScope, decl->func.type->func.params[i]);
+            decl_t *param = decl->func.type->func.params[i];
+            if (param->type) {
+                print("declaring param");
+                scope_declare(w->topScope, param);
+                print("walking type");
+                walk_expr(w, param->field.type);
+            }
         }
         walk_stmt(w, decl->func.body);
         w->topScope = w->topScope->outer;
