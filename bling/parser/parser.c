@@ -467,18 +467,22 @@ static expr_t *parse_enum_spec(parser_t *p) {
     if (p->tok == token_IDENT) {
         name = identifier(p);
     }
-    enumerator_t **enums = NULL;
+    decl_t **enums = NULL;
     if (accept(p, token_LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
-        slice_t list = {.size = sizeof(enumerator_t *)};
+        slice_t list = {.size = sizeof(decl_t *)};
         for (;;) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
-            enumerator_t *enumerator = malloc(sizeof(enumerator_t));
-            enumerator->name = identifier(p);
-            enumerator->value = NULL;
+            decl_t decl = {
+                .type = ast_DECL_ENUM,
+                .enum_ = {
+                    .name = identifier(p),
+                },
+            };
             if (accept(p, token_ASSIGN)) {
-                enumerator->value = parse_const_expr(p);
+                decl.enum_.value = parse_const_expr(p);
             }
+            decl_t *enumerator = memdup(&decl, sizeof(decl_t));
             list = append(list, &enumerator);
             if (!accept(p, token_COMMA) || p->tok == token_RBRACE) {
                 break;

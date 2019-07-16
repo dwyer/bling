@@ -306,16 +306,15 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
             emit_token(e, token_LBRACE);
             emit_newline(e);
             e->indent++;
-            for (enumerator_t **enumerators = type->enum_.enumerators;
-                    enumerators && *enumerators; enumerators++) {
-                enumerator_t *enumerator = *enumerators;
+            for (decl_t **enums = type->enum_.enumerators; enums && *enums; enums++) {
+                decl_t *enumerator = *enums;
                 emit_tabs(e);
-                emit_c_expr(e, enumerator->name);
-                if (enumerator->value) {
+                emit_c_expr(e, enumerator->enum_.name);
+                if (enumerator->enum_.value) {
                     emit_space(e);
                     emit_token(e, token_ASSIGN);
                     emit_space(e);
-                    emit_c_expr(e, enumerator->value);
+                    emit_c_expr(e, enumerator->enum_.value);
                 }
                 emit_token(e, token_COMMA);
                 emit_newline(e);

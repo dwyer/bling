@@ -8,6 +8,7 @@ typedef enum {
     ast_NODE_ILLEGAL = 0,
 
     _ast_DECL_START,
+    ast_DECL_ENUM,
     ast_DECL_FIELD,
     ast_DECL_FUNC,
     ast_DECL_IMPORT,
@@ -75,11 +76,6 @@ typedef struct {
     decl_t *decl;
 } object_t;
 
-typedef struct {
-    expr_t *name;
-    expr_t *value;
-} enumerator_t;
-
 struct decl_t {
     ast_node_type_t type;
     token_t store;
@@ -111,6 +107,11 @@ struct decl_t {
             expr_t *type;
             expr_t *name;
         } field;
+
+        struct {
+            expr_t *name;
+            expr_t *value;
+        } enum_;
 
     };
 };
@@ -158,7 +159,7 @@ struct expr_t {
 
         struct {
             expr_t *name;
-            enumerator_t **enumerators;
+            decl_t **enumerators;
         } enum_;
 
         struct {

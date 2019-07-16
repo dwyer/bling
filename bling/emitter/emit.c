@@ -322,16 +322,15 @@ static void print_type(emitter_t *p, expr_t *type) {
             print_token(p, token_LBRACE);
             emit_newline(p);
             p->indent++;
-            for (enumerator_t **enumerators = type->enum_.enumerators;
-                    enumerators && *enumerators; enumerators++) {
-                enumerator_t *enumerator = *enumerators;
+            for (decl_t **enums = type->enum_.enumerators; enums && *enums; enums++) {
+                decl_t *enumerator = *enums;
                 emit_tabs(p);
-                print_expr(p, enumerator->name);
-                if (enumerator->value) {
+                print_expr(p, enumerator->enum_.name);
+                if (enumerator->enum_.value) {
                     emit_space(p);
                     print_token(p, token_ASSIGN);
                     emit_space(p);
-                    print_expr(p, enumerator->value);
+                    print_expr(p, enumerator->enum_.value);
                 }
                 print_token(p, token_COMMA);
                 emit_newline(p);
