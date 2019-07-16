@@ -317,12 +317,12 @@ static void print_type(emitter_t *p, expr_t *type) {
             emit_space(p);
             print_expr(p, type->enum_.name);
         }
-        if (type->enum_.enumerators) {
+        if (type->enum_.enums) {
             emit_space(p);
             print_token(p, token_LBRACE);
             emit_newline(p);
             p->indent++;
-            for (decl_t **enums = type->enum_.enumerators; enums && *enums; enums++) {
+            for (decl_t **enums = type->enum_.enums; enums && *enums; enums++) {
                 decl_t *enumerator = *enums;
                 emit_tabs(p);
                 print_expr(p, enumerator->enum_.name);

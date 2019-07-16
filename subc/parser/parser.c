@@ -419,7 +419,7 @@ static expr_t *enum_specifier(parser_t *p) {
         .type = ast_TYPE_ENUM,
         .enum_ = {
             .name = name,
-            .enumerators = enums,
+            .enums = enums,
         },
     };
     return memdup(&x, sizeof(x));

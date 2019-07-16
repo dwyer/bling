@@ -159,7 +159,7 @@ struct expr_t {
 
         struct {
             expr_t *name;
-            decl_t **enumerators;
+            decl_t **enums;
         } enum_;
 
         struct {

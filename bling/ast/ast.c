@@ -214,8 +214,8 @@ static void walk_expr(walker_t *w, expr_t *expr) {
         panic("walk_expr: unknown expr: selector");
         break;
     case ast_TYPE_ENUM:
-        for (int i = 0; expr->enum_.enumerators[i]; i++) {
-            scope_declare(w->topScope, expr->enum_.enumerators[i]);
+        for (int i = 0; expr->enum_.enums[i]; i++) {
+            scope_declare(w->topScope, expr->enum_.enums[i]);
         }
         break;
     case ast_TYPE_STRUCT:

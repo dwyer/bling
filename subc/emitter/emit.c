@@ -301,12 +301,12 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
             emit_space(e);
             emit_c_expr(e, type->enum_.name);
         }
-        if (type->enum_.enumerators) {
+        if (type->enum_.enums) {
             emit_space(e);
             emit_token(e, token_LBRACE);
             emit_newline(e);
             e->indent++;
-            for (decl_t **enums = type->enum_.enumerators; enums && *enums; enums++) {
+            for (decl_t **enums = type->enum_.enums; enums && *enums; enums++) {
                 decl_t *enumerator = *enums;
                 emit_tabs(e);
                 emit_c_expr(e, enumerator->enum_.name);
