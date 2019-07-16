@@ -12,7 +12,7 @@ $import("path");
 $import("subc/parser");
 $import("subc/emitter");
 
-static char *types[] = {
+static char *native_types[] = {
     // native types
     "char",
     "float",
@@ -54,9 +54,20 @@ int main(int argc, char *argv[]) {
         argv++;
     }
     scope_t *scope = scope_new(NULL);
-    for (int i = 0; types[i] != NULL; i++) {
-        object_t *obj = object_new(obj_kind_TYPE, types[i]);
-        scope_insert(scope, obj);
+    for (int i = 0; native_types[i] != NULL; i++) {
+        expr_t name = {
+            .type = ast_EXPR_IDENT,
+            .ident = {
+                .name = strdup(native_types[i]),
+            },
+        };
+        decl_t decl = {
+            .type = ast_DECL_NATIVE,
+            .native = {
+                .name = memdup(&name, sizeof(expr_t)),
+            },
+        };
+        scope_declare(scope, memdup(&decl, sizeof(decl_t)));
     }
     emitter_t emitter = {.file = os_stdout};
     error_t *err = NULL;

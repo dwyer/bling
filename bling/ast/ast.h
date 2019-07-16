@@ -12,6 +12,7 @@ typedef enum {
     ast_DECL_FIELD,
     ast_DECL_FUNC,
     ast_DECL_IMPORT,
+    ast_DECL_NATIVE,
     ast_DECL_STORAGE,
     ast_DECL_TYPEDEF,
     ast_DECL_VALUE,
@@ -76,7 +77,7 @@ typedef struct {
     decl_t *decl;
 } object_t;
 
-struct decl_t {
+typedef struct decl_t {
     ast_node_type_t type;
     token_t store;
     union {
@@ -113,10 +114,14 @@ struct decl_t {
             expr_t *value;
         } enum_;
 
-    };
-};
+        struct {
+            expr_t *name;
+        } native;
 
-struct expr_t {
+    };
+} decl_t;
+
+typedef struct expr_t {
     ast_node_type_t type;
     union {
 
@@ -226,9 +231,9 @@ struct expr_t {
         } unary;
 
     };
-};
+} expr_t;
 
-struct stmt_t {
+typedef struct stmt_t {
     ast_node_type_t type;
     union {
 
@@ -280,17 +285,17 @@ struct stmt_t {
         } switch_;
 
     };
-};
+} stmt_t;
 
 extern object_t *object_new(obj_kind_t kind, char *name);
 
-typedef struct scope scope_t;
+typedef struct scope_t scope_t;
 
-struct scope {
+typedef struct scope_t {
     scope_t *outer;
     map_t objects;
     slice_t filenames;
-};
+} scope_t;
 
 extern bool is_expr_type(expr_t *x);
 
