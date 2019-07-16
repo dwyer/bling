@@ -52,10 +52,10 @@ int main(int argc, char *argv[]) {
         argv++;
     }
     scope_t *scope = scope_new(NULL);
-    for (char **names = types; *names; names++) {
+    for (int i = 0; types[i] != NULL; i++) {
         object_t *obj = malloc(sizeof(object_t *));
         obj->kind = obj_kind_TYPE;
-        obj->name = *names;
+        obj->name = types[i];
         scope_insert(scope, obj);
     }
     emitter_t emitter = {.file = os_stdout};
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
         if (emit_as_bling) {
             printer_print_file(&emitter, file);
         } else {
-            //walk_file(file);
+            walk_file(file);
             emitter_emit_file(&emitter, file);
         }
         free(file->decls);

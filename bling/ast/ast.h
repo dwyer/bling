@@ -7,13 +7,16 @@ typedef enum {
 
     ast_NODE_ILLEGAL = 0,
 
+    _ast_DECL_START,
     ast_DECL_FIELD,
     ast_DECL_FUNC,
     ast_DECL_IMPORT,
     ast_DECL_STORAGE,
     ast_DECL_TYPEDEF,
     ast_DECL_VALUE,
+    _ast_DECL_END,
 
+    _ast_EXPR_START,
     ast_EXPR_BASIC_LIT,
     ast_EXPR_BINARY,
     ast_EXPR_CALL,
@@ -29,7 +32,9 @@ typedef enum {
     ast_EXPR_SELECTOR,
     ast_EXPR_SIZEOF,
     ast_EXPR_INIT_DECL,
+    _ast_EXPR_END,
 
+    _ast_STMT_START,
     ast_STMT_BLOCK,
     ast_STMT_CASE,
     ast_STMT_DECL,
@@ -40,7 +45,9 @@ typedef enum {
     ast_STMT_LABEL,
     ast_STMT_RETURN,
     ast_STMT_SWITCH,
+    _ast_STMT_END,
 
+    _ast_TYPE_START,
     ast_TYPE_ARRAY,
     ast_TYPE_ENUM,
     ast_TYPE_NAME,
@@ -48,6 +55,7 @@ typedef enum {
     ast_TYPE_FUNC,
     ast_TYPE_QUAL,
     ast_TYPE_STRUCT,
+    _ast_TYPE_END,
 
 } ast_node_type_t;
 
@@ -282,6 +290,8 @@ struct scope {
     map_t objects;
     slice_t filenames;
 };
+
+extern bool is_expr_type(expr_t *x);
 
 extern scope_t *scope_new(scope_t *outer);
 extern void scope_deinit(scope_t *s);
