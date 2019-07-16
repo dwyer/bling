@@ -17,11 +17,12 @@ static const desc_t _object_desc = {
 };
 
 extern scope_t *scope_new(scope_t *outer) {
-    scope_t *s = malloc(sizeof(scope_t));
-    s->outer = outer;
-    s->objects = make_map(&desc_str, &_object_desc);
-    s->filenames = make_slice(sizeof(char *), 0, 0);
-    return s;
+    scope_t s = {
+        .outer = outer,
+        .objects = make_map(&desc_str, &_object_desc),
+        .filenames = make_slice(sizeof(char *), 0, 0),
+    };
+    return memdup(&s, sizeof(scope_t));
 }
 
 extern void scope_deinit(scope_t *s) {

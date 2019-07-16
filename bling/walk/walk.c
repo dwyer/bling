@@ -190,12 +190,12 @@ static void walk_decl(walker_t *w, decl_t *decl) {
 
 static void walk_func(walker_t *w, decl_t *decl) {
     if (decl->type == ast_DECL_FUNC && decl->func.body) {
-        print("walk_func: walking %s", decl->func.name->ident.name);
+        print("walk_func: walking func %s", decl->func.name->ident.name);
         w->topScope = scope_new(w->topScope);
         for (int i = 0; decl->func.type->func.params[i]; i++) {
             decl_t *param = decl->func.type->func.params[i];
             if (param->type) {
-                print("declaring param");
+                print("declaring param `%s`", param->field.name->ident.name);
                 scope_declare(w->topScope, param);
                 print("walking type");
                 walk_expr(w, param->field.type);
@@ -207,6 +207,12 @@ static void walk_func(walker_t *w, decl_t *decl) {
 }
 
 extern void walk_file(file_t *file) {
+    map_iter_t iter = map_iter(&file->scope->objects);
+    char *key = NULL;
+    void *val = NULL;
+    while (map_iter_next(&iter, &key, val)) {
+        print("iter: %s", key);
+    }
     walker_t w = {.topScope = scope_new(NULL)};
     for (int i = 0; file->decls[i] != NULL; i++) {
         walk_decl(&w, file->decls[i]);

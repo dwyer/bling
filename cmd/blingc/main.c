@@ -55,9 +55,7 @@ int main(int argc, char *argv[]) {
     }
     scope_t *scope = scope_new(NULL);
     for (int i = 0; types[i] != NULL; i++) {
-        object_t *obj = malloc(sizeof(object_t *));
-        obj->kind = obj_kind_TYPE;
-        obj->name = types[i];
+        object_t *obj = object_new(obj_kind_TYPE, types[i]);
         scope_insert(scope, obj);
     }
     emitter_t emitter = {.file = os_stdout};
