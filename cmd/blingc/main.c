@@ -1,11 +1,13 @@
 #include "builtin/builtin.h"
 
 #include "bling/parser/parser.h"
+#include "bling/walk/walk.h"
 #include "subc/parser/parser.h"
 #include "subc/emitter/emit.h"
 #include "path/path.h"
 
 $import("bling/parser");
+$import("bling/walk");
 $import("path");
 $import("subc/parser");
 $import("subc/emitter");

@@ -313,4 +313,5 @@ typedef struct {
     slice_t files;
 } package_t;
 
-extern void walk_file(file_t *file);
+extern void scope_declare(scope_t *s, decl_t *decl);
+extern void scope_resolve(scope_t *s, expr_t *x);
