@@ -267,7 +267,7 @@ typedef struct stmt_t {
             token_t kind;
             stmt_t *init;
             expr_t *cond;
-            expr_t *post;
+            stmt_t *post;
             stmt_t *body;
         } iter;
 

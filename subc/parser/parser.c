@@ -822,9 +822,9 @@ static stmt_t *statement(parser_t *p) {
             cond = expression(p);
         }
         expect(p, token_SEMICOLON);
-        expr_t *post = NULL;
+        stmt_t *post = NULL;
         if (p->tok != token_RPAREN) {
-            post = assignment_expression(p);
+            post = simple_statement(p, false);
         }
         expect(p, token_RPAREN);
         stmt_t *body = compound_statement(p);

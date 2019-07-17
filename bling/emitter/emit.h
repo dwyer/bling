@@ -8,6 +8,7 @@ $import("strings");
 typedef struct {
     strings_Builder builder;
     int indent;
+    bool skipSemi;
 } emitter_t;
 
 extern void emit_string(emitter_t *p, const char *s);

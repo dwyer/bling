@@ -205,7 +205,9 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
             emit_token(e, token_SEMICOLON);
             emit_space(e);
             if (stmt->iter.post) {
-                emit_c_expr(e, stmt->iter.post);
+                e->skipSemi = true;
+                emit_stmt(e, stmt->iter.post);
+                e->skipSemi = false;
             }
         }
         emit_token(e, token_RPAREN);

@@ -20,6 +20,9 @@ extern void emit_tabs(emitter_t *e) {
 }
 
 extern void emit_token(emitter_t *e, token_t tok) {
+    if (e->skipSemi && tok == token_SEMICOLON) {
+        return;
+    }
     emit_string(e, token_string(tok));
 }
 
@@ -28,7 +31,7 @@ static void print_expr(emitter_t *p, expr_t *expr);
 static void print_type(emitter_t *p, expr_t *type);
 
 static void print_token(emitter_t *p, token_t tok) {
-    emit_string(p, token_string(tok));
+    emit_token(p, tok);
 }
 
 static void print_expr(emitter_t *p, expr_t *expr) {
@@ -228,7 +231,9 @@ static void print_stmt(emitter_t *p, stmt_t *stmt) {
             print_token(p, token_SEMICOLON);
             emit_space(p);
             if (stmt->iter.post) {
-                print_expr(p, stmt->iter.post);
+                p->skipSemi = true;
+                print_stmt(p, stmt->iter.post);
+                p->skipSemi = false;
             }
         }
         emit_space(p);

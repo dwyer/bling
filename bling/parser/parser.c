@@ -708,9 +708,9 @@ static stmt_t *parse_stmt(parser_t *p) {
             cond = parse_expr(p);
         }
         expect(p, token_SEMICOLON);
-        expr_t *post = NULL;
+        stmt_t *post = NULL;
         if (p->tok != token_LBRACE) {
-            post = parse_assign_expr(p);
+            post = parse_simple_stmt(p, false);
         }
         stmt_t *body = parse_block_stmt(p);
         stmt_t stmt = {
