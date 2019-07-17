@@ -575,6 +575,38 @@ static expr_t *parse_init_expr(parser_t *p) {
     return parse_ternary_expr(p);
 }
 
+static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
+    // simple_statement
+    //         : labeled_statement
+    //         | expression_statement
+    //         ;
+    expr_t *x = parse_assign_expr(p);
+    // labeled_statement
+    //         : IDENTIFIER ':' statement
+    //         | CASE constant_expression ':' statement
+    //         | DEFAULT ':' statement
+    //         ;
+    if (labelOk && x->type == ast_EXPR_IDENT) {
+        if (accept(p, token_COLON)) {
+            stmt_t stmt = {
+                .type = ast_STMT_LABEL,
+                .label = {
+                    .label = x,
+                    .stmt = parse_stmt(p),
+                },
+            };
+            return memdup(&stmt, sizeof(stmt_t));
+        }
+    }
+    // expression_statement : expression? ';' ;
+    stmt_t stmt = {
+        .type = ast_STMT_EXPR,
+        .expr = {.x = x},
+    };
+    expect(p, token_SEMICOLON);
+    return memdup(&stmt, sizeof(stmt_t));
+}
+
 static stmt_t *parse_stmt(parser_t *p) {
     // statement
     //         : declaration
@@ -776,34 +808,7 @@ static stmt_t *parse_stmt(parser_t *p) {
         break;
     }
 
-    expr_t *x = NULL;
-    if (p->tok != token_SEMICOLON) {
-        x = parse_assign_expr(p);
-    }
-    // labeled_statement
-    //         : IDENTIFIER ':' statement
-    //         | CASE constant_expression ':' statement
-    //         | DEFAULT ':' statement
-    //         ;
-    if (x && x->type == ast_EXPR_IDENT) {
-        if (accept(p, token_COLON)) {
-            stmt_t stmt = {
-                .type = ast_STMT_LABEL,
-                .label = {
-                    .label = x,
-                    .stmt = parse_stmt(p),
-                },
-            };
-            return memdup(&stmt, sizeof(stmt_t));
-        }
-    }
-    // expression_statement : expression? ';' ;
-    stmt_t stmt = {
-        .type = ast_STMT_EXPR,
-        .expr = {.x = x},
-    };
-    expect(p, token_SEMICOLON);
-    return memdup(&stmt, sizeof(stmt_t));
+    return parse_simple_stmt(p, true);
 }
 
 static stmt_t *parse_block_stmt(parser_t *p) {

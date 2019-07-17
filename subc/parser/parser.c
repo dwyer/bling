@@ -688,6 +688,38 @@ static expr_t *initializer(parser_t *p) {
     return memdup(&expr, sizeof(expr));
 }
 
+static stmt_t *simple_statement(parser_t *p, bool labelOk) {
+    // simple_statement
+    //         : labeled_statement
+    //         | expression_statement
+    //         ;
+    expr_t *x = assignment_expression(p);
+    // labeled_statement
+    //         : IDENTIFIER ':' statement
+    //         | CASE constant_expression ':' statement
+    //         | DEFAULT ':' statement
+    //         ;
+    if (x->type == ast_EXPR_IDENT) {
+        if (labelOk && accept(p, token_COLON)) {
+            stmt_t stmt = {
+                .type = ast_STMT_LABEL,
+                .label = {
+                    .label = x,
+                    .stmt = statement(p),
+                },
+            };
+            return memdup(&stmt, sizeof(stmt));
+        }
+    }
+    // expression_statement : expression? ';' ;
+    stmt_t stmt = {
+        .type = ast_STMT_EXPR,
+        .expr = {.x = x},
+    };
+    expect(p, token_SEMICOLON);
+    return memdup(&stmt, sizeof(stmt));
+}
+
 static stmt_t *statement(parser_t *p) {
     // statement
     //         : declaration
@@ -697,8 +729,7 @@ static stmt_t *statement(parser_t *p) {
     //         | while_statement
     //         | for_statement
     //         | jump_statement
-    //         | labeled_statement
-    //         | expression_statement
+    //         | simple_statement
     //         ;
 
     if (is_type(p)) {
@@ -897,34 +928,7 @@ static stmt_t *statement(parser_t *p) {
         break;
     }
 
-    expr_t *x = NULL;
-    if (p->tok != token_SEMICOLON) {
-        x = assignment_expression(p);
-    }
-    // labeled_statement
-    //         : IDENTIFIER ':' statement
-    //         | CASE constant_expression ':' statement
-    //         | DEFAULT ':' statement
-    //         ;
-    if (x && x->type == ast_EXPR_IDENT) {
-        if (accept(p, token_COLON)) {
-            stmt_t stmt = {
-                .type = ast_STMT_LABEL,
-                .label = {
-                    .label = x,
-                    .stmt = statement(p),
-                },
-            };
-            return memdup(&stmt, sizeof(stmt));
-        }
-    }
-    // expression_statement : expression? ';' ;
-    stmt_t stmt = {
-        .type = ast_STMT_EXPR,
-        .expr = {.x = x},
-    };
-    expect(p, token_SEMICOLON);
-    return memdup(&stmt, sizeof(stmt));
+    return simple_statement(p, true);
 }
 
 static stmt_t *compound_statement(parser_t *p) {
