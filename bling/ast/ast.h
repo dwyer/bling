@@ -67,6 +67,7 @@ typedef struct stmt_t stmt_t;
 
 typedef enum {
     obj_kind_BAD,
+    obj_kind_FUNC,
     obj_kind_TYPE,
     obj_kind_VALUE,
 } obj_kind_t;

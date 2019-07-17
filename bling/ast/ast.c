@@ -48,10 +48,6 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
     obj_kind_t kind;
     expr_t *ident = NULL;
     switch (decl->type) {
-    case ast_DECL_NATIVE:
-        kind = obj_kind_VALUE;
-        ident = decl->native.name;
-        break;
     case ast_DECL_ENUM:
         kind = obj_kind_VALUE;
         ident = decl->enum_.name;
@@ -59,6 +55,14 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
     case ast_DECL_FIELD:
         kind = obj_kind_VALUE;
         ident = decl->field.name;
+        break;
+    case ast_DECL_FUNC:
+        kind = obj_kind_FUNC;
+        ident = decl->func.name;
+        break;
+    case ast_DECL_NATIVE:
+        kind = obj_kind_TYPE;
+        ident = decl->native.name;
         break;
     case ast_DECL_TYPEDEF:
         kind = obj_kind_TYPE;
@@ -74,6 +78,7 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
     }
     assert(ident->type == ast_EXPR_IDENT);
     if (ident->ident.obj != NULL) {
+        decl_t *decl = ident->ident.obj->decl;
         panic("already declared: %s", ident->ident.name);
     }
     object_t *obj = object_new(kind, ident->ident.name);

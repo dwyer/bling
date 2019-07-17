@@ -21,11 +21,11 @@ SRCS=runtime/runtime.h \
      subc/emitter/emit.h subc/emitter/emit.c \
      cmd/blingc/main.c
 
-hello: $(BLINGC)
-	$(BLINGC) syntax_test.bling
+hello: $(BLINGC) all.bling
+	./splitall.py
+	$(BLINGC) -o /dev/null syntax_test.bling
 
 a.out: $(BLINGC) all.bling
-	./splitall.py
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
 	cc all.c
 

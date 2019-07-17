@@ -11,14 +11,15 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <libgen.h> // basename, dirname
 
-#include <assert.h> // assert
 #include <ctype.h> // isspace
 #include <time.h> // clock
 
 #include <errno.h>
+
+#undef assert
+#define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
 
 #endif
