@@ -11,7 +11,6 @@ SRCS=runtime/runtime.h \
      strings/strings.h strings/strings.c \
      path/path.h path/path.c \
      os/os.h os/os.c \
-     fmt/fmt.h fmt/fmt.c \
      io/ioutil/ioutil.h io/ioutil/ioutil.c \
      bling/token/token.h bling/token/token.c \
      bling/ast/ast.h bling/ast/ast.c \
