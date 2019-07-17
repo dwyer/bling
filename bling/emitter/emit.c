@@ -247,6 +247,8 @@ static void print_stmt(emitter_t *p, stmt_t *stmt) {
     case ast_STMT_LABEL:
         print_expr(p, stmt->label.label);
         print_token(p, token_COLON);
+        emit_tabs(p);
+        print_stmt(p, stmt->label.stmt);
         break;
 
     case ast_STMT_RETURN:

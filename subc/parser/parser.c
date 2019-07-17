@@ -912,6 +912,7 @@ static stmt_t *statement(parser_t *p) {
                 .type = ast_STMT_LABEL,
                 .label = {
                     .label = x,
+                    .stmt = statement(p),
                 },
             };
             return memdup(&stmt, sizeof(stmt));

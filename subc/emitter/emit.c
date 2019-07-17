@@ -225,6 +225,8 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
     case ast_STMT_LABEL:
         emit_c_expr(e, stmt->label.label);
         emit_token(e, token_COLON);
+        emit_tabs(e);
+        emit_stmt(e, stmt->label.stmt);
         break;
 
     case ast_STMT_RETURN:

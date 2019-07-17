@@ -284,6 +284,7 @@ typedef struct stmt_t {
 
         struct {
             expr_t *label;
+            stmt_t *stmt;
         } label;
 
         struct {
