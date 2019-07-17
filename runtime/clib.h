@@ -4,19 +4,19 @@
 #include <sys/stat.h> // os: stat
 #include <dirent.h> // os: DIR, dirent, opendir, readdir, closedir
 #include <fcntl.h> // os: open
-#include <unistd.h> // os: read, close
+// #include <unistd.h> // os: read, close, write, STD*_FILENO
 
 #include <execinfo.h> // backtrace
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 
-#include <libgen.h> // basename, dirname
+// #include <stdlib.h>
+void *malloc(size_t);
+void *realloc(void *, size_t);
+void free(void *);
+void exit(int) __attribute__((noreturn));
 
-#include <ctype.h> // isspace
-#include <time.h> // clock
-
+#include <stdbool.h>
 #include <errno.h>
 
 #undef assert

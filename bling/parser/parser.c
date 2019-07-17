@@ -62,7 +62,6 @@ extern void parser_error(parser_t *p, char *fmt, ...) {
     }
     fputc('\n', stderr);
     panic("panicing");
-    exit(1);
 }
 
 extern void parser_next(parser_t *p) {

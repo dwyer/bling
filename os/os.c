@@ -5,6 +5,14 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
+static const int STDIN_FILENO = 0;
+static const int STDOUT_FILENO = 1;
+static const int STDERR_FILENO = 2;
+
+extern size_t read(int, void *, size_t); // libc
+extern size_t write(int, const void *, size_t); // libc
+extern int close(int); // libc
+
 static os_File _stdin = {.fd = STDIN_FILENO, .name = "/dev/stdin"};
 static os_File _stdout = {.fd = STDOUT_FILENO, .name = "/dev/stdout"};
 static os_File _stderr = {.fd = STDERR_FILENO, .name = "/dev/stderr"};

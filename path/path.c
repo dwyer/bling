@@ -1,5 +1,8 @@
 #include "path/path.h"
 
+extern char *basename(char *); // clib
+extern char *dirname(char *); // clib
+
 extern char *path_base(const char *path) {
     char *p = strdup(path);
     return basename(p);
