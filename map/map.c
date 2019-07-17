@@ -8,6 +8,33 @@ int map_hits = 0;
 int map_lookups = 0;
 int map_iters = 0;
 
+extern int desc_cmp(const desc_t *d, const void *a, const void *b) {
+    if (d->cmp) {
+        if (d->is_ptr) {
+            a = *(void **)a;
+            b = *(void **)b;
+        }
+        return d->cmp(a, b);
+    }
+    return memcmp(a, b, d->size);
+}
+
+extern uintptr_t desc_hash(const desc_t *d, const void *p) {
+    if (d->hash) {
+        if (d->is_ptr) {
+            p = *(void **)p;
+        }
+        return d->hash(p);
+    }
+    uintptr_t hash = 0;
+    int size = sizeof(uintptr_t);
+    if (size > d->size) {
+        size = d->size;
+    }
+    memcpy(&hash, p, size);
+    return hash;
+}
+
 static void *memdup(const void *src, size_t size) {
     return memcpy(malloc(size), src, size);
 }
@@ -137,3 +164,26 @@ extern int map_iter_next(map_iter_t *m, void *key, void *val) {
 extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc) {
     return map_init(key_desc, val_desc);
 }
+
+const desc_t desc_int = {
+    .size = sizeof(int),
+};
+
+static uintptr_t djb2(const char *s) {
+    // http://www.cse.yorku.ca/~oz/hash.html
+    uintptr_t hash = 5381;
+    int ch = *s;
+    while (ch) {
+        hash = ((hash << 5) + hash) + ch;
+        s++;
+        ch = *s;
+    }
+    return hash;
+}
+
+const desc_t desc_str = {
+    .size = sizeof(char *),
+    .dup = (void *(*)(const void *))strdup,
+    .cmp = (int (*)(const void *, const void *))strcmp,
+    .hash = (uintptr_t (*)(const void *))djb2,
+};
