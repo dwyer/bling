@@ -5,9 +5,10 @@ BLINGC=bazel-bin/cmd/blingc/blingc
 .PHONY: test $(BLINGC) all.bling
 
 SRCS=runtime/runtime.h \
+     builtin/builtin.h builtin/builtin.c \
      slice/slice.h slice/slice.c \
      map/map.h map/desc.c map/map.c map/types.c \
-     builtin/builtin.h builtin/builtin.c \
+     error/error.h error/error.c \
      strings/strings.h strings/strings.c \
      path/path.h path/path.c \
      os/os.h os/os.c \

@@ -1,6 +1,8 @@
 #pragma once
 #include "builtin/builtin.h"
+#include "error/error.h"
 
+$import("error");
 $import("path");
 
 typedef uint64_t time_Time;

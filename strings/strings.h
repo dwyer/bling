@@ -1,6 +1,10 @@
 #pragma once
 
+#include "error/error.h"
 #include "slice/slice.h"
+
+$import("error");
+$import("slice");
 
 extern char *strings_join(const char *a[], int size, const char *sep);
 

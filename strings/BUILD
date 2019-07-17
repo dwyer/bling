@@ -7,6 +7,7 @@ cc_library(
         "strings.h",
     ],
     deps = [
+        "//error",
         "//slice",
     ],
     visibility = ["//visibility:public"],

@@ -1,15 +1,13 @@
 cc_library(
-    name = "os",
+    name = "error",
     srcs = [
-        "os.c",
+        "error.c",
     ],
     hdrs = [
-        "os.h",
+        "error.h",
     ],
     deps = [
-        "//error",
-        "//path",
-        "//slice",
+        "//builtin",
     ],
     visibility = ["//visibility:public"],
 )
