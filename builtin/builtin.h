@@ -20,7 +20,6 @@ extern void panic(const char *fmt, ...);
 extern bool streq(const char *a, const char *b);
 
 extern slice_t make_slice(int size, int len, int cap);
-extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc);
 
 extern error_t *make_error(const char *error);
 extern error_t *make_sysError(void);

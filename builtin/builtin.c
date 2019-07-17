@@ -44,10 +44,6 @@ extern slice_t make_slice(int size, int len, int cap) {
     return slice_init(size, len, cap);
 }
 
-extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc) {
-    return map_init(key_desc, val_desc);
-}
-
 extern error_t *make_error(const char *error) {
     error_t err = {
         .error = strdup(error),

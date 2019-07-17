@@ -1,4 +1,4 @@
-#include "runtime.h"
+#include "map/map.h"
 
 static const float max_load_factor = 0.65;
 static const int default_cap = 8;
@@ -132,4 +132,8 @@ extern int map_iter_next(map_iter_t *m, void *key, void *val) {
         }
     }
     return 0;
+}
+
+extern map_t make_map(const desc_t *key_desc, const desc_t *val_desc) {
+    return map_init(key_desc, val_desc);
 }

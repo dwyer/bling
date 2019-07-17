@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
         if (emit_as_bling) {
             printer_print_file(&emitter, file);
         } else {
-            walk_file(file);
+            // walk_file(file);
             emitter_emit_file(&emitter, file);
         }
         free(file->decls);

@@ -1,14 +1,15 @@
 cc_library(
-    name = "ast",
+    name = "map",
     srcs = [
-        "ast.c",
+        "desc.c",
+        "map.c",
+        "types.c",
     ],
     hdrs = [
-        "ast.h",
+        "map.h",
     ],
     deps = [
-        "//bling/token",
-        "//map",
+        "//builtin",
     ],
     visibility = ["//visibility:public"],
 )
