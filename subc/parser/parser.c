@@ -253,59 +253,6 @@ static expr_t *ternary_expression(parser_t *p) {
     return x;
 }
 
-static expr_t *assignment_expression(parser_t *p) {
-    // assignment_expression
-    //         : ternary_expression
-    //         | unary_expression assignment_operator expression
-    //         | unary_expression INC_OP
-    //         | unary_expression DEC_OP
-    //         ;
-    expr_t *x = ternary_expression(p);
-    token_t op = p->tok;
-    switch (op) {
-    case token_ADD_ASSIGN:
-    case token_ASSIGN:
-    case token_DIV_ASSIGN:
-    case token_MOD_ASSIGN:
-    case token_MUL_ASSIGN:
-    case token_SHL_ASSIGN:
-    case token_SHR_ASSIGN:
-    case token_SUB_ASSIGN:
-    case token_XOR_ASSIGN:
-        {
-            parser_next(p);
-            expr_t *y = expression(p);
-            expr_t z = {
-                .type = ast_EXPR_BINARY,
-                .binary = {
-                    .x = x,
-                    .op = op,
-                    .y = y,
-                },
-            };
-            x = memdup(&z, sizeof(z));
-        }
-        break;
-    case token_INC:
-    case token_DEC:
-        {
-            parser_next(p);
-            expr_t y = {
-                .type = ast_EXPR_INCDEC,
-                .incdec = {
-                    .x = x,
-                    .tok = op,
-                },
-            };
-            x = memdup(&y, sizeof(y));
-        }
-        break;
-    default:
-        break;
-    }
-    return x;
-}
-
 static expr_t *expression(parser_t *p) {
     // expression : ternary_expression ;
     return ternary_expression(p);
@@ -714,9 +661,6 @@ static stmt_t *simple_statement(parser_t *p, bool labelOk) {
         {
             parser_next(p);
             expr_t *y = expression(p);
-            if (labelOk) {
-                expect(p, token_SEMICOLON);
-            }
             expr_t z = {
                 .type = ast_EXPR_BINARY,
                 .binary = {
@@ -738,9 +682,6 @@ static stmt_t *simple_statement(parser_t *p, bool labelOk) {
     case token_DEC:
         {
             parser_next(p);
-            if (labelOk) {
-                expect(p, token_SEMICOLON);
-            }
             expr_t y = {
                 .type = ast_EXPR_INCDEC,
                 .incdec = {
@@ -782,9 +723,6 @@ static stmt_t *simple_statement(parser_t *p, bool labelOk) {
         .type = ast_STMT_EXPR,
         .expr = {.x = x},
     };
-    if (labelOk) {
-        expect(p, token_SEMICOLON);
-    }
     return memdup(&stmt, sizeof(stmt));
 }
 
@@ -1003,7 +941,11 @@ static stmt_t *statement(parser_t *p) {
         return memdup(&stmt, sizeof(stmt_t));
     }
 
-    return simple_statement(p, true);
+    stmt_t *stmt = simple_statement(p, true);
+    if (stmt->type != ast_STMT_LABEL) {
+        expect(p, token_SEMICOLON);
+    }
+    return stmt;
 }
 
 static stmt_t *compound_statement(parser_t *p) {

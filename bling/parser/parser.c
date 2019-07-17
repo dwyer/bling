@@ -337,59 +337,6 @@ static expr_t *parse_ternary_expr(parser_t *p) {
     return x;
 }
 
-static expr_t *parse_assign_expr(parser_t *p) {
-    // assignment_expression
-    //         : ternary_expression
-    //         | unary_expression assignment_operator expression
-    //         | unary_expression INC_OP
-    //         | unary_expression DEC_OP
-    //         ;
-    expr_t *x = parse_ternary_expr(p);
-    token_t op = p->tok;
-    switch (op) {
-    case token_ADD_ASSIGN:
-    case token_ASSIGN:
-    case token_DIV_ASSIGN:
-    case token_MOD_ASSIGN:
-    case token_MUL_ASSIGN:
-    case token_SHL_ASSIGN:
-    case token_SHR_ASSIGN:
-    case token_SUB_ASSIGN:
-    case token_XOR_ASSIGN:
-        {
-            parser_next(p);
-            expr_t *y = parse_expr(p);
-            expr_t z = {
-                .type = ast_EXPR_BINARY,
-                .binary = {
-                    .x = x,
-                    .op = op,
-                    .y = y,
-                },
-            };
-            x = memdup(&z, sizeof(expr_t));
-        }
-        break;
-    case token_INC:
-    case token_DEC:
-        {
-            parser_next(p);
-            expr_t y = {
-                .type = ast_EXPR_INCDEC,
-                .incdec = {
-                    .x = x,
-                    .tok = op,
-                },
-            };
-            x = memdup(&y, sizeof(expr_t));
-        }
-        break;
-    default:
-        break;
-    }
-    return x;
-}
-
 static expr_t *parse_expr(parser_t *p) {
     // expression : ternary_expression ;
     return parse_ternary_expr(p);
@@ -580,7 +527,7 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
     //         : labeled_statement
     //         | expression_statement
     //         ;
-    expr_t *x = parse_assign_expr(p);
+    expr_t *x = parse_expr(p);
     // assignment_expression
     //         : expression
     //         | unary_expression assignment_operator expression
@@ -601,9 +548,6 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
         {
             parser_next(p);
             expr_t *y = parse_expr(p);
-            if (labelOk) {
-                expect(p, token_SEMICOLON);
-            }
             expr_t z = {
                 .type = ast_EXPR_BINARY,
                 .binary = {
@@ -625,9 +569,6 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
     case token_DEC:
         {
             parser_next(p);
-            if (labelOk) {
-                expect(p, token_SEMICOLON);
-            }
             expr_t y = {
                 .type = ast_EXPR_INCDEC,
                 .incdec = {
@@ -669,9 +610,6 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
         .type = ast_STMT_EXPR,
         .expr = {.x = x},
     };
-    if (labelOk) {
-        expect(p, token_SEMICOLON);
-    }
     return memdup(&stmt, sizeof(stmt_t));
 }
 
@@ -882,7 +820,11 @@ static stmt_t *parse_stmt(parser_t *p) {
         return memdup(&stmt, sizeof(stmt_t));
     }
 
-    return parse_simple_stmt(p, true);
+    stmt_t *stmt = parse_simple_stmt(p, true);
+    if (stmt->type != ast_STMT_LABEL) {
+        expect(p, token_SEMICOLON);
+    }
+    return stmt;
 }
 
 static stmt_t *parse_block_stmt(parser_t *p) {
