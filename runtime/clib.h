@@ -8,13 +8,17 @@
 
 #include <execinfo.h> // backtrace
 #include <stdarg.h>
+#include <stddef.h>
+
 #include <stdio.h>
 
 // #include <stdlib.h>
 void *malloc(size_t);
-void *realloc(void *, size_t);
 void free(void *);
-void exit(int) __attribute__((noreturn));
+
+void *realloc(void *, size_t); // used by slice append
+
+void exit(int) __attribute__((noreturn)); // used by panic
 
 #include <stdbool.h>
 #include <errno.h>
