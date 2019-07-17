@@ -611,163 +611,174 @@ static stmt_t *parse_stmt(parser_t *p) {
     //         | simple_statement
     //         ;
 
-    if (p->tok == token_VAR) {
-        stmt_t stmt = {
-            .type = ast_STMT_DECL,
-            .decl = parse_decl(p, false),
-        };
-        return memdup(&stmt, sizeof(stmt_t));
-    }
+    switch (p->tok) {
+    case token_VAR:
+        {
+            stmt_t stmt = {
+                .type = ast_STMT_DECL,
+                .decl = parse_decl(p, false),
+            };
+            return memdup(&stmt, sizeof(stmt_t));
+        }
 
-    if (accept(p, token_FOR)) {
-        // for_statement
-        //         | FOR simple_statement? ';' expression? ';' expression?
-        //              compound_statement ;
-        stmt_t *init = NULL;
-        if (!accept(p, token_SEMICOLON)) {
-            init = parse_stmt(p);
-        }
-        expr_t *cond = NULL;
-        if (p->tok != token_SEMICOLON) {
-            cond = parse_expr(p);
-        }
-        expect(p, token_SEMICOLON);
-        stmt_t *post = NULL;
-        if (p->tok != token_LBRACE) {
-            post = parse_simple_stmt(p, false);
-        }
-        stmt_t *body = parse_block_stmt(p);
-        stmt_t stmt = {
-            .type = ast_STMT_ITER,
-            .iter = {
-                .kind = token_FOR,
-                .init = init,
-                .cond = cond,
-                .post = post,
-                .body = body,
-            },
-        };
-        return memdup(&stmt, sizeof(stmt_t));
-    }
-
-    if (accept(p, token_IF)) {
-        // if_statement
-        //         : IF expression compound_statement
-        //         | IF expression compound_statement ELSE compound_statement
-        //         | IF expression compound_statement ELSE if_statement
-        //         ;
-        expr_t *cond = parse_expr(p);
-        if (p->tok != token_LBRACE) {
-            parser_error(p, "`if` must be followed by a compound_statement");
-        }
-        stmt_t *body = parse_block_stmt(p);
-        stmt_t *else_ = NULL;
-        if (accept(p, token_ELSE)) {
-            if (p->tok == token_IF) {
-                else_ = parse_stmt(p);
-            } else if (p->tok == token_LBRACE) {
-                else_ = parse_block_stmt(p);
-            } else {
-                parser_error(p, "`else` must be followed by an if_statement or compound_statement");
+    case token_FOR:
+        {
+            // for_statement
+            //         | FOR simple_statement? ';' expression? ';' expression?
+            //              compound_statement ;
+            parser_next(p);
+            stmt_t *init = NULL;
+            if (!accept(p, token_SEMICOLON)) {
+                init = parse_stmt(p);
             }
+            expr_t *cond = NULL;
+            if (p->tok != token_SEMICOLON) {
+                cond = parse_expr(p);
+            }
+            expect(p, token_SEMICOLON);
+            stmt_t *post = NULL;
+            if (p->tok != token_LBRACE) {
+                post = parse_simple_stmt(p, false);
+            }
+            stmt_t *body = parse_block_stmt(p);
+            stmt_t stmt = {
+                .type = ast_STMT_ITER,
+                .iter = {
+                    .kind = token_FOR,
+                    .init = init,
+                    .cond = cond,
+                    .post = post,
+                    .body = body,
+                },
+            };
+            return memdup(&stmt, sizeof(stmt_t));
         }
-        stmt_t stmt = {
-            .type = ast_STMT_IF,
-            .if_ = {
-                .cond = cond,
-                .body = body,
-                .else_ = else_,
-            },
-        };
-        return memdup(&stmt, sizeof(stmt_t));
-    }
 
-    if (accept(p, token_RETURN)) {
-        // return_statement
-        //         | RETURN expression? ';'
-        //         ;
-        expr_t *x = NULL;
-        if (p->tok != token_SEMICOLON) {
-            x = parse_expr(p);
-        }
-        expect(p, token_SEMICOLON);
-        stmt_t *stmt = malloc(sizeof(stmt_t));
-        stmt->type = ast_STMT_RETURN;
-        stmt->return_.x = x;
-        return stmt;
-    }
-
-    if (accept(p, token_SWITCH)) {
-        // switch_statement | SWITCH expression case_statement* ;
-        expr_t *tag = parse_expr(p);
-        expect(p, token_LBRACE);
-        slice_t clauses = {.size = sizeof(stmt_t *)};
-        while (p->tok == token_CASE || p->tok == token_DEFAULT) {
-            // case_statement
-            //         | CASE constant_expression ':' statement+
-            //         | DEFAULT ':' statement+
+    case token_IF:
+        {
+            // if_statement
+            //         : IF expression compound_statement
+            //         | IF expression compound_statement ELSE compound_statement
+            //         | IF expression compound_statement ELSE if_statement
             //         ;
-            expr_t *expr = NULL;
-            if (accept(p, token_CASE)) {
-                expr = parse_const_expr(p);
-            } else {
-                expect(p, token_DEFAULT);
+            parser_next(p);
+            expr_t *cond = parse_expr(p);
+            if (p->tok != token_LBRACE) {
+                parser_error(p, "`if` must be followed by a compound_statement");
             }
-            expect(p, token_COLON);
-            slice_t stmts = {.size = sizeof(stmt_t *)};
-            bool loop = true;
-            while (loop) {
-                switch (p->tok) {
-                case token_CASE:
-                case token_DEFAULT:
-                case token_RBRACE:
-                    loop = false;
-                    break;
-                default:
-                    break;
-                }
-                if (loop) {
-                    stmt_t *stmt = parse_stmt(p);
-                    stmts = append(stmts, &stmt);
+            stmt_t *body = parse_block_stmt(p);
+            stmt_t *else_ = NULL;
+            if (accept(p, token_ELSE)) {
+                if (p->tok == token_IF) {
+                    else_ = parse_stmt(p);
+                } else if (p->tok == token_LBRACE) {
+                    else_ = parse_block_stmt(p);
+                } else {
+                    parser_error(p, "`else` must be followed by an if_statement or compound_statement");
                 }
             }
             stmt_t stmt = {
-                .type = ast_STMT_CASE,
-                .case_ = {
-                    .expr = expr,
-                    .stmts = slice_to_nil_array(stmts),
+                .type = ast_STMT_IF,
+                .if_ = {
+                    .cond = cond,
+                    .body = body,
+                    .else_ = else_,
                 },
             };
-            stmt_t *clause = memdup(&stmt, sizeof(stmt_t));
-            clauses = append(clauses, &clause);
+            return memdup(&stmt, sizeof(stmt_t));
         }
-        expect(p, token_RBRACE);
-        stmt_t stmt = {
-            .type = ast_STMT_SWITCH,
-            .switch_ = {
-                .tag = tag,
-                .stmts = slice_to_nil_array(clauses),
-            },
-        };
-        return memdup(&stmt, sizeof(stmt_t));
-    }
 
-    if (accept(p, token_WHILE)) {
-        // while_statement : WHILE expression compound_statement ;
-        expr_t *cond = parse_expr(p);
-        stmt_t *body = parse_block_stmt(p);
-        stmt_t stmt = {
-            .type = ast_STMT_ITER,
-            .iter = {
-                .kind = token_WHILE,
-                .cond = cond,
-                .body = body,
-            },
-        };
-        return memdup(&stmt, sizeof(stmt_t));
-    }
+    case token_RETURN:
+        {
+            // return_statement
+            //         | RETURN expression? ';'
+            //         ;
+            parser_next(p);
+            expr_t *x = NULL;
+            if (p->tok != token_SEMICOLON) {
+                x = parse_expr(p);
+            }
+            expect(p, token_SEMICOLON);
+            stmt_t *stmt = malloc(sizeof(stmt_t));
+            stmt->type = ast_STMT_RETURN;
+            stmt->return_.x = x;
+            return stmt;
+        }
 
-    switch (p->tok) {
+    case token_SWITCH:
+        {
+            // switch_statement | SWITCH expression case_statement* ;
+            parser_next(p);
+            expr_t *tag = parse_expr(p);
+            expect(p, token_LBRACE);
+            slice_t clauses = {.size = sizeof(stmt_t *)};
+            while (p->tok == token_CASE || p->tok == token_DEFAULT) {
+                // case_statement
+                //         | CASE constant_expression ':' statement+
+                //         | DEFAULT ':' statement+
+                //         ;
+                expr_t *expr = NULL;
+                if (accept(p, token_CASE)) {
+                    expr = parse_const_expr(p);
+                } else {
+                    expect(p, token_DEFAULT);
+                }
+                expect(p, token_COLON);
+                slice_t stmts = {.size = sizeof(stmt_t *)};
+                bool loop = true;
+                while (loop) {
+                    switch (p->tok) {
+                    case token_CASE:
+                    case token_DEFAULT:
+                    case token_RBRACE:
+                        loop = false;
+                        break;
+                    default:
+                        break;
+                    }
+                    if (loop) {
+                        stmt_t *stmt = parse_stmt(p);
+                        stmts = append(stmts, &stmt);
+                    }
+                }
+                stmt_t stmt = {
+                    .type = ast_STMT_CASE,
+                    .case_ = {
+                        .expr = expr,
+                        .stmts = slice_to_nil_array(stmts),
+                    },
+                };
+                stmt_t *clause = memdup(&stmt, sizeof(stmt_t));
+                clauses = append(clauses, &clause);
+            }
+            expect(p, token_RBRACE);
+            stmt_t stmt = {
+                .type = ast_STMT_SWITCH,
+                .switch_ = {
+                    .tag = tag,
+                    .stmts = slice_to_nil_array(clauses),
+                },
+            };
+            return memdup(&stmt, sizeof(stmt_t));
+        }
+
+    case token_WHILE:
+        {
+            // while_statement : WHILE expression compound_statement ;
+            parser_next(p);
+            expr_t *cond = parse_expr(p);
+            stmt_t *body = parse_block_stmt(p);
+            stmt_t stmt = {
+                .type = ast_STMT_ITER,
+                .iter = {
+                    .kind = token_WHILE,
+                    .cond = cond,
+                    .body = body,
+                },
+            };
+            return memdup(&stmt, sizeof(stmt_t));
+        }
+
     case token_BREAK:
     case token_CONTINUE:
     case token_GOTO:
@@ -793,8 +804,10 @@ static stmt_t *parse_stmt(parser_t *p) {
             };
             return memdup(&stmt, sizeof(stmt_t));
         }
+
     case token_LBRACE:
         return parse_block_stmt(p);
+
     default:
         break;
     }
