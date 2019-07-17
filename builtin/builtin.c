@@ -1,5 +1,9 @@
 #include "builtin/builtin.h"
 
+extern int backtrace(void **, int); // libc
+extern void backtrace_symbols_fd(void* const*, int, int); // libc
+extern void exit(int) /* __attribute__((noreturn)) */; // lib
+
 static void vprint(const char *fmt, va_list ap) {
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
@@ -19,7 +23,8 @@ extern void panic(const char *fmt, ...) {
     va_end(ap);
     void *buf[1024];
     int n = backtrace(buf, 1024);
-    backtrace_symbols_fd(buf, n, 2);
+    int fd = 2; //stderr
+    backtrace_symbols_fd(buf, n, fd);
     exit(1);
 }
 

@@ -23,12 +23,12 @@ SRCS=runtime/runtime.h \
      subc/emitter/emit.h subc/emitter/emit.c \
      cmd/blingc/main.c
 
+hello: $(BLINGC) all.bling
+	$(BLINGC) -o /dev/null -w syntax_test.bling
+
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
 	cc all.c
-
-hello: $(BLINGC) all.bling
-	$(BLINGC) -o /dev/null -w syntax_test.bling
 
 all.bling: $(BLINGC)
 	$(BLINGC) -o all.bling $(SRCS)
