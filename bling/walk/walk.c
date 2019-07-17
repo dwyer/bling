@@ -22,7 +22,7 @@ static expr_t *find_basic_type(token_t kind) {
             .name = strdup(name),
         }
     };
-    return memdup(&x, sizeof(expr_t));
+    return esc(x);
 }
 
 typedef struct {

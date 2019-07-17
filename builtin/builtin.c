@@ -1,5 +1,9 @@
 #include "builtin/builtin.h"
 
+extern void *memdup(const void *src, size_t size) {
+    return memcpy(malloc(size), src, size);
+}
+
 static void vprint(const char *fmt, va_list ap) {
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
@@ -27,7 +31,7 @@ extern error_t *make_error(const char *error) {
     error_t err = {
         .error = strdup(error),
     };
-    return memdup(&err, sizeof(error_t));
+    return esc(err);
 }
 
 extern error_t *make_sysError(void) {

@@ -9,7 +9,7 @@ extern object_t *object_new(obj_kind_t kind, char *name) {
         .kind = kind,
         .name = name,
     };
-    return memdup(&obj, sizeof(object_t));
+    return esc(obj);
 }
 
 static const desc_t _object_desc = {
@@ -22,7 +22,7 @@ extern scope_t *scope_new(scope_t *outer) {
         .objects = make_map(&desc_str, &_object_desc),
         .filenames = make_slice(sizeof(char *), 0, 0),
     };
-    return memdup(&s, sizeof(scope_t));
+    return esc(s);
 }
 
 extern void scope_deinit(scope_t *s) {

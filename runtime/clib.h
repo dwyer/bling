@@ -22,4 +22,6 @@
 #undef assert
 #define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
 
+#define esc(x) memcpy(malloc(sizeof(x)), &(x), sizeof(x))
+
 #endif

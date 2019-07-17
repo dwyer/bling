@@ -57,10 +57,6 @@ static pair_t *pair_ref(const map_t *m, const void *key) {
     return NULL;
 }
 
-extern void *memdup(const void *src, size_t size) {
-    return memcpy(malloc(size), src, size);
-}
-
 static void set_unsafe(map_t *m, const void *key, const void *val) {
     pair_t *p = pair_ref(m, key);
     if (p->key == NULL) {

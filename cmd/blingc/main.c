@@ -73,10 +73,10 @@ int main(int argc, char *argv[]) {
         decl_t decl = {
             .type = ast_DECL_NATIVE,
             .native = {
-                .name = memdup(&name, sizeof(expr_t)),
+                .name = esc(name),
             },
         };
-        scope_declare(scope, memdup(&decl, sizeof(decl_t)));
+        scope_declare(scope, esc(decl));
     }
     emitter_t emitter = {};
     error_t *err = NULL;

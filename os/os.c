@@ -18,7 +18,7 @@ extern os_File *os_newFile(uintptr_t fd, const char *name) {
         .name = strdup(name),
         .fd = fd,
     };
-    return memdup(&file, sizeof(file));
+    return esc(file);
 }
 
 extern os_File *os_openFile(const char *filename, int mode, int perm, error_t **error) {
@@ -66,7 +66,7 @@ extern os_FileInfo os_stat(const char *name, error_t **error) {
         return info;
     }
     info._name = strdup(name);
-    info._sys = memdup(&st, sizeof(struct stat));
+    info._sys = esc(st);
     return info;
 }
 
@@ -125,7 +125,7 @@ extern os_FileInfo **os_readdir(os_File *file, error_t **error) {
             error_move(err, error);
             return NULL;
         }
-        os_FileInfo *ptr = memdup(&info, sizeof(info));
+        os_FileInfo *ptr = esc(info);
         arr = append(arr, &ptr);
     }
     free(names);
