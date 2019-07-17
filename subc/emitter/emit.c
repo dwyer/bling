@@ -70,11 +70,6 @@ static void emit_c_expr(emitter_t *e, expr_t *expr) {
         emit_token(e, token_RBRACK);
         break;
 
-    case ast_EXPR_INCDEC:
-        emit_c_expr(e, expr->incdec.x);
-        emit_token(e, expr->incdec.tok);
-        break;
-
     case ast_EXPR_KEY_VALUE:
         emit_token(e, token_PERIOD);
         emit_c_expr(e, expr->key_value.key);

@@ -101,11 +101,6 @@ static void print_expr(emitter_t *p, expr_t *expr) {
         print_token(p, token_RBRACK);
         break;
 
-    case ast_EXPR_INCDEC:
-        print_expr(p, expr->incdec.x);
-        print_token(p, expr->incdec.tok);
-        break;
-
     case ast_EXPR_KEY_VALUE:
         print_expr(p, expr->key_value.key);
         print_token(p, token_COLON);

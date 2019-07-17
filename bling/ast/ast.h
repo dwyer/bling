@@ -28,7 +28,6 @@ typedef enum {
     ast_EXPR_COMPOUND,
     ast_EXPR_COND,
     ast_EXPR_IDENT,
-    ast_EXPR_INCDEC,
     ast_EXPR_INDEX,
     ast_EXPR_KEY_VALUE,
     ast_EXPR_PAREN,
@@ -181,11 +180,6 @@ typedef struct expr_t {
             char *name;
             object_t *obj;
         } ident;
-
-        struct {
-            expr_t *x;
-            token_t tok;
-        } incdec;
 
         struct {
             expr_t *x;

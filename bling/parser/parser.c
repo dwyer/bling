@@ -530,9 +530,9 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
     expr_t *x = parse_expr(p);
     // assignment_statement
     //         : expression
-    //         | unary_expression assignment_operator expression
-    //         | unary_expression INC_OP
-    //         | unary_expression DEC_OP
+    //         | expression assignment_operator expression
+    //         | expression INC_OP
+    //         | expression DEC_OP
     //         ;
     token_t op = p->tok;
     switch (op) {
@@ -562,18 +562,11 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
     case token_DEC:
         {
             parser_next(p);
-            expr_t y = {
-                .type = ast_EXPR_INCDEC,
-                .incdec = {
-                    .x = x,
-                    .tok = op,
-                },
-            };
-            x = memdup(&y, sizeof(expr_t));
             stmt_t stmt = {
-                .type = ast_STMT_EXPR,
-                .expr = {
+                .type = ast_STMT_POSTFIX,
+                .postfix = {
                     .x = x,
+                    .op = op,
                 },
             };
             return memdup(&stmt, sizeof(stmt_t));
