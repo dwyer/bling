@@ -25,6 +25,14 @@ typedef struct {
     scope_t *topScope;
 } walker_t;
 
+static void walker_openScope(walker_t *w) {
+    w->topScope = scope_new(w->topScope);
+}
+
+static void walker_closeScope(walker_t *w) {
+    w->topScope = w->topScope->outer;
+}
+
 static expr_t *find_type(walker_t *w, expr_t *lhs, expr_t *expr) {
     assert(expr);
     switch (expr->type) {
@@ -32,9 +40,9 @@ static expr_t *find_type(walker_t *w, expr_t *lhs, expr_t *expr) {
         print("finding basic type");
         return find_basic_type(expr->basic_lit.kind);
     case ast_EXPR_IDENT:
-        print("finding type of %s", expr->ident.name);
+        print("finding type of `%s`", expr->ident.name);
         if (!expr->ident.obj) {
-            panic("find_type: not resolved: %s", expr->ident.name);
+            panic("find_type: not resolved: `%s`", expr->ident.name);
         }
         switch (expr->ident.obj->kind) {
         case obj_kind_VALUE:
@@ -52,6 +60,22 @@ static expr_t *find_type(walker_t *w, expr_t *lhs, expr_t *expr) {
         break;
     }
     return NULL;
+}
+
+static void printScope(scope_t *s) {
+    int indent = 1;
+    while (s) {
+        map_iter_t iter = map_iter(&s->objects);
+        char *key = NULL;
+        while (map_iter_next(&iter, &key, NULL)) {
+            for (int i = 0; i < indent; i++) {
+                fputs("\t", stderr);
+            }
+            print("%s", key);
+        }
+        s = s->outer;
+        indent++;
+    }
 }
 
 static bool match_types(expr_t *a, expr_t *b) {
@@ -73,11 +97,10 @@ static expr_t *type_from_ident(expr_t *ident) {
     print("type_from_ident: %s", ident->ident.name);
     assert(ident->ident.obj);
     decl_t *decl = ident->ident.obj->decl;
-    switch (decl->type) {
-    default:
-        panic("type_from_ident: bad decl: %d", decl->type);
-    }
-    return NULL;
+    assert(decl);
+    assert(decl->type == ast_DECL_TYPEDEF);
+    expr_t *type = decl->typedef_.type;
+    return type;
 }
 
 static void walk_expr(walker_t *w, expr_t *expr) {
@@ -86,6 +109,7 @@ static void walk_expr(walker_t *w, expr_t *expr) {
     case ast_EXPR_COMPOUND:
         break;
     case ast_EXPR_IDENT:
+        print("walk_expr: resolving `%s`", expr->ident.name);
         scope_resolve(w->topScope, expr);
         break;
     case ast_EXPR_SELECTOR:
@@ -99,20 +123,37 @@ static void walk_expr(walker_t *w, expr_t *expr) {
                 assert(expr->selector.tok != token_ARROW);
             }
             for (;;) {
-                if (type->type == ast_EXPR_IDENT) {
+                if (!type) {
+                    print("no type");
+                    break;
+                } else if (type->type == ast_EXPR_IDENT) {
+                    print("walk_expr: getting type from ident");
                     type = type_from_ident(type);
                 } else if (type->type == ast_TYPE_QUAL) {
+                    print("walk_expr: getting type from qual");
                     type = type->qual.type;
                 } else {
+                    print("got type");
                     break;
                 }
             }
+            assert(type);
             print("type %d", type->type);
+            print("selector: %s", expr->selector.sel->ident.name);
             assert(type->type == ast_TYPE_STRUCT);
-            /* expr_t *type = find_type(w, NULL, expr->selector.sel); */
-            /* walk_expr(w, expr->selector.sel); */
+            bool resolved = false;
+            for (int i = 0; type->struct_.fields[i]; i++) {
+                decl_t *field = type->struct_.fields[i];
+                print("field: %s", field->field.name->ident.name);
+                if (streq(expr->selector.sel->ident.name,
+                            field->field.name->ident.name)) {
+                    resolved = true;
+                    type = field->field.type;
+                    break;
+                }
+            }
+            assert(resolved);
         }
-        panic("walk_expr: unknown expr: selector");
         break;
     case ast_TYPE_ENUM:
         for (int i = 0; expr->enum_.enums[i]; i++) {
@@ -126,11 +167,11 @@ static void walk_expr(walker_t *w, expr_t *expr) {
         walk_expr(w, expr->qual.type);
         break;
     case ast_TYPE_STRUCT:
-        w->topScope = scope_new(w->topScope);
+        walker_openScope(w);
         for (int i = 0; expr->struct_.fields[i]; i++) {
             scope_declare(w->topScope, expr->struct_.fields[i]);
         }
-        w->topScope = w->topScope->outer;
+        walker_closeScope(w);
         break;
     default:
         panic("walk_expr: unknown expr: %d", expr->type);
@@ -191,29 +232,24 @@ static void walk_decl(walker_t *w, decl_t *decl) {
 static void walk_func(walker_t *w, decl_t *decl) {
     if (decl->type == ast_DECL_FUNC && decl->func.body) {
         print("walk_func: walking func %s", decl->func.name->ident.name);
-        w->topScope = scope_new(w->topScope);
+        walker_openScope(w);
         for (int i = 0; decl->func.type->func.params[i]; i++) {
             decl_t *param = decl->func.type->func.params[i];
             if (param->type) {
-                print("declaring param `%s`", param->field.name->ident.name);
-                scope_declare(w->topScope, param);
-                print("walking type");
+                print("walk_func: walking type of param `%s`", param->field.name->ident.name);
+                printScope(w->topScope);
                 walk_expr(w, param->field.type);
+                print("walk_func: declaring param `%s`", param->field.name->ident.name);
+                scope_declare(w->topScope, param);
             }
         }
         walk_stmt(w, decl->func.body);
-        w->topScope = w->topScope->outer;
+        walker_closeScope(w);
     }
 }
 
 extern void walk_file(file_t *file) {
-    map_iter_t iter = map_iter(&file->scope->objects);
-    char *key = NULL;
-    void *val = NULL;
-    while (map_iter_next(&iter, &key, val)) {
-        print("iter: %s", key);
-    }
-    walker_t w = {.topScope = scope_new(NULL)};
+    walker_t w = {.topScope = scope_new(file->scope)};
     for (int i = 0; file->decls[i] != NULL; i++) {
         walk_decl(&w, file->decls[i]);
     }

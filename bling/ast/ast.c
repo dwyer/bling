@@ -48,6 +48,10 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
     obj_kind_t kind;
     expr_t *ident = NULL;
     switch (decl->type) {
+    case ast_DECL_NATIVE:
+        kind = obj_kind_VALUE;
+        ident = decl->native.name;
+        break;
     case ast_DECL_ENUM:
         kind = obj_kind_VALUE;
         ident = decl->enum_.name;
@@ -112,5 +116,5 @@ extern void scope_resolve(scope_t *s, expr_t *x) {
         }
         s = s->outer;
     }
-    panic("unresolved: %s", x->ident.name);
+    panic("scope_resolve: unresolved: %s", x->ident.name);
 }

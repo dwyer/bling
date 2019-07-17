@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
                 .name = memdup(&name, sizeof(expr_t)),
             },
         };
+        print("declaring native type `%s`", native_types[i]);
         scope_declare(scope, memdup(&decl, sizeof(decl_t)));
     }
     emitter_t emitter = {.file = os_stdout};
