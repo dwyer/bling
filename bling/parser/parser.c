@@ -178,8 +178,8 @@ static expr_t *parse_postfix_expr(parser_t *p) {
                 slice_t args = {.size = sizeof(expr_t *)};
                 expect(p, token_LPAREN);
                 // argument_expression_list
-                //         : assignment_expression
-                //         | argument_expression_list ',' assignment_expression
+                //         : expression
+                //         | argument_expression_list ',' expression
                 //         ;
                 while (p->tok != token_RPAREN) {
                     expr_t *x = parse_expr(p);
@@ -535,7 +535,7 @@ static decl_t **parse_param_type_list(parser_t *p, bool anon) {
 
 static expr_t *parse_init_expr(parser_t *p) {
     // initializer
-    //         : assignment_expression
+    //         : expression
     //         | '{' initializer_list ','? '}'
     //         ;
     if (p->tok == token_LBRACE) {
@@ -572,7 +572,7 @@ static expr_t *parse_init_expr(parser_t *p) {
         };
         return memdup(&expr, sizeof(expr_t));
     }
-    return parse_ternary_expr(p);
+    return parse_expr(p);
 }
 
 static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {

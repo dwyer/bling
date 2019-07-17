@@ -77,8 +77,8 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                 slice_t args = {.size = sizeof(expr_t *)};
                 expect(p, token_LPAREN);
                 // argument_expression_list
-                //         : assignment_expression
-                //         | argument_expression_list ',' assignment_expression
+                //         : expression
+                //         | argument_expression_list ',' expression
                 //         ;
                 while (p->tok != token_RPAREN) {
                     expr_t *x = expression(p);
@@ -643,11 +643,11 @@ static decl_t *abstract_declarator(parser_t *p, expr_t *type) {
 
 static expr_t *initializer(parser_t *p) {
     // initializer
-    //         : assignment_expression
+    //         : expression
     //         | '{' initializer_list ','? '}'
     //         ;
     if (!accept(p, token_LBRACE)) {
-        return assignment_expression(p);
+        return expression(p);
     }
     // initializer_list
     //         : designation? initializer
