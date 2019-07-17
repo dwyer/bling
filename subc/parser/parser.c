@@ -641,11 +641,11 @@ static stmt_t *simple_statement(parser_t *p, bool labelOk) {
     //         | expression_statement
     //         ;
     expr_t *x = expression(p);
-    // assignment_expression
+    // assignment_statement
     //         : expression
-    //         | unary_expression assignment_operator expression
-    //         | unary_expression INC_OP
-    //         | unary_expression DEC_OP
+    //         | expression assignment_operator expression
+    //         | expression INC_OP
+    //         | expression DEC_OP
     //         ;
     token_t op = p->tok;
     switch (op) {
@@ -661,19 +661,12 @@ static stmt_t *simple_statement(parser_t *p, bool labelOk) {
         {
             parser_next(p);
             expr_t *y = expression(p);
-            expr_t z = {
-                .type = ast_EXPR_BINARY,
-                .binary = {
+            stmt_t stmt = {
+                .type = ast_STMT_ASSIGN,
+                .assign = {
                     .x = x,
                     .op = op,
                     .y = y,
-                },
-            };
-            x = memdup(&z, sizeof(z));
-            stmt_t stmt = {
-                .type = ast_STMT_EXPR,
-                .expr = {
-                    .x = x,
                 },
             };
             return memdup(&stmt, sizeof(stmt_t));
@@ -682,18 +675,11 @@ static stmt_t *simple_statement(parser_t *p, bool labelOk) {
     case token_DEC:
         {
             parser_next(p);
-            expr_t y = {
-                .type = ast_EXPR_INCDEC,
-                .incdec = {
-                    .x = x,
-                    .tok = op,
-                },
-            };
-            x = memdup(&y, sizeof(expr_t));
             stmt_t stmt = {
-                .type = ast_STMT_EXPR,
-                .expr = {
+                .type = ast_STMT_POSTFIX,
+                .postfix = {
                     .x = x,
+                    .op = op,
                 },
             };
             return memdup(&stmt, sizeof(stmt_t));

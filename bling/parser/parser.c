@@ -528,7 +528,7 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
     //         | expression_statement
     //         ;
     expr_t *x = parse_expr(p);
-    // assignment_expression
+    // assignment_statement
     //         : expression
     //         | unary_expression assignment_operator expression
     //         | unary_expression INC_OP
@@ -548,19 +548,12 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
         {
             parser_next(p);
             expr_t *y = parse_expr(p);
-            expr_t z = {
-                .type = ast_EXPR_BINARY,
-                .binary = {
+            stmt_t stmt = {
+                .type = ast_STMT_ASSIGN,
+                .assign = {
                     .x = x,
                     .op = op,
                     .y = y,
-                },
-            };
-            x = memdup(&z, sizeof(expr_t));
-            stmt_t stmt = {
-                .type = ast_STMT_EXPR,
-                .expr = {
-                    .x = x,
                 },
             };
             return memdup(&stmt, sizeof(stmt_t));

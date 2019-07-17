@@ -150,6 +150,16 @@ static void print_expr(emitter_t *p, expr_t *expr) {
 static void print_stmt(emitter_t *p, stmt_t *stmt) {
     switch (stmt->type) {
 
+    case ast_STMT_ASSIGN:
+        emit_tabs(p);
+        print_expr(p, stmt->assign.x);
+        emit_space(p);
+        print_token(p, stmt->assign.op);
+        emit_space(p);
+        print_expr(p, stmt->assign.y);
+        print_token(p, token_SEMICOLON);
+        break;
+
     case ast_STMT_BLOCK:
         print_token(p, token_LBRACE);
         emit_newline(p);
@@ -254,6 +264,13 @@ static void print_stmt(emitter_t *p, stmt_t *stmt) {
         print_token(p, token_COLON);
         emit_tabs(p);
         print_stmt(p, stmt->label.stmt);
+        break;
+
+    case ast_STMT_POSTFIX:
+        emit_tabs(p);
+        print_expr(p, stmt->postfix.x);
+        print_token(p, stmt->postfix.op);
+        print_token(p, token_SEMICOLON);
         break;
 
     case ast_STMT_RETURN:
