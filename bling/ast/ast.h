@@ -39,6 +39,7 @@ typedef enum {
     _ast_EXPR_END,
 
     _ast_STMT_START,
+    ast_STMT_ASSIGN,
     ast_STMT_BLOCK,
     ast_STMT_CASE,
     ast_STMT_DECL,
@@ -47,6 +48,7 @@ typedef enum {
     ast_STMT_ITER,
     ast_STMT_JUMP,
     ast_STMT_LABEL,
+    ast_STMT_POSTFIX,
     ast_STMT_RETURN,
     ast_STMT_SWITCH,
     _ast_STMT_END,
@@ -241,6 +243,12 @@ typedef struct stmt_t {
     union {
 
         struct {
+            expr_t *x;
+            token_t op;
+            expr_t *y;
+        } assign;
+
+        struct {
             stmt_t **stmts;
         } block;
 
@@ -277,6 +285,11 @@ typedef struct stmt_t {
         struct {
             expr_t *label;
         } label;
+
+        struct {
+            expr_t *x;
+            token_t op;
+        } postfix;
 
         struct {
             expr_t *x;
