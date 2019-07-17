@@ -8,6 +8,7 @@ cc_library(
     ],
     deps = [
         "//path",
+        "//slice",
     ],
     visibility = ["//visibility:public"],
 )

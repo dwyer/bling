@@ -1,6 +1,8 @@
 #pragma once
 
-#include "builtin/builtin.h"
+#include "slice/slice.h"
+
+$import("slice");
 
 typedef struct {
     size_t size;

@@ -7,7 +7,7 @@ cc_library(
         "strings.h",
     ],
     deps = [
-        "//builtin",
+        "//slice",
     ],
     visibility = ["//visibility:public"],
 )

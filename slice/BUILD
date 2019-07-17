@@ -1,14 +1,13 @@
 cc_library(
-    name = "path",
+    name = "slice",
     srcs = [
-        "path.c",
+        "slice.c",
     ],
     hdrs = [
-        "path.h",
+        "slice.h",
     ],
     deps = [
-        "//slice",
-        "//strings",
+        "//builtin",
     ],
     visibility = ["//visibility:public"],
 )

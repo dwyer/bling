@@ -13,6 +13,7 @@ cc_library(
         "//bling/token",
         "//io/ioutil",
         "//path",
+        "//slice",
     ],
     visibility = ["//visibility:public"],
 )

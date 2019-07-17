@@ -1,7 +1,4 @@
-#include "runtime.h"
-
-#include <stdlib.h>
-#include <string.h>
+#include "slice/slice.h"
 
 extern slice_t slice_init(int size, int len, int cap) {
     slice_t s = {
@@ -80,4 +77,25 @@ extern void *slice_to_nil_array(slice_t s) {
         slice_append(&s, &nil);
     }
     return s.array;
+}
+
+extern int len(slice_t s) {
+    return s.len;
+}
+
+extern int cap(slice_t s) {
+    return s.cap;
+}
+
+extern void *get_ptr(slice_t s, int index) {
+    return slice_ref(&s, index);
+}
+
+extern slice_t append(slice_t s, const void *obj) {
+    slice_append(&s, obj);
+    return s;
+}
+
+extern slice_t make_slice(int size, int len, int cap) {
+    return slice_init(size, len, cap);
 }

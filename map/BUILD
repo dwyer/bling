@@ -9,7 +9,7 @@ cc_library(
         "map.h",
     ],
     deps = [
-        "//builtin",
+        "//slice",
     ],
     visibility = ["//visibility:public"],
 )

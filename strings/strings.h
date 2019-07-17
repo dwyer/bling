@@ -1,6 +1,6 @@
 #pragma once
 
-#include "builtin/builtin.h"
+#include "slice/slice.h"
 
 extern char *strings_join(const char *a[], int size, const char *sep);
 

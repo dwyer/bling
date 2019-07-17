@@ -3,7 +3,6 @@ cc_library(
     srcs = [
         "clib.h",
         "runtime.h",
-        "slice.c",
     ],
     hdrs = [
         "clib.h",

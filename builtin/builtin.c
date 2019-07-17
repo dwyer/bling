@@ -23,27 +23,6 @@ extern void panic(const char *fmt, ...) {
     exit(1);
 }
 
-extern int len(slice_t s) {
-    return s.len;
-}
-
-extern int cap(slice_t s) {
-    return s.cap;
-}
-
-extern void *get_ptr(slice_t s, int index) {
-    return slice_ref(&s, index);
-}
-
-extern slice_t append(slice_t s, const void *obj) {
-    slice_append(&s, obj);
-    return s;
-}
-
-extern slice_t make_slice(int size, int len, int cap) {
-    return slice_init(size, len, cap);
-}
-
 extern error_t *make_error(const char *error) {
     error_t err = {
         .error = strdup(error),
