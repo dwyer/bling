@@ -693,7 +693,73 @@ static stmt_t *simple_statement(parser_t *p, bool labelOk) {
     //         : labeled_statement
     //         | expression_statement
     //         ;
-    expr_t *x = assignment_expression(p);
+    expr_t *x = expression(p);
+    // assignment_expression
+    //         : expression
+    //         | unary_expression assignment_operator expression
+    //         | unary_expression INC_OP
+    //         | unary_expression DEC_OP
+    //         ;
+    token_t op = p->tok;
+    switch (op) {
+    case token_ADD_ASSIGN:
+    case token_ASSIGN:
+    case token_DIV_ASSIGN:
+    case token_MOD_ASSIGN:
+    case token_MUL_ASSIGN:
+    case token_SHL_ASSIGN:
+    case token_SHR_ASSIGN:
+    case token_SUB_ASSIGN:
+    case token_XOR_ASSIGN:
+        {
+            parser_next(p);
+            expr_t *y = expression(p);
+            if (labelOk) {
+                expect(p, token_SEMICOLON);
+            }
+            expr_t z = {
+                .type = ast_EXPR_BINARY,
+                .binary = {
+                    .x = x,
+                    .op = op,
+                    .y = y,
+                },
+            };
+            x = memdup(&z, sizeof(z));
+            stmt_t stmt = {
+                .type = ast_STMT_EXPR,
+                .expr = {
+                    .x = x,
+                },
+            };
+            return memdup(&stmt, sizeof(stmt_t));
+        }
+    case token_INC:
+    case token_DEC:
+        {
+            parser_next(p);
+            if (labelOk) {
+                expect(p, token_SEMICOLON);
+            }
+            expr_t y = {
+                .type = ast_EXPR_INCDEC,
+                .incdec = {
+                    .x = x,
+                    .tok = op,
+                },
+            };
+            x = memdup(&y, sizeof(expr_t));
+            stmt_t stmt = {
+                .type = ast_STMT_EXPR,
+                .expr = {
+                    .x = x,
+                },
+            };
+            return memdup(&stmt, sizeof(stmt_t));
+        }
+    default:
+        break;
+    }
     // labeled_statement
     //         : IDENTIFIER ':' statement
     //         | CASE constant_expression ':' statement
@@ -922,12 +988,19 @@ static stmt_t *statement(parser_t *p) {
                     .label = label,
                 },
             };
-            return memdup(&stmt, sizeof(stmt));
+            return memdup(&stmt, sizeof(stmt_t));
         }
     case token_LBRACE:
         return compound_statement(p);
     default:
         break;
+    }
+
+    if (accept(p, token_SEMICOLON)) {
+        stmt_t stmt = {
+            .type = ast_STMT_EXPR,
+        };
+        return memdup(&stmt, sizeof(stmt_t));
     }
 
     return simple_statement(p, true);

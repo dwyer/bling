@@ -229,6 +229,11 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         emit_stmt(e, stmt->label.stmt);
         break;
 
+    case ast_STMT_POSTFIX:
+        emit_c_expr(e, stmt->postfix.x);
+        emit_token(e, stmt->postfix.op);
+        break;
+
     case ast_STMT_RETURN:
         emit_token(e, token_RETURN);
         if (stmt->return_.x) {
