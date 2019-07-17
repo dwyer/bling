@@ -340,7 +340,7 @@ static expr_t *parse_ternary_expr(parser_t *p) {
 static expr_t *parse_assign_expr(parser_t *p) {
     // assignment_expression
     //         : ternary_expression
-    //         | unary_expression assignment_operator assignment_expression
+    //         | unary_expression assignment_operator expression
     //         | unary_expression INC_OP
     //         | unary_expression DEC_OP
     //         ;
@@ -603,7 +603,9 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
         .type = ast_STMT_EXPR,
         .expr = {.x = x},
     };
-    expect(p, token_SEMICOLON);
+    if (labelOk) {
+        expect(p, token_SEMICOLON);
+    }
     return memdup(&stmt, sizeof(stmt_t));
 }
 
@@ -616,8 +618,7 @@ static stmt_t *parse_stmt(parser_t *p) {
     //         | while_statement
     //         | for_statement
     //         | jump_statement
-    //         | labeled_statement
-    //         | expression_statement
+    //         | simple_statement
     //         ;
 
     if (p->tok == token_VAR) {

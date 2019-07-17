@@ -256,7 +256,7 @@ static expr_t *ternary_expression(parser_t *p) {
 static expr_t *assignment_expression(parser_t *p) {
     // assignment_expression
     //         : ternary_expression
-    //         | unary_expression assignment_operator assignment_expression
+    //         | unary_expression assignment_operator expression
     //         | unary_expression INC_OP
     //         | unary_expression DEC_OP
     //         ;
@@ -272,9 +272,9 @@ static expr_t *assignment_expression(parser_t *p) {
     case token_SHR_ASSIGN:
     case token_SUB_ASSIGN:
     case token_XOR_ASSIGN:
-        parser_next(p);
         {
-            expr_t *y = assignment_expression(p);
+            parser_next(p);
+            expr_t *y = expression(p);
             expr_t z = {
                 .type = ast_EXPR_BINARY,
                 .binary = {
@@ -699,8 +699,8 @@ static stmt_t *simple_statement(parser_t *p, bool labelOk) {
     //         | CASE constant_expression ':' statement
     //         | DEFAULT ':' statement
     //         ;
-    if (x->type == ast_EXPR_IDENT) {
-        if (labelOk && accept(p, token_COLON)) {
+    if (labelOk && x->type == ast_EXPR_IDENT) {
+        if (accept(p, token_COLON)) {
             stmt_t stmt = {
                 .type = ast_STMT_LABEL,
                 .label = {
@@ -716,7 +716,9 @@ static stmt_t *simple_statement(parser_t *p, bool labelOk) {
         .type = ast_STMT_EXPR,
         .expr = {.x = x},
     };
-    expect(p, token_SEMICOLON);
+    if (labelOk) {
+        expect(p, token_SEMICOLON);
+    }
     return memdup(&stmt, sizeof(stmt));
 }
 
