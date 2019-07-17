@@ -12,14 +12,10 @@ extern object_t *object_new(obj_kind_t kind, char *name) {
     return esc(obj);
 }
 
-static const desc_t _object_desc = {
-    .size = sizeof(object_t),
-};
-
 extern scope_t *scope_new(scope_t *outer) {
     scope_t s = {
         .outer = outer,
-        .objects = make_map(&desc_str, &_object_desc),
+        .objects = map_init(sizeof(object_t)),
         .filenames = make_slice(sizeof(char *), 0, 0),
     };
     return esc(s);
