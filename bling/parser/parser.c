@@ -1059,7 +1059,6 @@ static file_t *parse_file(parser_t *p) {
             p->is_experiemental = true;
         }
     }
-    parser_import(p, "builtin", &decls);
     while (p->tok == token_IMPORT) {
         expect(p, token_IMPORT);
         expr_t *path = basic_lit(p, token_STRING);

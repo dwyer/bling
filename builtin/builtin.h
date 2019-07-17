@@ -18,3 +18,7 @@ extern char *strdup(const char *);
 extern char *strerror(int);
 extern size_t strlcpy(char *, const char *, size_t);
 extern size_t strlen(const char *);
+
+extern void *malloc(size_t);
+extern void free(void *);
+extern void *realloc(void *, size_t); // used by slice append
