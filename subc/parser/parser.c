@@ -129,7 +129,6 @@ static expr_t *unary_expression(parser_t *p) {
     //         | SIZEOF unary_expression
     //         | SIZEOF '(' type_name ')'
     //         ;
-    expr_t *x = NULL;
     switch (p->tok) {
     case token_ADD:
     case token_AND:
@@ -144,36 +143,47 @@ static expr_t *unary_expression(parser_t *p) {
         //         | '~'
         //         | '!'
         //         ;
-        x = malloc(sizeof(expr_t));
-        x->type = ast_EXPR_UNARY;
-        x->unary.op = p->tok;
-        parser_next(p);
-        x->unary.x = cast_expression(p);
-        break;
-    case token_SIZEOF:
-        x = malloc(sizeof(expr_t));
-        x->type = ast_EXPR_SIZEOF;
-        expect(p, token_SIZEOF);
-        expect(p, token_LPAREN);
-        if (is_type(p)) {
-            x->sizeof_.x = type_name(p);
-            if (p->tok == token_MUL) {
-                declarator(p, &x->sizeof_.x); // TODO assert result == NULL?
-            }
-        } else {
-            x->sizeof_.x = unary_expression(p);
+        {
+            token_t op = p->tok;
+            parser_next(p);
+            expr_t x = {
+                .type = ast_EXPR_UNARY,
+                .unary = {
+                    .x = cast_expression(p),
+                    .op = op,
+                },
+            };
+            return esc(x);
         }
-        expect(p, token_RPAREN);
-        break;
+    case token_SIZEOF:
+        {
+            expect(p, token_SIZEOF);
+            expect(p, token_LPAREN);
+            expr_t *x = NULL;
+            if (is_type(p)) {
+                x = type_name(p);
+                if (p->tok == token_MUL) {
+                    declarator(p, &x); // TODO assert result == NULL?
+                }
+            } else {
+                x = unary_expression(p);
+            }
+            expect(p, token_RPAREN);
+            expr_t y = {
+                .type = ast_EXPR_SIZEOF,
+                .sizeof_ = {
+                    .x = x,
+                },
+            };
+            return esc(y);
+        }
     case token_DEC:
     case token_INC:
         parser_error(p, "unary `%s` not supported in subc", token_string(p->tok));
-        break;
+        return NULL;
     default:
-        x = postfix_expression(p, NULL);
-        break;
+        return postfix_expression(p, NULL);
     }
-    return x;
 }
 
 static expr_t *cast_expression(parser_t *p) {
@@ -808,10 +818,13 @@ static stmt_t *statement(parser_t *p) {
             x = expression(p);
         }
         expect(p, token_SEMICOLON);
-        stmt_t *stmt = malloc(sizeof(stmt_t));
-        stmt->type = ast_STMT_RETURN;
-        stmt->return_.x = x;
-        return stmt;
+        stmt_t stmt = {
+            .type = ast_STMT_RETURN,
+            .return_ = {
+                .x = x,
+            },
+        };
+        return esc(stmt);
     }
 
     if (accept(p, token_SWITCH)) {
@@ -936,19 +949,21 @@ static stmt_t *statement(parser_t *p) {
 
 static stmt_t *compound_statement(parser_t *p) {
     // compound_statement : '{' statement_list? '}' ;
-    stmt_t *stmt = NULL;
     slice_t stmts = {.size = sizeof(stmt_t *)};
     expect(p, token_LBRACE);
     // statement_list : statement+ ;
     while (p->tok != token_RBRACE) {
-        stmt = statement(p);
+        stmt_t *stmt = statement(p);
         stmts = append(stmts, &stmt);
     }
     expect(p, token_RBRACE);
-    stmt = malloc(sizeof(stmt_t));
-    stmt->type = ast_STMT_BLOCK;
-    stmt->block.stmts = slice_to_nil_array(stmts);
-    return stmt;
+    stmt_t stmt = {
+        .type = ast_STMT_BLOCK,
+        .block = {
+            .stmts = slice_to_nil_array(stmts),
+        },
+    };
+    return esc(stmt);
 }
 
 static decl_t *parameter_declaration(parser_t *p) {
