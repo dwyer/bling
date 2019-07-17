@@ -2,7 +2,7 @@
 
 static void printlg(const char *fmt, ...) {}
 
-// #define printlg(...) print(__VA_ARGS__)
+#define printlg(...) print(__VA_ARGS__)
 
 static expr_t *find_basic_type(token_t kind) {
     const char *name = NULL;
@@ -30,10 +30,12 @@ typedef struct {
 } walker_t;
 
 static void walker_openScope(walker_t *w) {
+    printlg("opening scope");
     w->topScope = scope_new(w->topScope);
 }
 
 static void walker_closeScope(walker_t *w) {
+    printlg("closing scope");
     w->topScope = w->topScope->outer;
 }
 
@@ -268,11 +270,13 @@ static void walk_decl(walker_t *w, decl_t *decl) {
 }
 
 static void walk_func(walker_t *w, decl_t *decl) {
+    assert(decl);
     if (decl->type == ast_DECL_FUNC && decl->func.body) {
         printlg("walk_func: walking func %s", decl->func.name->ident.name);
         walker_openScope(w);
-        for (int i = 0; decl->func.type->func.params[i]; i++) {
+        for (int i = 0; decl->func.type->func.params && decl->func.type->func.params[i]; i++) {
             decl_t *param = decl->func.type->func.params[i];
+            printlg("got param");
             if (param->type) {
                 printlg("walk_func: walking type of param `%s`", param->field.name->ident.name);
                 printScope(w->topScope);

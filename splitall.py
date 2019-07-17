@@ -25,6 +25,5 @@ for file in files:
         pkgs[newfile] = []
     pkgs[newfile].extend(file['lines'])
 for pkg, lines in pkgs.items():
-    print('writing %s' % pkg)
     with open(pkg, 'w') as fp:
         fp.writelines(lines)
