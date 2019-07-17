@@ -2,7 +2,7 @@
 #include "bling/token/token.h"
 
 extern void emit_string(emitter_t *e, const char *s) {
-    os_write(e->file, s, NULL);
+    strings_Builder_write(&e->builder, s, strlen(s), NULL);
 }
 
 extern void emit_space(emitter_t *e) {

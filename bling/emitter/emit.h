@@ -1,12 +1,12 @@
 #pragma once
 #include "bling/ast/ast.h"
-#include "os/os.h"
+#include "strings/strings.h"
 
 $import("bling/ast");
-$import("os");
+$import("strings");
 
 typedef struct {
-    os_File *file;
+    strings_Builder builder;
     int indent;
 } emitter_t;
 

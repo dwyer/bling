@@ -2,12 +2,14 @@
 
 #include "bling/parser/parser.h"
 #include "bling/walk/walk.h"
-#include "subc/parser/parser.h"
-#include "subc/emitter/emit.h"
+#include "os/os.h"
 #include "path/path.h"
+#include "subc/emitter/emit.h"
+#include "subc/parser/parser.h"
 
 $import("bling/parser");
 $import("bling/walk");
+$import("os");
 $import("path");
 $import("subc/parser");
 $import("subc/emitter");
@@ -43,14 +45,21 @@ void usage(const char *progname) {
 int main(int argc, char *argv[]) {
     char *progname = *argv;
     bool emit_as_bling = false;
+    bool do_walk = false;
     argv++;
     if (!*argv) {
         usage(progname);
     }
     const char *dst = NULL;
-    if (streq(*argv, "-o")) {
-        argv++;
-        dst = *argv;
+    while (**argv == '-') {
+        if (streq(*argv, "-o")) {
+            argv++;
+            dst = *argv;
+        } else if (streq(*argv, "-w")) {
+            do_walk = true;
+        } else {
+            panic("unknown option: %s", *argv);
+        }
         argv++;
     }
     scope_t *scope = scope_new(NULL);
@@ -69,10 +78,9 @@ int main(int argc, char *argv[]) {
         };
         scope_declare(scope, memdup(&decl, sizeof(decl_t)));
     }
-    emitter_t emitter = {.file = os_stdout};
+    emitter_t emitter = {};
     error_t *err = NULL;
     if (dst) {
-        emitter.file = os_create(dst, &err);
         emit_as_bling = is_ext(dst, ".bling");
     }
     if (!emit_as_bling) {
@@ -93,15 +101,24 @@ int main(int argc, char *argv[]) {
         if (emit_as_bling) {
             printer_print_file(&emitter, file);
         } else {
-            walk_file(file);
+            if (do_walk) {
+                walk_file(file);
+            }
             emitter_emit_file(&emitter, file);
         }
         free(file->decls);
         free(file);
         argv++;
     }
+    char *out = strings_Builder_string(&emitter.builder);
+    os_File *file = os_stdout;
     if (dst) {
-        os_close(emitter.file, &err);
+        file = os_create(dst, &err);
+    }
+    os_write(file, out, &err);
+    if (dst) {
+        emit_as_bling = is_ext(dst, ".bling");
+        os_close(file, &err);
     }
     return 0;
 }

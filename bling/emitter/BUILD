@@ -8,7 +8,7 @@ cc_library(
     ],
     deps = [
         "//bling/ast",
-        "//os",
+        "//strings",
     ],
     visibility = ["//visibility:public"],
 )
