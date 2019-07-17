@@ -8,6 +8,10 @@ int map_hits = 0;
 int map_lookups = 0;
 int map_iters = 0;
 
+static void *memdup(const void *src, size_t size) {
+    return memcpy(malloc(size), src, size);
+}
+
 typedef struct {
     void *key;
     void *val;

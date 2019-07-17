@@ -1,9 +1,5 @@
 #include "builtin/builtin.h"
 
-extern void *memdup(const void *src, size_t size) {
-    return memcpy(malloc(size), src, size);
-}
-
 static void vprint(const char *fmt, va_list ap) {
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
