@@ -133,7 +133,7 @@ static void print_expr(emitter_t *p, expr_t *expr) {
         break;
 
     default:
-        emit_string(p, "/* [UNKNOWN EXPR] */");
+        panic("Unknown expr");
         break;
     }
 }
@@ -289,7 +289,7 @@ static void print_stmt(emitter_t *p, stmt_t *stmt) {
         break;
 
     default:
-        emit_string(p, "/* [UNKNOWN STMT] */;");
+        panic("Unknown stmt");
         break;
     }
 }
@@ -478,7 +478,7 @@ static void print_decl(emitter_t *p, decl_t *decl) {
         break;
 
     default:
-        emit_string(p, "/* [UNKNOWN DECL] */");
+        panic("Unknown decl");
         break;
     }
 }
