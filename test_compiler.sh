@@ -1,7 +1,7 @@
 #!/bin/bash
 
 padding_dots=$(printf '%0.1s' "."{1..60})
-padlength=50
+padlength=100
 cmp=./wrapper.sh
 success_total=0
 failure_total=0
@@ -62,7 +62,7 @@ test_stage () {
         base="${prog%.*}" #name of executable (filename w/out extension)
         test_name="${base##*valid/}"
 
-        print_test_name $test_name
+        print_test_name $prog
         $cmp $prog 2>/dev/null
         status=$?
 
@@ -109,7 +109,7 @@ test_stage () {
 
         $cmp $prog >/dev/null 2>&1
         status=$? #failed, as we expect, if exit code != 0
-        print_test_name $test_name
+        print_test_name $prog
 
         # make sure neither executable nor assembly was produced
         # and exit code is non-zero

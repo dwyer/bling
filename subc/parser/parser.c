@@ -16,7 +16,7 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr);
 static decl_t *abstract_declarator(parser_t *p, expr_t *type);
 
 static stmt_t *statement(parser_t *p);
-static stmt_t *compound_statement(parser_t *p);
+static stmt_t *compound_statement(parser_t *p, bool nonstrict);
 
 static expr_t *specifier_qualifier_list(parser_t *p);
 static expr_t *declaration_specifiers(parser_t *p, bool is_top);
@@ -762,7 +762,7 @@ static stmt_t *statement(parser_t *p) {
             post = simple_statement(p, false);
         }
         expect(p, token_RPAREN);
-        stmt_t *body = compound_statement(p);
+        stmt_t *body = compound_statement(p, true);
         stmt_t stmt = {
             .type = ast_STMT_ITER,
             .iter = {
@@ -778,25 +778,20 @@ static stmt_t *statement(parser_t *p) {
 
     if (accept(p, token_IF)) {
         // if_statement
-        //         : IF '(' expression ')' compound_statement
-        //         | IF '(' expression ')' compound_statement ELSE compound_statement
-        //         | IF '(' expression ')' compound_statement ELSE if_statement
+        //         : IF '(' expression ')' statement
+        //         | IF '(' expression ')' statement ELSE statement
+        //         | IF '(' expression ')' statement ELSE if_statement
         //         ;
         expect(p, token_LPAREN);
         expr_t *cond = expression(p);
         expect(p, token_RPAREN);
-        if (p->tok != token_LBRACE) {
-            parser_error(p, "`if` must be followed by a compound_statement");
-        }
-        stmt_t *body = compound_statement(p);
+        stmt_t *body = compound_statement(p, true);
         stmt_t *else_ = NULL;
         if (accept(p, token_ELSE)) {
             if (p->tok == token_IF) {
                 else_ = statement(p);
-            } else if (p->tok == token_LBRACE) {
-                else_ = compound_statement(p);
             } else {
-                parser_error(p, "`else` must be followed by an if_statement or compound_statement");
+                else_ = compound_statement(p, true);
             }
         }
         stmt_t stmt = {
@@ -886,11 +881,11 @@ static stmt_t *statement(parser_t *p) {
     }
 
     if (accept(p, token_WHILE)) {
-        // while_statement : WHILE '(' expression ')' compound_statement ;
+        // while_statement : WHILE '(' expression ')' statement ;
         expect(p, token_LPAREN);
         expr_t *cond = expression(p);
         expect(p, token_RPAREN);
-        stmt_t *body = compound_statement(p);
+        stmt_t *body = compound_statement(p, true);
         stmt_t stmt = {
             .type = ast_STMT_ITER,
             .iter = {
@@ -929,7 +924,7 @@ static stmt_t *statement(parser_t *p) {
             return esc(stmt);
         }
     case token_LBRACE:
-        return compound_statement(p);
+        return compound_statement(p, false);
     default:
         break;
     }
@@ -948,16 +943,21 @@ static stmt_t *statement(parser_t *p) {
     return stmt;
 }
 
-static stmt_t *compound_statement(parser_t *p) {
+static stmt_t *compound_statement(parser_t *p, bool nonstrict) {
     // compound_statement : '{' statement_list? '}' ;
-    slice_t stmts = {.size = sizeof(stmt_t *)};
-    expect(p, token_LBRACE);
     // statement_list : statement+ ;
-    while (p->tok != token_RBRACE) {
+    slice_t stmts = {.size = sizeof(stmt_t *)};
+    if (nonstrict && p->tok != token_LBRACE) {
         stmt_t *stmt = statement(p);
         stmts = append(stmts, &stmt);
+    } else {
+        expect(p, token_LBRACE);
+        while (p->tok != token_RBRACE) {
+            stmt_t *stmt = statement(p);
+            stmts = append(stmts, &stmt);
+        }
+        expect(p, token_RBRACE);
     }
-    expect(p, token_RBRACE);
     stmt_t stmt = {
         .type = ast_STMT_BLOCK,
         .block = {
@@ -1090,7 +1090,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
         if (is_external && p->tok == token_LBRACE) {
             // function_definition
             //         : declaration_specifiers declarator compound_statement ;
-            decl.func.body = compound_statement(p);
+            decl.func.body = compound_statement(p, false);
         } else {
             expect(p, token_SEMICOLON);
         }
