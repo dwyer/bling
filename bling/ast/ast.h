@@ -42,6 +42,7 @@ typedef enum {
     ast_STMT_BLOCK,
     ast_STMT_CASE,
     ast_STMT_DECL,
+    ast_STMT_EMPTY,
     ast_STMT_EXPR,
     ast_STMT_IF,
     ast_STMT_ITER,

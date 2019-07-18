@@ -931,7 +931,7 @@ static stmt_t *statement(parser_t *p) {
 
     if (accept(p, token_SEMICOLON)) {
         stmt_t stmt = {
-            .type = ast_STMT_EXPR,
+            .type = ast_STMT_EMPTY,
         };
         return esc(stmt);
     }

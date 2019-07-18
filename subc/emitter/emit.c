@@ -169,6 +169,10 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         emit_c_decl(e, stmt->decl);
         break;
 
+    case ast_STMT_EMPTY:
+        emit_token(e, token_SEMICOLON);
+        break;
+
     case ast_STMT_EXPR:
         emit_c_expr(e, stmt->expr.x);
         emit_token(e, token_SEMICOLON);

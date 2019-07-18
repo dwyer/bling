@@ -45,6 +45,18 @@ static expr_t *find_type(walker_t *w, expr_t *lhs, expr_t *expr) {
     case ast_EXPR_BASIC_LIT:
         printlg("finding basic type");
         return find_basic_type(expr->basic_lit.kind);
+    case ast_EXPR_BINARY:
+        {
+            expr_t *a = find_type(w, lhs, expr->binary.x);
+            expr_t *b = find_type(w, lhs, expr->binary.y);
+            // TODO check that types match
+            return a;
+        }
+    case ast_EXPR_COMPOUND:
+        if (lhs == NULL) {
+            panic("find_type: unable to resolve composite expr");
+        }
+        return lhs;
     case ast_EXPR_IDENT:
         printlg("finding type of `%s`", expr->ident.name);
         if (!expr->ident.obj) {
@@ -56,11 +68,6 @@ static expr_t *find_type(walker_t *w, expr_t *lhs, expr_t *expr) {
         default:
             panic("find_type: unknown kind: %d", obj_kind_VALUE);
         }
-    case ast_EXPR_COMPOUND:
-        if (lhs == NULL) {
-            panic("find_type: unable to resolve composite expr");
-        }
-        return lhs;
     default:
         panic("find_type: unknown expr: %d", expr->type);
         break;
@@ -242,20 +249,48 @@ static void walk_stmt(walker_t *w, stmt_t *stmt) {
         }
         break;
     case ast_STMT_BLOCK:
+        walker_openScope(w);
         for (int i = 0; stmt->block.stmts[i]; i++) {
             walk_stmt(w, stmt->block.stmts[i]);
         }
+        walker_closeScope(w);
+        break;
+    case ast_STMT_DECL:
+        walk_decl(w, stmt->decl);
         break;
     case ast_STMT_EXPR:
         walk_expr(w, stmt->expr.x);
         break;
-    case ast_STMT_DECL:
-        walk_decl(w, stmt->decl);
+    case ast_STMT_EMPTY:
         break;
     case ast_STMT_IF:
         walk_expr(w, stmt->if_.cond);
         walk_stmt(w, stmt->if_.body);
         break;
+
+    case ast_STMT_ITER:
+        if (stmt->iter.init || stmt->iter.post) {
+            walker_openScope(w);
+        }
+        if (stmt->iter.init) {
+            walk_stmt(w, stmt->iter.init);
+        }
+        if (stmt->iter.cond) {
+            walk_expr(w, stmt->iter.cond);
+        }
+        if (stmt->iter.post) {
+            walk_stmt(w, stmt->iter.post);
+        }
+        walk_stmt(w, stmt->iter.body);
+        if (stmt->iter.init || stmt->iter.post) {
+            walker_closeScope(w);
+        }
+        break;
+
+    case ast_STMT_JUMP:
+        /* TODO walk in label scope */
+        break;
+
     case ast_STMT_RETURN:
         if (stmt->return_.x) {
             expr_t *type = walk_expr(w, stmt->return_.x);

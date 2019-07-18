@@ -1,3 +1,4 @@
+// do/while statement not supported.
 int main() {
     int a = 1;
     do {

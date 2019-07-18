@@ -194,6 +194,10 @@ static void print_stmt(emitter_t *p, stmt_t *stmt) {
         print_decl(p, stmt->decl);
         break;
 
+    case ast_STMT_EMPTY:
+        emit_token(p, token_SEMICOLON);
+        break;
+
     case ast_STMT_EXPR:
         print_expr(p, stmt->expr.x);
         emit_token(p, token_SEMICOLON);
