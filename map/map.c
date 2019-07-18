@@ -73,7 +73,7 @@ static pair_t *pair_ref(const map_t *m, const void *key) {
     return NULL;
 }
 
-static void set_unsafe(map_t *m, const void *key, const void *val) {
+static void set_unsafe(map_t *m, const char *key, const void *val) {
     pair_t *p = pair_ref(m, key);
     if (p->key == NULL) {
         p->key = strdup(key);
@@ -84,12 +84,12 @@ static void set_unsafe(map_t *m, const void *key, const void *val) {
     }
 }
 
-extern bool map_has_key(map_t *m, const void *key) {
+extern bool map_has_key(map_t *m, const char *key) {
     pair_t *p = pair_ref(m, key);
     return p->key != NULL;
 }
 
-extern int map_get(const map_t *m, const void *key, void *val) {
+extern int map_get(const map_t *m, const char *key, void *val) {
     pair_t *p = pair_ref(m, key);
     if (p->val) {
         memcpy(val, p->val, m->val_size);
@@ -98,7 +98,7 @@ extern int map_get(const map_t *m, const void *key, void *val) {
     return 0;
 }
 
-extern void map_set(map_t *m, const void *key, const void *val) {
+extern void map_set(map_t *m, const char *key, const void *val) {
     set_unsafe(m, key, val);
     float load_factor = (float)map_len(m) / map_cap(m);
     if (load_factor >= max_load_factor) {
@@ -121,7 +121,7 @@ extern map_iter_t map_iter(const map_t *m) {
     return iter;
 }
 
-extern int map_iter_next(map_iter_t *m, void *key, void *val) {
+extern int map_iter_next(map_iter_t *m, char *key, void *val) {
     while (m->_idx < slice_len(&m->_map->pairs)) {
         pair_t *p = (pair_t *)slice_ref(&m->_map->pairs, m->_idx);
         m->_idx++;
