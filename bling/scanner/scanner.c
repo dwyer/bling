@@ -212,6 +212,9 @@ scan_again:
             break;
 
             // operators
+        case '~':
+            tok = token_BITWISE_NOT;
+            break;
         case '!':
             tok = switch2(s, token_NOT, token_NOT_EQUAL);
             break;

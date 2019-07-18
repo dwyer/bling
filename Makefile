@@ -22,12 +22,12 @@ SRCS=builtin/builtin.h builtin/builtin.c \
      subc/emitter/emit.h subc/emitter/emit.c \
      cmd/blingc/main.c
 
+test_compiler: $(BLINGC)
+	./test_compiler.sh 5
+
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
 	cc all.c
-
-test_compiler:
-	./test_compiler.sh 3
 
 hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/stdout -w syntax_test.bling

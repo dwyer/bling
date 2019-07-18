@@ -232,6 +232,7 @@ static expr_t *parse_unary_expr(parser_t *p) {
     switch (p->tok) {
     case token_ADD:
     case token_AND:
+    case token_BITWISE_NOT:
     case token_MUL:
     case token_NOT:
     case token_SUB:

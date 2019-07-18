@@ -59,6 +59,7 @@ extern char *token_string(token_t tok) {
     case token_AND: return "&";
     case token_AND_ASSIGN: return "&=";
     case token_ASSIGN: return "=";
+    case token_BITWISE_NOT: return "~";
     case token_DEC: return "--";
     case token_DIV: return "/";
     case token_DIV_ASSIGN: return "/=";

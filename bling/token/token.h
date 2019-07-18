@@ -65,6 +65,7 @@ typedef enum {
     token_AND,
     token_AND_ASSIGN,
     token_ASSIGN,
+    token_BITWISE_NOT,
     token_DEC,
     token_DIV,
     token_DIV_ASSIGN,
