@@ -22,15 +22,15 @@ SRCS=builtin/builtin.h builtin/builtin.c \
      subc/emitter/emit.h subc/emitter/emit.c \
      cmd/blingc/main.c
 
+a.out: $(BLINGC) all.bling
+	$(BLINGC) -o all.c cmd/blingc/blingc.bling
+	cc all.c
+
 test_compiler:
 	./test_compiler.sh 3
 
 hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/stdout -w syntax_test.bling
-
-a.out: $(BLINGC) all.bling
-	$(BLINGC) -o all.c cmd/blingc/blingc.bling
-	cc all.c
 
 all.bling: $(BLINGC)
 	$(BLINGC) -o all.bling $(SRCS)
@@ -40,7 +40,11 @@ debug: $(BLINGC)
 	lldb $(BLINGC)
 
 $(BLINGC):
-	bazel build --copt="-g0" cmd/blingc
+	bazel build \
+	    --copt="-g0" \
+	    --copt="-fms-extensions" \
+	    --copt="-Wno-microsoft-anon-tag" \
+	    cmd/blingc
 
 clean:
 	bazel clean
