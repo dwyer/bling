@@ -23,7 +23,7 @@ SRCS=builtin/builtin.h builtin/builtin.c \
      cmd/blingc/main.c
 
 test_compiler:
-	./test_compiler.sh 2
+	./test_compiler.sh 3
 
 hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/stdout -w syntax_test.bling
