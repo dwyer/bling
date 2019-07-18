@@ -52,6 +52,12 @@ static expr_t *find_type(walker_t *w, expr_t *lhs, expr_t *expr) {
             // TODO check that types match
             return a;
         }
+    case ast_EXPR_CALL:
+        {
+            expr_t *type = find_type(w, lhs, expr->call.func);
+            assert(type->type == ast_TYPE_FUNC);
+            return type->func.result;
+        }
     case ast_EXPR_COMPOUND:
         if (lhs == NULL) {
             panic("find_type: unable to resolve composite expr");

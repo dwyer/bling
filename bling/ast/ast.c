@@ -87,13 +87,13 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
         switch (kind) {
         case obj_kind_FUNC:
             // TODO compare types
-            ok = alt->decl->func.body == NULL;
+            ok = alt->decl->func.body == NULL || decl->func.body == NULL;
             break;
         case obj_kind_TYPE:
             break;
         case obj_kind_VALUE:
             // TODO compare types
-            ok = alt->decl->value.value == NULL && decl->value.value != NULL;
+            ok = alt->decl->value.value == NULL || decl->value.value == NULL;
             break;
         default:
             print("unknown kind: %d", kind);
