@@ -82,23 +82,24 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
     ident->ident.obj = obj;
     object_t *alt = scope_insert(s, obj);
     if (alt != NULL) {
-        bool warn = false;
-        if (alt->kind == kind) {
-            switch (kind) {
-            case obj_kind_TYPE:
-                warn = true;
-                break;
-            case obj_kind_VALUE:
-                warn = alt->decl->value.value == NULL &&
-                    decl->value.value != NULL;
-                break;
-            default:
-                break;
-            }
+        assert(alt->kind == kind);
+        bool ok = false;
+        switch (kind) {
+        case obj_kind_FUNC:
+            // TODO compare types
+            ok = alt->decl->func.body == NULL;
+            break;
+        case obj_kind_TYPE:
+            break;
+        case obj_kind_VALUE:
+            // TODO compare types
+            ok = alt->decl->value.value == NULL && decl->value.value != NULL;
+            break;
+        default:
+            print("unknown kind: %d", kind);
+            break;
         }
-        if (warn) {
-            print("warning: already declared: %s", ident->ident.name);
-        } else {
+        if (!ok) {
             panic("already declared: %s", ident->ident.name);
         }
     }

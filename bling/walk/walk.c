@@ -62,9 +62,15 @@ static expr_t *find_type(walker_t *w, expr_t *lhs, expr_t *expr) {
         if (!expr->ident.obj) {
             panic("find_type: not resolved: `%s`", expr->ident.name);
         }
-        switch (expr->ident.obj->kind) {
+        object_t *obj = expr->ident.obj;
+        decl_t *decl = obj->decl;
+        switch (obj->kind) {
+        case obj_kind_FUNC:
+            return decl->func.type;
+        case obj_kind_TYPE:
+            return decl->typedef_.type;
         case obj_kind_VALUE:
-            return expr->ident.obj->decl->value.type;
+            return decl->value.type;
         default:
             panic("find_type: unknown kind: %d", obj_kind_VALUE);
         }
@@ -151,7 +157,7 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
     case ast_EXPR_IDENT:
         printlg("walk_expr: resolving `%s`", expr->ident.name);
         scope_resolve(w->topScope, expr);
-        return NULL;
+        return find_type(w, NULL, expr);
 
     case ast_EXPR_PAREN:
         return walk_expr(w, expr->paren.x);
