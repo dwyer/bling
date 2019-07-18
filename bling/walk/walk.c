@@ -1,4 +1,5 @@
 #include "bling/ast/ast.h"
+#include "bling/emitter/emit.h"
 
 static void printlg(const char *fmt, ...) {}
 
@@ -27,6 +28,7 @@ static expr_t *find_basic_type(token_t kind) {
 
 typedef struct {
     scope_t *topScope;
+    expr_t *result;
 } walker_t;
 
 static void walker_openScope(walker_t *w) {
@@ -37,54 +39,6 @@ static void walker_openScope(walker_t *w) {
 static void walker_closeScope(walker_t *w) {
     printlg("closing scope");
     w->topScope = w->topScope->outer;
-}
-
-static expr_t *find_type(walker_t *w, expr_t *lhs, expr_t *expr) {
-    assert(expr);
-    switch (expr->type) {
-    case ast_EXPR_BASIC_LIT:
-        printlg("finding basic type");
-        return find_basic_type(expr->basic_lit.kind);
-    case ast_EXPR_BINARY:
-        {
-            expr_t *a = find_type(w, lhs, expr->binary.x);
-            expr_t *b = find_type(w, lhs, expr->binary.y);
-            // TODO check that types match
-            return a;
-        }
-    case ast_EXPR_CALL:
-        {
-            expr_t *type = find_type(w, lhs, expr->call.func);
-            assert(type->type == ast_TYPE_FUNC);
-            return type->func.result;
-        }
-    case ast_EXPR_COMPOUND:
-        if (lhs == NULL) {
-            panic("find_type: unable to resolve composite expr");
-        }
-        return lhs;
-    case ast_EXPR_IDENT:
-        printlg("finding type of `%s`", expr->ident.name);
-        if (!expr->ident.obj) {
-            panic("find_type: not resolved: `%s`", expr->ident.name);
-        }
-        object_t *obj = expr->ident.obj;
-        decl_t *decl = obj->decl;
-        switch (obj->kind) {
-        case obj_kind_FUNC:
-            return decl->func.type;
-        case obj_kind_TYPE:
-            return decl->typedef_.type;
-        case obj_kind_VALUE:
-            return decl->value.type;
-        default:
-            panic("find_type: unknown kind: %d", obj_kind_VALUE);
-        }
-    default:
-        panic("find_type: unknown expr: %d", expr->type);
-        break;
-    }
-    return NULL;
 }
 
 static void printScope(scope_t *s) {
@@ -118,6 +72,19 @@ static bool match_types(expr_t *a, expr_t *b) {
     return false;
 }
 
+static void type_check(expr_t *a, expr_t *b) {
+    if (!match_types(a, b)) {
+        emitter_t e = {};
+        emit_string(&e, "mismatched types: ");
+        emit_string(&e, "`");
+        print_type(&e, a);
+        emit_string(&e, "` and `");
+        print_type(&e, b);
+        emit_string(&e, "`");
+        panic(strings_Builder_string(&e.builder));
+    }
+}
+
 static expr_t *type_from_ident(expr_t *ident) {
     printlg("type_from_ident: %s", ident->ident.name);
     assert(ident->ident.obj);
@@ -126,6 +93,41 @@ static expr_t *type_from_ident(expr_t *ident) {
     assert(decl->type == ast_DECL_TYPEDEF);
     expr_t *type = decl->typedef_.type;
     return type;
+}
+
+static void walk_type(walker_t *w, expr_t *expr) {
+    switch (expr->type) {
+
+    case ast_EXPR_IDENT:
+        scope_resolve(w->topScope, expr);
+        break;
+
+    case ast_TYPE_ENUM:
+        for (int i = 0; expr->enum_.enums[i]; i++) {
+            scope_declare(w->topScope, expr->enum_.enums[i]);
+        }
+        break;
+
+    case ast_TYPE_PTR:
+        walk_type(w, expr->ptr.type);
+        break;
+
+    case ast_TYPE_QUAL:
+        walk_type(w, expr->qual.type);
+        break;
+
+    case ast_TYPE_STRUCT:
+        walker_openScope(w);
+        for (int i = 0; expr->struct_.fields[i]; i++) {
+            scope_declare(w->topScope, expr->struct_.fields[i]);
+        }
+        walker_closeScope(w);
+        break;
+
+    default:
+        panic("walk_type: unknown expr: %d", expr->type);
+        break;
+    }
 }
 
 static expr_t *walk_expr(walker_t *w, expr_t *expr) {
@@ -138,7 +140,7 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
         }
 
     case ast_EXPR_BASIC_LIT:
-        return NULL;
+        return find_basic_type(expr->basic_lit.kind);
 
     case ast_EXPR_COMPOUND:
         return NULL;
@@ -155,23 +157,33 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
 
     case ast_EXPR_CAST:
         {
-            expr_t *a = walk_expr(w, expr->cast.expr);
-            expr_t *b = walk_expr(w, expr->cast.type);
-            return b;
+            walk_type(w, expr->cast.type);
+            walk_expr(w, expr->cast.expr);
+            // TODO: apply type to compound lit
+            return expr->cast.type;
         }
 
     case ast_EXPR_IDENT:
-        printlg("walk_expr: resolving `%s`", expr->ident.name);
-        scope_resolve(w->topScope, expr);
-        return find_type(w, NULL, expr);
+        {
+            scope_resolve(w->topScope, expr);
+            object_t *obj = expr->ident.obj;
+            decl_t *decl = obj->decl;
+            switch (obj->kind) {
+            case obj_kind_FUNC:
+                return decl->func.type;
+            case obj_kind_TYPE:
+                return decl->typedef_.type;
+            case obj_kind_VALUE:
+                return decl->value.type;
+            }
+        }
 
     case ast_EXPR_PAREN:
         return walk_expr(w, expr->paren.x);
 
     case ast_EXPR_SELECTOR:
         {
-            expr_t *a = walk_expr(w, expr->selector.x);
-            expr_t *type = find_type(w, NULL, expr->selector.x);
+            expr_t *type = walk_expr(w, expr->selector.x);
             if (type->type == ast_TYPE_PTR) {
                 type = type->ptr.type;
             } else {
@@ -217,24 +229,6 @@ out:
     case ast_EXPR_UNARY:
         return walk_expr(w, expr->unary.x);
 
-    case ast_TYPE_ENUM:
-        for (int i = 0; expr->enum_.enums[i]; i++) {
-            scope_declare(w->topScope, expr->enum_.enums[i]);
-        }
-        return expr;
-    case ast_TYPE_PTR:
-        walk_expr(w, expr->ptr.type);
-        return expr;
-    case ast_TYPE_QUAL:
-        walk_expr(w, expr->qual.type);
-        return expr;
-    case ast_TYPE_STRUCT:
-        walker_openScope(w);
-        for (int i = 0; expr->struct_.fields[i]; i++) {
-            scope_declare(w->topScope, expr->struct_.fields[i]);
-        }
-        walker_closeScope(w);
-        return expr;
     default:
         panic("walk_expr: unknown expr: %d", expr->type);
     }
@@ -306,7 +300,8 @@ static void walk_stmt(walker_t *w, stmt_t *stmt) {
     case ast_STMT_RETURN:
         if (stmt->return_.x) {
             expr_t *type = walk_expr(w, stmt->return_.x);
-            // TODO: assert that expr type equals return type
+            assert(w->result);
+            type_check(w->result, type);
         }
         break;
     default:
@@ -323,21 +318,27 @@ static void walk_decl(walker_t *w, decl_t *decl) {
         break;
     case ast_DECL_TYPEDEF:
         printlg("walk_decl: walking typedef %s", decl->typedef_.name->ident.name);
-        walk_expr(w, decl->typedef_.type);
+        walk_type(w, decl->typedef_.type);
         scope_declare(w->topScope, decl);
         break;
     case ast_DECL_VALUE:
-        if (decl->value.value != NULL) {
-            walk_expr(w, decl->value.value);
+        {
+            expr_t *val_type = NULL;
+            if (decl->value.type != NULL) {
+                walk_type(w, decl->value.type);
+            }
+            if (decl->value.value != NULL) {
+                val_type = walk_expr(w, decl->value.value);
+            }
+            if (decl->value.type == NULL) {
+                decl->value.type = val_type;
+            }
+            if (val_type != NULL) {
+                type_check(decl->value.type, val_type);
+            }
+            scope_declare(w->topScope, decl);
+            break;
         }
-        if (decl->value.type == NULL) {
-            decl->value.type = find_type(w, decl->value.type, decl->value.value);
-        } else if (decl->value.value != NULL) {
-            assert(match_types(decl->value.type,
-                        find_type(w, decl->value.type, decl->value.value)));
-        }
-        scope_declare(w->topScope, decl);
-        break;
     default:
         panic("walk_decl: not implemented: %d", decl->type);
     }
@@ -347,19 +348,22 @@ static void walk_func(walker_t *w, decl_t *decl) {
     assert(decl);
     if (decl->type == ast_DECL_FUNC && decl->func.body) {
         printlg("walk_func: walking func %s", decl->func.name->ident.name);
+        expr_t *type = decl->func.type;
         walker_openScope(w);
-        for (int i = 0; decl->func.type->func.params && decl->func.type->func.params[i]; i++) {
-            decl_t *param = decl->func.type->func.params[i];
+        for (int i = 0; type->func.params && type->func.params[i]; i++) {
+            decl_t *param = type->func.params[i];
             printlg("got param");
-            if (param->type) {
+            if (param->field.type) {
                 printlg("walk_func: walking type of param `%s`", param->field.name->ident.name);
                 printScope(w->topScope);
-                walk_expr(w, param->field.type);
+                walk_type(w, param->field.type);
                 printlg("walk_func: declaring param `%s`", param->field.name->ident.name);
                 scope_declare(w->topScope, param);
             }
         }
+        w->result = decl->func.type->func.result;
         walk_stmt(w, decl->func.body);
+        w->result = NULL;
         walker_closeScope(w);
     }
 }

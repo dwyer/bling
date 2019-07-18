@@ -27,8 +27,6 @@ extern void emit_token(emitter_t *e, token_t tok) {
 }
 
 static void print_decl(emitter_t *p, decl_t *decl);
-static void print_expr(emitter_t *p, expr_t *expr);
-static void print_type(emitter_t *p, expr_t *type);
 
 static void print_expr(emitter_t *p, expr_t *expr) {
     if (!expr) {
