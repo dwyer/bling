@@ -1,11 +1,7 @@
 *.bling
 *.dSYM
 *.o
-/b2c
-/bcc
-/c2c
 a.out
 all.c
 bazel-*
-t8.shakespeare.txt
-test_*
+nora_test
