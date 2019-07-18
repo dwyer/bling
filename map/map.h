@@ -34,4 +34,4 @@ typedef struct {
 } map_iter_t;
 
 extern map_iter_t map_iter(const map_t *m);
-extern int map_iter_next(map_iter_t *m, char *key, void *val);
+extern int map_iter_next(map_iter_t *m, char **key, void *val);

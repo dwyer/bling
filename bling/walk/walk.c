@@ -5,27 +5,6 @@ static void printlg(const char *fmt, ...) {}
 
 #define printlg(...) print(__VA_ARGS__)
 
-static expr_t *find_basic_type(token_t kind) {
-    const char *name = NULL;
-    switch (kind) {
-    case token_INT:
-        name = "int";
-        break;
-    case token_FLOAT:
-        name = "float";
-        break;
-    default:
-        panic("find_basic_type: bad kind: %s", token_string(kind));
-    }
-    expr_t x = {
-        .type = ast_EXPR_IDENT,
-        .ident = {
-            .name = strdup(name),
-        }
-    };
-    return esc(x);
-}
-
 typedef struct {
     scope_t *topScope;
     expr_t *result;
@@ -85,14 +64,30 @@ static void type_check(expr_t *a, expr_t *b) {
     }
 }
 
-static expr_t *type_from_ident(expr_t *ident) {
-    printlg("type_from_ident: %s", ident->ident.name);
+static expr_t *lookup_typedef(expr_t *ident) {
     assert(ident->ident.obj);
     decl_t *decl = ident->ident.obj->decl;
     assert(decl);
     assert(decl->type == ast_DECL_TYPEDEF);
     expr_t *type = decl->typedef_.type;
     return type;
+}
+
+static expr_t *unwind_typedef(expr_t *type) {
+    for (;;) {
+        assert(type);
+        switch (type->type) {
+        case ast_EXPR_IDENT:
+            type = lookup_typedef(type);
+            break;
+        case ast_TYPE_QUAL:
+            type = type->qual.type;
+            break;
+        default:
+            assert(type);
+            return type;
+        }
+    }
 }
 
 static void walk_type(walker_t *w, expr_t *expr) {
@@ -136,11 +131,32 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
         {
             expr_t *a = walk_expr(w, expr->binary.x);
             expr_t *b = walk_expr(w, expr->binary.y);
-            return b;
+            type_check(a, b);
+            return a;
         }
 
     case ast_EXPR_BASIC_LIT:
-        return find_basic_type(expr->basic_lit.kind);
+        {
+            const char *name = NULL;
+            token_t kind = expr->basic_lit.kind;
+            switch (kind) {
+            case token_INT:
+                name = "int";
+                break;
+            case token_FLOAT:
+                name = "float";
+                break;
+            default:
+                panic("walk_expr: not implmented: %s", token_string(kind));
+            }
+            expr_t x = {
+                .type = ast_EXPR_IDENT,
+                .ident = {
+                    .name = strdup(name),
+                }
+            };
+            return esc(x);
+        }
 
     case ast_EXPR_COMPOUND:
         return NULL;
@@ -189,26 +205,7 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
             } else {
                 assert(expr->selector.tok != token_ARROW);
             }
-            for (;;) {
-                if (!type) {
-                    printlg("no type");
-                    break;
-                }
-                switch (type->type) {
-                case ast_EXPR_IDENT:
-                    printlg("walk_expr: getting type from ident");
-                    type = type_from_ident(type);
-                    continue;
-                case ast_TYPE_QUAL:
-                    printlg("walk_expr: getting type from qual");
-                    type = type->qual.type;
-                    continue;
-                default:
-                    goto out;
-                }
-            }
-out:
-            assert(type);
+            type = unwind_typedef(type);
             assert(type->type == ast_TYPE_STRUCT);
             printlg("selector: %s", expr->selector.sel->ident.name);
             bool resolved = false;
@@ -352,7 +349,6 @@ static void walk_func(walker_t *w, decl_t *decl) {
         walker_openScope(w);
         for (int i = 0; type->func.params && type->func.params[i]; i++) {
             decl_t *param = type->func.params[i];
-            printlg("got param");
             if (param->field.type) {
                 printlg("walk_func: walking type of param `%s`", param->field.name->ident.name);
                 printScope(w->topScope);

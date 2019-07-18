@@ -121,7 +121,7 @@ extern map_iter_t map_iter(const map_t *m) {
     return iter;
 }
 
-extern int map_iter_next(map_iter_t *m, char *key, void *val) {
+extern int map_iter_next(map_iter_t *m, char **key, void *val) {
     while (m->_idx < slice_len(&m->_map->pairs)) {
         pair_t *p = (pair_t *)slice_ref(&m->_map->pairs, m->_idx);
         m->_idx++;

@@ -74,7 +74,6 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
     }
     assert(ident->type == ast_EXPR_IDENT);
     if (ident->ident.obj != NULL) {
-        decl_t *decl = ident->ident.obj->decl;
         panic("already declared: %s", ident->ident.name);
     }
     object_t *obj = object_new(kind, ident->ident.name);
