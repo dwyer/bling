@@ -16,7 +16,7 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr);
 static decl_t *abstract_declarator(parser_t *p, expr_t *type);
 
 static stmt_t *statement(parser_t *p);
-static stmt_t *compound_statement(parser_t *p, bool nonstrict);
+static stmt_t *compound_statement(parser_t *p, bool allow_single);
 
 static expr_t *specifier_qualifier_list(parser_t *p);
 static expr_t *declaration_specifiers(parser_t *p, bool is_top);
@@ -943,12 +943,13 @@ static stmt_t *statement(parser_t *p) {
     return stmt;
 }
 
-static stmt_t *compound_statement(parser_t *p, bool nonstrict) {
+static stmt_t *compound_statement(parser_t *p, bool allow_single) {
     // compound_statement : '{' statement_list? '}' ;
     // statement_list : statement+ ;
     slice_t stmts = {.size = sizeof(stmt_t *)};
-    if (nonstrict && p->tok != token_LBRACE) {
+    if (allow_single && p->tok != token_LBRACE) {
         stmt_t *stmt = statement(p);
+        assert(stmt->type != ast_STMT_DECL);
         stmts = append(stmts, &stmt);
     } else {
         expect(p, token_LBRACE);

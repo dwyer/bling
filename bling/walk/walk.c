@@ -111,23 +111,19 @@ static expr_t *type_from_ident(expr_t *ident) {
 
 static expr_t *walk_expr(walker_t *w, expr_t *expr) {
     switch (expr->type) {
-    case ast_EXPR_UNARY:
-        return walk_expr(w, expr->unary.x);
-    case ast_EXPR_CAST:
-        {
-            expr_t *a = walk_expr(w, expr->cast.expr);
-            expr_t *b = walk_expr(w, expr->cast.type);
-            return b;
-        }
     case ast_EXPR_BINARY:
         {
             expr_t *a = walk_expr(w, expr->binary.x);
             expr_t *b = walk_expr(w, expr->binary.y);
             return b;
         }
+
     case ast_EXPR_BASIC_LIT:
+        return NULL;
+
     case ast_EXPR_COMPOUND:
         return NULL;
+
     case ast_EXPR_CALL:
         {
             expr_t *type = walk_expr(w, expr->call.func);
@@ -137,10 +133,22 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
             assert(type->type == ast_TYPE_FUNC);
             return type->func.result;
         }
+
+    case ast_EXPR_CAST:
+        {
+            expr_t *a = walk_expr(w, expr->cast.expr);
+            expr_t *b = walk_expr(w, expr->cast.type);
+            return b;
+        }
+
     case ast_EXPR_IDENT:
         printlg("walk_expr: resolving `%s`", expr->ident.name);
         scope_resolve(w->topScope, expr);
         return NULL;
+
+    case ast_EXPR_PAREN:
+        return walk_expr(w, expr->paren.x);
+
     case ast_EXPR_SELECTOR:
         {
             expr_t *a = walk_expr(w, expr->selector.x);
@@ -186,6 +194,10 @@ out:
             assert(resolved);
             return type;
         }
+
+    case ast_EXPR_UNARY:
+        return walk_expr(w, expr->unary.x);
+
     case ast_TYPE_ENUM:
         for (int i = 0; expr->enum_.enums[i]; i++) {
             scope_declare(w->topScope, expr->enum_.enums[i]);
@@ -214,6 +226,21 @@ static void walk_decl(walker_t *w, decl_t *decl);
 
 static void walk_stmt(walker_t *w, stmt_t *stmt) {
     switch (stmt->type) {
+    case ast_STMT_ASSIGN:
+        {
+            switch (stmt->assign.x->type) {
+            case ast_EXPR_IDENT:
+            case ast_EXPR_SELECTOR:
+                break;
+            default:
+                panic("walk_stmt: lhs of assign stmt must be ident or selector");
+            }
+            expr_t *a = walk_expr(w, stmt->assign.x);
+            expr_t *b = walk_expr(w, stmt->assign.y);
+            (void)a;
+            (void)b;
+        }
+        break;
     case ast_STMT_BLOCK:
         for (int i = 0; stmt->block.stmts[i]; i++) {
             walk_stmt(w, stmt->block.stmts[i]);
