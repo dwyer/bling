@@ -191,12 +191,18 @@ static expr_t *cast_expression(parser_t *p) {
     // cast_expression
     //         : unary_expression
     //         | '(' type_name ')' cast_expression
+    //         | '(' type_name ')' initializer
     //         ;
     if (accept(p, token_LPAREN)) {
         if (is_type(p)) {
             expr_t *type = type_name(p);
             expect(p, token_RPAREN);
-            expr_t *x = cast_expression(p);
+            expr_t *x;
+            if (p->tok == token_LBRACE) {
+                x = initializer(p);
+            } else {
+                x = cast_expression(p);
+            }
             expr_t y = {
                 .type = ast_EXPR_CAST,
                 .cast = {

@@ -283,7 +283,12 @@ static expr_t *parse_cast_expr(parser_t *p) {
         expect(p, token_LPAREN);
         expr_t *type = parse_type_spec(p);
         expect(p, token_RPAREN);
-        expr_t *expr = parse_cast_expr(p);
+        expr_t *expr = NULL;
+        if (p->tok == token_LBRACE) {
+            expr = parse_init_expr(p);
+        } else {
+            expr = parse_cast_expr(p);
+        }
         expr_t y = {
             .type = ast_EXPR_CAST,
             .cast = {
