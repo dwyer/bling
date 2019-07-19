@@ -277,7 +277,8 @@ static expr_t *parse_unary_expr(parser_t *p) {
 static expr_t *parse_cast_expr(parser_t *p) {
     // cast_expression
     //         : unary_expression
-    //         | AS '(' cast_expression ',' type_name ')'
+    //         | AS '(' type_name ')' cast_expression
+    //         | AS '(' type_name ')' initializer
     //         ;
     if (accept(p, token_AS)) {
         expect(p, token_LPAREN);

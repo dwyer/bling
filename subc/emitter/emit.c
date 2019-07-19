@@ -117,7 +117,6 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
     switch (stmt->type) {
 
     case ast_STMT_ASSIGN:
-        emit_tabs(e);
         emit_c_expr(e, stmt->assign.x);
         emit_space(e);
         emit_token(e, stmt->assign.op);

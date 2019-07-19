@@ -129,10 +129,10 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
     switch (expr->type) {
     case ast_EXPR_BINARY:
         {
-            expr_t *a = walk_expr(w, expr->binary.x);
-            expr_t *b = walk_expr(w, expr->binary.y);
-            type_check(a, b);
-            return a;
+            expr_t *typ1 = walk_expr(w, expr->binary.x);
+            expr_t *typ2 = walk_expr(w, expr->binary.y);
+            type_check(typ1, typ2);
+            return typ1;
         }
 
     case ast_EXPR_BASIC_LIT:
@@ -167,7 +167,15 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
             if (type->type == ast_TYPE_PTR) {
                 type = type->ptr.type;
             }
-            assert(type->type == ast_TYPE_FUNC);
+            assert(type->type == ast_TYPE_FUNC); // TODO handle builtins
+            int i;
+            for (i = 0; expr->call.args[i]; i++) {
+                assert(type->func.params[i]);
+                decl_t *param = type->func.params[i];
+                assert(param->type == ast_DECL_FIELD);
+                expr_t *type = walk_expr(w, expr->call.args[i]);
+                type_check(param->field.type, type);
+            }
             return type->func.result;
         }
 
@@ -201,6 +209,7 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
         {
             expr_t *type = walk_expr(w, expr->selector.x);
             if (type->type == ast_TYPE_PTR) {
+                expr->selector.tok = token_ARROW;
                 type = type->ptr.type;
             } else {
                 assert(expr->selector.tok != token_ARROW);
@@ -351,7 +360,7 @@ static void walk_func(walker_t *w, decl_t *decl) {
             decl_t *param = type->func.params[i];
             if (param->field.type) {
                 printlg("walk_func: walking type of param `%s`", param->field.name->ident.name);
-                printScope(w->topScope);
+                // printScope(w->topScope);
                 walk_type(w, param->field.type);
                 printlg("walk_func: declaring param `%s`", param->field.name->ident.name);
                 scope_declare(w->topScope, param);

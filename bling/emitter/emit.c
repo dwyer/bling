@@ -140,7 +140,6 @@ static void print_stmt(emitter_t *p, stmt_t *stmt) {
     switch (stmt->type) {
 
     case ast_STMT_ASSIGN:
-        emit_tabs(p);
         print_expr(p, stmt->assign.x);
         emit_space(p);
         emit_token(p, stmt->assign.op);
