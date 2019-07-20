@@ -75,6 +75,18 @@ extern void printScope(scope_t *s) {
     }
 }
 
+extern char *types_exprString(expr_t *expr) {
+    emitter_t e = {};
+    print_expr(&e, expr);
+    return strings_Builder_string(&e.builder);
+}
+
+extern char *types_typeString(expr_t *expr) {
+    emitter_t e = {};
+    print_type(&e, expr);
+    return strings_Builder_string(&e.builder);
+}
+
 extern bool types_isIdent(expr_t *expr) {
     return expr->type == ast_EXPR_IDENT;
 }
@@ -88,6 +100,16 @@ extern bool types_isVoidPtr(expr_t *type) {
         return types_isVoid(type->ptr.type);
     }
     return false;
+}
+
+static expr_t *types_makePtr(expr_t *type) {
+    expr_t x = {
+        .type = ast_TYPE_PTR,
+        .ptr = {
+            .type = type,
+        }
+    };
+    return esc(x);
 }
 
 static bool types_match(expr_t *a, expr_t *b) {
@@ -121,14 +143,8 @@ static bool types_match(expr_t *a, expr_t *b) {
 
 static void types_check(expr_t *a, expr_t *b) {
     if (!types_match(a, b)) {
-        emitter_t e = {};
-        emit_string(&e, "mismatched types: ");
-        emit_string(&e, "`");
-        print_type(&e, a);
-        emit_string(&e, "` and `");
-        print_type(&e, b);
-        emit_string(&e, "`");
-        panic(strings_Builder_string(&e.builder));
+        panic("mismatched types: `%s` and `%s`", types_typeString(a),
+                types_typeString(b));
     }
 }
 
@@ -236,13 +252,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             if (func->type == ast_EXPR_IDENT && streq(func->ident.name, "esc")) {
                 assert(expr->call.args[0] && !expr->call.args[1]);
                 expr_t *type = check_expr(w, expr->call.args[0]);
-                expr_t x = {
-                    .type = ast_TYPE_PTR,
-                    .ptr = {
-                        .type = type,
-                    }
-                };
-                return esc(x);
+                return types_makePtr(type);
             } else {
                 if (type->type == ast_TYPE_PTR) {
                     type = type->ptr.type;
@@ -315,7 +325,20 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
         }
 
     case ast_EXPR_UNARY:
-        return check_expr(w, expr->unary.x);
+        {
+            expr_t *type = check_expr(w, expr->unary.x);
+            switch (expr->unary.op) {
+            case token_AND:
+                // TODO assert that expr is not a literal
+                type = types_makePtr(type);
+                break;
+            case token_MUL:
+                assert(type->type == ast_TYPE_PTR);
+                type = type->ptr.type;
+                break;
+            }
+            return type;
+        }
 
     default:
         panic("check_expr: unknown expr: %d", expr->type);

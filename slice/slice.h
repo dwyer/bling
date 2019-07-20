@@ -2,6 +2,8 @@
 
 #include "builtin/builtin.h"
 
+$import("builtin");
+
 typedef struct {
     int size;
     int len;
