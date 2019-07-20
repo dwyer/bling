@@ -63,7 +63,7 @@ static void print_expr(emitter_t *p, expr_t *expr) {
     case ast_EXPR_CAST:
         emit_token(p, token_AS);
         emit_token(p, token_LPAREN);
-        print_expr(p, expr->cast.type);
+        print_type(p, expr->cast.type);
         emit_token(p, token_RPAREN);
         emit_space(p);
         print_expr(p, expr->cast.expr);

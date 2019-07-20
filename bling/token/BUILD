@@ -7,7 +7,7 @@ cc_library(
         "token.h",
     ],
     deps = [
-        "//builtin",
+        "//bootstrap",
     ],
     visibility = ["//visibility:public"],
 )

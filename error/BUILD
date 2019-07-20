@@ -7,7 +7,7 @@ cc_library(
         "error.h",
     ],
     deps = [
-        "//builtin",
+        "//bootstrap",
     ],
     visibility = ["//visibility:public"],
 )

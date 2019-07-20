@@ -61,7 +61,7 @@ static pair_t *pair_ref(const map_t *m, const void *key) {
         map_iters++;
         int idx = (hash + i) % map_cap(m);
         pair_t *p = (pair_t *)slice_ref(&m->pairs, idx);
-        if (!p->key || !strcmp(key, p->key)) {
+        if (!p->key || streq(key, p->key)) {
             if (!i) {
                 map_hits++;
             } else {

@@ -94,7 +94,7 @@ extern char *token_string(token_t tok) {
 extern token_t token_lookup(char *ident) {
     for (token_t tok = token_AS; tok <= token_WHILE; tok++) {
         char *s = token_string(tok);
-        if (!strcmp(ident, s)) {
+        if (streq(ident, s)) {
             return tok;
         }
     }

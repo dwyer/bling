@@ -1,10 +1,10 @@
 cc_library(
-    name = "builtin",
-    hdrs = [
-        "builtin.h",
+    name = "bootstrap",
+    srcs = [
+        "bootstrap.c",
     ],
     deps = [
-        "//runtime"
+        "//builtin"
     ],
     visibility = ["//visibility:public"],
 )

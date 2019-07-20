@@ -53,6 +53,9 @@ int main(int argc, char *argv[]) {
         char *src = ioutil_read_file("runtime/clib.h", &err);
         emit_string(&emitter, src);
         free(src);
+        src = ioutil_read_file("bootstrap/bootstrap.c", &err);
+        emit_string(&emitter, src);
+        free(src);
     }
     while (*argv) {
         char *filename = *argv;

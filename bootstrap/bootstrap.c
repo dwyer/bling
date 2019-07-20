@@ -1,4 +1,4 @@
-#include "builtin/builtin.h"
+#include "runtime/clib.h"
 
 extern int backtrace(void **, int); // libc
 extern void backtrace_symbols_fd(void* const*, int, int); // libc
@@ -28,6 +28,7 @@ extern void panic(const char *fmt, ...) {
     exit(1);
 }
 
+extern int strcmp(const char *, const char *);
 extern bool streq(const char *a, const char *b) {
     return strcmp(a, b) == 0;
 }

@@ -7,7 +7,7 @@ cc_library(
         "slice.h",
     ],
     deps = [
-        "//builtin",
+        "//bootstrap",
     ],
     visibility = ["//visibility:public"],
 )
