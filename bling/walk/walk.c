@@ -22,6 +22,8 @@ static char *native_types[] = {
     "uintptr_t",
     "va_list",
 
+    "esc",
+
     NULL,
 };
 
@@ -81,12 +83,17 @@ static bool match_types(expr_t *a, expr_t *b) {
     if (b->type == ast_TYPE_QUAL) {
         b = b->qual.type;
     }
-    if (a->type == ast_EXPR_IDENT && b->type == ast_EXPR_IDENT) {
-        return streq(a->ident.name, b->ident.name);
+    if (a->type != b->type) {
+        return false;
     }
-    printlg("a type: %d", a->type);
-    printlg("b type: %d", b->type);
-    return false;
+    switch (a->type) {
+    case ast_EXPR_IDENT:
+        return streq(a->ident.name, b->ident.name);
+    case ast_TYPE_PTR:
+        return match_types(a->ptr.type, b->ptr.type);
+    default:
+        return false;
+    }
 }
 
 static void type_check(expr_t *a, expr_t *b) {
@@ -201,12 +208,23 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
 
     case ast_EXPR_CALL:
         {
-            expr_t *type = walk_expr(w, expr->call.func);
-            switch (type->type) {
-            case ast_TYPE_PTR:
-                type = type->ptr.type;
+            expr_t *func = expr->call.func;
+            expr_t *type = walk_expr(w, func);
+            if (func->type == ast_EXPR_IDENT && streq(func->ident.name, "esc")) {
+                assert(expr->call.args[0] && !expr->call.args[1]);
+                expr_t *type = walk_expr(w, expr->call.args[0]);
+                expr_t x = {
+                    .type = ast_TYPE_PTR,
+                    .ptr = {
+                        .type = type,
+                    }
+                };
+                return esc(x);
+            } else {
+                if (type->type == ast_TYPE_PTR) {
+                    type = type->ptr.type;
+                }
                 assert(type->type == ast_TYPE_FUNC); // TODO handle builtins
-            case ast_TYPE_FUNC:
                 for (int i = 0; expr->call.args[i]; i++) {
                     assert(type->func.params[i]);
                     decl_t *param = type->func.params[i];
@@ -215,10 +233,7 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
                     type_check(param->field.type, type);
                 }
                 return type->func.result;
-            default:
-                panic("call expr is not a func");
             }
-            return NULL;
         }
 
     case ast_EXPR_CAST:
@@ -291,7 +306,11 @@ static void walk_stmt(walker_t *w, stmt_t *stmt) {
     switch (stmt->type) {
     case ast_STMT_ASSIGN:
         {
-            switch (stmt->assign.x->type) {
+            expr_t *lhs = stmt->assign.x;
+            if (lhs->type == ast_EXPR_UNARY && lhs->unary.op == token_MUL) {
+                lhs = lhs->unary.x;
+            }
+            switch (lhs->type) {
             case ast_EXPR_IDENT:
             case ast_EXPR_SELECTOR:
                 break;
@@ -401,8 +420,11 @@ static void walk_func(walker_t *w, decl_t *decl) {
         expr_t *type = decl->func.type;
         walker_openScope(w);
         for (int i = 0; type->func.params && type->func.params[i]; i++) {
+            printlg("getting param");
             decl_t *param = type->func.params[i];
-            if (param->field.type) {
+            printlg("got param");
+            assert(param->type == ast_DECL_FIELD);
+            if (param->field.name) {
                 printlg("walk_func: walking type of param `%s`", param->field.name->ident.name);
                 walk_type(w, param->field.type);
                 printlg("walk_func: declaring param `%s`", param->field.name->ident.name);

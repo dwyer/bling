@@ -1,5 +1,7 @@
 #include "error/error.h"
-#include "builtin/builtin.h"
+
+extern int errno; // from libc
+extern char *strerror(int); // from libc
 
 extern error_t *make_error(const char *error) {
     error_t err = {
@@ -8,12 +10,12 @@ extern error_t *make_error(const char *error) {
     return esc(err);
 }
 
-extern error_t *make_sysError(void) {
+extern error_t *make_sysError() {
     return make_error(strerror(errno));
 }
 
 extern void error_move(error_t *src, error_t **dst) {
-    if (dst != NULL) {
+    if (!dst) {
         *dst = src;
     }
 }

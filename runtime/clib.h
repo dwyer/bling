@@ -7,8 +7,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <errno.h>
-
 #include <sys/stat.h> // os: stat
 #include <dirent.h> // os: DIR, dirent, opendir, readdir, closedir
 #include <fcntl.h> // os: open
