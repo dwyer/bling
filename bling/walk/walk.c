@@ -76,13 +76,32 @@ extern void printScope(scope_t *s) {
     }
 }
 
+static bool is_ident(expr_t *expr) {
+    return expr->type == ast_EXPR_IDENT;
+}
+
+static bool is_void(expr_t *type) {
+    return type->type == ast_EXPR_IDENT && streq(type->ident.name, "void");
+}
+
+static bool is_void_ptr(expr_t *type) {
+    if (type->type == ast_TYPE_PTR) {
+        return is_void(type->ptr.type);
+    }
+    return false;
+}
+
 static bool match_types(expr_t *a, expr_t *b) {
     if (a->type == ast_TYPE_QUAL) {
+        if (b->type == ast_TYPE_QUAL) {
+            if (a->qual.qual != b->qual.qual) {
+                return false;
+            }
+            b = b->qual.type;
+        }
         a = a->qual.type;
     }
-    if (b->type == ast_TYPE_QUAL) {
-        b = b->qual.type;
-    }
+    // TODO match ptrs with arrays
     if (a->type != b->type) {
         return false;
     }
@@ -90,7 +109,12 @@ static bool match_types(expr_t *a, expr_t *b) {
     case ast_EXPR_IDENT:
         return streq(a->ident.name, b->ident.name);
     case ast_TYPE_PTR:
+        if (is_void_ptr(a)) {
+            return true;
+        }
         return match_types(a->ptr.type, b->ptr.type);
+    case ast_TYPE_QUAL:
+        return false;
     default:
         return false;
     }
