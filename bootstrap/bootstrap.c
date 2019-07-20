@@ -1,5 +1,7 @@
 #include "runtime/clib.h"
 
+void *nil = (void *)0;
+
 extern int backtrace(void **, int); // libc
 extern void backtrace_symbols_fd(void* const*, int, int); // libc
 extern void exit(int) /* __attribute__((noreturn)) */; // lib

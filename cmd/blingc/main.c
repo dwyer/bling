@@ -1,7 +1,7 @@
 #include "builtin/builtin.h"
 
 #include "bling/parser/parser.h"
-#include "bling/walk/walk.h"
+#include "bling/types/types.h"
 #include "os/os.h"
 #include "path/path.h"
 #include "subc/emitter/emit.h"
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
             printer_print_file(&emitter, file);
         } else {
             if (do_walk) {
-                walk_file(file);
+                types_checkFile(file);
             }
             emitter_emit_file(&emitter, file);
         }

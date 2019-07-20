@@ -1,10 +1,10 @@
 cc_library(
-    name = "walk",
+    name = "types",
     srcs = [
-        "walk.c",
+        "types.c",
     ],
     hdrs = [
-        "walk.h",
+        "types.h",
     ],
     deps = [
         "//bling/ast",
