@@ -20,7 +20,6 @@ typedef struct {
     scope_t *top_scope;
     scope_t *pkg_scope;
     bool c_mode;
-    bool is_experiemental;
 } parser_t;
 
 extern void parser_declare(parser_t *p, scope_t *s, decl_t *decl, obj_kind_t kind, expr_t *name);

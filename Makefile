@@ -5,9 +5,9 @@ BLINGC=bazel-bin/cmd/blingc/blingc
 .PHONY: test $(BLINGC) all.bling
 
 SRCS=builtin/builtin.h builtin/builtin.c \
+     error/error.h error/error.c \
      slice/slice.h slice/slice.c \
      map/map.h map/map.c \
-     error/error.h error/error.c \
      strings/strings.h strings/strings.c \
      path/path.h path/path.c \
      os/os.h os/os.c \
@@ -24,6 +24,7 @@ SRCS=builtin/builtin.h builtin/builtin.c \
 
 hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/stdout -w syntax_test.bling
+	$(BLINGC) -o /dev/stdout -w error/error.bling
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling

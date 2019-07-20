@@ -975,11 +975,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
             expect(p, token_VAR);
             expr_t *ident = identifier(p);
             expr_t *type = NULL;
-            if (p->is_experiemental) {
-                if (p->tok != token_ASSIGN) {
-                    type = parse_type_spec(p);
-                }
-            } else {
+            if (p->tok != token_ASSIGN) {
                 type = parse_type_spec(p);
             }
             expr_t *value = NULL;
@@ -1062,9 +1058,6 @@ static file_t *parse_file(parser_t *p) {
         name = identifier(p);
         expect(p, token_RPAREN);
         expect(p, token_SEMICOLON);
-        if (streq(name->ident.name, "experimental")) {
-            p->is_experiemental = true;
-        }
     }
     while (p->tok == token_IMPORT) {
         expect(p, token_IMPORT);

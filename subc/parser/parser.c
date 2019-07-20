@@ -51,7 +51,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
     //         | postfix_expression '[' expression ']'
     //         | postfix_expression '(' argument_expression_list? ')'
     //         | postfix_expression '.' IDENTIFIER
-    //         | postfix_expression '*' IDENTIFIER
+    //         | postfix_expression '->' IDENTIFIER
     //         ;
     if (x == NULL) {
         x = primary_expression(p);
@@ -150,15 +150,15 @@ static expr_t *unary_expression(parser_t *p) {
             expr_t x = {
                 .type = ast_EXPR_UNARY,
                 .unary = {
-                    .x = cast_expression(p),
                     .op = op,
+                    .x = cast_expression(p),
                 },
             };
             return esc(x);
         }
     case token_SIZEOF:
         {
-            expect(p, token_SIZEOF);
+            parser_next(p);
             expect(p, token_LPAREN);
             expr_t *x = NULL;
             if (is_type(p)) {

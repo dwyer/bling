@@ -5,6 +5,44 @@ static void printlg(const char *fmt, ...) {}
 
 #define printlg(...) print(__VA_ARGS__)
 
+static char *native_types[] = {
+    // native types
+    "char",
+    "float",
+    "int",
+    "void",
+
+    // libc types
+    "DIR",
+    "FILE",
+    "bool",
+    "size_t",
+    "uint32_t",
+    "uint64_t",
+    "uintptr_t",
+    "va_list",
+
+    NULL,
+};
+
+extern void declare_builtins(scope_t *s) {
+    for (int i = 0; native_types[i] != NULL; i++) {
+        expr_t name = {
+            .type = ast_EXPR_IDENT,
+            .ident = {
+                .name = strdup(native_types[i]),
+            },
+        };
+        decl_t decl = {
+            .type = ast_DECL_NATIVE,
+            .native = {
+                .name = esc(name),
+            },
+        };
+        scope_declare(s, esc(decl));
+    }
+}
+
 typedef struct {
     scope_t *topScope;
     expr_t *result;
@@ -20,7 +58,7 @@ static void walker_closeScope(walker_t *w) {
     w->topScope = w->topScope->outer;
 }
 
-static void printScope(scope_t *s) {
+extern void printScope(scope_t *s) {
     int indent = 1;
     while (s) {
         map_iter_t iter = map_iter(&s->objects);
@@ -164,19 +202,23 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
     case ast_EXPR_CALL:
         {
             expr_t *type = walk_expr(w, expr->call.func);
-            if (type->type == ast_TYPE_PTR) {
+            switch (type->type) {
+            case ast_TYPE_PTR:
                 type = type->ptr.type;
+                assert(type->type == ast_TYPE_FUNC); // TODO handle builtins
+            case ast_TYPE_FUNC:
+                for (int i = 0; expr->call.args[i]; i++) {
+                    assert(type->func.params[i]);
+                    decl_t *param = type->func.params[i];
+                    assert(param->type == ast_DECL_FIELD);
+                    expr_t *type = walk_expr(w, expr->call.args[i]);
+                    type_check(param->field.type, type);
+                }
+                return type->func.result;
+            default:
+                panic("call expr is not a func");
             }
-            assert(type->type == ast_TYPE_FUNC); // TODO handle builtins
-            int i;
-            for (i = 0; expr->call.args[i]; i++) {
-                assert(type->func.params[i]);
-                decl_t *param = type->func.params[i];
-                assert(param->type == ast_DECL_FIELD);
-                expr_t *type = walk_expr(w, expr->call.args[i]);
-                type_check(param->field.type, type);
-            }
-            return type->func.result;
+            return NULL;
         }
 
     case ast_EXPR_CAST:
@@ -228,7 +270,9 @@ static expr_t *walk_expr(walker_t *w, expr_t *expr) {
                     break;
                 }
             }
-            assert(resolved);
+            if (!resolved) {
+                panic("struct has no field `%s`", expr->selector.sel->ident.name);
+            }
             return type;
         }
 
@@ -360,7 +404,6 @@ static void walk_func(walker_t *w, decl_t *decl) {
             decl_t *param = type->func.params[i];
             if (param->field.type) {
                 printlg("walk_func: walking type of param `%s`", param->field.name->ident.name);
-                // printScope(w->topScope);
                 walk_type(w, param->field.type);
                 printlg("walk_func: declaring param `%s`", param->field.name->ident.name);
                 scope_declare(w->topScope, param);

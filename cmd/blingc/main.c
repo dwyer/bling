@@ -14,26 +14,6 @@ $import("path");
 $import("subc/parser");
 $import("subc/emitter");
 
-static char *native_types[] = {
-    // native types
-    "char",
-    "float",
-    "int",
-    "void",
-
-    // libc types
-    "DIR",
-    "FILE",
-    "bool",
-    "size_t",
-    "uint32_t",
-    "uint64_t",
-    "uintptr_t",
-    "va_list",
-
-    NULL,
-};
-
 bool is_ext(const char *path, const char *ext) {
     return path_matchExt(ext, path);
 }
@@ -63,21 +43,7 @@ int main(int argc, char *argv[]) {
         argv++;
     }
     scope_t *scope = scope_new(NULL);
-    for (int i = 0; native_types[i] != NULL; i++) {
-        expr_t name = {
-            .type = ast_EXPR_IDENT,
-            .ident = {
-                .name = strdup(native_types[i]),
-            },
-        };
-        decl_t decl = {
-            .type = ast_DECL_NATIVE,
-            .native = {
-                .name = esc(name),
-            },
-        };
-        scope_declare(scope, esc(decl));
-    }
+    declare_builtins(scope);
     emitter_t emitter = {};
     error_t *err = NULL;
     if (dst) {
