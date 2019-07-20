@@ -8,7 +8,7 @@
 #include "subc/parser/parser.h"
 
 $import("bling/parser");
-$import("bling/walk");
+$import("bling/types");
 $import("os");
 $import("path");
 $import("subc/parser");

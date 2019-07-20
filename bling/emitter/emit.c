@@ -136,7 +136,7 @@ static void print_expr(emitter_t *p, expr_t *expr) {
     }
 }
 
-static void print_stmt(emitter_t *p, stmt_t *stmt) {
+extern void print_stmt(emitter_t *p, stmt_t *stmt) {
     switch (stmt->type) {
 
     case ast_STMT_ASSIGN:

@@ -81,6 +81,12 @@ extern char *types_exprString(expr_t *expr) {
     return strings_Builder_string(&e.builder);
 }
 
+extern char *types_stmtString(stmt_t *stmt) {
+    emitter_t e = {};
+    print_stmt(&e, stmt);
+    return strings_Builder_string(&e.builder);
+}
+
 extern char *types_typeString(expr_t *expr) {
     emitter_t e = {};
     print_type(&e, expr);
@@ -128,7 +134,16 @@ static bool types_match(expr_t *a, expr_t *b) {
     }
     switch (a->type) {
     case ast_EXPR_IDENT:
-        return streq(a->ident.name, b->ident.name);
+        {
+            if (streq(a->ident.name, b->ident.name)) {
+                return true;
+            }
+            // assert(a->ident.obj);
+            // assert(b->ident.obj);
+            // decl_t *decl_a = a->ident.obj->decl;
+            // decl_t *decl_b = b->ident.obj->decl;
+            return false;
+        }
     case ast_TYPE_PTR:
         if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
             return true;
@@ -143,7 +158,8 @@ static bool types_match(expr_t *a, expr_t *b) {
 
 static void types_check(expr_t *a, expr_t *b) {
     if (!types_match(a, b)) {
-        panic("mismatched types: `%s` and `%s`", types_typeString(a),
+        panic("mismatched types: `%s` and `%s`",
+                types_typeString(a),
                 types_typeString(b));
     }
 }
@@ -204,13 +220,32 @@ static void check_type(checker_t *w, expr_t *expr) {
         break;
 
     default:
-        panic("check_type: unknown expr: %d", expr->type);
+        panic("check_type: unknown type: %s", types_typeString(expr));
         break;
+    }
+}
+
+static bool types_isLhs(expr_t *expr) {
+    switch (expr->type) {
+    case ast_EXPR_IDENT:
+    case ast_EXPR_SELECTOR:
+        return true;
+    case ast_EXPR_CAST:
+        return types_isLhs(expr->cast.expr);
+    case ast_EXPR_INDEX:
+        return types_isLhs(expr->index.x);
+    case ast_EXPR_PAREN:
+        return types_isLhs(expr->paren.x);
+    case ast_EXPR_UNARY:
+        return expr->unary.op == token_MUL && types_isLhs(expr->unary.x);
+    default:
+        return false;
     }
 }
 
 static expr_t *check_expr(checker_t *w, expr_t *expr) {
     switch (expr->type) {
+
     case ast_EXPR_BINARY:
         {
             expr_t *typ1 = check_expr(w, expr->binary.x);
@@ -292,6 +327,27 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             }
         }
 
+    case ast_EXPR_INDEX:
+        {
+            expr_t *type = check_expr(w, expr->index.x);
+            switch (type->type) {
+            case ast_TYPE_ARRAY:
+                type = type->array.elt;
+                break;
+            case ast_TYPE_PTR:
+                type = type->ptr.type;
+                break;
+            default:
+                panic("indexing a non-array or pointer `%s`: %s",
+                        types_typeString(type),
+                        types_exprString(expr));
+                break;
+            }
+            expr_t *typ2 = check_expr(w, expr->index.index);
+            (void)typ2; // TODO assert that typ2 is an integer
+            return type;
+        }
+
     case ast_EXPR_PAREN:
         return check_expr(w, expr->paren.x);
 
@@ -329,19 +385,26 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             expr_t *type = check_expr(w, expr->unary.x);
             switch (expr->unary.op) {
             case token_AND:
-                // TODO assert that expr is not a literal
-                type = types_makePtr(type);
-                break;
+                if (!types_isLhs(expr->unary.x)) {
+                    panic("check_expr: invalid lvalue `%s`: %s",
+                            types_exprString(expr->unary.x),
+                            types_exprString(expr));
+                }
+                return types_makePtr(type);
             case token_MUL:
-                assert(type->type == ast_TYPE_PTR);
-                type = type->ptr.type;
-                break;
+                if (type->type != ast_TYPE_PTR) {
+                    panic("check_expr: deferencing a non-pointer `%s`: %s",
+                            types_typeString(type),
+                            types_exprString(expr));
+                }
+                return type->ptr.type;
+            default:
+                return type;
             }
-            return type;
         }
 
     default:
-        panic("check_expr: unknown expr: %d", expr->type);
+        panic("check_expr: unknown expr: %s", types_exprString(expr));
     }
     return NULL;
 }
@@ -352,21 +415,13 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
     switch (stmt->type) {
     case ast_STMT_ASSIGN:
         {
-            expr_t *lhs = stmt->assign.x;
-            if (lhs->type == ast_EXPR_UNARY && lhs->unary.op == token_MUL) {
-                lhs = lhs->unary.x;
-            }
-            switch (lhs->type) {
-            case ast_EXPR_IDENT:
-            case ast_EXPR_SELECTOR:
-                break;
-            default:
-                panic("check_stmt: lhs of assign stmt must be ident or selector");
+            if (!types_isLhs(stmt->assign.x)) {
+                panic("check_stmt: invalid lvalue `%s`: %s",
+                        types_exprString(stmt->assign.x),
+                        types_stmtString(stmt));
             }
             expr_t *a = check_expr(w, stmt->assign.x);
             expr_t *b = check_expr(w, stmt->assign.y);
-            (void)a;
-            (void)b;
         }
         break;
     case ast_STMT_BLOCK:
@@ -466,14 +521,12 @@ static void check_func(checker_t *w, decl_t *decl) {
         expr_t *type = decl->func.type;
         checker_openScope(w);
         for (int i = 0; type->func.params && type->func.params[i]; i++) {
-            printlg("getting param");
             decl_t *param = type->func.params[i];
-            printlg("got param");
             assert(param->type == ast_DECL_FIELD);
             if (param->field.name) {
-                printlg("check_func: walking type of param `%s`", param->field.name->ident.name);
+                printlg("check_func: checking type of param `%s`",
+                        param->field.name->ident.name);
                 check_type(w, param->field.type);
-                printlg("check_func: declaring param `%s`", param->field.name->ident.name);
                 scope_declare(w->topScope, param);
             }
         }
