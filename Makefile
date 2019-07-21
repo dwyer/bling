@@ -32,6 +32,7 @@ hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/null -w strings/strings.bling
 	$(BLINGC) -o /dev/null -w path/path.bling
 	$(BLINGC) -o /dev/null -w bling/ast/ast.bling
+	$(BLINGC) -o /dev/null -w bling/scanner/scanner.bling
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling

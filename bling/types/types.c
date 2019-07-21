@@ -616,6 +616,7 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
             }
         }
         break;
+
     case ast_STMT_BLOCK:
         checker_openScope(w);
         for (int i = 0; stmt->block.stmts[i]; i++) {
@@ -623,14 +624,18 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
         }
         checker_closeScope(w);
         break;
+
     case ast_STMT_DECL:
         check_decl(w, stmt->decl);
         break;
+
     case ast_STMT_EXPR:
         check_expr(w, stmt->expr.x);
         break;
+
     case ast_STMT_EMPTY:
         break;
+
     case ast_STMT_IF:
         check_expr(w, stmt->if_.cond);
         check_stmt(w, stmt->if_.body);
@@ -656,7 +661,12 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
         break;
 
     case ast_STMT_JUMP:
-        /* TODO walk in label scope */
+        /* TODO walk label in label scope */
+        break;
+
+    case ast_STMT_LABEL:
+        /* TODO walk label in label scope */
+        check_stmt(w, stmt->label.stmt);
         break;
 
     case ast_STMT_POSTFIX:
