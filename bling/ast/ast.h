@@ -106,7 +106,6 @@ typedef struct decl_t {
             expr_t *type;
             expr_t *name;
             stmt_t *body;
-            token_t store;
         } func;
 
         struct {

@@ -137,6 +137,9 @@ extern bool types_isIdent(expr_t *expr) {
 }
 
 extern bool types_isVoid(expr_t *type) {
+    if (type->type == ast_TYPE_QUAL) {
+        type = type->qual.type;
+    }
     return types_isIdent(type) && streq(type->ident.name, "void");
 }
 
@@ -184,11 +187,13 @@ static expr_t *unwind_typedef(expr_t *type) {
     }
 }
 
-static expr_t *types_match(expr_t *a, expr_t *b) {
+static expr_t *types_match(expr_t *a, expr_t *b, token_t op) {
     if (a->type == ast_TYPE_QUAL) {
         if (b->type == ast_TYPE_QUAL) {
             if (a->qual.qual != b->qual.qual) {
-                return NULL;
+                if (op == token_ASSIGN) {
+                    return NULL;
+                }
             }
             b = b->qual.type;
         }
@@ -226,7 +231,9 @@ static expr_t *types_match(expr_t *a, expr_t *b) {
         if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
             return a;
         }
-        return types_match(a->ptr.type, b->ptr.type);
+        printlg("not void ptrs: `%s` and `%s`",
+                types_typeString(a), types_typeString(b));
+        return types_match(a->ptr.type, b->ptr.type, op);
     default:
         printlg("warning: un-impl type match `%s` and `%s`",
                 types_typeString(a), types_typeString(b));
@@ -234,8 +241,8 @@ static expr_t *types_match(expr_t *a, expr_t *b) {
     }
 }
 
-static expr_t *types_check(expr_t *a, expr_t *b) {
-    expr_t *type = types_match(a, b);
+static expr_t *types_check(expr_t *a, expr_t *b, token_t op) {
+    expr_t *type = types_match(a, b, op);
     if (type == NULL) {
         panic("mismatched types: `%s` and `%s`",
                 types_typeString(a), types_typeString(b));
@@ -310,6 +317,16 @@ static bool types_isLhs(expr_t *expr) {
     }
 }
 
+static expr_t *make_ident(const char *name) {
+    expr_t x = {
+        .type = ast_EXPR_IDENT,
+        .ident = {
+            .name = strdup(name),
+        },
+    };
+    return esc(x);
+}
+
 static expr_t *check_expr(checker_t *w, expr_t *expr) {
     switch (expr->type) {
 
@@ -317,8 +334,14 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
         {
             expr_t *typ1 = check_expr(w, expr->binary.x);
             expr_t *typ2 = check_expr(w, expr->binary.y);
-            types_check(typ1, typ2);
-            return typ1;
+            expr_t *type = types_check(typ1, typ2, expr->binary.op);
+            switch (expr->binary.op) {
+            case token_EQUAL:
+                type = make_ident("bool");
+                check_type(w, type);
+            default:
+                return type;
+            }
         }
 
     case ast_EXPR_BASIC_LIT:
@@ -365,7 +388,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
                     decl_t *param = type->func.params[i];
                     assert(param->type == ast_DECL_FIELD);
                     expr_t *type = check_expr(w, expr->call.args[i]);
-                    types_check(param->field.type, type);
+                    types_check(param->field.type, type, token_VAR);
                 }
                 return type->func.result;
             }
@@ -495,7 +518,7 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
             if (b->type == ast_TYPE_QUAL) {
                 b = b->qual.type;
             }
-            types_match(a, b);
+            types_check(a, b, token_ASSIGN);
         }
         break;
     case ast_STMT_BLOCK:
@@ -545,7 +568,7 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
         if (stmt->return_.x) {
             expr_t *type = check_expr(w, stmt->return_.x);
             assert(w->result);
-            types_check(w->result, type);
+            types_check(w->result, type, token_VAR);
         }
         break;
     default:
@@ -582,7 +605,7 @@ static void check_decl(checker_t *w, decl_t *decl) {
                 if (val_type->type == ast_TYPE_QUAL) {
                     val_type = val_type->qual.type;
                 }
-                types_check(decl->value.type, val_type);
+                types_check(decl->value.type, val_type, token_VAR);
             }
             scope_declare(w->topScope, decl);
             break;
