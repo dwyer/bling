@@ -322,6 +322,5 @@ typedef struct {
     slice_t files;
 } package_t;
 
-extern void scope_declare(scope_t *s, decl_t *decl);
 extern void scope_resolve(scope_t *s, expr_t *x);
 extern void scope_free(scope_t *s);

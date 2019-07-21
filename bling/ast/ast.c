@@ -40,67 +40,6 @@ extern object_t *scope_lookup(scope_t *s, char *name) {
     return obj;
 }
 
-extern void scope_declare(scope_t *s, decl_t *decl) {
-    obj_kind_t kind;
-    expr_t *ident = NULL;
-    switch (decl->type) {
-    case ast_DECL_FIELD:
-        kind = obj_kind_VALUE;
-        ident = decl->field.name;
-        break;
-    case ast_DECL_FUNC:
-        kind = obj_kind_FUNC;
-        ident = decl->func.name;
-        break;
-    case ast_DECL_TYPEDEF:
-        kind = obj_kind_TYPE;
-        ident = decl->typedef_.name;
-        break;
-    case ast_DECL_VALUE:
-        kind = obj_kind_VALUE;
-        ident = decl->value.name;
-        break;
-    default:
-        panic("scope_declare: bad decl: %d", decl->type);
-        return;
-    }
-    assert(ident->type == ast_EXPR_IDENT);
-    if (ident->ident.obj != NULL) {
-        panic("already declared: %s", ident->ident.name);
-    }
-    object_t *obj = object_new(kind, ident->ident.name);
-    obj->decl = decl;
-    ident->ident.obj = obj;
-    object_t *alt = scope_insert(s, obj);
-    if (alt != NULL) {
-        assert(alt->kind == kind);
-        bool redecl = false;
-        switch (kind) {
-        case obj_kind_FUNC:
-            // TODO compare types
-            redecl = alt->decl->func.body == NULL;
-            break;
-        case obj_kind_TYPE:
-            if (alt->decl->typedef_.type->type == ast_TYPE_STRUCT) {
-                redecl = alt->decl->typedef_.type->struct_.fields == NULL;
-            }
-            break;
-        case obj_kind_VALUE:
-            // TODO compare types
-            redecl = alt->decl->value.value == NULL;
-            break;
-        default:
-            print("unknown kind: %d", kind);
-            break;
-        }
-        if (!redecl) {
-            panic("already declared: %s", ident->ident.name);
-        }
-        print("redeclaring %s", obj->name);
-        alt->decl = decl;
-    }
-}
-
 extern void scope_resolve(scope_t *s, expr_t *x) {
     if (x->type != ast_EXPR_IDENT) {
         return;
@@ -118,6 +57,7 @@ extern void scope_resolve(scope_t *s, expr_t *x) {
 }
 
 extern void scope_free(scope_t *s) {
-    // TODO: free objects and filenames
+    slice_deinit(&s->filenames);
+    map_deinit(&s->objects);
     free(s);
 }
