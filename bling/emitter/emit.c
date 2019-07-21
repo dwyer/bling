@@ -351,12 +351,12 @@ extern void print_type(emitter_t *p, expr_t *type) {
             for (decl_t **enums = type->enum_.enums; enums && *enums; enums++) {
                 decl_t *enumerator = *enums;
                 emit_tabs(p);
-                print_expr(p, enumerator->enum_.name);
-                if (enumerator->enum_.value) {
+                print_expr(p, enumerator->value.name);
+                if (enumerator->value.value) {
                     emit_space(p);
                     emit_token(p, token_ASSIGN);
                     emit_space(p);
-                    print_expr(p, enumerator->enum_.value);
+                    print_expr(p, enumerator->value.value);
                 }
                 emit_token(p, token_COMMA);
                 emit_newline(p);

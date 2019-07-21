@@ -44,10 +44,6 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
     obj_kind_t kind;
     expr_t *ident = NULL;
     switch (decl->type) {
-    case ast_DECL_ENUM:
-        kind = obj_kind_VALUE;
-        ident = decl->enum_.name;
-        break;
     case ast_DECL_FIELD:
         kind = obj_kind_VALUE;
         ident = decl->field.name;

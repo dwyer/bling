@@ -362,13 +362,13 @@ static expr_t *enum_specifier(parser_t *p) {
         for (;;) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             decl_t decl = {
-                .type = ast_DECL_ENUM,
-                .enum_ = {
+                .type = ast_DECL_VALUE,
+                .value = {
                     .name = identifier(p),
                 },
             };
             if (accept(p, token_ASSIGN)) {
-                decl.enum_.value = constant_expression(p);
+                decl.value.value = constant_expression(p);
             }
             decl_t *enumerator = esc(decl);
             list = append(list, &enumerator);

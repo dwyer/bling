@@ -4,7 +4,7 @@ BLINGC=bazel-bin/cmd/blingc/blingc
 
 .PHONY: test $(BLINGC) all.bling
 
-SRCS=builtin/builtin.h \
+SRCS=bootstrap/bootstrap.h \
      bootstrap/bootstrap.c \
      error/error.h error/error.c \
      slice/slice.h slice/slice.c \

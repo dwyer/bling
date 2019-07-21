@@ -294,7 +294,7 @@ static void check_type(checker_t *w, expr_t *expr) {
 
     case ast_TYPE_ENUM:
         for (int i = 0; expr->enum_.enums[i]; i++) {
-            expr->enum_.enums[i]->enum_.type = expr;
+            expr->enum_.enums[i]->value.type = expr;
             scope_declare(w->topScope, expr->enum_.enums[i]);
         }
         break;
@@ -361,8 +361,6 @@ static bool types_isLhs(expr_t *expr) {
 static expr_t *get_decl_type(decl_t *decl) {
     assert(decl);
     switch (decl->type) {
-    case ast_DECL_ENUM:
-        return decl->enum_.type;
     case ast_DECL_FIELD:
         return decl->field.type;
     case ast_DECL_FUNC:
