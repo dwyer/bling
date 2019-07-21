@@ -22,6 +22,16 @@ void usage(const char *progname) {
     panic("usage: %s -o DST SRCS", progname);
 }
 
+void emit_rawfile(emitter_t *e, const char *filename) {
+    error_t *err = NULL;
+    char *src = ioutil_read_file(filename, &err);
+    if (err) {
+        panic(err->error);
+    }
+    emit_string(e, src);
+    free(src);
+}
+
 int main(int argc, char *argv[]) {
     char *progname = *argv;
     bool emit_as_bling = false;
@@ -50,12 +60,7 @@ int main(int argc, char *argv[]) {
         emit_as_bling = is_ext(dst, ".bling");
     }
     if (!emit_as_bling) {
-        char *src = ioutil_read_file("runtime/clib.h", &err);
-        emit_string(&emitter, src);
-        free(src);
-        src = ioutil_read_file("bootstrap/bootstrap.c", &err);
-        emit_string(&emitter, src);
-        free(src);
+        emit_rawfile(&emitter, "builtin/libc.h");
     }
     while (*argv) {
         char *filename = *argv;
@@ -78,6 +83,9 @@ int main(int argc, char *argv[]) {
         free(file->decls);
         free(file);
         argv++;
+    }
+    if (!emit_as_bling) {
+        emit_rawfile(&emitter, "bootstrap/bootstrap.c");
     }
     char *out = strings_Builder_string(&emitter.builder);
     os_File *file = os_stdout;

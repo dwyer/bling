@@ -2,9 +2,7 @@ cc_library(
     name = "builtin",
     hdrs = [
         "builtin.h",
-    ],
-    deps = [
-        "//runtime"
+        "libc.h",
     ],
     visibility = ["//visibility:public"],
 )

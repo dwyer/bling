@@ -15,7 +15,7 @@ extern error_t *make_sysError() {
 }
 
 extern void error_move(error_t *src, error_t **dst) {
-    if (dst == nil) {
+    if (dst != NULL) {
         *dst = src;
     }
 }

@@ -31,9 +31,9 @@ extern os_File *os_newFile(uintptr_t fd, const char *name) {
 
 extern os_File *os_openFile(const char *filename, int mode, int perm, error_t **error) {
     int fd = open(filename, mode, perm);
-    if (fd == 0) {
+    if (fd == -1) {
         if (error != NULL) {
-            *error = make_error("couldn't open file");
+            *error = make_sysError();
         }
         return NULL;
     }

@@ -3,7 +3,7 @@
 #define $import(_)
 #define $package(_)
 
-#include "runtime/clib.h"
+#include "libc.h"
 
 typedef char bool;
 

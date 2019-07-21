@@ -1,4 +1,6 @@
+#ifdef BOOTSTRAP
 #include "builtin/builtin.h"
+#endif
 
 extern int backtrace(void **, int); // libc
 extern void backtrace_symbols_fd(void* const*, int, int); // libc

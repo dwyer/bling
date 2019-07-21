@@ -6,5 +6,8 @@ cc_library(
     deps = [
         "//builtin"
     ],
+    defines = [
+        "BOOTSTRAP",
+    ],
     visibility = ["//visibility:public"],
 )
