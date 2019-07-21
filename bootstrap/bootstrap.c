@@ -1,6 +1,4 @@
-#ifdef BOOTSTRAP
-#include "bootstrap/bootstrap.h"
-#endif
+#include "bootstrap.h"
 
 extern int backtrace(void **, int); // libc
 extern void backtrace_symbols_fd(void* const*, int, int); // libc

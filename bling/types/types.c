@@ -1,7 +1,7 @@
 #include "bling/ast/ast.h"
 #include "bling/emitter/emit.h"
 
-// static void printlg(const char *fmt, ...) {}
+extern void printlg(const char *fmt, ...) {}
 
 #define printlg(...) print(__VA_ARGS__)
 
@@ -18,7 +18,6 @@ static struct {
     // libc types
     {"DIR", sizeof(DIR)},
     {"FILE", sizeof(FILE)},
-    {"bool", sizeof(bool)},
     {"size_t", sizeof(size_t), true},
     {"uint32_t", sizeof(uint32_t), true},
     {"uint64_t", sizeof(uint64_t), true},
@@ -50,6 +49,7 @@ static void declare_natives(scope_t *s) {
                 .type = esc(type),
             },
         };
+        printlg("declare_natives: declaring %s", decl.typedef_.name->ident.name);
         scope_declare(s, esc(decl));
     }
 }
@@ -294,8 +294,10 @@ static void check_type(checker_t *w, expr_t *expr) {
 
     case ast_TYPE_ENUM:
         for (int i = 0; expr->enum_.enums[i]; i++) {
-            expr->enum_.enums[i]->enum_.type = expr;
-            scope_declare(w->topScope, expr->enum_.enums[i]);
+            decl_t *decl = expr->enum_.enums[i];
+            decl->enum_.type = expr;
+            printlg("check_type: declaring %s", decl->enum_.name->ident.name);
+            scope_declare(w->topScope, decl);
         }
         break;
 
@@ -327,6 +329,8 @@ static void check_type(checker_t *w, expr_t *expr) {
                 decl_t *field = expr->struct_.fields[i];
                 check_type(w, field->field.type);
                 if (field->field.name) {
+                    printlg("check_type: declaring %s",
+                            field->field.name->ident.name);
                     scope_declare(w->topScope, field);
                 }
             }
@@ -440,25 +444,25 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
                 assert(expr->call.args[0] && !expr->call.args[1]);
                 expr_t *type = check_expr(w, expr->call.args[0]);
                 return types_makePtr(type);
-            } else {
-                if (type->type == ast_TYPE_PTR) {
-                    type = type->ptr.type;
-                }
-                assert(type->type == ast_TYPE_FUNC); // TODO handle builtins
-                for (int i = 0; expr->call.args[i]; i++) {
-                    assert(type->func.params[i]);
-                    decl_t *param = type->func.params[i];
-                    assert(param->type == ast_DECL_FIELD);
-                    expr_t *type = check_expr(w, expr->call.args[i]);
-                    if (!types_areAssignable(param->field.type, type)) {
-                        panic("not assignable: %s and %s: %s",
-                                types_typeString(param->field.type),
-                                types_typeString(type),
-                                types_exprString(expr));
-                    }
-                }
-                return type->func.result;
             }
+            if (type->type == ast_TYPE_PTR) {
+                type = type->ptr.type;
+            }
+            assert(type->type == ast_TYPE_FUNC); // TODO handle builtins
+            for (int i = 0; expr->call.args[i]; i++) {
+                assert(type->func.params[i]);
+                decl_t *param = type->func.params[i];
+                assert(param->type == ast_DECL_FIELD);
+                expr_t *type = check_expr(w, expr->call.args[i]);
+                if (!types_areAssignable(param->field.type, type)) {
+                    panic("not assignable: %s and %s: %s",
+                            types_typeString(param->field.type),
+                            types_typeString(type),
+                            types_exprString(expr));
+                }
+            }
+            return type->func.result;
+
         }
 
     case ast_EXPR_CAST:
@@ -686,13 +690,14 @@ static void check_decl(checker_t *w, decl_t *decl) {
     switch (decl->type) {
     case ast_DECL_FUNC:
         check_type(w, decl->func.type);
+        printlg("check_decl: declaring %s", decl->func.name->ident.name);
         scope_declare(w->topScope, decl);
         break;
     case ast_DECL_IMPORT:
         break;
     case ast_DECL_TYPEDEF:
-        printlg("check_decl: walking typedef %s", decl->typedef_.name->ident.name);
         check_type(w, decl->typedef_.type);
+        printlg("check_decl: declaring %s", decl->typedef_.name->ident.name);
         scope_declare(w->topScope, decl);
         break;
     case ast_DECL_VALUE:
@@ -719,6 +724,7 @@ static void check_decl(checker_t *w, decl_t *decl) {
                             types_declString(decl));
                 }
             }
+            printlg("check_decl: declaring %s", decl->value.name->ident.name);
             scope_declare(w->topScope, decl);
             break;
         }
@@ -749,7 +755,8 @@ static void check_func(checker_t *w, decl_t *decl) {
 }
 
 extern void types_checkFile(file_t *file) {
-    checker_t w = {.topScope = scope_new(file->scope)};
+    printlg("checking file %s", file->filename);
+    checker_t w = {.topScope = file->scope};
     for (int i = 0; file->decls[i] != NULL; i++) {
         check_decl(&w, file->decls[i]);
     }

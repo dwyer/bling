@@ -2,8 +2,6 @@
 
 #include "bootstrap/bootstrap.h"
 
-$import("builtin");
-
 typedef struct {
     char *error;
 } error_t;

@@ -21,13 +21,10 @@ void usage(const char *progname) {
 }
 
 void emit_rawfile(emitter_t *e, const char *filename) {
-    error_t *err = NULL;
-    char *src = ioutil_read_file(filename, &err);
-    if (err) {
-        panic(err->error);
-    }
-    emit_string(e, src);
-    free(src);
+    emit_string(e, "#include \"");
+    emit_string(e, filename);
+    emit_string(e, "\"");
+    emit_newline(e);
 }
 
 int main(int argc, char *argv[]) {
@@ -52,13 +49,20 @@ int main(int argc, char *argv[]) {
     }
     scope_t *scope = scope_new(NULL);
     declare_builtins(scope);
-    emitter_t emitter = {};
-    error_t *err = NULL;
+    if (do_walk) {
+        print("walking BUILTINS");
+        file_t *file = parser_parse_file("builtin/builtin.bling", scope);
+        types_checkFile(file);
+        free(file->decls);
+        free(file);
+    }
     if (dst) {
         emit_as_bling = is_ext(dst, ".bling");
     }
+    emitter_t emitter = {};
+    error_t *err = NULL;
     if (!emit_as_bling) {
-        emit_rawfile(&emitter, "bootstrap/libc.h");
+        emit_rawfile(&emitter, "bootstrap/bootstrap.c");
     }
     while (*argv) {
         char *filename = *argv;
@@ -81,9 +85,6 @@ int main(int argc, char *argv[]) {
         free(file->decls);
         free(file);
         argv++;
-    }
-    if (!emit_as_bling) {
-        emit_rawfile(&emitter, "bootstrap/bootstrap.c");
     }
     char *out = strings_Builder_string(&emitter.builder);
     os_File *file = os_stdout;
