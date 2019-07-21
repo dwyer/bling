@@ -782,7 +782,10 @@ static void check_func(checker_t *w, decl_t *decl) {
             }
         }
         w->result = decl->func.type->func.result;
-        check_stmt(w, decl->func.body);
+        // walk the block manually to avoid opening a new scope
+        for (int i = 0; decl->func.body->block.stmts[i]; i++) {
+            check_stmt(w, decl->func.body->block.stmts[i]);
+        }
         w->result = NULL;
         checker_closeScope(w);
     }
