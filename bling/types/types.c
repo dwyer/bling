@@ -187,8 +187,8 @@ extern bool types_isVoid(expr_t *type) {
 }
 
 extern bool types_isVoidPtr(expr_t *type) {
-    if (type->type == ast_TYPE_PTR) {
-        return types_isVoid(type->ptr.type);
+    if (type->type == ast_EXPR_STAR) {
+        return types_isVoid(type->star.x);
     }
     return false;
 }
@@ -205,9 +205,9 @@ static expr_t *types_makeIdent(const char *name) {
 
 static expr_t *types_makePtr(expr_t *type) {
     expr_t x = {
-        .type = ast_TYPE_PTR,
-        .ptr = {
-            .type = type,
+        .type = ast_EXPR_STAR,
+        .star = {
+            .x = type,
         }
     };
     return esc(x);
@@ -252,11 +252,11 @@ static bool types_areIdentical(expr_t *a, expr_t *b) {
     switch (a->type) {
     case ast_EXPR_IDENT:
         return b->type == ast_EXPR_IDENT && a->ident.obj == a->ident.obj;
-    case ast_TYPE_PTR:
+    case ast_EXPR_STAR:
         if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
             return true;
         }
-        return types_areIdentical(a->ptr.type, b->ptr.type);
+        return types_areIdentical(a->star.x, b->star.x);
     case ast_TYPE_QUAL:
         return types_areIdentical(a->qual.type, b->qual.type);
     default:
@@ -281,14 +281,14 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
     if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
         return true;
     }
-    if (a->type == ast_TYPE_PTR && b->type == ast_TYPE_PTR) {
-        return types_areAssignable(a->ptr.type, b->ptr.type);
+    if (a->type == ast_EXPR_STAR && b->type == ast_EXPR_STAR) {
+        return types_areAssignable(a->star.x, b->star.x);
     }
-    if (a->type == ast_TYPE_PTR && b->type == ast_TYPE_ARRAY) {
-        return types_areAssignable(a->ptr.type, b->array.elt);
+    if (a->type == ast_EXPR_STAR && b->type == ast_TYPE_ARRAY) {
+        return types_areAssignable(a->star.x, b->array.elt);
     }
-    if (a->type == ast_TYPE_ARRAY && b->type == ast_TYPE_PTR) {
-        return types_areAssignable(a->array.elt, b->ptr.type);
+    if (a->type == ast_TYPE_ARRAY && b->type == ast_EXPR_STAR) {
+        return types_areAssignable(a->array.elt, b->star.x);
     }
     while (a->type == ast_EXPR_IDENT) {
         a = lookup_typedef(a);
@@ -326,7 +326,7 @@ static bool types_areComparable(expr_t *a, expr_t *b) {
     if (b->type == ast_TYPE_QUAL) {
         return types_areComparable(a, b->qual.type);
     }
-    if (a->type == ast_TYPE_PTR && types_isNative(b, "int")) {
+    if (a->type == ast_EXPR_STAR && types_isNative(b, "int")) {
         return true;
     }
     return types_areAssignable(a, b);
@@ -372,8 +372,8 @@ static void check_type(checker_t *w, expr_t *expr) {
         }
         break;
 
-    case ast_TYPE_PTR:
-        check_type(w, expr->ptr.type);
+    case ast_EXPR_STAR:
+        check_type(w, expr->star.x);
         break;
 
     case ast_TYPE_QUAL:
@@ -415,8 +415,8 @@ static bool types_isLhs(expr_t *expr) {
         return types_isLhs(expr->index.x);
     case ast_EXPR_PAREN:
         return types_isLhs(expr->paren.x);
-    case ast_EXPR_UNARY:
-        return expr->unary.op == token_MUL && types_isLhs(expr->unary.x);
+    case ast_EXPR_STAR:
+        return types_isLhs(expr->star.x);
     default:
         return false;
     }
@@ -524,8 +524,8 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
                     return types_makePtr(type);
                 }
             }
-            if (type->type == ast_TYPE_PTR) {
-                type = type->ptr.type;
+            if (type->type == ast_EXPR_STAR) {
+                type = type->star.x;
             }
             if (type->type != ast_TYPE_FUNC) {
                 panic("check_expr: `%s` is not a func: %s",
@@ -572,8 +572,8 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             case ast_TYPE_ARRAY:
                 type = type->array.elt;
                 break;
-            case ast_TYPE_PTR:
-                type = type->ptr.type;
+            case ast_EXPR_STAR:
+                type = type->star.x;
                 break;
             default:
                 panic("indexing a non-array or pointer `%s`: %s",
@@ -593,9 +593,9 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
         {
             expr_t *type = check_expr(w, expr->selector.x);
             assert(type);
-            if (type->type == ast_TYPE_PTR) {
+            if (type->type == ast_EXPR_STAR) {
                 expr->selector.tok = token_ARROW;
-                type = type->ptr.type;
+                type = type->star.x;
             } else {
                 assert(expr->selector.tok != token_ARROW);
             }
@@ -619,27 +619,29 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             return ident;
         }
 
+    case ast_EXPR_STAR:
+        {
+            expr_t *type = check_expr(w, expr->star.x);
+            if (type->type != ast_EXPR_STAR) {
+                panic("check_expr: deferencing a non-pointer `%s`: %s",
+                        types_typeString(type),
+                        types_exprString(expr));
+            }
+            return type->star.x;
+        }
+
     case ast_EXPR_UNARY:
         {
             expr_t *type = check_expr(w, expr->unary.x);
-            switch (expr->unary.op) {
-            case token_AND:
+            if (expr->unary.op == token_AND) {
                 if (!types_isLhs(expr->unary.x)) {
                     panic("check_expr: invalid lvalue `%s`: %s",
                             types_exprString(expr->unary.x),
                             types_exprString(expr));
                 }
                 return types_makePtr(type);
-            case token_MUL:
-                if (type->type != ast_TYPE_PTR) {
-                    panic("check_expr: deferencing a non-pointer `%s`: %s",
-                            types_typeString(type),
-                            types_exprString(expr));
-                }
-                return type->ptr.type;
-            default:
-                return type;
             }
+            return type;
         }
 
     default:

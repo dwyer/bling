@@ -131,6 +131,11 @@ extern void print_expr(emitter_t *p, expr_t *expr) {
         emit_token(p, token_RPAREN);
         break;
 
+    case ast_EXPR_STAR:
+        emit_token(p, token_MUL);
+        print_expr(p, expr->star.x);
+        break;
+
     case ast_EXPR_UNARY:
         emit_token(p, expr->unary.op);
         print_expr(p, expr->unary.x);
@@ -363,8 +368,8 @@ extern void print_type(emitter_t *p, expr_t *type) {
         }
         break;
 
-    case ast_TYPE_PTR:
-        type = type->ptr.type;
+    case ast_EXPR_STAR:
+        type = type->star.x;
         if (type->type == ast_TYPE_FUNC) {
             emit_token(p, token_FUNC);
             emit_token(p, token_LPAREN);

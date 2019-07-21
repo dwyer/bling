@@ -110,6 +110,11 @@ static void emit_c_expr(emitter_t *e, expr_t *expr) {
         emit_token(e, token_RPAREN);
         break;
 
+    case ast_EXPR_STAR:
+        emit_token(e, token_MUL);
+        emit_c_expr(e, expr->star.x);
+        break;
+
     case ast_EXPR_UNARY:
         emit_token(e, expr->unary.op);
         emit_c_expr(e, expr->unary.x);
@@ -352,8 +357,8 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
         }
         break;
 
-    case ast_TYPE_PTR:
-        type = type->ptr.type;
+    case ast_EXPR_STAR:
+        type = type->star.x;
         if (type->type == ast_TYPE_FUNC) {
             emit_c_type(e, type->func.result, NULL);
             emit_token(e, token_LPAREN);

@@ -26,12 +26,13 @@ typedef enum {
     ast_EXPR_COND,
     ast_EXPR_IDENT,
     ast_EXPR_INDEX,
+    ast_EXPR_INIT_DECL,
     ast_EXPR_KEY_VALUE,
     ast_EXPR_PAREN,
-    ast_EXPR_UNARY,
     ast_EXPR_SELECTOR,
     ast_EXPR_SIZEOF,
-    ast_EXPR_INIT_DECL,
+    ast_EXPR_STAR,
+    ast_EXPR_UNARY,
     _ast_EXPR_END,
 
     _ast_STMT_START,
@@ -54,7 +55,6 @@ typedef enum {
     ast_TYPE_ARRAY,
     ast_TYPE_ENUM,
     ast_TYPE_NATIVE,
-    ast_TYPE_PTR,
     ast_TYPE_FUNC,
     ast_TYPE_QUAL,
     ast_TYPE_STRUCT,
@@ -188,10 +188,6 @@ typedef struct expr_t {
         } paren;
 
         struct {
-            expr_t *type;
-        } ptr;
-
-        struct {
             expr_t *x;
             token_t tok;
             expr_t *sel;
@@ -200,6 +196,10 @@ typedef struct expr_t {
         struct {
             expr_t *x;
         } sizeof_;
+
+        struct {
+            expr_t *x;
+        } star;
 
         struct {
             token_t tok;

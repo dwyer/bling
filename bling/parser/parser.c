@@ -233,7 +233,6 @@ static expr_t *parse_unary_expr(parser_t *p) {
     case token_ADD:
     case token_AND:
     case token_BITWISE_NOT:
-    case token_MUL:
     case token_NOT:
     case token_SUB:
         // unary_operator
@@ -251,6 +250,17 @@ static expr_t *parse_unary_expr(parser_t *p) {
                 .type = ast_EXPR_UNARY,
                 .unary = {
                     .op = op,
+                    .x = parse_cast_expr(p),
+                },
+            };
+            return esc(x);
+        }
+    case token_MUL:
+        {
+            parser_next(p);
+            expr_t x = {
+                .type = ast_EXPR_STAR,
+                .star = {
                     .x = parse_cast_expr(p),
                 },
             };
@@ -461,9 +471,9 @@ static expr_t *parse_enum_spec(parser_t *p) {
 static expr_t *parse_pointer(parser_t *p) {
     expect(p, token_MUL);
     expr_t x = {
-        .type = ast_TYPE_PTR,
-        .ptr = {
-            .type = parse_type_spec(p),
+        .type = ast_EXPR_STAR,
+        .star = {
+            .x = parse_type_spec(p),
         },
     };
     return esc(x);
@@ -885,9 +895,9 @@ static expr_t *parse_func_type(parser_t *p) {
         },
     };
     expr_t ptr = {
-        .type = ast_TYPE_PTR,
-        .ptr = {
-            .type = esc(type),
+        .type = ast_EXPR_STAR,
+        .star = {
+            .x = esc(type),
         },
     };
     return esc(ptr);

@@ -133,7 +133,6 @@ static expr_t *unary_expression(parser_t *p) {
     case token_ADD:
     case token_AND:
     case token_BITWISE_NOT:
-    case token_MUL:
     case token_NOT:
     case token_SUB:
         // unary_operator
@@ -151,6 +150,17 @@ static expr_t *unary_expression(parser_t *p) {
                 .type = ast_EXPR_UNARY,
                 .unary = {
                     .op = op,
+                    .x = cast_expression(p),
+                },
+            };
+            return esc(x);
+        }
+    case token_MUL:
+        {
+            parser_next(p);
+            expr_t x = {
+                .type = ast_EXPR_STAR,
+                .star = {
                     .x = cast_expression(p),
                 },
             };
@@ -448,9 +458,9 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
     }
     if (is_ptr) {
         expr_t type = {
-            .type = ast_TYPE_PTR,
-            .ptr = {
-                .type = *type_ptr,
+            .type = ast_EXPR_STAR,
+            .star = {
+                .x = *type_ptr,
             }
         };
         *type_ptr = esc(type);
@@ -477,9 +487,9 @@ static expr_t *pointer(parser_t *p, expr_t *type) {
     // pointer : '*' type_qualifier_list? pointer? ;
     while (accept(p, token_MUL)) {
         expr_t x = {
-            .type = ast_TYPE_PTR,
-            .ptr = {
-                .type = type,
+            .type = ast_EXPR_STAR,
+            .star = {
+                .x = type,
             },
         };
         type = esc(x);
@@ -582,9 +592,9 @@ static decl_t *abstract_declarator(parser_t *p, expr_t *type) {
     }
     if (is_ptr) {
         expr_t tmp = {
-            .type = ast_TYPE_PTR,
-            .ptr = {
-                .type = type,
+            .type = ast_EXPR_STAR,
+            .star = {
+                .x = type,
             },
         };
         type = esc(tmp);
