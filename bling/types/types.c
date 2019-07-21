@@ -571,8 +571,22 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
             types_check(w->result, type, token_VAR);
         }
         break;
+
+    case ast_STMT_SWITCH:
+        {
+            expr_t *type = check_expr(w, stmt->switch_.tag);
+            for (int i = 0; stmt->switch_.stmts[i]; i++) {
+                stmt_t *clause = stmt->switch_.stmts[i];
+                assert(clause->type == ast_STMT_CASE);
+                expr_t *clauseExprType = check_expr(w, clause->case_.expr);
+                types_check(type, clauseExprType, token_EQUAL);
+                assert(false);
+            }
+        }
+        break;
+
     default:
-        panic("check_stmt: unknown stmt: %d", stmt->type);
+        panic("check_stmt: unknown stmt: %s", types_stmtString(stmt));
     }
 }
 
