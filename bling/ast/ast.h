@@ -92,30 +92,30 @@ typedef struct decl_t {
         } import;
 
         struct {
-            expr_t *type;
             expr_t *name;
+            expr_t *type;
         } typedef_;
 
         struct {
-            expr_t *type;
             expr_t *name;
+            expr_t *type;
             expr_t *value;
         } value;
 
         struct {
-            expr_t *type;
             expr_t *name;
+            expr_t *type;
             stmt_t *body;
         } func;
 
         struct {
-            expr_t *type;
             expr_t *name;
+            expr_t *type;
         } field;
 
         struct {
-            expr_t *type;
             expr_t *name;
+            expr_t *type;
             expr_t *value;
         } enum_;
 
