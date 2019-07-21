@@ -1085,7 +1085,11 @@ static file_t *parse_file(parser_t *p) {
 }
 
 extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {
-    char *src = ioutil_read_file(filename, NULL);
+    error_t *err = NULL;
+    char *src = ioutil_read_file(filename, &err);
+    if (err) {
+        panic("%s: %s", filename, err->error);
+    }
     parser_t p = {};
     parser_init(&p, filename, src);
     p.pkg_scope = pkg_scope;
