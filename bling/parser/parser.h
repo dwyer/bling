@@ -17,7 +17,6 @@ typedef struct {
     token_t tok;
     char *lit;
     char *filename;
-    scope_t *top_scope;
     scope_t *pkg_scope;
     bool c_mode;
 } parser_t;

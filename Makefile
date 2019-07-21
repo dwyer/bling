@@ -25,7 +25,6 @@ SRCS=bootstrap/bootstrap.h \
 
 hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/null -w syntax_test.bling
-	$(BLINGC) -o /dev/null -w builtin/builtin.bling
 	$(BLINGC) -o /dev/null -w error/error.bling
 	$(BLINGC) -o /dev/null -w slice/slice.bling
 	$(BLINGC) -o /dev/null -w map/map.bling
