@@ -253,7 +253,6 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         break;
 
     case ast_STMT_POSTFIX:
-        emit_tabs(e);
         emit_c_expr(e, stmt->postfix.x);
         emit_token(e, stmt->postfix.op);
         emit_token(e, token_SEMICOLON);

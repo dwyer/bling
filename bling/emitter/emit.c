@@ -270,7 +270,6 @@ extern void print_stmt(emitter_t *p, stmt_t *stmt) {
         break;
 
     case ast_STMT_POSTFIX:
-        emit_tabs(p);
         print_expr(p, stmt->postfix.x);
         emit_token(p, stmt->postfix.op);
         emit_token(p, token_SEMICOLON);
