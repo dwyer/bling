@@ -17,10 +17,10 @@ SRCS=bootstrap/bootstrap.h \
      bling/ast/ast.h bling/ast/ast.c \
      bling/scanner/scanner.h bling/scanner/scanner.c \
      bling/parser/parser.h bling/parser/parser.c \
-     bling/emitter/emit.h bling/emitter/emit.c \
+     bling/emitter/emitter.h bling/emitter/emitter.c \
      bling/types/types.h bling/types/types.c \
      subc/parser/parser.h subc/parser/parser.c \
-     subc/emitter/emit.h subc/emitter/emit.c \
+     subc/emitter/emitter.h subc/emitter/emitter.c \
      cmd/blingc/main.c
 
 hello: $(BLINGC) all.bling

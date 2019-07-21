@@ -1,5 +1,5 @@
 #pragma once
-#include "bling/emitter/emit.h"
+#include "bling/emitter/emitter.h"
 
 $import("bling/emitter");
 

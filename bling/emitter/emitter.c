@@ -1,4 +1,4 @@
-#include "bling/emitter/emit.h"
+#include "bling/emitter/emitter.h"
 #include "bling/token/token.h"
 
 extern void emit_string(emitter_t *e, const char *s) {

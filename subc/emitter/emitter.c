@@ -1,4 +1,4 @@
-#include "subc/emitter/emit.h"
+#include "subc/emitter/emitter.h"
 #include "bling/token/token.h"
 
 static void emit_c_decl(emitter_t *e, decl_t *decl);

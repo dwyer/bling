@@ -1,5 +1,5 @@
 #include "bling/ast/ast.h"
-#include "bling/emitter/emit.h"
+#include "bling/emitter/emitter.h"
 
 extern void printlg(const char *fmt, ...) {}
 

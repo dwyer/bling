@@ -1,10 +1,10 @@
 cc_library(
     name = "emitter",
     srcs = [
-        "emit.c",
+        "emitter.c",
     ],
     hdrs = [
-        "emit.h",
+        "emitter.h",
     ],
     deps = [
         "//bling/ast",

@@ -2,7 +2,7 @@
 #include "bling/types/types.h"
 #include "os/os.h"
 #include "path/path.h"
-#include "subc/emitter/emit.h"
+#include "subc/emitter/emitter.h"
 #include "subc/parser/parser.h"
 
 $import("bling/parser");
