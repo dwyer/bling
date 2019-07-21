@@ -44,6 +44,8 @@ debug: $(BLINGC)
 
 $(BLINGC):
 	bazel build \
+	    --copt="-Wall" \
+	    --copt="-Werror" \
 	    --copt="-g0" \
 	    --copt="-fms-extensions" \
 	    --copt="-Wno-microsoft-anon-tag" \

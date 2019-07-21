@@ -1,7 +1,7 @@
 #include "bling/ast/ast.h"
 #include "bling/emitter/emit.h"
 
-static void printlg(const char *fmt, ...) {}
+// static void printlg(const char *fmt, ...) {}
 
 #define printlg(...) print(__VA_ARGS__)
 
