@@ -1161,11 +1161,9 @@ static file_t *parse_cfile(parser_t *p) {
     while (p->tok == token_IMPORT) {
         expect(p, token_IMPORT);
         expect(p, token_LPAREN);
-        expr_t *path = primary_expression(p);
+        expr_t *path = basic_lit(p, token_STRING);
         expect(p, token_RPAREN);
         expect(p, token_SEMICOLON);
-        assert(path->type == ast_EXPR_BASIC_LIT);
-        assert(path->basic_lit.kind == token_STRING);
         decl_t decl = {
             .type = ast_DECL_IMPORT,
             .import = {

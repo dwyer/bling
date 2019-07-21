@@ -99,7 +99,7 @@ extern expr_t *identifier(parser_t *p) {
     return esc(x);
 }
 
-static expr_t *basic_lit(parser_t *p, token_t kind) {
+extern expr_t *basic_lit(parser_t *p, token_t kind) {
     char *value = p->lit;
     expect(p, kind);
     expr_t x = {
@@ -1037,32 +1037,28 @@ static bool isTestFile(const char *name) {
     return path_match("*_test.bling", name);
 }
 
-static void parser_import(parser_t *p, const char *dirname, slice_t *decls) {
-    for (int i = 0; i < len(p->pkg_scope->filenames); i++) {
-        char *s = NULL;
-        slice_get(&p->pkg_scope->filenames, i, &s);
-        if (streq(dirname, s)) {
-            return;
-        }
-    }
-    p->pkg_scope->filenames = append(p->pkg_scope->filenames, &dirname);
+extern file_t **parser_parseDir(const char *path, error_t **first) {
     error_t *err = NULL;
-    os_FileInfo **infos = ioutil_read_dir(dirname, &err);
+    os_FileInfo **infos = ioutil_read_dir(path, &err);
+    if (err) {
+        error_move(err, first);
+    }
+    slice_t files = slice_init(sizeof(uintptr_t), 0, 0);
     while (*infos != NULL) {
         char *name = os_FileInfo_name(**infos);
         if (isBlingFile(name) && !isTestFile(name)) {
-            file_t *file = parser_parse_file(name, p->pkg_scope);
-            for (int i = 0; file->decls[i] != NULL; i++) {
-                *decls = append(*decls, &file->decls[i]);
-            }
+            file_t *file = parser_parse_file(name);
+            files = append(files, &file);
         }
         infos++;
     }
+    return slice_to_nil_array(files);
 }
 
 static file_t *parse_file(parser_t *p) {
-    slice_t decls = {.size = sizeof(decl_t *)};
     expr_t *name = NULL;
+    slice_t imports = slice_init(sizeof(uintptr_t), 0, 0);
+    slice_t decls = slice_init(sizeof(decl_t *), 0, 0);
     if (accept(p, token_PACKAGE)) {
         expect(p, token_LPAREN);
         name = identifier(p);
@@ -1073,14 +1069,14 @@ static file_t *parse_file(parser_t *p) {
         expect(p, token_IMPORT);
         expr_t *path = basic_lit(p, token_STRING);
         expect(p, token_SEMICOLON);
-        const char *lit = path->basic_lit.value;
-        int n = strlen(lit) - 2;
-        char *dirname = malloc(n + 1);
-        for (int i = 0; i < n; i++) {
-            dirname[i] = lit[i+1];
-        }
-        dirname[n] = '\0';
-        parser_import(p, dirname, &decls);
+        decl_t decl = {
+            .type = ast_DECL_IMPORT,
+            .import = {
+                .path = path,
+            },
+        };
+        decl_t *declp = esc(decl);
+        imports = append(imports, &declp);
     }
     while (p->tok != token_EOF) {
         decl_t *decl = parse_decl(p, true);
@@ -1089,12 +1085,13 @@ static file_t *parse_file(parser_t *p) {
     file_t file = {
         .filename = p->filename,
         .name = name,
+        .imports = slice_to_nil_array(imports),
         .decls = slice_to_nil_array(decls),
     };
     return esc(file);
 }
 
-extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {
+extern file_t *parser_parse_file(char *filename) {
     error_t *err = NULL;
     char *src = ioutil_read_file(filename, &err);
     if (err) {
@@ -1102,7 +1099,6 @@ extern file_t *parser_parse_file(char *filename, scope_t *pkg_scope) {
     }
     parser_t p = {};
     parser_init(&p, filename, src);
-    p.pkg_scope = pkg_scope;
     file_t *file = parse_file(&p);
     file->scope = p.pkg_scope;
     free(src);

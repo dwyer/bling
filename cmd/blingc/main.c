@@ -51,7 +51,8 @@ int main(int argc, char *argv[]) {
     declare_builtins(scope);
     if (do_walk) {
         print("walking BUILTINS");
-        file_t *file = parser_parse_file("builtin/builtin.bling", scope);
+        file_t *file = parser_parse_file("builtin/builtin.bling");
+        file->scope = scope;
         types_checkFile(file);
         free(file->decls);
         free(file);
@@ -68,7 +69,7 @@ int main(int argc, char *argv[]) {
         char *filename = *argv;
         file_t *file = NULL;
         if (is_ext(filename, ".bling")) {
-            file = parser_parse_file(filename, scope);
+            file = parser_parse_file(filename);
         } else if (is_ext(filename, ".c") || is_ext(filename, ".h")) {
             file = parser_parse_cfile(filename, scope);
         } else {
@@ -78,6 +79,7 @@ int main(int argc, char *argv[]) {
             printer_print_file(&emitter, file);
         } else {
             if (do_walk) {
+                file->scope = scope;
                 types_checkFile(file);
             }
             emitter_emit_file(&emitter, file);

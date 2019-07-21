@@ -306,9 +306,9 @@ extern object_t *scope_lookup(scope_t *s, char *name);
 typedef struct {
     const char *filename;
     expr_t *name;
+    decl_t **imports;
     decl_t **decls;
     scope_t *scope;
-    decl_t **imports;
 } file_t;
 
 typedef struct {

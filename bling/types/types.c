@@ -1,5 +1,6 @@
 #include "bling/ast/ast.h"
 #include "bling/emitter/emitter.h"
+#include "bling/parser/parser.h"
 
 extern void printlg(const char *fmt, ...) {}
 
@@ -55,13 +56,13 @@ static void scope_declare(scope_t *s, decl_t *decl) {
             redecl = alt->decl->value.value == NULL;
             break;
         default:
-            print("unknown kind: %d", kind);
+            printlg("unknown kind: %d", kind);
             break;
         }
         if (!redecl) {
             panic("already declared: %s", ident->ident.name);
         }
-        print("redeclaring %s", obj->name);
+        printlg("redeclaring %s", obj->name);
         alt->decl = decl;
     }
 }
@@ -391,7 +392,7 @@ static void check_type(checker_t *w, expr_t *expr) {
                             field->field.name->ident.name);
                     scope_declare(w->topScope, field);
                 } else {
-                    print("anonymous struct");
+                    printlg("anonymous struct");
                 }
             }
             checker_closeScope(w);
@@ -781,14 +782,49 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
     }
 }
 
+static char *constant_stringVal(expr_t *x) {
+    // TODO move this to const pkg
+    const char *lit = x->basic_lit.value;
+    int n = strlen(lit) - 2;
+    char *val = malloc(n + 1);
+    for (int i = 0; i < n; i++) {
+        val[i] = lit[i+1];
+    }
+    val[n] = '\0';
+    return val;
+}
+
+static void check_file(checker_t *w, file_t *file);
+
+static void check_import(checker_t *w, decl_t *import) {
+    char *path = constant_stringVal(import->import.path);
+    printlg("importing %s", path);
+    for (int i = 0; i < len(w->topScope->filenames); i++) {
+        char *s = NULL;
+        slice_get(&w->topScope->filenames, i, &s);
+        if (streq(path, s)) {
+            printlg("already imported \"%s\"", path);
+            free(path);
+            return;
+        }
+    }
+    w->topScope->filenames = append(w->topScope->filenames, &path);
+    error_t *err = NULL;
+    file_t **files = parser_parseDir(path, &err);
+    if (err) {
+        panic("%s: %s", path, err->error);
+    }
+    for (int i = 0; files[i]; i++) {
+        check_file(w, files[i]);
+    }
+}
+
 static void check_decl(checker_t *w, decl_t *decl) {
     switch (decl->type) {
     case ast_DECL_FUNC:
         check_type(w, decl->func.type);
         printlg("check_decl: declaring %s", decl->func.name->ident.name);
         scope_declare(w->topScope, decl);
-        break;
-    case ast_DECL_IMPORT:
         break;
     case ast_DECL_TYPEDEF:
         check_type(w, decl->typedef_.type);
@@ -852,13 +888,21 @@ static void check_func(checker_t *w, decl_t *decl) {
     }
 }
 
+static void check_file(checker_t *w, file_t *file) {
+    printlg("checking file `%s`", file->filename);
+    for (int i = 0; file->imports[i] != NULL; i++) {
+        check_import(w, file->imports[i]);
+    }
+    for (int i = 0; file->decls[i] != NULL; i++) {
+        check_decl(w, file->decls[i]);
+    }
+    for (int i = 0; file->decls[i] != NULL; i++) {
+        check_func(w, file->decls[i]);
+    }
+}
+
 extern void types_checkFile(file_t *file) {
-    printlg("checking file %s", file->filename);
-    checker_t w = {.topScope = file->scope};
-    for (int i = 0; file->decls[i] != NULL; i++) {
-        check_decl(&w, file->decls[i]);
-    }
-    for (int i = 0; file->decls[i] != NULL; i++) {
-        check_func(&w, file->decls[i]);
-    }
+    scope_t *scope = file->scope;
+    checker_t w = {.topScope = scope};
+    check_file(&w, file);
 }
