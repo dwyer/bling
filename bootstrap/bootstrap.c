@@ -1,6 +1,4 @@
-#include "runtime/clib.h"
-
-void *nil = (void *)0;
+#include "builtin/builtin.h"
 
 extern int backtrace(void **, int); // libc
 extern void backtrace_symbols_fd(void* const*, int, int); // libc

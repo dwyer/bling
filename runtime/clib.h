@@ -2,7 +2,6 @@
 #define __CLIB_H__
 
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>

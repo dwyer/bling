@@ -83,6 +83,7 @@ extern void declare_builtins(scope_t *s) {
 typedef struct {
     scope_t *topScope;
     expr_t *result;
+    bool strict;
 } checker_t;
 
 static void checker_openScope(checker_t *w) {
@@ -487,7 +488,14 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
                         types_stmtString(stmt));
             }
             expr_t *a = check_expr(w, stmt->assign.x);
+            if (a->type == ast_TYPE_QUAL) {
+                panic("cannot assign to const var: %s", types_stmtString(stmt));
+            }
             expr_t *b = check_expr(w, stmt->assign.y);
+            if (b->type == ast_TYPE_QUAL) {
+                b = b->qual.type;
+            }
+            types_match(a, b);
         }
         break;
     case ast_STMT_BLOCK:
@@ -571,6 +579,9 @@ static void check_decl(checker_t *w, decl_t *decl) {
                 decl->value.type = val_type;
             }
             if (val_type != NULL) {
+                if (val_type->type == ast_TYPE_QUAL) {
+                    val_type = val_type->qual.type;
+                }
                 types_check(decl->value.type, val_type);
             }
             scope_declare(w->topScope, decl);
