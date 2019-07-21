@@ -114,6 +114,7 @@ typedef struct decl_t {
         } field;
 
         struct {
+            expr_t *type;
             expr_t *name;
             expr_t *value;
         } enum_;

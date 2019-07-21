@@ -114,6 +114,12 @@ extern void printScope(scope_t *s) {
     }
 }
 
+extern char *types_declString(decl_t *decl) {
+    emitter_t e = {};
+    print_decl(&e, decl);
+    return strings_Builder_string(&e.builder);
+}
+
 extern char *types_exprString(expr_t *expr) {
     emitter_t e = {};
     print_expr(&e, expr);
@@ -199,6 +205,14 @@ static expr_t *types_match(expr_t *a, expr_t *b, token_t op) {
         }
         a = a->qual.type;
     }
+    if (a->type == ast_EXPR_IDENT) {
+        if (b->type == ast_TYPE_ENUM) {
+            decl_t *decl = a->ident.obj->decl;
+            if (decl->type == ast_DECL_TYPEDEF) {
+                a = decl->typedef_.type;
+            }
+        }
+    }
     // TODO match ptrs with arrays
     if (a->type != b->type) {
         return NULL;
@@ -227,6 +241,8 @@ static expr_t *types_match(expr_t *a, expr_t *b, token_t op) {
             }
             return NULL;
         }
+    case ast_TYPE_ENUM:
+        return a == b ? a : NULL;
     case ast_TYPE_PTR:
         if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
             return a;
@@ -235,7 +251,7 @@ static expr_t *types_match(expr_t *a, expr_t *b, token_t op) {
                 types_typeString(a), types_typeString(b));
         return types_match(a->ptr.type, b->ptr.type, op);
     default:
-        printlg("warning: un-impl type match `%s` and `%s`",
+        panic("un-impl type match `%s` and `%s`",
                 types_typeString(a), types_typeString(b));
         return NULL;
     }
@@ -259,6 +275,7 @@ static void check_type(checker_t *w, expr_t *expr) {
 
     case ast_TYPE_ENUM:
         for (int i = 0; expr->enum_.enums[i]; i++) {
+            expr->enum_.enums[i]->enum_.type = expr;
             scope_declare(w->topScope, expr->enum_.enums[i]);
         }
         break;
@@ -325,6 +342,35 @@ static expr_t *make_ident(const char *name) {
         },
     };
     return esc(x);
+}
+
+static expr_t *get_decl_type(decl_t *decl) {
+    assert(decl);
+    switch (decl->type) {
+    case ast_DECL_ENUM:
+        return decl->enum_.type;
+    case ast_DECL_FIELD:
+        return decl->field.type;
+    case ast_DECL_FUNC:
+        return decl->func.type;
+    case ast_DECL_NATIVE:
+        return decl->native.name;
+    case ast_DECL_TYPEDEF:
+        return decl->typedef_.type;
+    case ast_DECL_VALUE:
+        return decl->value.type;
+    default:
+        panic("unhandled decl: %d", decl->type);
+        return NULL;
+    }
+}
+
+
+static expr_t *get_ident_type(expr_t *ident) {
+    assert(ident->type == ast_EXPR_IDENT);
+    object_t *obj = ident->ident.obj;
+    assert(obj);
+    return get_decl_type(obj->decl);
 }
 
 static expr_t *check_expr(checker_t *w, expr_t *expr) {
@@ -405,16 +451,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
     case ast_EXPR_IDENT:
         {
             scope_resolve(w->topScope, expr);
-            object_t *obj = expr->ident.obj;
-            decl_t *decl = obj->decl;
-            switch (obj->kind) {
-            case obj_kind_FUNC:
-                return decl->func.type;
-            case obj_kind_TYPE:
-                return decl->typedef_.type;
-            case obj_kind_VALUE:
-                return decl->value.type;
-            }
+            return get_ident_type(expr);
         }
 
     case ast_EXPR_INDEX:
@@ -574,13 +611,12 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
 
     case ast_STMT_SWITCH:
         {
-            expr_t *type = check_expr(w, stmt->switch_.tag);
+            expr_t *type1 = check_expr(w, stmt->switch_.tag);
             for (int i = 0; stmt->switch_.stmts[i]; i++) {
                 stmt_t *clause = stmt->switch_.stmts[i];
                 assert(clause->type == ast_STMT_CASE);
-                expr_t *clauseExprType = check_expr(w, clause->case_.expr);
-                types_check(type, clauseExprType, token_EQUAL);
-                assert(false);
+                expr_t *type2 = check_expr(w, clause->case_.expr);
+                types_check(type1, type2, token_EQUAL);
             }
         }
         break;

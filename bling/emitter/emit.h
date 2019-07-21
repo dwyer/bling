@@ -17,6 +17,7 @@ extern void emit_newline(emitter_t *e);
 extern void emit_tabs(emitter_t *e);
 extern void emit_token(emitter_t *e, token_t tok);
 
+extern void print_decl(emitter_t *p, decl_t *decl);
 extern void print_expr(emitter_t *p, expr_t *expr);
 extern void print_stmt(emitter_t *p, stmt_t *stmt);
 extern void print_type(emitter_t *p, expr_t *type);

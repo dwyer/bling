@@ -26,9 +26,7 @@ extern void emit_token(emitter_t *e, token_t tok) {
     emit_string(e, token_string(tok));
 }
 
-static void print_decl(emitter_t *p, decl_t *decl);
-
-static void print_expr(emitter_t *p, expr_t *expr) {
+extern void print_expr(emitter_t *p, expr_t *expr) {
     if (!expr) {
         panic("print_expr: expr is NULL");
     }
@@ -82,6 +80,18 @@ static void print_expr(emitter_t *p, expr_t *expr) {
         p->indent--;
         emit_tabs(p);
         emit_token(p, token_RBRACE);
+        break;
+
+    case ast_EXPR_COND:
+        print_expr(p, expr->conditional.condition);
+        emit_space(p);
+        emit_token(p, token_QUESTION_MARK);
+        emit_space(p);
+        print_expr(p, expr->conditional.consequence);
+        emit_space(p);
+        emit_token(p, token_COLON);
+        emit_space(p);
+        print_expr(p, expr->conditional.alternative);
         break;
 
     case ast_EXPR_IDENT:
@@ -299,7 +309,7 @@ static bool is_void(expr_t *type) {
     return type->type == ast_EXPR_IDENT && streq(type->ident.name, "void");
 }
 
-static void print_type(emitter_t *p, expr_t *type) {
+extern void print_type(emitter_t *p, expr_t *type) {
     switch (type->type) {
     case ast_TYPE_ARRAY:
         emit_token(p, token_LBRACK);
@@ -424,7 +434,7 @@ static void print_type(emitter_t *p, expr_t *type) {
     }
 }
 
-static void print_decl(emitter_t *p, decl_t *decl) {
+extern void print_decl(emitter_t *p, decl_t *decl) {
     switch (decl->type) {
 
     case ast_DECL_FIELD:

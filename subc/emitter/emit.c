@@ -44,6 +44,18 @@ static void emit_c_expr(emitter_t *e, expr_t *expr) {
         emit_c_expr(e, expr->cast.expr);
         break;
 
+    case ast_EXPR_COND:
+        emit_c_expr(e, expr->conditional.condition);
+        emit_space(e);
+        emit_token(e, token_QUESTION_MARK);
+        emit_space(e);
+        emit_c_expr(e, expr->conditional.consequence);
+        emit_space(e);
+        emit_token(e, token_COLON);
+        emit_space(e);
+        emit_c_expr(e, expr->conditional.alternative);
+        break;
+
     case ast_EXPR_COMPOUND:
         emit_token(e, token_LBRACE);
         emit_newline(e);
