@@ -392,25 +392,32 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
 
     case ast_EXPR_BASIC_LIT:
         {
-            const char *name = NULL;
             token_t kind = expr->basic_lit.kind;
+            expr_t *type = NULL;
             switch (kind) {
             case token_INT:
-                name = "int";
+                type = make_ident("int");
                 break;
             case token_FLOAT:
-                name = "float";
+                type = make_ident("float");
+                break;
+            case token_STRING:
+                {
+                    expr_t x = {
+                        .type = ast_TYPE_PTR,
+                        .ptr = {
+                            .type = make_ident("char"),
+                        }
+                    };
+                    type = esc(x);
+                }
                 break;
             default:
                 panic("check_expr: not implmented: %s", token_string(kind));
+                break;
             }
-            expr_t x = {
-                .type = ast_EXPR_IDENT,
-                .ident = {
-                    .name = strdup(name),
-                }
-            };
-            return esc(x);
+            check_type(w, type);
+            return type;
         }
 
     case ast_EXPR_COMPOUND:
