@@ -29,18 +29,14 @@ extern bool path_isAbs(const char *path) {
     return path != NULL && path[0] == '/';
 }
 
-extern char *path_join(const char *elem, ...) {
-    va_list ap;
-    va_start(ap, elem);
+extern char *path_join(const char **elems, int n) {
+    return strings_join(elems, n, "/");
+}
+
+extern char *path_join2(const char *a, const char *b) {
     slice_t elems = {.size = sizeof(char *)};
-    for (;;) {
-        elems = append(elems, &elem);
-        elem = (char *)va_arg(ap, uintptr_t);
-        if (elem == NULL) {
-            break;
-        }
-    }
-    va_end(ap);
+    elems = append(elems, &a);
+    elems = append(elems, &b);
     return strings_join(elems.array, len(elems), "/");
 }
 
