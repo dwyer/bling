@@ -533,6 +533,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
     case ast_EXPR_SELECTOR:
         {
             expr_t *type = check_expr(w, expr->selector.x);
+            assert(type);
             if (type->type == ast_TYPE_PTR) {
                 expr->selector.tok = token_ARROW;
                 type = type->ptr.type;
@@ -541,11 +542,14 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             }
             type = unwind_typedef(type);
             printlg("selector: %s", expr->selector.sel->ident.name);
-            type = find_field(type, expr->selector.sel);
-            if (type == NULL) {
-                panic("struct has no field `%s`", expr->selector.sel->ident.name);
+            expr_t *eType = find_field(type, expr->selector.sel);
+            if (eType == NULL) {
+                panic("struct `%s` (`%s`) has no field `%s`",
+                        types_exprString(expr->selector.x),
+                        types_typeString(type),
+                        expr->selector.sel->ident.name);
             }
-            return type;
+            return eType;
         }
 
     case ast_EXPR_SIZEOF:
