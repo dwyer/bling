@@ -5,28 +5,64 @@ static void printlg(const char *fmt, ...) {}
 
 #define printlg(...) print(__VA_ARGS__)
 
-static char *builtins[] = {
+static struct {
+    char *name;
+    int size;
+    bool arith;
+} natives[] = {
     // native types
-    "char",
-    "float",
-    "int",
-    "void",
+    {"char", sizeof(char), true},
+    {"float", sizeof(float), true},
+    {"int", sizeof(int), true},
+    {"void", sizeof(void)},
     // libc types
-    "DIR",
-    "FILE",
-    "bool",
-    "size_t",
-    "uint32_t",
-    "uint64_t",
-    "uintptr_t",
-    "va_list",
+    {"DIR", sizeof(DIR)},
+    {"FILE", sizeof(FILE)},
+    {"bool", sizeof(bool)},
+    {"size_t", sizeof(size_t), true},
+    {"uint32_t", sizeof(uint32_t), true},
+    {"uint64_t", sizeof(uint64_t), true},
+    {"uintptr_t", sizeof(uintptr_t), true},
+    {"va_list", sizeof(va_list)},
+    // sentinel
+    {NULL},
+};
+
+static char *builtins[] = {
     // builtin funcs
     "esc",
     // sentinel
     NULL,
 };
 
+static void declare_natives(scope_t *s) {
+    for (int i = 0; natives[i].name != NULL; i++) {
+        expr_t name = {
+            .type = ast_EXPR_IDENT,
+            .ident = {
+                .name = strdup(natives[i].name),
+            },
+        };
+        expr_t type = {
+            .type = ast_TYPE_NATIVE,
+            .native = {
+                .name = strdup(natives[i].name),
+                .size = natives[i].size,
+            },
+        };
+        decl_t decl = {
+            .type = ast_DECL_TYPEDEF,
+            .typedef_ = {
+                .name = esc(name),
+                .type = esc(type),
+            },
+        };
+        scope_declare(s, esc(decl));
+    }
+}
+
 extern void declare_builtins(scope_t *s) {
+    declare_natives(s);
     for (int i = 0; builtins[i] != NULL; i++) {
         expr_t name = {
             .type = ast_EXPR_IDENT,
@@ -56,7 +92,9 @@ static void checker_openScope(checker_t *w) {
 
 static void checker_closeScope(checker_t *w) {
     printlg("closing scope");
+    scope_t *inner = w->topScope;
     w->topScope = w->topScope->outer;
+    scope_free(inner);
 }
 
 extern void printScope(scope_t *s) {
@@ -118,52 +156,6 @@ static expr_t *types_makePtr(expr_t *type) {
     return esc(x);
 }
 
-static bool types_match(expr_t *a, expr_t *b) {
-    if (a->type == ast_TYPE_QUAL) {
-        if (b->type == ast_TYPE_QUAL) {
-            if (a->qual.qual != b->qual.qual) {
-                return false;
-            }
-            b = b->qual.type;
-        }
-        a = a->qual.type;
-    }
-    // TODO match ptrs with arrays
-    if (a->type != b->type) {
-        return false;
-    }
-    switch (a->type) {
-    case ast_EXPR_IDENT:
-        {
-            if (streq(a->ident.name, b->ident.name)) {
-                return true;
-            }
-            // assert(a->ident.obj);
-            // assert(b->ident.obj);
-            // decl_t *decl_a = a->ident.obj->decl;
-            // decl_t *decl_b = b->ident.obj->decl;
-            return false;
-        }
-    case ast_TYPE_PTR:
-        if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
-            return true;
-        }
-        return types_match(a->ptr.type, b->ptr.type);
-    case ast_TYPE_QUAL:
-        return false;
-    default:
-        return false;
-    }
-}
-
-static void types_check(expr_t *a, expr_t *b) {
-    if (!types_match(a, b)) {
-        panic("mismatched types: `%s` and `%s`",
-                types_typeString(a),
-                types_typeString(b));
-    }
-}
-
 static expr_t *lookup_typedef(expr_t *ident) {
     assert(ident->ident.obj);
     decl_t *decl = ident->ident.obj->decl;
@@ -175,8 +167,10 @@ static expr_t *lookup_typedef(expr_t *ident) {
 
 static expr_t *unwind_typedef(expr_t *type) {
     for (;;) {
-        assert(type);
         switch (type->type) {
+        case ast_TYPE_NATIVE:
+        case ast_TYPE_STRUCT:
+            return type;
         case ast_EXPR_IDENT:
             type = lookup_typedef(type);
             break;
@@ -184,10 +178,68 @@ static expr_t *unwind_typedef(expr_t *type) {
             type = type->qual.type;
             break;
         default:
-            assert(type);
-            return type;
+            panic("unwind_typedef: not impl: %s", types_typeString(type));
         }
     }
+}
+
+static expr_t *types_match(expr_t *a, expr_t *b) {
+    if (a->type == ast_TYPE_QUAL) {
+        if (b->type == ast_TYPE_QUAL) {
+            if (a->qual.qual != b->qual.qual) {
+                return NULL;
+            }
+            b = b->qual.type;
+        }
+        a = a->qual.type;
+    }
+    // TODO match ptrs with arrays
+    if (a->type != b->type) {
+        return NULL;
+    }
+    switch (a->type) {
+    case ast_EXPR_IDENT:
+        {
+            if (streq(a->ident.name, b->ident.name)) {
+                return a;
+            }
+            printlg("comparing `%s` and `%s`", a->ident.name, b->ident.name);
+            assert(a->ident.obj);
+            assert(b->ident.obj);
+            assert(a->ident.obj->decl->type == ast_DECL_TYPEDEF);
+            assert(b->ident.obj->decl->type == ast_DECL_TYPEDEF);
+            a = unwind_typedef(a);
+            b = unwind_typedef(b);
+            // a = a->ident.obj->decl->typedef_.type;
+            // b = b->ident.obj->decl->typedef_.type;
+            if (a->type == ast_TYPE_NATIVE && b->type == ast_TYPE_NATIVE) {
+                printlg("both native");
+                if (a->native.size > 0 && b->native.size > 0 &&
+                        a->native.size > b->native.size) {
+                    return a;
+                }
+            }
+            return NULL;
+        }
+    case ast_TYPE_PTR:
+        if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
+            return a;
+        }
+        return types_match(a->ptr.type, b->ptr.type);
+    default:
+        printlg("warning: un-impl type match `%s` and `%s`",
+                types_typeString(a), types_typeString(b));
+        return NULL;
+    }
+}
+
+static expr_t *types_check(expr_t *a, expr_t *b) {
+    expr_t *type = types_match(a, b);
+    if (type == NULL) {
+        panic("mismatched types: `%s` and `%s`",
+                types_typeString(a), types_typeString(b));
+    }
+    return type;
 }
 
 static void check_type(checker_t *w, expr_t *expr) {
@@ -203,6 +255,19 @@ static void check_type(checker_t *w, expr_t *expr) {
         }
         break;
 
+    case ast_TYPE_FUNC:
+        for (int i = 0; expr->func.params && expr->func.params[i]; i++) {
+            decl_t *param = expr->func.params[i];
+            assert(param->type == ast_DECL_FIELD);
+            if (param->field.type) {
+                check_type(w, param->field.type);
+            }
+        }
+        if (expr->func.result) {
+            check_type(w, expr->func.result);
+        }
+        break;
+
     case ast_TYPE_PTR:
         check_type(w, expr->ptr.type);
         break;
@@ -214,6 +279,7 @@ static void check_type(checker_t *w, expr_t *expr) {
     case ast_TYPE_STRUCT:
         checker_openScope(w);
         for (int i = 0; expr->struct_.fields[i]; i++) {
+            check_type(w, expr->struct_.fields[i]->field.type);
             scope_declare(w->topScope, expr->struct_.fields[i]);
         }
         checker_closeScope(w);
@@ -482,6 +548,7 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
 static void check_decl(checker_t *w, decl_t *decl) {
     switch (decl->type) {
     case ast_DECL_FUNC:
+        check_type(w, decl->func.type);
         scope_declare(w->topScope, decl);
         break;
     case ast_DECL_IMPORT:
@@ -515,18 +582,16 @@ static void check_decl(checker_t *w, decl_t *decl) {
 }
 
 static void check_func(checker_t *w, decl_t *decl) {
-    assert(decl);
     if (decl->type == ast_DECL_FUNC && decl->func.body) {
         printlg("check_func: walking func %s", decl->func.name->ident.name);
-        expr_t *type = decl->func.type;
         checker_openScope(w);
+        expr_t *type = decl->func.type;
         for (int i = 0; type->func.params && type->func.params[i]; i++) {
             decl_t *param = type->func.params[i];
             assert(param->type == ast_DECL_FIELD);
             if (param->field.name) {
-                printlg("check_func: checking type of param `%s`",
+                printlg("check_func: declaring param `%s`",
                         param->field.name->ident.name);
-                check_type(w, param->field.type);
                 scope_declare(w->topScope, param);
             }
         }

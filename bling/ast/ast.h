@@ -56,7 +56,8 @@ typedef enum {
     _ast_TYPE_START,
     ast_TYPE_ARRAY,
     ast_TYPE_ENUM,
-    ast_TYPE_NAME,
+    ast_TYPE_NAME, // TODO get rid of this
+    ast_TYPE_NATIVE,
     ast_TYPE_PTR,
     ast_TYPE_FUNC,
     ast_TYPE_QUAL,
@@ -190,6 +191,11 @@ typedef struct expr_t {
             expr_t *key;
             expr_t *value;
         } key_value;
+
+        struct {
+            char *name;
+            int size;
+        } native;
 
         struct {
             expr_t *x;
@@ -331,3 +337,4 @@ typedef struct {
 
 extern void scope_declare(scope_t *s, decl_t *decl);
 extern void scope_resolve(scope_t *s, expr_t *x);
+extern void scope_free(scope_t *s);

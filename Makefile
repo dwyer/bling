@@ -24,8 +24,8 @@ SRCS=builtin/builtin.h \
      cmd/blingc/main.c
 
 hello: $(BLINGC) all.bling
-	$(BLINGC) -o /dev/stdout -w syntax_test.bling
-	$(BLINGC) -o /dev/stdout -w error/error.bling
+	# $(BLINGC) -o /dev/stdout -w syntax_test.bling
+	# $(BLINGC) -o /dev/stdout -w error/error.bling
 	$(BLINGC) -o /dev/stdout -w slice/slice.bling
 
 a.out: $(BLINGC) all.bling

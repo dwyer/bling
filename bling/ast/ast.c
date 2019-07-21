@@ -101,6 +101,8 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
         if (!ok) {
             panic("already declared: %s", ident->ident.name);
         }
+        // print("redeclaring %s", obj->name);
+        // map_set(&s->objects, obj->name, &obj);
     }
 }
 
@@ -118,4 +120,9 @@ extern void scope_resolve(scope_t *s, expr_t *x) {
         s = s->outer;
     }
     panic("scope_resolve: unresolved: %s", x->ident.name);
+}
+
+extern void scope_free(scope_t *s) {
+    // TODO: free objects and filenames
+    free(s);
 }
