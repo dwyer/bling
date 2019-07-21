@@ -526,14 +526,7 @@ static expr_t *type_name(parser_t *p) {
     //         ;
     expr_t *type = specifier_qualifier_list(p);
     decl_t *decl = abstract_declarator(p, type);
-    type = decl->field.type;
-    expr_t x = {
-        .type = ast_TYPE_NAME,
-        .type_name = {
-            .type = type,
-        },
-    };
-    return esc(x);
+    return decl->field.type;
 }
 
 static decl_t *abstract_declarator(parser_t *p, expr_t *type) {

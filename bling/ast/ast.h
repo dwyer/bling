@@ -53,7 +53,6 @@ typedef enum {
     _ast_TYPE_START,
     ast_TYPE_ARRAY,
     ast_TYPE_ENUM,
-    ast_TYPE_NAME, // TODO get rid of this
     ast_TYPE_NATIVE,
     ast_TYPE_PTR,
     ast_TYPE_FUNC,
@@ -207,10 +206,6 @@ typedef struct expr_t {
             expr_t *name;
             decl_t **fields;
         } struct_;
-
-        struct {
-            expr_t *type;
-        } type_name;
 
         struct {
             token_t qual;

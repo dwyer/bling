@@ -136,10 +136,6 @@ extern void print_expr(emitter_t *p, expr_t *expr) {
         print_expr(p, expr->unary.x);
         break;
 
-    case ast_TYPE_NAME:
-        print_type(p, expr->type_name.type);
-        break;
-
     default:
         panic("Unknown expr");
         break;
@@ -365,10 +361,6 @@ extern void print_type(emitter_t *p, expr_t *type) {
             emit_tabs(p);
             emit_token(p, token_RBRACE);
         }
-        break;
-
-    case ast_TYPE_NAME:
-        print_type(p, type->type_name.type);
         break;
 
     case ast_TYPE_PTR:

@@ -115,10 +115,6 @@ static void emit_c_expr(emitter_t *e, expr_t *expr) {
         emit_c_expr(e, expr->unary.x);
         break;
 
-    case ast_TYPE_NAME:
-        emit_c_expr(e, expr->type_name.type);
-        break;
-
     default:
         panic("Unknown expr: %d", expr->type);
         break;
@@ -354,10 +350,6 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
             emit_tabs(e);
             emit_token(e, token_RBRACE);
         }
-        break;
-
-    case ast_TYPE_NAME:
-        emit_c_expr(e, type->type_name.type);
         break;
 
     case ast_TYPE_PTR:
