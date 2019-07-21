@@ -74,30 +74,30 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
     object_t *alt = scope_insert(s, obj);
     if (alt != NULL) {
         assert(alt->kind == kind);
-        bool ok = false;
+        bool redecl = false;
         switch (kind) {
         case obj_kind_FUNC:
             // TODO compare types
-            ok = alt->decl->func.body == NULL || decl->func.body == NULL;
+            redecl = alt->decl->func.body == NULL;
             break;
         case obj_kind_TYPE:
             if (alt->decl->typedef_.type->type == ast_TYPE_STRUCT) {
-                ok = alt->decl->typedef_.type->struct_.fields == NULL;
+                redecl = alt->decl->typedef_.type->struct_.fields == NULL;
             }
             break;
         case obj_kind_VALUE:
             // TODO compare types
-            ok = alt->decl->value.value == NULL || decl->value.value == NULL;
+            redecl = alt->decl->value.value == NULL;
             break;
         default:
             print("unknown kind: %d", kind);
             break;
         }
-        if (!ok) {
+        if (!redecl) {
             panic("already declared: %s", ident->ident.name);
         }
         print("redeclaring %s", obj->name);
-        map_set(&s->objects, obj->name, &obj);
+        alt->decl = decl;
     }
 }
 
