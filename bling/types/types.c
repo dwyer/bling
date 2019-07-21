@@ -343,12 +343,17 @@ static void check_type(checker_t *w, expr_t *expr) {
         break;
 
     case ast_TYPE_STRUCT:
-        checker_openScope(w);
-        for (int i = 0; expr->struct_.fields[i]; i++) {
-            check_type(w, expr->struct_.fields[i]->field.type);
-            scope_declare(w->topScope, expr->struct_.fields[i]);
+        if (expr->struct_.fields) {
+            checker_openScope(w);
+            for (int i = 0; expr->struct_.fields[i]; i++) {
+                decl_t *field = expr->struct_.fields[i];
+                check_type(w, field->field.type);
+                if (field->field.name) {
+                    scope_declare(w->topScope, field);
+                }
+            }
+            checker_closeScope(w);
         }
-        checker_closeScope(w);
         break;
 
     default:

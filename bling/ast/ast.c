@@ -89,6 +89,9 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
             ok = alt->decl->func.body == NULL || decl->func.body == NULL;
             break;
         case obj_kind_TYPE:
+            if (alt->decl->typedef_.type->type == ast_TYPE_STRUCT) {
+                ok = alt->decl->typedef_.type->struct_.fields == NULL;
+            }
             break;
         case obj_kind_VALUE:
             // TODO compare types
