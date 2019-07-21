@@ -156,6 +156,16 @@ extern bool types_isVoidPtr(expr_t *type) {
     return false;
 }
 
+static expr_t *types_makeIdent(const char *name) {
+    expr_t x = {
+        .type = ast_EXPR_IDENT,
+        .ident = {
+            .name = strdup(name),
+        },
+    };
+    return esc(x);
+}
+
 static expr_t *types_makePtr(expr_t *type) {
     expr_t x = {
         .type = ast_TYPE_PTR,
@@ -229,8 +239,17 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
         }
         a = a->qual.type;
     }
+    if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
+        return true;
+    }
     if (a->type == ast_TYPE_PTR && b->type == ast_TYPE_PTR) {
         return types_areAssignable(a->ptr.type, b->ptr.type);
+    }
+    if (a->type == ast_TYPE_PTR && b->type == ast_TYPE_ARRAY) {
+        return types_areAssignable(a->ptr.type, b->array.elt);
+    }
+    if (a->type == ast_TYPE_ARRAY && b->type == ast_TYPE_PTR) {
+        return types_areAssignable(a->array.elt, b->ptr.type);
     }
     if (a->type == ast_EXPR_IDENT) {
         decl_t *decl = a->ident.obj->decl;
@@ -251,6 +270,17 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
     return types_areIdentical(a, b);
 }
 
+static bool types_isNative(expr_t *type, const char *name) {
+    switch (type->type) {
+    case ast_EXPR_IDENT:
+        return streq(type->ident.name, name);
+    case ast_TYPE_NATIVE:
+        return true;
+    default:
+        return false;
+    }
+}
+
 static bool types_areComparable(expr_t *a, expr_t *b) {
     if (types_areAssignable(a, b)) {
         return true;
@@ -260,6 +290,9 @@ static bool types_areComparable(expr_t *a, expr_t *b) {
     }
     if (b->type == ast_TYPE_QUAL) {
         return types_areComparable(a, b->qual.type);
+    }
+    if (a->type == ast_TYPE_PTR && types_isNative(b, "int")) {
+        return true;
     }
     return types_areAssignable(a, b);
 }
@@ -342,16 +375,6 @@ static bool types_isLhs(expr_t *expr) {
     }
 }
 
-static expr_t *make_ident(const char *name) {
-    expr_t x = {
-        .type = ast_EXPR_IDENT,
-        .ident = {
-            .name = strdup(name),
-        },
-    };
-    return esc(x);
-}
-
 static expr_t *get_decl_type(decl_t *decl) {
     assert(decl);
     switch (decl->type) {
@@ -401,7 +424,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             case token_LT:
             case token_LT_EQUAL:
             case token_NOT_EQUAL:
-                typ1 = make_ident("bool");
+                typ1 = types_makeIdent("bool");
                 check_type(w, typ1);
             default:
                 return typ1;
@@ -413,20 +436,10 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             token_t kind = expr->basic_lit.kind;
             expr_t *type = NULL;
             switch (kind) {
-            case token_CHAR: type = make_ident("char"); break;
-            case token_INT: type = make_ident("int"); break;
-            case token_FLOAT: type = make_ident("float"); break;
-            case token_STRING:
-                {
-                    expr_t x = {
-                        .type = ast_TYPE_PTR,
-                        .ptr = {
-                            .type = make_ident("char"),
-                        }
-                    };
-                    type = esc(x);
-                }
-                break;
+            case token_CHAR: type = types_makeIdent("char"); break;
+            case token_INT: type = types_makeIdent("int"); break;
+            case token_FLOAT: type = types_makeIdent("float"); break;
+            case token_STRING: type = types_makePtr(types_makeIdent("char")); break;
             default:
                 panic("check_expr: not implmented: %s", token_string(kind));
                 break;
@@ -533,7 +546,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
     case ast_EXPR_SIZEOF:
         {
             check_type(w, expr->sizeof_.x);
-            expr_t *ident = make_ident("size_t");
+            expr_t *ident = types_makeIdent("size_t");
             scope_resolve(w->topScope, ident);
             return ident;
         }
@@ -643,12 +656,19 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
 
     case ast_STMT_RETURN:
         if (stmt->return_.x) {
-            expr_t *type = check_expr(w, stmt->return_.x);
-            assert(w->result);
-            if (!types_areAssignable(w->result, type)) {
+            expr_t *a = w->result;
+            assert(a);
+            expr_t *b = check_expr(w, stmt->return_.x);
+            if (a->type == ast_TYPE_QUAL) {
+                a = a->qual.type;
+            }
+            if (b->type == ast_TYPE_QUAL) {
+                b = b->qual.type;
+            }
+            if (!types_areAssignable(a, b)) {
                 panic("check_stmt: not returnable: %s and %s: %s",
-                        types_typeString(w->result),
-                        types_typeString(type),
+                        types_typeString(a),
+                        types_typeString(b),
                         types_stmtString(stmt));
             }
         }
