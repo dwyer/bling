@@ -1,5 +1,5 @@
 #ifdef BOOTSTRAP
-#include "builtin/builtin.h"
+#include "bootstrap/bootstrap.h"
 #endif
 
 extern int backtrace(void **, int); // libc

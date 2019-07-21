@@ -1,5 +1,3 @@
-#include "builtin/builtin.h"
-
 #include "bling/parser/parser.h"
 #include "bling/types/types.h"
 #include "os/os.h"
@@ -60,7 +58,7 @@ int main(int argc, char *argv[]) {
         emit_as_bling = is_ext(dst, ".bling");
     }
     if (!emit_as_bling) {
-        emit_rawfile(&emitter, "builtin/libc.h");
+        emit_rawfile(&emitter, "bootstrap/libc.h");
     }
     while (*argv) {
         char *filename = *argv;

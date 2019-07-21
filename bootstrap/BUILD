@@ -3,8 +3,9 @@ cc_library(
     srcs = [
         "bootstrap.c",
     ],
-    deps = [
-        "//builtin"
+    hdrs = [
+        "bootstrap.h",
+        "libc.h",
     ],
     defines = [
         "BOOTSTRAP",

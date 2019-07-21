@@ -1,0 +1,32 @@
+
+typedef bool char;
+
+$var false const bool = $as(bool) 0;
+
+$var true const bool = !false;
+
+$var NULL *void = $as(*void) 0;
+
+$func print(fmt *const char, ...);
+
+$func panic(fmt *const char, ...);
+
+$func streq(a *const char, b *const char) bool;
+
+$func memcmp(*const void, *const void, size_t) int;
+
+$func memcpy(*void, *const void, size_t) *void;
+
+$func memset(*void, int, size_t) *void;
+
+$func strdup(*const char) *char;
+
+$func strlcpy(*char, *const char, size_t) size_t;
+
+$func strlen(*const char) size_t;
+
+$func malloc(size_t) *void;
+
+$func free(*void);
+
+$func realloc(*void, size_t) *void;

@@ -3,12 +3,14 @@
 #define $import(_)
 #define $package(_)
 
+#include "libc.h"
+
 typedef char bool;
 
 static const bool false = (bool)0;
 static const bool true = !false;
 
-static void *NULL = (void *)0;
+static void *nil = (void *)0;
 
 extern void print(const char *fmt, ...);
 extern void panic(const char *fmt, ...);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "builtin/builtin.h"
+#include "bootstrap/bootstrap.h"
 
 $import("builtin");
 
