@@ -28,6 +28,7 @@ hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/null -w builtin/builtin.bling
 	$(BLINGC) -o /dev/null -w error/error.bling
 	$(BLINGC) -o /dev/null -w slice/slice.bling
+	$(BLINGC) -o /dev/null -w map/map.bling
 	$(BLINGC) -o /dev/null -w bling/token/token.bling
 	$(BLINGC) -o /dev/null -w strings/strings.bling
 	$(BLINGC) -o /dev/null -w path/path.bling
