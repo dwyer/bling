@@ -193,17 +193,45 @@ static expr_t *unwind_typedef(expr_t *type) {
     }
 }
 
-static expr_t *types_match(expr_t *a, expr_t *b, token_t op) {
+static bool types_areIdentical(expr_t *a, expr_t *b) {
+    if (a == b) {
+        return true;
+    }
+    if (a->type != b->type) {
+        return false;
+    }
+    switch (a->type) {
+    case ast_EXPR_IDENT:
+        return b->type == ast_EXPR_IDENT && a->ident.obj == a->ident.obj;
+    case ast_TYPE_PTR:
+        if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
+            return true;
+        }
+        return types_areIdentical(a->ptr.type, b->ptr.type);
+    case ast_TYPE_QUAL:
+        return types_areIdentical(a->qual.type, b->qual.type);
+    default:
+        panic("unreachable: %s == %s", types_typeString(a), types_typeString(b));
+        return false;
+    }
+}
+
+static bool types_areAssignable(expr_t *a, expr_t *b) {
+    if (types_areIdentical(a, b)) {
+        print("SHORTCUT!");
+        return true;
+    }
     if (a->type == ast_TYPE_QUAL) {
         if (b->type == ast_TYPE_QUAL) {
             if (a->qual.qual != b->qual.qual) {
-                if (op == token_ASSIGN) {
-                    return NULL;
-                }
+                return false;
             }
             b = b->qual.type;
         }
         a = a->qual.type;
+    }
+    if (a->type == ast_TYPE_PTR && b->type == ast_TYPE_PTR) {
+        return types_areAssignable(a->ptr.type, b->ptr.type);
     }
     if (a->type == ast_EXPR_IDENT) {
         if (b->type == ast_TYPE_ENUM) {
@@ -213,57 +241,20 @@ static expr_t *types_match(expr_t *a, expr_t *b, token_t op) {
             }
         }
     }
-    // TODO match ptrs with arrays
-    if (a->type != b->type) {
-        return NULL;
-    }
-    switch (a->type) {
-    case ast_EXPR_IDENT:
-        {
-            if (streq(a->ident.name, b->ident.name)) {
-                return a;
-            }
-            printlg("comparing `%s` and `%s`", a->ident.name, b->ident.name);
-            assert(a->ident.obj);
-            assert(b->ident.obj);
-            assert(a->ident.obj->decl->type == ast_DECL_TYPEDEF);
-            assert(b->ident.obj->decl->type == ast_DECL_TYPEDEF);
-            a = unwind_typedef(a);
-            b = unwind_typedef(b);
-            // a = a->ident.obj->decl->typedef_.type;
-            // b = b->ident.obj->decl->typedef_.type;
-            if (a->type == ast_TYPE_NATIVE && b->type == ast_TYPE_NATIVE) {
-                printlg("both native");
-                if (a->native.size > 0 && b->native.size > 0 &&
-                        a->native.size > b->native.size) {
-                    return a;
-                }
-            }
-            return NULL;
-        }
-    case ast_TYPE_ENUM:
-        return a == b ? a : NULL;
-    case ast_TYPE_PTR:
-        if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
-            return a;
-        }
-        printlg("not void ptrs: `%s` and `%s`",
-                types_typeString(a), types_typeString(b));
-        return types_match(a->ptr.type, b->ptr.type, op);
-    default:
-        panic("un-impl type match `%s` and `%s`",
-                types_typeString(a), types_typeString(b));
-        return NULL;
-    }
+    return types_areIdentical(a, b);
 }
 
-static expr_t *types_check(expr_t *a, expr_t *b, token_t op) {
-    expr_t *type = types_match(a, b, op);
-    if (type == NULL) {
-        panic("mismatched types: `%s` and `%s`",
-                types_typeString(a), types_typeString(b));
+static bool types_areComparable(expr_t *a, expr_t *b) {
+    if (types_areAssignable(a, b)) {
+        return true;
     }
-    return type;
+    if (a->type == ast_TYPE_QUAL) {
+        return types_areComparable(a->qual.type, b);
+    }
+    if (b->type == ast_TYPE_QUAL) {
+        return types_areComparable(a, b->qual.type);
+    }
+    return types_areAssignable(a, b);
 }
 
 static void check_type(checker_t *w, expr_t *expr) {
@@ -380,13 +371,23 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
         {
             expr_t *typ1 = check_expr(w, expr->binary.x);
             expr_t *typ2 = check_expr(w, expr->binary.y);
-            expr_t *type = types_check(typ1, typ2, expr->binary.op);
+            if (!types_areComparable(typ1, typ2)) {
+                panic("not compariable: %s and %s: %s",
+                        types_typeString(typ1),
+                        types_typeString(typ2),
+                        types_exprString(expr));
+            }
             switch (expr->binary.op) {
             case token_EQUAL:
-                type = make_ident("bool");
-                check_type(w, type);
+            case token_GT:
+            case token_GT_EQUAL:
+            case token_LT:
+            case token_LT_EQUAL:
+            case token_NOT_EQUAL:
+                typ1 = make_ident("bool");
+                check_type(w, typ1);
             default:
-                return type;
+                return typ1;
             }
         }
 
@@ -441,7 +442,12 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
                     decl_t *param = type->func.params[i];
                     assert(param->type == ast_DECL_FIELD);
                     expr_t *type = check_expr(w, expr->call.args[i]);
-                    types_check(param->field.type, type, token_VAR);
+                    if (!types_areAssignable(param->field.type, type)) {
+                        panic("not assignable: %s and %s: %s",
+                                types_typeString(param->field.type),
+                                types_typeString(type),
+                                types_exprString(expr));
+                    }
                 }
                 return type->func.result;
             }
@@ -562,7 +568,12 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
             if (b->type == ast_TYPE_QUAL) {
                 b = b->qual.type;
             }
-            types_check(a, b, token_ASSIGN);
+            if (!types_areAssignable(a, b)) {
+                panic("check_stmt: not assignment `%s` and `%s`: %s",
+                        types_exprString(stmt->assign.x),
+                        types_exprString(stmt->assign.y),
+                        types_stmtString(stmt));
+            }
         }
         break;
     case ast_STMT_BLOCK:
@@ -612,7 +623,12 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
         if (stmt->return_.x) {
             expr_t *type = check_expr(w, stmt->return_.x);
             assert(w->result);
-            types_check(w->result, type, token_VAR);
+            if (!types_areAssignable(w->result, type)) {
+                panic("check_stmt: not returnable: %s and %s: %s",
+                        types_typeString(w->result),
+                        types_typeString(type),
+                        types_stmtString(stmt));
+            }
         }
         break;
 
@@ -623,7 +639,12 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
                 stmt_t *clause = stmt->switch_.stmts[i];
                 assert(clause->type == ast_STMT_CASE);
                 expr_t *type2 = check_expr(w, clause->case_.expr);
-                types_check(type1, type2, token_EQUAL);
+                if (!types_areComparable(type1, type2)) {
+                    panic("check_stmt: not comparable: %s and %s: %s",
+                            types_typeString(type1),
+                            types_typeString(type2),
+                            types_stmtString(stmt));
+                }
             }
         }
         break;
@@ -648,21 +669,27 @@ static void check_decl(checker_t *w, decl_t *decl) {
         break;
     case ast_DECL_VALUE:
         {
-            expr_t *val_type = NULL;
+            expr_t *b = NULL;
             if (decl->value.type != NULL) {
                 check_type(w, decl->value.type);
             }
             if (decl->value.value != NULL) {
-                val_type = check_expr(w, decl->value.value);
+                b = check_expr(w, decl->value.value);
             }
             if (decl->value.type == NULL) {
-                decl->value.type = val_type;
+                decl->value.type = b;
             }
-            if (val_type != NULL) {
-                if (val_type->type == ast_TYPE_QUAL) {
-                    val_type = val_type->qual.type;
+            if (b != NULL) {
+                if (b->type == ast_TYPE_QUAL) {
+                    b = b->qual.type;
                 }
-                types_check(decl->value.type, val_type, token_VAR);
+                expr_t *a = decl->value.type;
+                if (!types_areAssignable(a, b)) {
+                    panic("check_decl: not assignable %s and %s: %s",
+                            types_typeString(a),
+                            types_typeString(b),
+                            types_declString(decl));
+                }
             }
             scope_declare(w->topScope, decl);
             break;
