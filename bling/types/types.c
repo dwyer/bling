@@ -264,11 +264,21 @@ static bool types_areComparable(expr_t *a, expr_t *b) {
     return types_areAssignable(a, b);
 }
 
+static expr_t *check_expr(checker_t *w, expr_t *expr);
+
 static void check_type(checker_t *w, expr_t *expr) {
     switch (expr->type) {
 
     case ast_EXPR_IDENT:
         scope_resolve(w->topScope, expr);
+        break;
+
+    case ast_TYPE_ARRAY:
+        check_type(w, expr->array.elt);
+        if (expr->array.len) {
+            expr_t *len = check_expr(w, expr->array.len);
+            (void)len; // TODO assert that len resolves to int
+        }
         break;
 
     case ast_TYPE_ENUM:
@@ -403,12 +413,9 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             token_t kind = expr->basic_lit.kind;
             expr_t *type = NULL;
             switch (kind) {
-            case token_INT:
-                type = make_ident("int");
-                break;
-            case token_FLOAT:
-                type = make_ident("float");
-                break;
+            case token_CHAR: type = make_ident("char"); break;
+            case token_INT: type = make_ident("int"); break;
+            case token_FLOAT: type = make_ident("float"); break;
             case token_STRING:
                 {
                     expr_t x = {
@@ -510,21 +517,25 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             type = unwind_typedef(type);
             assert(type->type == ast_TYPE_STRUCT);
             printlg("selector: %s", expr->selector.sel->ident.name);
-            bool resolved = false;
             for (int i = 0; type->struct_.fields[i]; i++) {
                 decl_t *field = type->struct_.fields[i];
-                printlg("field: %s", field->field.name->ident.name);
-                if (streq(expr->selector.sel->ident.name,
-                            field->field.name->ident.name)) {
-                    resolved = true;
+                expr_t *name = field->field.name;
+                printlg("field: %s", name->ident.name);
+                if (streq(expr->selector.sel->ident.name, name->ident.name)) {
                     type = field->field.type;
-                    break;
+                    return type;
                 }
             }
-            if (!resolved) {
-                panic("struct has no field `%s`", expr->selector.sel->ident.name);
-            }
-            return type;
+            panic("struct has no field `%s`", expr->selector.sel->ident.name);
+            return NULL;
+        }
+
+    case ast_EXPR_SIZEOF:
+        {
+            check_type(w, expr->sizeof_.x);
+            expr_t *ident = make_ident("size_t");
+            scope_resolve(w->topScope, ident);
+            return ident;
         }
 
     case ast_EXPR_UNARY:

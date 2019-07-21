@@ -29,7 +29,7 @@ hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/null -w error/error.bling
 	$(BLINGC) -o /dev/null -w slice/slice.bling
 	$(BLINGC) -o /dev/null -w bling/token/token.bling
-	$(BLINGC) -o /dev/null -w bling/strings/strings.bling
+	$(BLINGC) -o /dev/null -w strings/strings.bling
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
