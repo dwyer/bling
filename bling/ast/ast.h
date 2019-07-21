@@ -14,8 +14,6 @@ typedef enum {
     ast_DECL_FIELD,
     ast_DECL_FUNC,
     ast_DECL_IMPORT,
-    ast_DECL_NATIVE,
-    ast_DECL_STORAGE,
     ast_DECL_TYPEDEF,
     ast_DECL_VALUE,
     _ast_DECL_END,
@@ -118,10 +116,6 @@ typedef struct decl_t {
             expr_t *type;
             expr_t *value;
         } enum_;
-
-        struct {
-            expr_t *name;
-        } native;
 
     };
 } decl_t;

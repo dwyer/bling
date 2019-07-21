@@ -28,13 +28,6 @@ static struct {
     {NULL},
 };
 
-static char *builtins[] = {
-    // builtin funcs
-    "esc",
-    // sentinel
-    NULL,
-};
-
 static void declare_natives(scope_t *s) {
     for (int i = 0; natives[i].name != NULL; i++) {
         expr_t name = {
@@ -63,21 +56,6 @@ static void declare_natives(scope_t *s) {
 
 extern void declare_builtins(scope_t *s) {
     declare_natives(s);
-    for (int i = 0; builtins[i] != NULL; i++) {
-        expr_t name = {
-            .type = ast_EXPR_IDENT,
-            .ident = {
-                .name = strdup(builtins[i]),
-            },
-        };
-        decl_t decl = {
-            .type = ast_DECL_NATIVE,
-            .native = {
-                .name = esc(name),
-            },
-        };
-        scope_declare(s, esc(decl));
-    }
 }
 
 typedef struct {
@@ -389,8 +367,6 @@ static expr_t *get_decl_type(decl_t *decl) {
         return decl->field.type;
     case ast_DECL_FUNC:
         return decl->func.type;
-    case ast_DECL_NATIVE:
-        return decl->native.name;
     case ast_DECL_TYPEDEF:
         return decl->typedef_.type;
     case ast_DECL_VALUE:

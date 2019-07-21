@@ -56,10 +56,6 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
         kind = obj_kind_FUNC;
         ident = decl->func.name;
         break;
-    case ast_DECL_NATIVE:
-        kind = obj_kind_TYPE;
-        ident = decl->native.name;
-        break;
     case ast_DECL_TYPEDEF:
         kind = obj_kind_TYPE;
         ident = decl->typedef_.name;

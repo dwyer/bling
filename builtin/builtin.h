@@ -12,6 +12,7 @@ static void *NULL = (void *)0;
 
 static const int BUFSIZ = 1024;
 
+extern void *esc(void *);
 extern void print(const char *fmt, ...);
 extern void panic(const char *fmt, ...);
 extern bool streq(const char *a, const char *b);
