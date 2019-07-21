@@ -218,7 +218,6 @@ static bool types_areIdentical(expr_t *a, expr_t *b) {
 
 static bool types_areAssignable(expr_t *a, expr_t *b) {
     if (types_areIdentical(a, b)) {
-        print("SHORTCUT!");
         return true;
     }
     if (a->type == ast_TYPE_QUAL) {
@@ -234,12 +233,20 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
         return types_areAssignable(a->ptr.type, b->ptr.type);
     }
     if (a->type == ast_EXPR_IDENT) {
-        if (b->type == ast_TYPE_ENUM) {
-            decl_t *decl = a->ident.obj->decl;
-            if (decl->type == ast_DECL_TYPEDEF) {
-                a = decl->typedef_.type;
-            }
+        decl_t *decl = a->ident.obj->decl;
+        assert(decl->type == ast_DECL_TYPEDEF);
+        a = decl->typedef_.type;
+        if (b->type == ast_EXPR_IDENT) {
+            decl_t *decl = b->ident.obj->decl;
+            assert(decl->type == ast_DECL_TYPEDEF);
+            b = decl->typedef_.type;
         }
+    }
+    if (b->type == ast_TYPE_ENUM && a->type == ast_TYPE_NATIVE && streq(a->native.name, "int")) {
+        return true;
+    }
+    if (a->type == ast_TYPE_ENUM && b->type == ast_TYPE_NATIVE && streq(b->native.name, "int")) {
+        return true;
     }
     return types_areIdentical(a, b);
 }
@@ -619,6 +626,10 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
         /* TODO walk in label scope */
         break;
 
+    case ast_STMT_POSTFIX:
+        check_expr(w, stmt->postfix.x);
+        break;
+
     case ast_STMT_RETURN:
         if (stmt->return_.x) {
             expr_t *type = check_expr(w, stmt->return_.x);
@@ -638,12 +649,17 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
             for (int i = 0; stmt->switch_.stmts[i]; i++) {
                 stmt_t *clause = stmt->switch_.stmts[i];
                 assert(clause->type == ast_STMT_CASE);
-                expr_t *type2 = check_expr(w, clause->case_.expr);
-                if (!types_areComparable(type1, type2)) {
-                    panic("check_stmt: not comparable: %s and %s: %s",
-                            types_typeString(type1),
-                            types_typeString(type2),
-                            types_stmtString(stmt));
+                if (clause->case_.expr) {
+                    expr_t *type2 = check_expr(w, clause->case_.expr);
+                    if (!types_areComparable(type1, type2)) {
+                        panic("check_stmt: not comparable: %s and %s: %s",
+                                types_typeString(type1),
+                                types_typeString(type2),
+                                types_stmtString(stmt));
+                    }
+                }
+                for (int j = 0; clause->case_.stmts[j]; j++) {
+                    check_stmt(w, clause->case_.stmts[j]);
                 }
             }
         }
