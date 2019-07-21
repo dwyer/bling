@@ -16,6 +16,7 @@ extern void *esc(void *);
 extern void print(const char *fmt, ...);
 extern void panic(const char *fmt, ...);
 extern bool streq(const char *a, const char *b);
+extern void assert(bool);
 
 extern int memcmp(const void *, const void *, size_t);
 extern void *memcpy(void *, const void *, size_t);

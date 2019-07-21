@@ -24,13 +24,13 @@ SRCS=bootstrap/bootstrap.h \
      cmd/blingc/main.c
 
 hello: $(BLINGC) all.bling
-	$(BLINGC) -o /dev/null -w syntax_test.bling
-	$(BLINGC) -o /dev/null -w error/error.bling
-	$(BLINGC) -o /dev/null -w slice/slice.bling
-	$(BLINGC) -o /dev/null -w map/map.bling
-	$(BLINGC) -o /dev/null -w bling/token/token.bling
-	$(BLINGC) -o /dev/null -w strings/strings.bling
-	$(BLINGC) -o /dev/null -w path/path.bling
+	# $(BLINGC) -o /dev/null -w syntax_test.bling
+	# $(BLINGC) -o /dev/null -w error/error.bling
+	# $(BLINGC) -o /dev/null -w slice/slice.bling
+	# $(BLINGC) -o /dev/null -w map/map.bling
+	# $(BLINGC) -o /dev/null -w bling/token/token.bling
+	# $(BLINGC) -o /dev/null -w strings/strings.bling
+	# $(BLINGC) -o /dev/null -w path/path.bling
 	$(BLINGC) -o /dev/null -w bling/ast/ast.bling
 
 a.out: $(BLINGC) all.bling
@@ -49,9 +49,9 @@ debug: $(BLINGC)
 
 $(BLINGC):
 	bazel build \
+	    -c dbg \
 	    --copt="-Wall" \
 	    --copt="-Werror" \
-	    --copt="-g0" \
 	    --copt="-fms-extensions" \
 	    --copt="-Wno-microsoft-anon-tag" \
 	    cmd/blingc

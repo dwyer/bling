@@ -96,8 +96,8 @@ extern void scope_declare(scope_t *s, decl_t *decl) {
         if (!ok) {
             panic("already declared: %s", ident->ident.name);
         }
-        // print("redeclaring %s", obj->name);
-        // map_set(&s->objects, obj->name, &obj);
+        print("redeclaring %s", obj->name);
+        map_set(&s->objects, obj->name, &obj);
     }
 }
 

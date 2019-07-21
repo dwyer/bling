@@ -17,6 +17,8 @@ $func panic(fmt *const char, ...);
 
 $func streq(a *const char, b *const char) bool;
 
+$func assert(bool);
+
 $func memcmp(*const void, *const void, size_t) int;
 
 $func memcpy(*void, *const void, size_t) *void;

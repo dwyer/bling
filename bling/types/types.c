@@ -185,6 +185,8 @@ static bool types_areIdentical(expr_t *a, expr_t *b) {
     if (a == b) {
         return true;
     }
+    assert(a);
+    assert(b);
     if (a->type != b->type) {
         return false;
     }
@@ -229,15 +231,11 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
     if (a->type == ast_TYPE_ARRAY && b->type == ast_TYPE_PTR) {
         return types_areAssignable(a->array.elt, b->ptr.type);
     }
-    if (a->type == ast_EXPR_IDENT) {
-        decl_t *decl = a->ident.obj->decl;
-        assert(decl->type == ast_DECL_TYPEDEF);
-        a = decl->typedef_.type;
-        if (b->type == ast_EXPR_IDENT) {
-            decl_t *decl = b->ident.obj->decl;
-            assert(decl->type == ast_DECL_TYPEDEF);
-            b = decl->typedef_.type;
-        }
+    while (a->type == ast_EXPR_IDENT) {
+        a = lookup_typedef(a);
+    }
+    while (b->type == ast_EXPR_IDENT) {
+        b = lookup_typedef(b);
     }
     if (b->type == ast_TYPE_ENUM && a->type == ast_TYPE_NATIVE && streq(a->native.name, "int")) {
         return true;
@@ -278,6 +276,7 @@ static bool types_areComparable(expr_t *a, expr_t *b) {
 static expr_t *check_expr(checker_t *w, expr_t *expr);
 
 static void check_type(checker_t *w, expr_t *expr) {
+    assert(expr);
     switch (expr->type) {
 
     case ast_EXPR_IDENT:
@@ -332,6 +331,8 @@ static void check_type(checker_t *w, expr_t *expr) {
                     printlg("check_type: declaring %s",
                             field->field.name->ident.name);
                     scope_declare(w->topScope, field);
+                } else {
+                    print("anonymous struct");
                 }
             }
             checker_closeScope(w);
@@ -387,7 +388,26 @@ static expr_t *get_ident_type(expr_t *ident) {
     return get_decl_type(obj->decl);
 }
 
+static expr_t *find_field(expr_t *type, expr_t *sel) {
+    assert(type->type == ast_TYPE_STRUCT);
+    for (int i = 0; type->struct_.fields && type->struct_.fields[i]; i++) {
+        decl_t *field = type->struct_.fields[i];
+        expr_t *name = field->field.name;
+        if (name) {
+            printlg("field: %s == %s?", name->ident.name, sel->ident.name);
+            if (streq(sel->ident.name, name->ident.name)) {
+                type = field->field.type;
+                return type;
+            }
+        } else {
+            return find_field(field->field.type, sel);
+        }
+    }
+    return NULL;
+}
+
 static expr_t *check_expr(checker_t *w, expr_t *expr) {
+    assert(expr);
     switch (expr->type) {
 
     case ast_EXPR_BINARY:
@@ -438,25 +458,34 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
         {
             expr_t *func = expr->call.func;
             expr_t *type = check_expr(w, func);
-            if (func->type == ast_EXPR_IDENT && streq(func->ident.name, "esc")) {
-                assert(expr->call.args[0] && !expr->call.args[1]);
-                expr_t *type = check_expr(w, expr->call.args[0]);
-                return types_makePtr(type);
+            if (func->type == ast_EXPR_IDENT) {
+                if (streq(func->ident.name, "esc")) {
+                    assert(expr->call.args[0] && !expr->call.args[1]);
+                    expr_t *type = check_expr(w, expr->call.args[0]);
+                    return types_makePtr(type);
+                }
             }
             if (type->type == ast_TYPE_PTR) {
                 type = type->ptr.type;
             }
-            assert(type->type == ast_TYPE_FUNC); // TODO handle builtins
+            if (type->type != ast_TYPE_FUNC) {
+                panic("check_expr: `%s` is not a func: %s",
+                        types_exprString(expr->call.func),
+                        types_exprString(expr));
+            }
+            int j = 0;
             for (int i = 0; expr->call.args[i]; i++) {
-                assert(type->func.params[i]);
-                decl_t *param = type->func.params[i];
+                decl_t *param = type->func.params[j];
                 assert(param->type == ast_DECL_FIELD);
                 expr_t *type = check_expr(w, expr->call.args[i]);
-                if (!types_areAssignable(param->field.type, type)) {
-                    panic("not assignable: %s and %s: %s",
-                            types_typeString(param->field.type),
-                            types_typeString(type),
-                            types_exprString(expr));
+                if (param->field.type) {
+                    if (!types_areAssignable(param->field.type, type)) {
+                        panic("not assignable: %s and %s: %s",
+                                types_typeString(param->field.type),
+                                types_typeString(type),
+                                types_exprString(expr));
+                    }
+                    j++;
                 }
             }
             return type->func.result;
@@ -511,19 +540,12 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
                 assert(expr->selector.tok != token_ARROW);
             }
             type = unwind_typedef(type);
-            assert(type->type == ast_TYPE_STRUCT);
             printlg("selector: %s", expr->selector.sel->ident.name);
-            for (int i = 0; type->struct_.fields[i]; i++) {
-                decl_t *field = type->struct_.fields[i];
-                expr_t *name = field->field.name;
-                printlg("field: %s", name->ident.name);
-                if (streq(expr->selector.sel->ident.name, name->ident.name)) {
-                    type = field->field.type;
-                    return type;
-                }
+            type = find_field(type, expr->selector.sel);
+            if (type == NULL) {
+                panic("struct has no field `%s`", expr->selector.sel->ident.name);
             }
-            panic("struct has no field `%s`", expr->selector.sel->ident.name);
-            return NULL;
+            return type;
         }
 
     case ast_EXPR_SIZEOF:
