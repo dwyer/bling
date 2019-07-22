@@ -9,6 +9,7 @@ SRCS=bootstrap/bootstrap.h \
      error/error.h error/error.c \
      slice/slice.h slice/slice.c \
      map/map.h map/map.c \
+     bytes/bytes.h bytes/bytes.c \
      strings/strings.h strings/strings.c \
      path/path.h path/path.c \
      os/os.h os/os.c \

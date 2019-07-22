@@ -258,6 +258,9 @@ static bool types_areIdentical(expr_t *a, expr_t *b) {
             return true;
         }
         return types_areIdentical(a->star.x, b->star.x);
+    case ast_TYPE_ARRAY:
+        // TODO check lengths
+        return types_areIdentical(a->array.elt, b->array.elt);
     case ast_TYPE_QUAL:
         return types_areIdentical(a->qual.type, b->qual.type);
     default:
