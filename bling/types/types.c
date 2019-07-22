@@ -215,18 +215,44 @@ static expr_t *lookup_typedef(expr_t *ident) {
 static expr_t *unwind_typedef(expr_t *type) {
     for (;;) {
         switch (type->type) {
-        case ast_TYPE_NATIVE:
-        case ast_TYPE_STRUCT:
-            return type;
         case ast_EXPR_IDENT:
             type = lookup_typedef(type);
             break;
+        case ast_TYPE_ENUM:
+        case ast_TYPE_NATIVE:
+        case ast_TYPE_STRUCT:
+            return type;
         case ast_TYPE_QUAL:
             type = type->qual.type;
             break;
         default:
             panic("unwind_typedef: not impl: %s", types_typeString(type));
         }
+    }
+}
+
+static bool types_isArithmetic(expr_t *type) {
+    switch (type->type) {
+    case ast_EXPR_IDENT:
+        return types_isArithmetic(unwind_typedef(type));
+    case ast_EXPR_STAR:
+    case ast_TYPE_ENUM:
+        return true;
+    case ast_TYPE_NATIVE:
+        return !streq(type->native.name, "void");
+    default:
+        return false;
+    }
+}
+
+static bool types_isNative(expr_t *type, const char *name) {
+    switch (type->type) {
+    case ast_EXPR_IDENT:
+        return streq(type->ident.name, name);
+    case ast_TYPE_NATIVE:
+        return true;
+    default:
+        return false;
     }
 }
 
@@ -299,19 +325,8 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
     return types_areIdentical(a, b);
 }
 
-static bool types_isNative(expr_t *type, const char *name) {
-    switch (type->type) {
-    case ast_EXPR_IDENT:
-        return streq(type->ident.name, name);
-    case ast_TYPE_NATIVE:
-        return true;
-    default:
-        return false;
-    }
-}
-
 static bool types_areComparable(expr_t *a, expr_t *b) {
-    if (types_areAssignable(a, b)) {
+    if (types_areIdentical(a, b)) {
         return true;
     }
     if (a->type == ast_TYPE_QUAL) {
@@ -320,10 +335,13 @@ static bool types_areComparable(expr_t *a, expr_t *b) {
     if (b->type == ast_TYPE_QUAL) {
         return types_areComparable(a, b->qual.type);
     }
+    if (types_isArithmetic(a) && types_isArithmetic(b)) {
+        return true;
+    }
     if (a->type == ast_EXPR_STAR && types_isNative(b, "int")) {
         return true;
     }
-    return types_areAssignable(a, b);
+    return types_areIdentical(a, b);
 }
 
 static expr_t *check_expr(checker_t *w, expr_t *expr);
