@@ -1,9 +1,7 @@
 #!/bin/sh
-ctmp=$(mktemp -u).c
-otmp=$(mktemp -u).out
-./bazel-bin/cmd/blingc/blingc -w -o $ctmp $1
+bin=${1%.*}.out
+./bazel-bin/cmd/blingc/blingc -w -o $bin $1
 if [ $? -eq 0 ]; then
-    cc -o $otmp $ctmp
-    mv $otmp ${1%.*}
+    mv $bin ${bin%.*}
 fi
 rm -f $ctmp

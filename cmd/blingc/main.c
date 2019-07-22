@@ -12,6 +12,8 @@ $import("path");
 $import("subc/parser");
 $import("subc/emitter");
 
+int execve(const char *path, char *argv[], char *envp[]);
+
 bool is_ext(const char *path, const char *ext) {
     return path_matchExt(ext, path);
 }
@@ -75,7 +77,7 @@ void compile_c(char *argv[]) {
 void compile_bling(char *argv[]) {
     bool emit_as_bling = false;
     config_t conf = {};
-    const char *dst = NULL;
+    char *dst = NULL;
     while (**argv == '-') {
         if (streq(*argv, "-o")) {
             argv++;
@@ -124,20 +126,35 @@ void compile_bling(char *argv[]) {
             } else {
                 emitter_emit_file(&emitter, file);
             }
-            // free(file->decls);
-            // free(file);
+            free(file->decls);
+            free(file);
         }
         argv++;
     }
     char *out = emitter_string(&emitter);
-    os_File *file = os_stdout;
     if (dst) {
-        file = os_create(dst, &err);
-    }
-    os_write(file, out, &err);
-    if (dst) {
-        emit_as_bling = is_ext(dst, ".bling");
-        os_close(file, &err);
+        if (is_ext(dst, ".out")) {
+            print("compiling %s", dst);
+            char *tmp = "/tmp/tmp.c";
+            ioutil_writeFile(tmp, out, 0644);
+            char *args[] = {
+                "/usr/bin/cc",
+                "-o", dst,
+                tmp,
+                "bazel-bin/bootstrap/libbootstrap.a",
+                "bazel-bin/fmt/libfmt.a",
+                "bazel-bin/os/libos.a",
+                NULL,
+            };
+            int code = execve(args[0], args, NULL);
+            if (code) {
+                print("%s exited with code: %d", argv[0], code);
+            }
+        } else {
+            ioutil_writeFile(dst, out, 0644);
+        }
+    } else {
+        os_write(os_stdout, out, &err);
     }
 }
 
