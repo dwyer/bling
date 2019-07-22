@@ -495,6 +495,8 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             case token_EQUAL:
             case token_GT:
             case token_GT_EQUAL:
+            case token_LAND:
+            case token_LOR:
             case token_LT:
             case token_LT_EQUAL:
             case token_NOT_EQUAL:
