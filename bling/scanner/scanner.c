@@ -1,6 +1,5 @@
 #include "bling/scanner/scanner.h"
 #include "bling/token/token.h"
-#include "slice/slice.h"
 
 static void next0(scanner_t *s) {
     s->offset = s->rd_offset;
@@ -14,13 +13,10 @@ static void skip_whitespace(scanner_t *s) {
     }
 }
 
-static char *skip_line(scanner_t *s) {
-    slice_t b = slice_init(sizeof(char), 0, 0);
+static void skip_line(scanner_t *s) {
     while (s->ch >= 0 && s->ch != '\n') {
-        b = append(b, &s->ch);
         next0(s);
     }
-    return slice_to_nil_array(b);
 }
 
 static bool is_letter(int ch) {
@@ -68,6 +64,14 @@ static char *make_string_slice(scanner_t *s, int start, int end) {
 static char *scan_ident(scanner_t *s) {
     int offs = s->offset;
     while (is_letter(s->ch) || is_digit(s->ch)) {
+        next0(s);
+    }
+    return make_string_slice(s, offs, s->offset);
+}
+
+static char *scan_pragma(scanner_t *s) {
+    int offs = s->offset;
+    while (s->ch > 0 && s->ch != '\n') {
         next0(s);
     }
     return make_string_slice(s, offs, s->offset);
@@ -134,7 +138,7 @@ static void scan_comment(scanner_t *s) {
     int offs = s->offset - 1;
     switch (s->ch) {
     case '/':
-        free(skip_line(s));
+        skip_line(s);
         break;
     case '*':
         next0(s);
@@ -182,7 +186,7 @@ scan_again:
             break;
         case '#':
             tok = token_HASH;
-            *lit = skip_line(s);
+            *lit = scan_pragma(s);
             break;
         case '(':
             tok = token_LPAREN;
