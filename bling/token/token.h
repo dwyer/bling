@@ -47,6 +47,7 @@ typedef enum {
     token_COMMA,
     token_ELLIPSIS,
     token_EOF,
+    token_HASH,
     token_LBRACE,
     token_LBRACK,
     token_LPAREN,

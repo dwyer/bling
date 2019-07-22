@@ -1,5 +1,6 @@
 #include "bling/scanner/scanner.h"
 #include "bling/token/token.h"
+#include "slice/slice.h"
 
 static void next0(scanner_t *s) {
     s->offset = s->rd_offset;
@@ -13,10 +14,13 @@ static void skip_whitespace(scanner_t *s) {
     }
 }
 
-static void skip_line(scanner_t *s) {
+static char *skip_line(scanner_t *s) {
+    slice_t b = slice_init(sizeof(char), 0, 0);
     while (s->ch >= 0 && s->ch != '\n') {
+        b = append(b, &s->ch);
         next0(s);
     }
+    return slice_to_nil_array(b);
 }
 
 static bool is_letter(int ch) {
@@ -130,7 +134,7 @@ static void scan_comment(scanner_t *s) {
     int offs = s->offset - 1;
     switch (s->ch) {
     case '/':
-        skip_line(s);
+        free(skip_line(s));
         break;
     case '*':
         next0(s);
@@ -177,8 +181,8 @@ scan_again:
             tok = token_EOF;
             break;
         case '#':
-            skip_line(s);
-            goto scan_again;
+            tok = token_HASH;
+            *lit = skip_line(s);
             break;
         case '(':
             tok = token_LPAREN;

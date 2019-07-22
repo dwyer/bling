@@ -467,6 +467,11 @@ extern void print_decl(emitter_t *p, decl_t *decl) {
         emit_token(p, token_SEMICOLON);
         break;
 
+    case ast_DECL_PRAGMA:
+        emit_token(p, token_HASH);
+        emit_string(p, decl->pragma.lit);
+        break;
+
     case ast_DECL_VALUE:
         emit_token(p, token_VAR);
         if (decl->value.name) {

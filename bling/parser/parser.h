@@ -31,3 +31,4 @@ extern void expect(parser_t *p, token_t tok);
 extern expr_t *basic_lit(parser_t *p, token_t kind);
 extern expr_t *identifier(parser_t *p);
 extern expr_t *primary_expression(parser_t *p);
+extern decl_t *parse_pragma(parser_t *p);

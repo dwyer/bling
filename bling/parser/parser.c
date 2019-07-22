@@ -2,6 +2,18 @@
 
 #include "path/path.h"
 
+extern decl_t *parse_pragma(parser_t *p) {
+    char *lit = strdup(p->lit);
+    expect(p, token_HASH);
+    decl_t decl = {
+        .type = ast_DECL_PRAGMA,
+        .pragma = {
+            .lit = lit,
+        },
+    };
+    return esc(decl);
+}
+
 extern void parser_init(parser_t *p, char *filename, char *src) {
     p->filename = filename;
     p->lit = NULL;
@@ -964,6 +976,8 @@ static expr_t *parse_type_spec(parser_t *p) {
 
 static decl_t *parse_decl(parser_t *p, bool is_external) {
     switch (p->tok) {
+    case token_HASH:
+        return parse_pragma(p);
     case token_TYPEDEF:
         {
             token_t keyword = p->tok;
@@ -1059,6 +1073,10 @@ static file_t *parse_file(parser_t *p) {
     expr_t *name = NULL;
     slice_t imports = slice_init(sizeof(uintptr_t), 0, 0);
     slice_t decls = slice_init(sizeof(decl_t *), 0, 0);
+    while (p->tok == token_HASH) {
+        decl_t *lit = parse_pragma(p);
+        decls = append(decls, &lit);
+    }
     if (accept(p, token_PACKAGE)) {
         expect(p, token_LPAREN);
         name = identifier(p);

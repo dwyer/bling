@@ -1069,6 +1069,9 @@ static expr_t *specifier_qualifier_list(parser_t *p) {
 
 static decl_t *declaration(parser_t *p, bool is_external) {
     // declaration : declaration_specifiers init_declarator_list ';' ;
+    if (p->tok == token_HASH) {
+        return parse_pragma(p);
+    }
     if (p->tok == token_TYPEDEF) {
         token_t keyword = p->tok;
         expect(p, keyword);
@@ -1152,6 +1155,10 @@ static file_t *parse_cfile(parser_t *p) {
     slice_t decls = {.size = sizeof(decl_t *)};
     slice_t imports = {.size = sizeof(decl_t *)};
     expr_t *name = NULL;
+    while (p->tok == token_HASH) {
+        decl_t *lit = parse_pragma(p);
+        decls = append(decls, &lit);
+    }
     if (accept(p, token_PACKAGE)) {
         expect(p, token_LPAREN);
         name = identifier(p);

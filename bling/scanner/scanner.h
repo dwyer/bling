@@ -2,6 +2,7 @@
 #include "bling/token/token.h"
 
 $import("bling/token");
+$import("slice");
 
 typedef struct {
     char *src;

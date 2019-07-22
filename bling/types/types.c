@@ -826,6 +826,8 @@ static void check_decl(checker_t *w, decl_t *decl) {
         printlg("check_decl: declaring %s", decl->func.name->ident.name);
         scope_declare(w->topScope, decl);
         break;
+    case ast_DECL_PRAGMA:
+        break;
     case ast_DECL_TYPEDEF:
         check_type(w, decl->typedef_.type);
         printlg("check_decl: declaring %s", decl->typedef_.name->ident.name);
@@ -860,7 +862,7 @@ static void check_decl(checker_t *w, decl_t *decl) {
             break;
         }
     default:
-        panic("check_decl: not implemented: %d", decl->type);
+        panic("check_decl: not implemented: %s", types_declString(decl));
     }
 }
 
