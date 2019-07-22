@@ -2,16 +2,10 @@
 
 #include "path/path.h"
 
-#include <sys/stat.h>
-#include <dirent.h>
-
-static const int STDIN_FILENO = 0;
-static const int STDOUT_FILENO = 1;
-static const int STDERR_FILENO = 2;
-
-extern size_t read(int, void *, size_t); // libc
-extern size_t write(int, const void *, size_t); // libc
-extern int close(int); // libc
+#include <dirent.h> // DIR, dirent, opendir, readdir, closedir
+#include <fcntl.h> // open
+#include <sys/stat.h> // stat
+#include <unistd.h> // read, close, write, STD*_FILENO
 
 static os_File _stdin = {.fd = STDIN_FILENO, .name = "/dev/stdin"};
 static os_File _stdout = {.fd = STDOUT_FILENO, .name = "/dev/stdout"};

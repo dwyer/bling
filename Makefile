@@ -12,7 +12,7 @@ SRCS=bootstrap/bootstrap.h \
      bytes/bytes.h bytes/bytes.c \
      strings/strings.h strings/strings.c \
      path/path.h path/path.c \
-     os/os.h os/os.c \
+     os/os.h \
      io/ioutil/ioutil.h io/ioutil/ioutil.c \
      bling/token/token.h bling/token/token.c \
      bling/ast/ast.h bling/ast/ast.c \
@@ -37,7 +37,7 @@ hello: $(BLINGC) all.bling
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
-	cc all.c
+	cc all.c bazel-bin/os/libos.a
 
 test_compiler: $(BLINGC)
 	./test_compiler.sh

@@ -79,11 +79,16 @@ static struct {
     {"int", sizeof(int), true},
     {"void", sizeof(void)},
     // libc types
-    {"DIR", sizeof(DIR)},
     {"FILE", sizeof(FILE)},
+    {"int16_t", sizeof(int16_t), true},
+    {"int32_t", sizeof(int32_t), true},
+    {"int64_t", sizeof(int64_t), true},
+    {"int8_t", sizeof(int8_t), true},
     {"size_t", sizeof(size_t), true},
+    {"uint16_t", sizeof(uint16_t), true},
     {"uint32_t", sizeof(uint32_t), true},
     {"uint64_t", sizeof(uint64_t), true},
+    {"uint8_t", sizeof(uint8_t), true},
     {"uintptr_t", sizeof(uintptr_t), true},
     {"va_list", sizeof(va_list)},
     // sentinel
