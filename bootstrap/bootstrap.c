@@ -1,5 +1,6 @@
 #include "bootstrap.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 
 extern int backtrace(void **, int); // libc

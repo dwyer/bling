@@ -89,7 +89,6 @@ static struct {
     {"uint64_t", sizeof(uint64_t), true},
     {"uint8_t", sizeof(uint8_t), true},
     {"uintptr_t", sizeof(uintptr_t), true},
-    {"va_list", sizeof(va_list)},
     // sentinel
     {NULL},
 };

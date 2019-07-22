@@ -5,7 +5,6 @@ BLINGC=bazel-bin/cmd/blingc/blingc
 .PHONY: test $(BLINGC) all.bling
 
 SRCS=bootstrap/bootstrap.h \
-     bootstrap/bootstrap.c \
      fmt/fmt.h \
      error/error.h error/error.c \
      slice/slice.h slice/slice.c \

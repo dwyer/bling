@@ -1,7 +1,6 @@
 #ifndef __CLIB_H__
 #define __CLIB_H__
 
-#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 
