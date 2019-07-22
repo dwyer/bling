@@ -310,7 +310,7 @@ extern void print_stmt(emitter_t *p, stmt_t *stmt) {
 }
 
 static bool is_void(expr_t *type) {
-    return type->type == ast_EXPR_IDENT && streq(type->ident.name, "void");
+    return type == NULL || (type->type == ast_EXPR_IDENT && streq(type->ident.name, "void"));
 }
 
 extern void print_type(emitter_t *p, expr_t *type) {

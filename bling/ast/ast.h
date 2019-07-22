@@ -319,7 +319,7 @@ typedef struct {
 typedef struct {
     char *name;
     scope_t *scope;
-    slice_t files;
+    file_t **files;
 } package_t;
 
 extern void scope_resolve(scope_t *s, expr_t *x);

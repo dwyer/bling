@@ -43,7 +43,7 @@ test_compiler: $(BLINGC)
 	./test_compiler.sh
 
 all.bling: $(BLINGC)
-	$(BLINGC) -o all.bling $(SRCS)
+	$(BLINGC) -c -o all.bling $(SRCS)
 	./splitall.py
 
 debug: $(BLINGC)

@@ -1,6 +1,7 @@
 #include "bling/ast/ast.h"
 #include "bling/emitter/emitter.h"
 #include "bling/parser/parser.h"
+#include "bling/types/types.h"
 
 extern void printlg(const char *fmt, ...) {}
 
@@ -121,18 +122,19 @@ extern void declare_builtins(scope_t *s) {
 }
 
 typedef struct {
-    scope_t *topScope;
+    config_t *conf;
+    scope_t *scope;
     expr_t *result;
-    bool strict;
+    slice_t files;
 } checker_t;
 
 static void checker_openScope(checker_t *w) {
-    w->topScope = scope_new(w->topScope);
+    w->scope = scope_new(w->scope);
 }
 
 static void checker_closeScope(checker_t *w) {
-    scope_t *inner = w->topScope;
-    w->topScope = w->topScope->outer;
+    scope_t *inner = w->scope;
+    w->scope = w->scope->outer;
     scope_free(inner);
 }
 
@@ -343,7 +345,7 @@ static void check_type(checker_t *w, expr_t *expr) {
     switch (expr->type) {
 
     case ast_EXPR_IDENT:
-        scope_resolve(w->topScope, expr);
+        scope_resolve(w->scope, expr);
         break;
 
     case ast_TYPE_ARRAY:
@@ -359,7 +361,7 @@ static void check_type(checker_t *w, expr_t *expr) {
             decl_t *decl = expr->enum_.enums[i];
             decl->value.type = expr;
             printlg("check_type: declaring %s", decl->value.name->ident.name);
-            scope_declare(w->topScope, decl);
+            scope_declare(w->scope, decl);
         }
         break;
 
@@ -393,7 +395,7 @@ static void check_type(checker_t *w, expr_t *expr) {
                 if (field->field.name) {
                     printlg("check_type: declaring %s",
                             field->field.name->ident.name);
-                    scope_declare(w->topScope, field);
+                    scope_declare(w->scope, field);
                 } else {
                     printlg("anonymous struct");
                 }
@@ -565,7 +567,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
 
     case ast_EXPR_IDENT:
         {
-            scope_resolve(w->topScope, expr);
+            scope_resolve(w->scope, expr);
             return get_ident_type(expr);
         }
 
@@ -619,7 +621,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
         {
             check_type(w, expr->sizeof_.x);
             expr_t *ident = types_makeIdent("size_t");
-            scope_resolve(w->topScope, ident);
+            scope_resolve(w->scope, ident);
             return ident;
         }
 
@@ -802,16 +804,16 @@ static void check_file(checker_t *w, file_t *file);
 static void check_import(checker_t *w, decl_t *import) {
     char *path = constant_stringVal(import->import.path);
     printlg("importing %s", path);
-    for (int i = 0; i < len(w->topScope->filenames); i++) {
+    for (int i = 0; i < len(w->scope->filenames); i++) {
         char *s = NULL;
-        slice_get(&w->topScope->filenames, i, &s);
+        slice_get(&w->scope->filenames, i, &s);
         if (streq(path, s)) {
             printlg("already imported \"%s\"", path);
             free(path);
             return;
         }
     }
-    w->topScope->filenames = append(w->topScope->filenames, &path);
+    w->scope->filenames = append(w->scope->filenames, &path);
     error_t *err = NULL;
     file_t **files = parser_parseDir(path, &err);
     if (err) {
@@ -827,14 +829,14 @@ static void check_decl(checker_t *w, decl_t *decl) {
     case ast_DECL_FUNC:
         check_type(w, decl->func.type);
         printlg("check_decl: declaring %s", decl->func.name->ident.name);
-        scope_declare(w->topScope, decl);
+        scope_declare(w->scope, decl);
         break;
     case ast_DECL_PRAGMA:
         break;
     case ast_DECL_TYPEDEF:
         check_type(w, decl->typedef_.type);
         printlg("check_decl: declaring %s", decl->typedef_.name->ident.name);
-        scope_declare(w->topScope, decl);
+        scope_declare(w->scope, decl);
         break;
     case ast_DECL_VALUE:
         {
@@ -861,7 +863,7 @@ static void check_decl(checker_t *w, decl_t *decl) {
                 }
             }
             printlg("check_decl: declaring %s", decl->value.name->ident.name);
-            scope_declare(w->topScope, decl);
+            scope_declare(w->scope, decl);
             break;
         }
     default:
@@ -880,7 +882,7 @@ static void check_func(checker_t *w, decl_t *decl) {
             if (param->field.name) {
                 printlg("check_func: declaring param `%s`",
                         param->field.name->ident.name);
-                scope_declare(w->topScope, param);
+                scope_declare(w->scope, param);
             }
         }
         w->result = decl->func.type->func.result;
@@ -898,16 +900,27 @@ static void check_file(checker_t *w, file_t *file) {
     for (int i = 0; file->imports[i] != NULL; i++) {
         check_import(w, file->imports[i]);
     }
-    for (int i = 0; file->decls[i] != NULL; i++) {
-        check_decl(w, file->decls[i]);
-    }
-    for (int i = 0; file->decls[i] != NULL; i++) {
-        check_func(w, file->decls[i]);
+    w->files = append(w->files, &file);
+    if (w->conf->strict) {
+        for (int i = 0; file->decls[i] != NULL; i++) {
+            check_decl(w, file->decls[i]);
+        }
+        for (int i = 0; file->decls[i] != NULL; i++) {
+            check_func(w, file->decls[i]);
+        }
     }
 }
 
-extern void types_checkFile(file_t *file) {
-    scope_t *scope = file->scope;
-    checker_t w = {.topScope = scope};
+extern package_t types_checkFile(config_t *conf, file_t *file) {
+    checker_t w = {
+        .conf = conf,
+        .scope = file->scope,
+        .files = slice_init(sizeof(file_t *), 0, 0),
+    };
     check_file(&w, file);
+    package_t pkg = {
+        .files = slice_to_nil_array(w.files),
+        .scope = w.scope,
+    };
+    return pkg;
 }

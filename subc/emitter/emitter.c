@@ -453,8 +453,8 @@ static void emit_c_decl(emitter_t *e, decl_t *decl) {
         break;
 
     case ast_DECL_PRAGMA:
-        emit_token(e, token_HASH);
-        emit_string(e, decl->pragma.lit);
+        // emit_token(e, token_HASH);
+        // emit_string(e, decl->pragma.lit);
         break;
 
     case ast_DECL_TYPEDEF:

@@ -14,4 +14,8 @@ extern char *types_exprString(expr_t *expr);
 extern char *types_stmtString(stmt_t *stmt);
 extern char *types_typeString(expr_t *expr);
 
-extern void types_checkFile(file_t *file);
+typedef struct {
+    bool strict;
+} config_t;
+
+extern package_t types_checkFile(config_t *conf, file_t *file);
