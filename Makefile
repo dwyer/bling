@@ -6,6 +6,7 @@ BLINGC=bazel-bin/cmd/blingc/blingc
 
 SRCS=bootstrap/bootstrap.h \
      bootstrap/bootstrap.c \
+     fmt/fmt.h \
      error/error.h error/error.c \
      slice/slice.h slice/slice.c \
      map/map.h map/map.c \
@@ -38,7 +39,7 @@ hello: $(BLINGC) all.bling
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
-	cc all.c bazel-bin/os/libos.a
+	cc bazel-bin/fmt/libfmt.a bazel-bin/os/libos.a all.c
 
 test_compiler: $(BLINGC)
 	./test_compiler.sh

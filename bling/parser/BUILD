@@ -11,9 +11,9 @@ cc_library(
         "//bling/ast",
         "//bling/scanner",
         "//bling/token",
+        "//fmt",
         "//io/ioutil",
         "//path",
-        "//slice",
     ],
     visibility = ["//visibility:public"],
 )

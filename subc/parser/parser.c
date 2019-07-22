@@ -1,5 +1,7 @@
 #include "subc/parser/parser.h"
 
+#include "fmt/fmt.h"
+
 static expr_t *cast_expression(parser_t *p);
 static expr_t *expression(parser_t *p);
 static expr_t *constant_expression(parser_t *p);
@@ -190,7 +192,7 @@ static expr_t *unary_expression(parser_t *p) {
         }
     case token_DEC:
     case token_INC:
-        parser_error(p, "unary `%s` not supported in subc", token_string(p->tok));
+        parser_error(p, fmt_sprintf("unary `%s` not supported in subc", token_string(p->tok)));
         return NULL;
     default:
         return postfix_expression(p, NULL);
@@ -1005,7 +1007,7 @@ static expr_t *type_specifier(parser_t *p) {
     switch (p->tok) {
     case token_SIGNED:
     case token_UNSIGNED:
-        parser_error(p, "`%s` is not supported in subc", token_string(p->tok));
+        parser_error(p, fmt_sprintf("`%s` is not supported in subc", token_string(p->tok)));
         break;
     case token_STRUCT:
     case token_UNION:
@@ -1019,9 +1021,9 @@ static expr_t *type_specifier(parser_t *p) {
             x = identifier(p);
         } else {
             if (p->lit) {
-                parser_error(p, "expected type, got %s", p->lit);
+                parser_error(p, fmt_sprintf("expected type, got %s", p->lit));
             } else {
-                parser_error(p, "expected type, got %s", token_string(p->tok));
+                parser_error(p, fmt_sprintf("expected type, got %s", token_string(p->tok)));
             }
         }
         break;

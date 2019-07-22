@@ -1,5 +1,7 @@
 #include "bling/parser/parser.h"
 
+#include "bytes/bytes.h"
+#include "fmt/fmt.h"
 #include "path/path.h"
 
 extern decl_t *parse_pragma(parser_t *p) {
@@ -59,21 +61,13 @@ extern void parser_error(parser_t *p, char *fmt, ...) {
             col++;
         }
     }
-    fprintf(stderr, "%s:%d:%d: ", p->filename, line, col);
-    va_list ap;
-    va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    fputc('\n', stderr);
+    buffer_t buf = {};
     for (int i = line_offset; ; i++) {
         int ch = p->scanner.src[i];
-        fputc(ch, stderr);
-        if (!ch || ch == '\n') {
-            break;
-        }
+        buffer_writeByte(&buf, ch, NULL);
     }
-    fputc('\n', stderr);
-    panic("panicing");
+    panic(fmt_sprintf("%s:%d:%d: %s\n%s", p->filename, line, col, fmt,
+                buffer_string(&buf)));
 }
 
 extern void parser_next(parser_t *p) {
@@ -95,7 +89,7 @@ extern void expect(parser_t *p, token_t tok) {
         if (lit == NULL) {
             lit = token_string(p->tok);
         }
-        parser_error(p, "expected `%s`, got `%s`", token_string(tok), lit);
+        parser_error(p, fmt_sprintf("expected `%s`, got `%s`", token_string(tok), lit));
     }
     parser_next(p);
 }
@@ -154,7 +148,7 @@ extern expr_t *primary_expression(parser_t *p) {
             return esc(x);
         }
     default:
-        parser_error(p, "bad expr: %s: %s", token_string(p->tok), p->lit);
+        parser_error(p, fmt_sprintf("bad expr: %s: %s", token_string(p->tok), p->lit)) ;
         return NULL;
     }
 }
@@ -968,7 +962,7 @@ static expr_t *parse_type_spec(parser_t *p) {
         }
         break;
     default:
-        parser_error(p, "expected type, got %s", token_string(p->tok));
+        parser_error(p, fmt_sprintf("expected type, got %s", token_string(p->tok)));
         break;
     }
     return x;
@@ -1038,7 +1032,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
             return esc(decl);
         }
     default:
-        parser_error(p, "cant handle it: %s", token_string(p->tok));
+        parser_error(p, fmt_sprintf("cant handle it: %s", token_string(p->tok)));
         return NULL;
     }
 }

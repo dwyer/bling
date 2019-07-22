@@ -7,6 +7,8 @@
 $import("bling/ast");
 $import("bling/scanner");
 $import("bling/token");
+$import("bytes");
+$import("fmt");
 $import("io/ioutil");
 $import("path");
 
