@@ -43,6 +43,7 @@ hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/null -w bling/types/types.bling
 	$(BLINGC) -o /dev/null -w subc/parser/parser.bling
 	$(BLINGC) -o /dev/null -w subc/emitter/emitter.bling
+	$(BLINGC) -o /dev/null -w cmd/blingc/blingc.bling
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling

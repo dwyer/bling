@@ -486,8 +486,11 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
 
     case ast_EXPR_BINARY:
         {
+            printlg("walking binary x");
             expr_t *typ1 = check_expr(w, expr->binary.x);
+            printlg("walking binary y");
             expr_t *typ2 = check_expr(w, expr->binary.y);
+            printlg("walked binary");
             if (!types_areComparable(typ1, typ2)) {
                 panic("not compariable: %s and %s: %s",
                         types_typeString(typ1),
@@ -515,10 +518,18 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             token_t kind = expr->basic_lit.kind;
             expr_t *type = NULL;
             switch (kind) {
-            case token_CHAR: type = types_makeIdent("char"); break;
-            case token_INT: type = types_makeIdent("int"); break;
-            case token_FLOAT: type = types_makeIdent("float"); break;
-            case token_STRING: type = types_makePtr(types_makeIdent("char")); break;
+            case token_CHAR:
+                type = types_makeIdent("char");
+                break;
+            case token_FLOAT:
+                type = types_makeIdent("float");
+                break;
+            case token_INT:
+                type = types_makeIdent("int");
+                break;
+            case token_STRING:
+                type = types_makePtr(types_makeIdent("char"));
+                break;
             default:
                 panic("check_expr: not implmented: %s", token_string(kind));
                 break;
@@ -642,12 +653,17 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
     case ast_EXPR_STAR:
         {
             expr_t *type = check_expr(w, expr->star.x);
-            if (type->type != ast_EXPR_STAR) {
-                panic("check_expr: deferencing a non-pointer `%s`: %s",
+            switch (type->type) {
+            case ast_EXPR_STAR:
+                return type->star.x;
+            case ast_TYPE_ARRAY:
+                return type->array.elt;
+            default:
+                panic("check_expr: derefencing a non-pointer `%s`: %s",
                         types_typeString(type),
                         types_exprString(expr));
+                return NULL;
             }
-            return type->star.x;
         }
 
     case ast_EXPR_UNARY:
@@ -730,11 +746,13 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
             check_stmt(w, stmt->iter.init);
         }
         if (stmt->iter.cond) {
+            printlg("walking for/while cond");
             check_expr(w, stmt->iter.cond);
         }
         if (stmt->iter.post) {
             check_stmt(w, stmt->iter.post);
         }
+        printlg("walking for/while body");
         check_stmt(w, stmt->iter.body);
         if (stmt->iter.init || stmt->iter.post) {
             checker_closeScope(w);
