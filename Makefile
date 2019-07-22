@@ -26,16 +26,21 @@ SRCS=bootstrap/bootstrap.h \
 
 hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/null -w syntax_test.bling
+	$(BLINGC) -o /dev/null -w fmt/fmt.bling
 	$(BLINGC) -o /dev/null -w error/error.bling
 	$(BLINGC) -o /dev/null -w slice/slice.bling
 	$(BLINGC) -o /dev/null -w map/map.bling
-	$(BLINGC) -o /dev/null -w bling/token/token.bling
+	$(BLINGC) -o /dev/null -w bytes/bytes.bling
 	$(BLINGC) -o /dev/null -w strings/strings.bling
 	$(BLINGC) -o /dev/null -w path/path.bling
+	$(BLINGC) -o /dev/null -w os/os.bling
+	$(BLINGC) -o /dev/null -w io/ioutil/ioutil.bling
+	$(BLINGC) -o /dev/null -w bling/token/token.bling
 	$(BLINGC) -o /dev/null -w bling/ast/ast.bling
 	$(BLINGC) -o /dev/null -w bling/scanner/scanner.bling
 	$(BLINGC) -o /dev/null -w bling/parser/parser.bling
 	$(BLINGC) -o /dev/null -w bling/emitter/emitter.bling
+	$(BLINGC) -o /dev/null -w bling/types/types.bling
 	$(BLINGC) -o /dev/null -w subc/parser/parser.bling
 	$(BLINGC) -o /dev/null -w subc/emitter/emitter.bling
 

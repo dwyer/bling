@@ -3,6 +3,7 @@
 
 $import("bling/ast");
 $import("bling/emitter");
+$import("bling/parser");
 
 extern void declare_builtins(scope_t *s);
 

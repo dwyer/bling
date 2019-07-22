@@ -316,6 +316,9 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
     while (b->type == ast_EXPR_IDENT) {
         b = lookup_typedef(b);
     }
+    if (types_isNative(a, "bool") && types_isArithmetic(b)) {
+        return true;
+    }
     if (b->type == ast_TYPE_ENUM && a->type == ast_TYPE_NATIVE && streq(a->native.name, "int")) {
         return true;
     }
