@@ -7,7 +7,6 @@ cc_library(
         "path.h",
     ],
     deps = [
-        "//slice",
         "//strings",
     ],
     visibility = ["//visibility:public"],

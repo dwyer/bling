@@ -28,19 +28,19 @@ extern char *ioutil_read_file(const char *name, error_t **error) {
     if (err != NULL) {
         goto end;
     }
-    strings_Builder b = {};
+    buffer_t b = {};
     for (;;) {
         char buf[BUFSIZ];
         int n = os_read(file, buf, BUFSIZ, &err);
         if (err != NULL) {
             goto end;
         }
-        strings_Builder_write(&b, buf, n, NULL); // ignore error
+        buffer_write(&b, buf, n, NULL); // ignore error
         if (n < BUFSIZ) {
             break;
         }
     }
-    ret = strings_Builder_string(&b);
+    ret = buffer_string(&b);
 end:
     if (file != NULL) {
         os_close(file, &err);

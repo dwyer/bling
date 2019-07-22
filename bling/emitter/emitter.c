@@ -2,11 +2,11 @@
 #include "bling/token/token.h"
 
 extern char *emitter_string(emitter_t *e) {
-    return strings_Builder_string(&e->builder);
+    return buffer_string(&e->buf);
 }
 
 extern void emit_string(emitter_t *e, const char *s) {
-    strings_Builder_write(&e->builder, s, strlen(s), NULL);
+    buffer_write(&e->buf, s, strlen(s), NULL);
 }
 
 extern void emit_space(emitter_t *e) {
