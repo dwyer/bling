@@ -5,7 +5,6 @@ cc_library(
     ],
     hdrs = [
         "bootstrap.h",
-        "libc.h",
     ],
     defines = [
         "BOOTSTRAP",

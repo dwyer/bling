@@ -21,10 +21,13 @@ void usage(const char *progname) {
 }
 
 void emit_rawfile(emitter_t *e, const char *filename) {
-    emit_string(e, "#include \"");
-    emit_string(e, filename);
-    emit_string(e, "\"");
-    emit_newline(e);
+    error_t *err = NULL;
+    char *src = ioutil_read_file(filename, &err);
+    if (err) {
+        panic(err->error);
+    }
+    emit_string(e, src);
+    free(src);
 }
 
 void compile_c(char *argv[]) {
@@ -100,7 +103,7 @@ void compile_bling(char *argv[]) {
     emitter_t emitter = {};
     error_t *err = NULL;
     if (!emit_as_bling) {
-        emit_rawfile(&emitter, "bootstrap/bootstrap.c");
+        emit_rawfile(&emitter, "bootstrap/bootstrap.h");
     }
     while (*argv) {
         char *filename = *argv;

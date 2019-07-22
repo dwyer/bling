@@ -1,16 +1,20 @@
-#pragma once
+#ifndef __BOOTSTRAP_H__
+#define __BOOTSTRAP_H__
+
+#include <stddef.h>
+#include <stdint.h>
 
 #define $import(_)
 #define $package(_)
 
-#include "libc.h"
+#define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
+
+#define esc(x) memcpy(malloc(sizeof(x)), &(x), sizeof(x))
 
 typedef char bool;
 
 static const bool false = (bool)0;
 static const bool true = !false;
-
-static void *nil = (void *)0;
 
 extern void print(const char *fmt, ...);
 extern void panic(const char *fmt, ...);
@@ -27,3 +31,5 @@ extern size_t strlen(const char *);
 extern void *malloc(size_t);
 extern void free(void *);
 extern void *realloc(void *, size_t); // used by slice append
+
+#endif

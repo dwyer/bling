@@ -38,7 +38,7 @@ hello: $(BLINGC) all.bling
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
-	cc bazel-bin/fmt/libfmt.a bazel-bin/os/libos.a all.c
+	cc bazel-bin/bootstrap/libbootstrap.a bazel-bin/fmt/libfmt.a bazel-bin/os/libos.a all.c
 
 test_compiler: $(BLINGC)
 	./test_compiler.sh
