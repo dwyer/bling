@@ -22,6 +22,7 @@ end:
 }
 
 extern char *ioutil_read_file(const char *name, error_t **error) {
+    const int bufsiz = 1024;
     char *ret = NULL;
     error_t *err = NULL;
     os_File *file = os_open(name, &err);
@@ -30,13 +31,13 @@ extern char *ioutil_read_file(const char *name, error_t **error) {
     }
     buffer_t b = {};
     for (;;) {
-        char buf[BUFSIZ];
-        int n = os_read(file, buf, BUFSIZ, &err);
+        char buf[bufsiz];
+        int n = os_read(file, buf, bufsiz, &err);
         if (err != NULL) {
             goto end;
         }
         buffer_write(&b, buf, n, NULL); // ignore error
-        if (n < BUFSIZ) {
+        if (n < bufsiz) {
             break;
         }
     }

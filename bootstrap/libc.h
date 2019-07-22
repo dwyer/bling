@@ -4,7 +4,6 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
 

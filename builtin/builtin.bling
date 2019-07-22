@@ -7,8 +7,6 @@ $var true const bool = !false;
 
 $var NULL *void = $as(*void) 0;
 
-$var BUFSIZ const int = 1024;
-
 $func esc(*void) *void;
 
 $func print(fmt *const char, ...);

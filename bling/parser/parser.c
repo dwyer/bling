@@ -65,6 +65,9 @@ extern void parser_error(parser_t *p, char *fmt, ...) {
     for (int i = line_offset; ; i++) {
         int ch = p->scanner.src[i];
         buffer_writeByte(&buf, ch, NULL);
+        if (!ch || ch == '\n') {
+            break;
+        }
     }
     panic(fmt_sprintf("%s:%d:%d: %s\n%s", p->filename, line, col, fmt,
                 buffer_string(&buf)));

@@ -19,7 +19,7 @@ extern char *bytes_join(const char *a[], int size, const char *sep) {
 static void buffer_init(buffer_t *b) {
     if (b->size == 0) {
         b->size = sizeof(char);
-        b->cap = BUFSIZ;
+        b->cap = 1024;
     }
 }
 

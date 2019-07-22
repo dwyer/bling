@@ -79,7 +79,6 @@ static struct {
     {"int", sizeof(int), true},
     {"void", sizeof(void)},
     // libc types
-    {"FILE", sizeof(FILE)},
     {"int16_t", sizeof(int16_t), true},
     {"int32_t", sizeof(int32_t), true},
     {"int64_t", sizeof(int64_t), true},
@@ -141,22 +140,6 @@ static void checker_closeScope(checker_t *w) {
     scope_t *inner = w->scope;
     w->scope = w->scope->outer;
     scope_free(inner);
-}
-
-extern void printScope(scope_t *s) {
-    int indent = 1;
-    while (s) {
-        map_iter_t iter = map_iter(&s->objects);
-        char *key = NULL;
-        while (map_iter_next(&iter, &key, NULL)) {
-            for (int i = 0; i < indent; i++) {
-                fputs("\t", stderr);
-            }
-            printlg("%s", key);
-        }
-        s = s->outer;
-        indent++;
-    }
 }
 
 extern char *types_declString(decl_t *decl) {

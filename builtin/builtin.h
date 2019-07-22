@@ -10,7 +10,7 @@ static const bool true = !false;
 
 static void *NULL = (void *)0;
 
-static const int BUFSIZ = 1024;
+static const int bufsiz = 1024;
 
 extern void *esc(void *);
 extern void print(const char *fmt, ...);
