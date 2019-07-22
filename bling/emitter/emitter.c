@@ -1,6 +1,10 @@
 #include "bling/emitter/emitter.h"
 #include "bling/token/token.h"
 
+extern char *emitter_string(emitter_t *e) {
+    return strings_Builder_string(&e->builder);
+}
+
 extern void emit_string(emitter_t *e, const char *s) {
     strings_Builder_write(&e->builder, s, strlen(s), NULL);
 }

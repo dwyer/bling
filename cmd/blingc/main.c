@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
         free(file);
         argv++;
     }
-    char *out = strings_Builder_string(&emitter.builder);
+    char *out = emitter_string(&emitter);
     os_File *file = os_stdout;
     if (dst) {
         file = os_create(dst, &err);

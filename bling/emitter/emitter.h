@@ -11,6 +11,8 @@ typedef struct {
     bool skipSemi;
 } emitter_t;
 
+extern char *emitter_string(emitter_t *e);
+
 extern void emit_string(emitter_t *p, const char *s);
 extern void emit_space(emitter_t *e);
 extern void emit_newline(emitter_t *e);

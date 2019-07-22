@@ -155,25 +155,25 @@ extern void printScope(scope_t *s) {
 extern char *types_declString(decl_t *decl) {
     emitter_t e = {};
     print_decl(&e, decl);
-    return strings_Builder_string(&e.builder);
+    return emitter_string(&e);
 }
 
 extern char *types_exprString(expr_t *expr) {
     emitter_t e = {};
     print_expr(&e, expr);
-    return strings_Builder_string(&e.builder);
+    return emitter_string(&e);
 }
 
 extern char *types_stmtString(stmt_t *stmt) {
     emitter_t e = {};
     print_stmt(&e, stmt);
-    return strings_Builder_string(&e.builder);
+    return emitter_string(&e);
 }
 
 extern char *types_typeString(expr_t *expr) {
     emitter_t e = {};
     print_type(&e, expr);
-    return strings_Builder_string(&e.builder);
+    return emitter_string(&e);
 }
 
 extern bool types_isIdent(expr_t *expr) {
