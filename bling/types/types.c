@@ -75,6 +75,7 @@ static struct {
 } natives[] = {
     // native types
     {"char", sizeof(char), true},
+    {"double", sizeof(double), true},
     {"float", sizeof(float), true},
     {"int", sizeof(int), true},
     {"void", sizeof(void)},
@@ -115,7 +116,8 @@ static void declare_natives(scope_t *s) {
                 .type = esc(type),
             },
         };
-        printlg("declare_natives: declaring %s", decl.typedef_.name->ident.name);
+        printlg("declare_natives: declaring %s (size %d)",
+                natives[i].name, natives[i].size);
         scope_declare(s, esc(decl));
     }
 }
