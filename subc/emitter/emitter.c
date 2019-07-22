@@ -384,10 +384,18 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
         break;
 
     case ast_TYPE_QUAL:
-        emit_token(e, type->qual.qual);
-        emit_space(e);
-        emit_c_type(e, type->qual.type, name);
-        name = NULL;
+        // TODO: ensure that the C parser is able to parse both of these
+        // regardless of the const type.
+        if (type->qual.type->type == ast_EXPR_STAR) {
+            emit_c_type(e, type->qual.type, NULL);
+            emit_space(e);
+            emit_token(e, type->qual.qual);
+        } else {
+            emit_token(e, type->qual.qual);
+            emit_space(e);
+            emit_c_type(e, type->qual.type, name);
+            name = NULL;
+        }
         break;
 
     case ast_TYPE_STRUCT:
@@ -453,8 +461,9 @@ static void emit_c_decl(emitter_t *e, decl_t *decl) {
         break;
 
     case ast_DECL_PRAGMA:
-        // emit_token(e, token_HASH);
-        // emit_string(e, decl->pragma.lit);
+        emit_string(e, "//");
+        emit_token(e, token_HASH);
+        emit_string(e, decl->pragma.lit);
         break;
 
     case ast_DECL_TYPEDEF:

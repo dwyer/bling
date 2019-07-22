@@ -1,1 +1,1 @@
-`T *const x` gets emitted as `const T *x`
+Yes.

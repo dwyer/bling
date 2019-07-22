@@ -12,7 +12,7 @@ $import("path");
 $import("subc/parser");
 $import("subc/emitter");
 
-int execve(const char *path, char *argv[], char *envp[]);
+int execve(const char *path, char *const argv[], char *envp[]);
 
 bool is_ext(const char *path, const char *ext) {
     return path_matchExt(ext, path);
