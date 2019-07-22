@@ -204,15 +204,14 @@ static expr_t *types_makePtr(expr_t *type) {
 }
 
 static expr_t *lookup_typedef(expr_t *ident) {
-    assert(ident->ident.obj);
     decl_t *decl = ident->ident.obj->decl;
-    assert(decl);
-    assert(decl->type == ast_DECL_TYPEDEF);
-    expr_t *type = decl->typedef_.type;
-    return type;
+    if (decl->type != ast_DECL_TYPEDEF) {
+        panic("not a typedef: %s", types_typeString(ident));
+    }
+    return decl->typedef_.type;
 }
 
-static expr_t *unwind_typedef(expr_t *type) {
+static expr_t *types_getBaseType(expr_t *type) {
     for (;;) {
         switch (type->type) {
         case ast_EXPR_IDENT:
@@ -226,7 +225,7 @@ static expr_t *unwind_typedef(expr_t *type) {
             type = type->qual.type;
             break;
         default:
-            panic("unwind_typedef: not impl: %s", types_typeString(type));
+            panic("not a typedef: %s", types_typeString(type));
         }
     }
 }
@@ -234,7 +233,7 @@ static expr_t *unwind_typedef(expr_t *type) {
 static bool types_isArithmetic(expr_t *type) {
     switch (type->type) {
     case ast_EXPR_IDENT:
-        return types_isArithmetic(unwind_typedef(type));
+        return types_isArithmetic(types_getBaseType(type));
     case ast_EXPR_STAR:
     case ast_TYPE_ENUM:
         return true;
@@ -284,6 +283,22 @@ static bool types_areIdentical(expr_t *a, expr_t *b) {
     }
 }
 
+static bool types_isPointer(expr_t *t) {
+    return t->type == ast_EXPR_STAR || t->type == ast_TYPE_ARRAY;
+}
+
+static expr_t *types_pointerBase(expr_t *t) {
+    switch (t->type) {
+    case ast_EXPR_STAR:
+        return t->star.x;
+    case ast_TYPE_ARRAY:
+        return t->array.elt;
+    default:
+        panic("not a pointer: %s", types_typeString(t));
+        return NULL;
+    }
+}
+
 static bool types_areAssignable(expr_t *a, expr_t *b) {
     if (types_areIdentical(a, b)) {
         return true;
@@ -301,14 +316,8 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
     if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
         return true;
     }
-    if (a->type == ast_EXPR_STAR && b->type == ast_EXPR_STAR) {
-        return types_areAssignable(a->star.x, b->star.x);
-    }
-    if (a->type == ast_EXPR_STAR && b->type == ast_TYPE_ARRAY) {
-        return types_areAssignable(a->star.x, b->array.elt);
-    }
-    if (a->type == ast_TYPE_ARRAY && b->type == ast_EXPR_STAR) {
-        return types_areAssignable(a->array.elt, b->star.x);
+    if (types_isPointer(a) && types_isPointer(b)) {
+        return types_areAssignable(types_pointerBase(a), types_pointerBase(b));
     }
     while (a->type == ast_EXPR_IDENT) {
         a = lookup_typedef(a);
@@ -319,10 +328,10 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
     if (types_isNative(a, "bool") && types_isArithmetic(b)) {
         return true;
     }
-    if (b->type == ast_TYPE_ENUM && a->type == ast_TYPE_NATIVE && streq(a->native.name, "int")) {
+    if (b->type == ast_TYPE_ENUM && types_isArithmetic(a)) {
         return true;
     }
-    if (a->type == ast_TYPE_ENUM && b->type == ast_TYPE_NATIVE && streq(b->native.name, "int")) {
+    if (a->type == ast_TYPE_ENUM && types_isArithmetic(a)) {
         return true;
     }
     return types_areIdentical(a, b);
@@ -630,7 +639,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             } else {
                 assert(expr->selector.tok != token_ARROW);
             }
-            type = unwind_typedef(type);
+            type = types_getBaseType(type);
             printlg("selector: %s", expr->selector.sel->ident.name);
             expr_t *eType = find_field(type, expr->selector.sel);
             if (eType == NULL) {
