@@ -420,7 +420,7 @@ static expr_t *parse_struct_or_union_spec(parser_t *p) {
         expect(p, token_RBRACE);
         fields = slice_to_nil_array(slice);
     }
-    // TODO assert name or fields
+    // TODO assert(name || fields)
     expr_t x = {
         .type = ast_TYPE_STRUCT,
         .struct_ = {

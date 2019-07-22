@@ -217,6 +217,7 @@ static expr_t *types_getBaseType(expr_t *type) {
         case ast_EXPR_IDENT:
             type = lookup_typedef(type);
             break;
+        case ast_TYPE_ARRAY:
         case ast_TYPE_ENUM:
         case ast_TYPE_NATIVE:
         case ast_TYPE_STRUCT:
@@ -303,15 +304,16 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
     if (types_areIdentical(a, b)) {
         return true;
     }
-    // TODO only enforce this when it comes from a pointer
     if (a->type == ast_TYPE_QUAL) {
         if (b->type == ast_TYPE_QUAL) {
             if (a->qual.qual != b->qual.qual) {
-                return false;
+                // TODO only enforce this when it comes from a pointer
+                // return false;
             }
             b = b->qual.type;
         }
         a = a->qual.type;
+        return types_areAssignable(a, b);
     }
     if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
         return true;
@@ -471,22 +473,114 @@ static expr_t *get_ident_type(expr_t *ident) {
     return get_decl_type(obj->decl);
 }
 
-static expr_t *find_field(expr_t *type, expr_t *sel) {
+static decl_t *find_field(expr_t *type, expr_t *sel) {
     assert(type->type == ast_TYPE_STRUCT);
+    assert(sel->type == ast_EXPR_IDENT);
     for (int i = 0; type->struct_.fields && type->struct_.fields[i]; i++) {
         decl_t *field = type->struct_.fields[i];
         expr_t *name = field->field.name;
         if (name) {
-            printlg("field: %s == %s?", name->ident.name, sel->ident.name);
             if (streq(sel->ident.name, name->ident.name)) {
                 type = field->field.type;
-                return type;
+                return field;
             }
         } else {
             return find_field(field->field.type, sel);
         }
     }
     return NULL;
+}
+
+static void check_array(checker_t *w, expr_t *x) {
+    expr_t *baseT = types_getBaseType(x->compound.type);
+    for (int i = 0; x->compound.list[i]; i++) {
+        expr_t *elt = x->compound.list[i];
+        if (elt->type == ast_EXPR_COMPOUND) {
+            if (elt->compound.type == NULL) {
+                elt->compound.type = baseT->array.elt;
+            }
+        }
+        expr_t *eltT = check_expr(w, elt);
+        (void)eltT;
+    }
+}
+
+static decl_t *getStructField(expr_t *type, int index) {
+    assert(type->type == ast_TYPE_STRUCT);
+    if (type->struct_.fields == NULL) {
+        panic("incomplete field defn: %s", types_typeString(type));
+    }
+    for (int i = 0; type->struct_.fields[i]; i++) {
+        if (i == index) {
+            return type->struct_.fields[i];
+        }
+    }
+    return NULL;
+}
+
+static void check_struct(checker_t *w, expr_t *x) {
+    assert(x->compound.type);
+    expr_t *baseT = types_getBaseType(x->compound.type);
+    bool expectKV = false;
+    for (int i = 0; x->compound.list[i]; i++) {
+        expr_t *elt = x->compound.list[i];
+        expr_t *fieldT = NULL;
+        if (elt->type == ast_EXPR_KEY_VALUE) {
+            expectKV = true;
+            expr_t *key = elt->key_value.key;
+            if (!types_isIdent(key)) {
+                panic("key must be an identifier: %s",
+                        types_typeString(x->compound.type));
+            }
+            decl_t *field = find_field(baseT, key);
+            if (field == NULL) {
+                panic("struct `%s` has no field `%s`",
+                        types_typeString(x->compound.type),
+                        types_exprString(key));
+            }
+            key->ident.obj = field->field.name->ident.obj;
+            fieldT = field->field.type;
+            elt = elt->key_value.value;
+        } else {
+            if (expectKV) {
+                panic("expected a key/value expr: %s", types_exprString(x));
+            }
+            decl_t *field = getStructField(baseT, i);
+            fieldT = field->field.type;
+        }
+        if (elt->type == ast_EXPR_COMPOUND) {
+            if (elt->compound.type == NULL) {
+                elt->compound.type = fieldT;
+            }
+        }
+        expr_t *eltT = check_expr(w, elt);
+        if (eltT->type == ast_TYPE_QUAL) {
+            eltT = eltT->qual.type;
+        }
+        if (!types_areAssignable(fieldT, eltT)) {
+            panic("cannot init field of type `%s` with value of type `%s`: %s",
+                    types_typeString(fieldT),
+                    types_typeString(eltT),
+                    types_exprString(elt));
+        }
+    }
+}
+
+static void check_compositeLit(checker_t *w, expr_t *x) {
+    expr_t *t = x->compound.type;
+    assert(t);
+    expr_t *baseT = types_getBaseType(t);
+    switch (baseT->type) {
+    case ast_TYPE_ARRAY:
+        check_array(w, x);
+        break;
+    case ast_TYPE_STRUCT:
+        check_struct(w, x);
+        break;
+    default:
+        panic("composite type must be an array or a struct: %s",
+                types_typeString(t));
+    }
 }
 
 static expr_t *check_expr(checker_t *w, expr_t *expr) {
@@ -547,9 +641,6 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             return type;
         }
 
-    case ast_EXPR_COMPOUND:
-        return NULL;
-
     case ast_EXPR_CALL:
         {
             expr_t *func = expr->call.func;
@@ -591,11 +682,20 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
 
         }
 
+    case ast_EXPR_COMPOUND:
+        if (expr->compound.type == NULL) {
+            panic("untyped compound expr: %s", types_exprString(expr));
+        }
+        check_compositeLit(w, expr);
+        return expr->compound.type;
+
     case ast_EXPR_CAST:
         {
             check_type(w, expr->cast.type);
+            if (expr->cast.expr->type == ast_EXPR_COMPOUND) {
+                expr->cast.expr->compound.type = expr->cast.type;
+            }
             check_expr(w, expr->cast.expr);
-            // TODO: apply type to compound lit
             return expr->cast.type;
         }
 
@@ -641,14 +741,15 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
             }
             type = types_getBaseType(type);
             printlg("selector: %s", expr->selector.sel->ident.name);
-            expr_t *eType = find_field(type, expr->selector.sel);
-            if (eType == NULL) {
+            decl_t *field = find_field(type, expr->selector.sel);
+            if (field == NULL) {
                 panic("struct `%s` (`%s`) has no field `%s`",
                         types_exprString(expr->selector.x),
                         types_typeString(type),
                         expr->selector.sel->ident.name);
             }
-            return eType;
+            expr->selector.sel->ident.obj = field->field.name->ident.obj;
+            return field->field.type;
         }
 
     case ast_EXPR_SIZEOF:
@@ -881,25 +982,32 @@ static void check_decl(checker_t *w, decl_t *decl) {
         break;
     case ast_DECL_VALUE:
         {
-            expr_t *b = NULL;
+            expr_t *valType = NULL;
             if (decl->value.type != NULL) {
                 check_type(w, decl->value.type);
             }
             if (decl->value.value != NULL) {
-                b = check_expr(w, decl->value.value);
+                if (decl->value.value->type == ast_EXPR_COMPOUND) {
+                    if (decl->value.type == NULL) {
+                        // TODO resolve this restriction by enforcing T{}.
+                        panic("cannot assign short var decls with composite type");
+                    }
+                    decl->value.value->compound.type = decl->value.type;
+                }
+                valType = check_expr(w, decl->value.value);
             }
             if (decl->value.type == NULL) {
-                decl->value.type = b;
+                decl->value.type = valType;
             }
-            if (b != NULL) {
-                if (b->type == ast_TYPE_QUAL) {
-                    b = b->qual.type;
+            if (valType != NULL) {
+                if (valType->type == ast_TYPE_QUAL) {
+                    valType = valType->qual.type;
                 }
-                expr_t *a = decl->value.type;
-                if (!types_areAssignable(a, b)) {
+                expr_t *varType = decl->value.type;
+                if (!types_areAssignable(varType, valType)) {
                     panic("check_decl: not assignable %s and %s: %s",
-                            types_typeString(a),
-                            types_typeString(b),
+                            types_typeString(varType),
+                            types_typeString(valType),
                             types_declString(decl));
                 }
             }
