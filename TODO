@@ -1,0 +1,36 @@
+Allow types where exprs are expected, for instance:
+    - make(T)
+    - var y T = T{...}
+    - var x []T = []T{...}
+    - etc.
+
+Auto-insert semicolons (bling-only)
+    Roadmap:
+        - expect (or accept) semicolons after blocks, since they will be
+          inserted there.
+
+Use dollar-sign ('$') to select members of a package. For instance:
+
+    var x pkg$Type = a
+    var y = pkg$function(x)
+
+    Dollar is used because cc interprets it has an ident, making it useful for
+    name mangling, while blingc will interpret it as a selector op (such as '.'
+    and '->').
+
+    Roadmap:
+        - Remove dollar sign from keywords ($package, $import, $var, $func).
+        - Change the name of things that use those keywords.
+        - Make '$' a token.
+        - Prepend pkg$ to names of all package decls (excluding builtins and C
+                primatives).
+
+    Eventually it will be emitted as '.' in bling and '$' in C.
+
+Declare pkg members into named scopes, to be selected (initially) by '$'
+selector.
+
+Consolidate different selector ops ('.', '->', '$') into just one ('.'). Enforce
+it when parsing bling code.
+
+Compile to assembly.
