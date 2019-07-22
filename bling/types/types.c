@@ -280,6 +280,7 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
     if (types_areIdentical(a, b)) {
         return true;
     }
+    // TODO only enforce this when it comes from a pointer
     if (a->type == ast_TYPE_QUAL) {
         if (b->type == ast_TYPE_QUAL) {
             if (a->qual.qual != b->qual.qual) {
@@ -549,6 +550,9 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
                 assert(param->type == ast_DECL_FIELD);
                 expr_t *type = check_expr(w, expr->call.args[i]);
                 if (param->field.type) {
+                    if (type->type == ast_TYPE_QUAL) {
+                        type = type->qual.type;
+                    }
                     if (!types_areAssignable(param->field.type, type)) {
                         panic("not assignable: %s and %s: %s",
                                 types_typeString(param->field.type),
