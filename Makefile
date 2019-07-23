@@ -25,7 +25,6 @@ SRCS=bootstrap/bootstrap.h \
      cmd/blingc/main.c
 
 hello: $(BLINGC) all.bling
-	$(BLINGC) -o /dev/null -w syntax_test.bling
 	$(BLINGC) -o /dev/null -w cmd/blingc/blingc.bling
 
 a.out: $(BLINGC) all.bling

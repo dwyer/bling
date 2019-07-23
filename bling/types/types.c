@@ -734,7 +734,6 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
     case ast_EXPR_SELECTOR:
         {
             expr_t *type = check_expr(w, expr->selector.x);
-            assert(type);
             if (type->type == ast_EXPR_STAR) {
                 expr->selector.tok = token_ARROW;
                 type = type->star.x;
@@ -848,6 +847,9 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
     case ast_STMT_IF:
         check_expr(w, stmt->if_.cond);
         check_stmt(w, stmt->if_.body);
+        if (stmt->if_.else_) {
+            check_stmt(w, stmt->if_.else_);
+        }
         break;
 
     case ast_STMT_ITER:
