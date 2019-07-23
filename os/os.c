@@ -24,11 +24,10 @@ extern os_File *os_newFile(uintptr_t fd, const char *name) {
 }
 
 extern os_File *os_openFile(const char *filename, int mode, int perm, error_t **error) {
+    error_clear();
     int fd = open(filename, mode, perm);
     if (fd == -1) {
-        if (error != NULL) {
-            *error = make_sysError();
-        }
+        error_check(error);
         return NULL;
     }
     return os_newFile(fd, filename);
@@ -43,28 +42,35 @@ extern os_File *os_create(const char *filename, error_t **error) {
 }
 
 extern int os_read(os_File *file, char *b, int n, error_t **error) {
-    return read(file->fd, b, n);
+    error_clear();
+    n = read(file->fd, b, n);
+    error_check(error);
+    return n;
 }
 
 extern int os_write(os_File *file, const char *b, error_t **error) {
-    return write(file->fd, b, strlen(b));
+    error_clear();
+    int n = write(file->fd, b, strlen(b));
+    error_check(error);
+    return n;
 }
 
 extern void os_close(os_File *file, error_t **error) {
+    error_clear();
     if (file->is_dir) {
         closedir((DIR *)file->fd);
     } else {
         close(file->fd);
     }
+    error_check(error);
 }
 
 extern os_FileInfo os_stat(const char *name, error_t **error) {
     struct stat st;
     os_FileInfo info = {};
+    error_clear();
     if (stat(name, &st) != 0) {
-        if (error != NULL) {
-            *error = make_sysError();
-        }
+        error_check(error);
         return info;
     }
     info._name = strdup(name);
@@ -80,9 +86,7 @@ extern void os_FileInfo_free(os_FileInfo info) {
 extern os_File *os_openDir(const char *name, error_t **error) {
     DIR *dp = opendir(name);
     if (dp == NULL) {
-        if (error != NULL) {
-            *error = make_error("bad dirname");
-        }
+        error_check(error);
         return NULL;
     }
     os_File *file = os_newFile((uintptr_t)dp, name);
