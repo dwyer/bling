@@ -7,67 +7,6 @@ extern void printlg(const char *fmt, ...) {}
 
 #define printlg(...) print(__VA_ARGS__)
 
-static void scope_declare(scope_t *s, decl_t *decl) {
-    obj_kind_t kind;
-    expr_t *ident = NULL;
-    switch (decl->type) {
-    case ast_DECL_FIELD:
-        kind = obj_kind_VALUE;
-        ident = decl->field.name;
-        break;
-    case ast_DECL_FUNC:
-        kind = obj_kind_FUNC;
-        ident = decl->func.name;
-        break;
-    case ast_DECL_TYPEDEF:
-        kind = obj_kind_TYPE;
-        ident = decl->typedef_.name;
-        break;
-    case ast_DECL_VALUE:
-        kind = obj_kind_VALUE;
-        ident = decl->value.name;
-        break;
-    default:
-        panic("scope_declare: bad decl: %d", decl->type);
-        return;
-    }
-    assert(ident->type == ast_EXPR_IDENT);
-    if (ident->ident.obj != NULL) {
-        panic("already declared: %s", ident->ident.name);
-    }
-    object_t *obj = object_new(kind, ident->ident.name);
-    obj->decl = decl;
-    ident->ident.obj = obj;
-    object_t *alt = scope_insert(s, obj);
-    if (alt != NULL) {
-        assert(alt->kind == kind);
-        bool redecl = false;
-        switch (kind) {
-        case obj_kind_FUNC:
-            // TODO compare types
-            redecl = alt->decl->func.body == NULL;
-            break;
-        case obj_kind_TYPE:
-            if (alt->decl->typedef_.type->type == ast_TYPE_STRUCT) {
-                redecl = alt->decl->typedef_.type->struct_.fields == NULL;
-            }
-            break;
-        case obj_kind_VALUE:
-            // TODO compare types
-            redecl = alt->decl->value.value == NULL;
-            break;
-        default:
-            printlg("unknown kind: %d", kind);
-            break;
-        }
-        if (!redecl) {
-            panic("already declared: %s", ident->ident.name);
-        }
-        printlg("redeclaring %s", obj->name);
-        alt->decl = decl;
-    }
-}
-
 static struct {
     char *name;
     int size;
@@ -93,56 +32,6 @@ static struct {
     // sentinel
     {NULL},
 };
-
-static void declare_natives(scope_t *s) {
-    for (int i = 0; natives[i].name != NULL; i++) {
-        expr_t name = {
-            .type = ast_EXPR_IDENT,
-            .ident = {
-                .name = strdup(natives[i].name),
-            },
-        };
-        expr_t type = {
-            .type = ast_TYPE_NATIVE,
-            .native = {
-                .name = strdup(natives[i].name),
-                .size = natives[i].size,
-            },
-        };
-        decl_t decl = {
-            .type = ast_DECL_TYPEDEF,
-            .typedef_ = {
-                .name = esc(name),
-                .type = esc(type),
-            },
-        };
-        printlg("declare_natives: declaring %s (size %d)",
-                natives[i].name, natives[i].size);
-        scope_declare(s, esc(decl));
-    }
-}
-
-extern void declare_builtins(scope_t *s) {
-    declare_natives(s);
-}
-
-typedef struct {
-    config_t *conf;
-    scope_t *scope;
-    expr_t *result;
-    slice_t files;
-    expr_t *typedefName;
-} checker_t;
-
-static void checker_openScope(checker_t *w) {
-    w->scope = scope_new(w->scope);
-}
-
-static void checker_closeScope(checker_t *w) {
-    scope_t *inner = w->scope;
-    w->scope = w->scope->outer;
-    scope_free(inner);
-}
 
 extern char *types_declString(decl_t *decl) {
     emitter_t e = {};
@@ -266,6 +155,9 @@ static bool types_areIdentical(expr_t *a, expr_t *b) {
     if (a == b) {
         return true;
     }
+    if (a == NULL || b == NULL) {
+        return false;
+    }
     assert(a);
     assert(b);
     if (a->type != b->type) {
@@ -282,6 +174,27 @@ static bool types_areIdentical(expr_t *a, expr_t *b) {
     case ast_TYPE_ARRAY:
         // TODO check lengths
         return types_areIdentical(a->array.elt, b->array.elt);
+    case ast_TYPE_FUNC:
+        {
+            if (!types_areIdentical(a->func.result, b->func.result)) {
+                return false;
+            }
+            int i = 0;
+            for (; a->func.params[i]; i++) {
+                decl_t *param1 = a->func.params[i];
+                decl_t *param2 = b->func.params[i];
+                if (param2 == NULL) {
+                    return false;
+                }
+                if (!types_areIdentical(param1->field.type, param2->field.type)) {
+                    return false;
+                }
+            }
+            if (b->func.params[i]) {
+                return false;
+            }
+        }
+        return true;
     case ast_TYPE_QUAL:
         return types_areIdentical(a->qual.type, b->qual.type);
     default:
@@ -362,6 +275,118 @@ static bool types_areComparable(expr_t *a, expr_t *b) {
         return true;
     }
     return types_areIdentical(a, b);
+}
+
+static void scope_declare(scope_t *s, decl_t *decl) {
+    obj_kind_t kind;
+    expr_t *ident = NULL;
+    switch (decl->type) {
+    case ast_DECL_FIELD:
+        kind = obj_kind_VALUE;
+        ident = decl->field.name;
+        break;
+    case ast_DECL_FUNC:
+        kind = obj_kind_FUNC;
+        ident = decl->func.name;
+        break;
+    case ast_DECL_TYPEDEF:
+        kind = obj_kind_TYPE;
+        ident = decl->typedef_.name;
+        break;
+    case ast_DECL_VALUE:
+        kind = obj_kind_VALUE;
+        ident = decl->value.name;
+        break;
+    default:
+        panic("scope_declare: bad decl: %d", decl->type);
+        return;
+    }
+    assert(ident->type == ast_EXPR_IDENT);
+    if (ident->ident.obj != NULL) {
+        panic("already declared: %s", ident->ident.name);
+    }
+    object_t *obj = object_new(kind, ident->ident.name);
+    obj->decl = decl;
+    ident->ident.obj = obj;
+    object_t *alt = scope_insert(s, obj);
+    if (alt != NULL) {
+        if (alt->kind != kind) {
+            panic("incompatible redefinition of `%s`: %s",
+                    types_declString(obj->decl),
+                    types_declString(decl));
+        }
+        bool redecl = false;
+        switch (kind) {
+        case obj_kind_FUNC:
+            redecl =
+                (alt->decl->func.body == NULL || decl->func.body == NULL) &&
+                types_areIdentical(alt->decl->func.type, decl->func.type);
+            break;
+        case obj_kind_TYPE:
+            if (alt->decl->typedef_.type->type == ast_TYPE_STRUCT) {
+                redecl = alt->decl->typedef_.type->struct_.fields == NULL;
+            }
+            break;
+        case obj_kind_VALUE:
+            redecl = alt->decl->value.value == NULL &&
+                !types_areIdentical(alt->decl->value.type, decl->value.value);
+            break;
+        default:
+            printlg("unknown kind: %d", kind);
+            break;
+        }
+        if (!redecl) {
+            panic("already declared: %s", ident->ident.name);
+        }
+        printlg("redeclaring %s", obj->name);
+        alt->decl = decl;
+    }
+}
+
+extern void declare_builtins(scope_t *s) {
+    for (int i = 0; natives[i].name != NULL; i++) {
+        expr_t name = {
+            .type = ast_EXPR_IDENT,
+            .ident = {
+                .name = strdup(natives[i].name),
+            },
+        };
+        expr_t type = {
+            .type = ast_TYPE_NATIVE,
+            .native = {
+                .name = strdup(natives[i].name),
+                .size = natives[i].size,
+            },
+        };
+        decl_t decl = {
+            .type = ast_DECL_TYPEDEF,
+            .typedef_ = {
+                .name = esc(name),
+                .type = esc(type),
+            },
+        };
+        printlg("declare_natives: declaring %s (size %d)",
+                natives[i].name, natives[i].size);
+        scope_declare(s, esc(decl));
+    }
+}
+
+typedef struct {
+    config_t *conf;
+    scope_t *scope;
+    expr_t *result;
+    slice_t files;
+    expr_t *typedefName;
+} checker_t;
+
+static void checker_openScope(checker_t *w) {
+    w->scope = scope_new(w->scope);
+}
+
+static void checker_closeScope(checker_t *w) {
+    scope_t *inner = w->scope;
+    w->scope = w->scope->outer;
+    scope_free(inner);
 }
 
 static expr_t *check_expr(checker_t *w, expr_t *expr);
