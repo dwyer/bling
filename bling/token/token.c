@@ -1,93 +1,94 @@
 #include "token.h"
 
+static char *tokens[] = {
+    [token_ILLEGAL] = "ILLEGAL",
+
+    [token_CHAR] = "CHAR",
+    [token_FLOAT] = "FLOAT",
+    [token_IDENT] = "IDENT",
+    [token_INT] = "INT",
+    [token_STRING] = "STRING",
+    [token_TYPE_NAME] = "TYPE",
+
+    [token_BREAK] = "break",
+    [token_CASE] = "case",
+    [token_CONST] = "const",
+    [token_CONTINUE] = "continue",
+    [token_DEFAULT] = "default",
+    [token_ELSE] = "else",
+    [token_ENUM] = "enum",
+    [token_EXTERN] = "extern",
+    [token_FOR] = "for",
+    [token_FUNC] = "fun",
+    [token_GOTO] = "goto",
+    [token_IF] = "if",
+    [token_IMPORT] = "import",
+    [token_PACKAGE] = "package",
+    [token_RETURN] = "return",
+    [token_SIGNED] = "signed",
+    [token_SIZEOF] = "sizeof",
+    [token_STATIC] = "static",
+    [token_STRUCT] = "struct",
+    [token_SWITCH] = "switch",
+    [token_TYPEDEF] = "typedef",
+    [token_UNION] = "union",
+    [token_UNSIGNED] = "unsigned",
+    [token_VAR] = "var",
+    [token_WHILE] = "while",
+
+    [token_ARROW] = "->",
+    [token_COLON] = ":",
+    [token_COMMA] = ",",
+    [token_ELLIPSIS] = "...",
+    [token_EOF] = "EOF",
+    [token_HASH] = "#",
+    [token_LBRACE] = "{",
+    [token_LBRACK] = "[",
+    [token_LPAREN] = "(",
+    [token_PERIOD] = ".",
+    [token_QUESTION_MARK] = "?",
+    [token_RBRACE] = "}",
+    [token_RBRACK] = "]",
+    [token_RPAREN] = ")",
+    [token_SEMICOLON] = ";",
+
+    [token_ADD] = "+",
+    [token_ADD_ASSIGN] = "+=",
+    [token_AND] = "&",
+    [token_AND_ASSIGN] = "&=",
+    [token_ASSIGN] = "=",
+    [token_BITWISE_NOT] = "~",
+    [token_DEC] = "--",
+    [token_DIV] = "/",
+    [token_DIV_ASSIGN] = "/=",
+    [token_EQUAL] = "==",
+    [token_GT] = ">",
+    [token_GT_EQUAL] = ">=",
+    [token_INC] = "++",
+    [token_LAND] = "&&",
+    [token_LOR] = "||",
+    [token_LT] = "<",
+    [token_LT_EQUAL] = "<=",
+    [token_MOD] = "%",
+    [token_MOD_ASSIGN] = "%=",
+    [token_MUL] = "*",
+    [token_MUL_ASSIGN] = "*=",
+    [token_NOT] = "!",
+    [token_NOT_EQUAL] = "!=",
+    [token_OR] = "|",
+    [token_OR_ASSIGN] = "|=",
+    [token_SHL] = "<<",
+    [token_SHL_ASSIGN] = "<<=",
+    [token_SHR] = ">>",
+    [token_SHR_ASSIGN] = ">>=",
+    [token_SUB] = "-",
+    [token_SUB_ASSIGN] = "-=",
+    [token_XOR] = "^",
+    [token_XOR_ASSIGN] = "^=",
+};
+
 extern char *token_string(token_t tok) {
-    switch (tok) {
-    case token_ILLEGAL: return "ILLEGAL";
-
-    case token_CHAR: return "CHAR";
-    case token_FLOAT: return "FLOAT";
-    case token_IDENT: return "IDENT";
-    case token_INT: return "INT";
-    case token_STRING: return "STRING";
-    case token_TYPE_NAME: return "TYPE";
-
-    case token_BREAK: return "break";
-    case token_CASE: return "case";
-    case token_CONST: return "const";
-    case token_CONTINUE: return "continue";
-    case token_DEFAULT: return "default";
-    case token_ELSE: return "else";
-    case token_ENUM: return "enum";
-    case token_EXTERN: return "extern";
-    case token_FOR: return "for";
-    case token_FUNC: return "fun";
-    case token_GOTO: return "goto";
-    case token_IF: return "if";
-    case token_IMPORT: return "import";
-    case token_PACKAGE: return "package";
-    case token_RETURN: return "return";
-    case token_SIGNED: return "signed";
-    case token_SIZEOF: return "sizeof";
-    case token_STATIC: return "static";
-    case token_STRUCT: return "struct";
-    case token_SWITCH: return "switch";
-    case token_TYPEDEF: return "typedef";
-    case token_UNION: return "union";
-    case token_UNSIGNED: return "unsigned";
-    case token_VAR: return "var";
-    case token_WHILE: return "while";
-
-    case token_ARROW: return "->";
-    case token_COLON: return ":";
-    case token_COMMA: return ",";
-    case token_ELLIPSIS: return "...";
-    case token_EOF: return "EOF";
-    case token_HASH: return "#";
-    case token_LBRACE: return "{";
-    case token_LBRACK: return "[";
-    case token_LPAREN: return "(";
-    case token_PERIOD: return ".";
-    case token_QUESTION_MARK: return "?";
-    case token_RBRACE: return "}";
-    case token_RBRACK: return "]";
-    case token_RPAREN: return ")";
-    case token_SEMICOLON: return ";";
-
-    case token_ADD: return "+";
-    case token_ADD_ASSIGN: return "+=";
-    case token_AND: return "&";
-    case token_AND_ASSIGN: return "&=";
-    case token_ASSIGN: return "=";
-    case token_BITWISE_NOT: return "~";
-    case token_DEC: return "--";
-    case token_DIV: return "/";
-    case token_DIV_ASSIGN: return "/=";
-    case token_EQUAL: return "==";
-    case token_GT: return ">";
-    case token_GT_EQUAL: return ">=";
-    case token_INC: return "++";
-    case token_LAND: return "&&";
-    case token_LOR: return "||";
-    case token_LT: return "<";
-    case token_LT_EQUAL: return "<=";
-    case token_MOD: return "%";
-    case token_MOD_ASSIGN: return "%=";
-    case token_MUL: return "*";
-    case token_MUL_ASSIGN: return "*=";
-    case token_NOT: return "!";
-    case token_NOT_EQUAL: return "!=";
-    case token_OR: return "|";
-    case token_OR_ASSIGN: return "|=";
-    case token_SHL: return "<<";
-    case token_SHL_ASSIGN: return "<<=";
-    case token_SHR: return ">>";
-    case token_SHR_ASSIGN: return ">>=";
-    case token_SUB: return "-";
-    case token_SUB_ASSIGN: return "-=";
-    case token_XOR: return "^";
-    case token_XOR_ASSIGN: return "^=";
-    }
-    return "???";
+    return tokens[tok];
 }
 
 extern token_t token_lookup(char *ident) {
