@@ -297,13 +297,12 @@ static expr_t *parse_unary_expr(parser_t *p) {
 static expr_t *parse_cast_expr(parser_t *p) {
     // cast_expression
     //         : unary_expression
-    //         | AS '(' type_name ')' cast_expression
-    //         | AS '(' type_name ')' initializer
+    //         | '<' type_name '>' cast_expression
+    //         | '<' type_name '>' initializer
     //         ;
-    if (accept(p, token_AS)) {
-        expect(p, token_LPAREN);
+    if (accept(p, token_LT)) {
         expr_t *type = parse_type_spec(p);
-        expect(p, token_RPAREN);
+        expect(p, token_GT);
         expr_t *expr = NULL;
         if (p->tok == token_LBRACE) {
             expr = parse_init_expr(p);

@@ -63,10 +63,9 @@ extern void print_expr(emitter_t *p, expr_t *expr) {
         break;
 
     case ast_EXPR_CAST:
-        emit_token(p, token_AS);
-        emit_token(p, token_LPAREN);
+        emit_token(p, token_LT);
         print_type(p, expr->cast.type);
-        emit_token(p, token_RPAREN);
+        emit_token(p, token_GT);
         emit_space(p);
         print_expr(p, expr->cast.expr);
         break;
