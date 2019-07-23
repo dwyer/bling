@@ -76,7 +76,7 @@ void compile_c(char *argv[]) {
 
 void compile_bling(char *argv[]) {
     bool emit_as_bling = false;
-    config_t conf = {};
+    config_t conf = {.strict = true};
     char *dst = NULL;
     while (**argv == '-') {
         if (streq(*argv, "-o")) {
