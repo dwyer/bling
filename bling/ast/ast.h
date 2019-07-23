@@ -182,6 +182,7 @@ typedef struct expr_t {
         struct {
             expr_t *key;
             expr_t *value;
+            bool isArray;
         } key_value;
 
         struct {

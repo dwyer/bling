@@ -83,8 +83,14 @@ static void emit_c_expr(emitter_t *e, expr_t *expr) {
         break;
 
     case ast_EXPR_KEY_VALUE:
-        emit_token(e, token_PERIOD);
-        emit_c_expr(e, expr->key_value.key);
+        if (expr->key_value.isArray) {
+            emit_token(e, token_LBRACK);
+            emit_c_expr(e, expr->key_value.key);
+            emit_token(e, token_RBRACK);
+        } else {
+            emit_token(e, token_PERIOD);
+            emit_c_expr(e, expr->key_value.key);
+        }
         emit_space(e);
         emit_token(e, token_ASSIGN);
         emit_space(e);

@@ -625,36 +625,31 @@ static expr_t *initializer(parser_t *p) {
     //         ;
     slice_t list = {.size = sizeof(expr_t *)};
     while (p->tok != token_RBRACE && p->tok != token_EOF) {
-        expr_t *value = NULL;
+        expr_t *key = NULL;
+        bool isArray = false;
         // designation : designator_list '=' ;
         // designator_list : designator+ ;
         // designator : '.' identifier
         if (accept(p, token_PERIOD)) {
-            expr_t *key = identifier(p);
+            key = identifier(p);
             expect(p, token_ASSIGN);
-            expr_t x = {
-                .type = ast_EXPR_KEY_VALUE,
-                .key_value = {
-                    .key = key,
-                    .value = initializer(p),
-                },
-            };
-            value = esc(x);
         } else if (accept(p, token_LBRACK)) {
-            expr_t *key = expression(p);
-            (void)key;
+            isArray = true;
+            key = expression(p);
             expect(p, token_RBRACK);
             expect(p, token_ASSIGN);
+        }
+        expr_t *value = initializer(p);
+        if (key) {
             expr_t x = {
                 .type = ast_EXPR_KEY_VALUE,
                 .key_value = {
                     .key = key,
-                    .value = initializer(p),
+                    .value = value,
+                    .isArray = isArray,
                 },
             };
             value = esc(x);
-        } else {
-            value = initializer(p);
         }
         list = append(list, &value);
         if (!accept(p, token_COMMA)) {

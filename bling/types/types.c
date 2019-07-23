@@ -516,6 +516,7 @@ static void check_array(checker_t *w, expr_t *x) {
     for (int i = 0; x->compound.list[i]; i++) {
         expr_t *elt = x->compound.list[i];
         if (elt->type == ast_EXPR_KEY_VALUE) {
+            elt->key_value.isArray = true;
             expr_t *indexT = check_expr(w, elt->key_value.key);
             if (!types_isInteger(indexT)) {
                 panic("not a valid index: %s: %s",
@@ -555,6 +556,7 @@ static void check_struct(checker_t *w, expr_t *x) {
         expr_t *elt = x->compound.list[i];
         expr_t *fieldT = NULL;
         if (elt->type == ast_EXPR_KEY_VALUE) {
+            elt->key_value.isArray = false;
             expectKV = true;
             expr_t *key = elt->key_value.key;
             if (!ast_isIdent(key)) {
