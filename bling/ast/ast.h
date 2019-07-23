@@ -325,3 +325,10 @@ typedef struct {
 
 extern void scope_resolve(scope_t *s, expr_t *x);
 extern void scope_free(scope_t *s);
+
+
+extern bool ast_isIdent(expr_t *x);
+extern bool ast_isIdentNamed(expr_t *x, const char *name);
+extern bool ast_isNil(expr_t *x);
+extern bool ast_isVoid(expr_t *x);
+extern bool ast_isVoidPtr(expr_t *x);

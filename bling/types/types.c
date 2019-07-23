@@ -131,6 +131,7 @@ typedef struct {
     scope_t *scope;
     expr_t *result;
     slice_t files;
+    expr_t *typedefName;
 } checker_t;
 
 static void checker_openScope(checker_t *w) {
@@ -186,24 +187,6 @@ extern bool types_isType(expr_t *expr) {
     default:
         return false;
     }
-}
-
-extern bool types_isIdent(expr_t *expr) {
-    return expr->type == ast_EXPR_IDENT;
-}
-
-extern bool types_isVoid(expr_t *type) {
-    if (type->type == ast_TYPE_QUAL) {
-        type = type->qual.type;
-    }
-    return types_isIdent(type) && streq(type->ident.name, "void");
-}
-
-extern bool types_isVoidPtr(expr_t *type) {
-    if (type->type == ast_EXPR_STAR) {
-        return types_isVoid(type->star.x);
-    }
-    return false;
 }
 
 static expr_t *types_makeIdent(const char *name) {
@@ -292,7 +275,7 @@ static bool types_areIdentical(expr_t *a, expr_t *b) {
     case ast_EXPR_IDENT:
         return b->type == ast_EXPR_IDENT && a->ident.obj == a->ident.obj;
     case ast_EXPR_STAR:
-        if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
+        if (ast_isVoidPtr(a) || ast_isVoidPtr(b)) {
             return true;
         }
         return types_areIdentical(a->star.x, b->star.x);
@@ -338,7 +321,7 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
         a = a->qual.type;
         return types_areAssignable(a, b);
     }
-    if (types_isVoidPtr(a) || types_isVoidPtr(b)) {
+    if (ast_isVoidPtr(a) || ast_isVoidPtr(b)) {
         return true;
     }
     if (types_isPointer(a) && types_isPointer(b)) {
@@ -402,7 +385,9 @@ static void check_type(checker_t *w, expr_t *expr) {
     case ast_TYPE_ENUM:
         for (int i = 0; expr->enum_.enums[i]; i++) {
             decl_t *decl = expr->enum_.enums[i];
-            decl->value.type = expr;
+            if (w->typedefName) {
+                decl->value.type = w->typedefName;
+            }
             printlg("check_type: declaring %s", decl->value.name->ident.name);
             scope_declare(w->scope, decl);
         }
@@ -551,7 +536,7 @@ static void check_struct(checker_t *w, expr_t *x) {
         if (elt->type == ast_EXPR_KEY_VALUE) {
             expectKV = true;
             expr_t *key = elt->key_value.key;
-            if (!types_isIdent(key)) {
+            if (!ast_isIdent(key)) {
                 panic("key must be an identifier: %s",
                         types_typeString(x->compound.type));
             }
@@ -1001,7 +986,9 @@ static void check_decl(checker_t *w, decl_t *decl) {
     case ast_DECL_PRAGMA:
         break;
     case ast_DECL_TYPEDEF:
+        w->typedefName = decl->typedef_.name;
         check_type(w, decl->typedef_.type);
+        w->typedefName = NULL;
         printlg("check_decl: declaring %s", decl->typedef_.name->ident.name);
         scope_declare(w->scope, decl);
         break;
@@ -1022,7 +1009,11 @@ static void check_decl(checker_t *w, decl_t *decl) {
                 valType = check_expr(w, decl->value.value);
             }
             if (decl->value.type == NULL) {
-                decl->value.type = valType;
+                if (valType->type == ast_TYPE_QUAL) {
+                    decl->value.type = valType->qual.type;
+                } else {
+                    decl->value.type = valType;
+                }
             }
             if (valType != NULL) {
                 if (valType->type == ast_TYPE_QUAL) {

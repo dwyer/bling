@@ -61,3 +61,29 @@ extern void scope_free(scope_t *s) {
     map_deinit(&s->objects);
     free(s);
 }
+
+extern bool ast_isIdent(expr_t *x) {
+    return x->type == ast_EXPR_IDENT;
+}
+
+extern bool ast_isIdentNamed(expr_t *x, const char *name) {
+    return ast_isIdent(x) && streq(x->ident.name, name);
+}
+
+extern bool ast_isNil(expr_t *x) {
+    return ast_isIdentNamed(x, "NULL");
+}
+
+extern bool ast_isVoid(expr_t *x) {
+    if (x->type == ast_TYPE_QUAL) {
+        x = x->qual.type;
+    }
+    return ast_isIdent(x) && streq(x->ident.name, "void");
+}
+
+extern bool ast_isVoidPtr(expr_t *x) {
+    if (x->type == ast_EXPR_STAR) {
+        return ast_isVoid(x->star.x);
+    }
+    return false;
+}

@@ -484,8 +484,14 @@ extern void print_decl(emitter_t *p, decl_t *decl) {
                 emit_space(p);
                 print_expr(p, decl->value.name);
             }
+            // TODO:
+            // if (decl->value.value == NULL
+            //         || ast_isNil(decl->value.value)
+            //         || ast_isVoidPtr(decl->value.value)
+            //         || decl->value.value->type == ast_EXPR_COMPOUND) {
             emit_space(p);
             print_type(p, decl->value.type);
+            // }
             if (decl->value.value) {
                 emit_space(p);
                 emit_token(p, token_ASSIGN);
