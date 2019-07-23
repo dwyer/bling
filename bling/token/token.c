@@ -9,7 +9,6 @@ static char *tokens[] = {
     [token_IDENT] = "IDENT",
     [token_INT] = "INT",
     [token_STRING] = "STRING",
-    [token_TYPE_NAME] = "TYPE",
 
     [token_BREAK] = "break",
     [token_CASE] = "case",
@@ -97,10 +96,9 @@ static map_t keywords = {};
 extern token_t token_lookup(char *ident) {
     if (keywords.val_size == 0) {
         keywords = map_init(sizeof(token_t));
-        for (token_t tok = _token_keyword_beg + 1; tok < _token_keyword_end;
-                tok++) {
-            char *s = token_string(tok);
-            map_set(&keywords, s, &tok);
+        for (int i = _token_keyword_beg + 1; i < _token_keyword_end; i++) {
+            char *s = token_string(i);
+            map_set(&keywords, s, &i);
         }
     }
     token_t tok = token_IDENT;
@@ -110,9 +108,9 @@ extern token_t token_lookup(char *ident) {
 
 extern int token_precedence(token_t op) {
     switch (op) {
-    case token_MOD:
     case token_MUL:
     case token_DIV:
+    case token_MOD:
         return 10;
     case token_ADD:
     case token_SUB:

@@ -8,11 +8,9 @@ import("map");
 typedef enum {
     token_ILLEGAL = 0,
 
-    token_IDENT,
-    token_TYPE_NAME,
-
     token_CHAR,
     token_FLOAT,
+    token_IDENT,
     token_INT,
     token_STRING,
 
