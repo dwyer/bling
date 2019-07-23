@@ -167,6 +167,27 @@ extern char *types_typeString(expr_t *expr) {
     return emitter_string(&e);
 }
 
+extern bool types_isType(expr_t *expr) {
+    switch (expr->type) {
+    case ast_EXPR_IDENT:
+        if (expr->ident.obj == NULL) {
+            panic("types_isType: unresolved identifier %s", expr->ident.name);
+        }
+        return expr->ident.obj->decl->type == ast_DECL_TYPEDEF;
+    case ast_EXPR_STAR:
+        return types_isType(expr->star.x);
+    case ast_TYPE_ARRAY:
+    case ast_TYPE_ENUM:
+    case ast_TYPE_FUNC:
+    case ast_TYPE_QUAL:
+    case ast_TYPE_NATIVE:
+    case ast_TYPE_STRUCT:
+        return true;
+    default:
+        return false;
+    }
+}
+
 extern bool types_isIdent(expr_t *expr) {
     return expr->type == ast_EXPR_IDENT;
 }
