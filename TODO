@@ -4,6 +4,74 @@ Allow types where exprs are expected, for instance:
     - var x []T = []T{...}
     - etc.
 
+Implement a way to define a value with no address, such as #define and C's enum.
+
+Allow extending structs:
+
+    typedef vec2 struct {
+        x int;
+        y int;
+    };
+
+    typedef vec3 struct {
+        vec3;
+        z int;
+    }
+
+Allow switch-case to take multiple expressions:
+
+    // in bling
+    switch (x) {
+    case A, B, C:
+        doSomething();
+        break;
+    default:
+        break;
+    }
+
+    // in C
+    switch (x) {
+    case A:
+    case B:
+    case C:
+        doSomething();
+        break;
+    default:
+        break;
+    }
+
+    Later:
+        Eventually we want to have switch cases to have an implicit break and to
+        open a new scope by default. So the above example would be converted to:
+
+        // in bling
+        switch (x) {
+        case A, B, C:
+            var y = x + 1;
+            doSomething(y);
+        default:
+            doSomethingElse();
+        }
+
+        // in C
+        switch (x) {
+        case A:
+        case B:
+        case C: {
+                int y = x + 1;
+                doSomething(y);
+            }
+            break;
+        default: {
+                doSomethingElse();
+            }
+            break;
+        }
+
+Allow key/value pairs as array elements.
+    in C:       char *strings[256] = {[0] = "hello", [42] = "world"};
+    in bling:   var strings [256]*char = {0: "hello", 42: "world"};
+
 Auto-insert semicolons (bling-only)
     Roadmap:
         - expect (or accept) semicolons after blocks, since they will be
@@ -27,10 +95,13 @@ Use dollar-sign ('$') to select members of a package. For instance:
 
     Eventually it will be emitted as '.' in bling and '$' in C.
 
-Declare pkg members into named scopes, to be selected (initially) by '$'
-selector.
+    Name mangling
+        Mangle names when emitting C. Depends on the dollar-sign selector above.
 
-Consolidate different selector ops ('.', '->', '$') into just one ('.'). Enforce
-it when parsing bling code.
+    Declare pkg members into named scopes, to be selected (initially) by '$'
+    selector.
+
+        Consolidate different selector ops ('.', '->', '$') into just one ('.').
+        Enforce this convention when parsing bling code.
 
 Compile to assembly.
