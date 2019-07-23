@@ -499,10 +499,31 @@ static decl_t *find_field(expr_t *type, expr_t *sel) {
     return NULL;
 }
 
+static bool types_isInteger(expr_t *x) {
+    switch (x->type) {
+    case ast_EXPR_IDENT:
+        return types_isInteger(x->ident.obj->decl->typedef_.type);
+    case ast_TYPE_ENUM:
+    case ast_TYPE_NATIVE:
+        return true;
+    default:
+        return false;
+    }
+}
+
 static void check_array(checker_t *w, expr_t *x) {
     expr_t *baseT = types_getBaseType(x->compound.type);
     for (int i = 0; x->compound.list[i]; i++) {
         expr_t *elt = x->compound.list[i];
+        if (elt->type == ast_EXPR_KEY_VALUE) {
+            expr_t *indexT = check_expr(w, elt->key_value.key);
+            if (!types_isInteger(indexT)) {
+                panic("not a valid index: %s: %s",
+                        types_exprString(elt->key_value.key),
+                        types_exprString(elt));
+            }
+            elt = elt->key_value.value;
+        }
         if (elt->type == ast_EXPR_COMPOUND) {
             if (elt->compound.type == NULL) {
                 elt->compound.type = baseT->array.elt;
