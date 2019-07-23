@@ -640,6 +640,19 @@ static expr_t *initializer(parser_t *p) {
                 },
             };
             value = esc(x);
+        } else if (accept(p, token_LBRACK)) {
+            expr_t *key = expression(p);
+            (void)key;
+            expect(p, token_RBRACK);
+            expect(p, token_ASSIGN);
+            expr_t x = {
+                .type = ast_EXPR_KEY_VALUE,
+                .key_value = {
+                    .key = key,
+                    .value = initializer(p),
+                },
+            };
+            value = esc(x);
         } else {
             value = initializer(p);
         }
