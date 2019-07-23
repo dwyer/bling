@@ -69,7 +69,6 @@ extern bool types_isType(expr_t *expr) {
     case ast_TYPE_ARRAY:
     case ast_TYPE_ENUM:
     case ast_TYPE_FUNC:
-    case ast_TYPE_QUAL:
     case ast_TYPE_NATIVE:
     case ast_TYPE_STRUCT:
         return true;
@@ -117,9 +116,6 @@ static expr_t *types_getBaseType(expr_t *type) {
         case ast_TYPE_NATIVE:
         case ast_TYPE_STRUCT:
             return type;
-        case ast_TYPE_QUAL:
-            type = type->qual.type;
-            break;
         default:
             panic("not a typedef: %s", types_typeString(type));
         }
@@ -195,8 +191,6 @@ static bool types_areIdentical(expr_t *a, expr_t *b) {
             }
         }
         return true;
-    case ast_TYPE_QUAL:
-        return types_areIdentical(a->qual.type, b->qual.type);
     default:
         panic("unreachable: %s == %s", types_typeString(a), types_typeString(b));
         return false;
@@ -222,17 +216,6 @@ static expr_t *types_pointerBase(expr_t *t) {
 static bool types_areAssignable(expr_t *a, expr_t *b) {
     if (types_areIdentical(a, b)) {
         return true;
-    }
-    if (a->type == ast_TYPE_QUAL) {
-        if (b->type == ast_TYPE_QUAL) {
-            if (a->qual.qual != b->qual.qual) {
-                // TODO only enforce this when it comes from a pointer
-                // return false;
-            }
-            b = b->qual.type;
-        }
-        a = a->qual.type;
-        return types_areAssignable(a, b);
     }
     if (ast_isVoidPtr(a) || ast_isVoidPtr(b)) {
         return true;
@@ -261,12 +244,6 @@ static bool types_areAssignable(expr_t *a, expr_t *b) {
 static bool types_areComparable(expr_t *a, expr_t *b) {
     if (types_areIdentical(a, b)) {
         return true;
-    }
-    if (a->type == ast_TYPE_QUAL) {
-        return types_areComparable(a->qual.type, b);
-    }
-    if (b->type == ast_TYPE_QUAL) {
-        return types_areComparable(a, b->qual.type);
     }
     if (types_isArithmetic(a) && types_isArithmetic(b)) {
         return true;
@@ -433,10 +410,6 @@ static void check_type(checker_t *w, expr_t *expr) {
 
     case ast_EXPR_STAR:
         check_type(w, expr->star.x);
-        break;
-
-    case ast_TYPE_QUAL:
-        check_type(w, expr->qual.type);
         break;
 
     case ast_TYPE_STRUCT:
@@ -610,9 +583,6 @@ static void check_struct(checker_t *w, expr_t *x) {
             }
         }
         expr_t *eltT = check_expr(w, elt);
-        if (eltT->type == ast_TYPE_QUAL) {
-            eltT = eltT->qual.type;
-        }
         if (!types_areAssignable(fieldT, eltT)) {
             panic("cannot init field of type `%s` with value of type `%s`: %s",
                     types_typeString(fieldT),
@@ -722,9 +692,6 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
                 assert(param->type == ast_DECL_FIELD);
                 expr_t *type = check_expr(w, expr->call.args[i]);
                 if (param->field.type) {
-                    if (type->type == ast_TYPE_QUAL) {
-                        type = type->qual.type;
-                    }
                     if (!types_areAssignable(param->field.type, type)) {
                         panic("not assignable: %s and %s: %s",
                                 types_typeString(param->field.type),
@@ -863,13 +830,10 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
                         types_stmtString(stmt));
             }
             expr_t *a = check_expr(w, stmt->assign.x);
-            if (a->type == ast_TYPE_QUAL) {
+            if (a->is_const) {
                 panic("cannot assign to const var: %s", types_stmtString(stmt));
             }
             expr_t *b = check_expr(w, stmt->assign.y);
-            if (b->type == ast_TYPE_QUAL) {
-                b = b->qual.type;
-            }
             if (!types_areAssignable(a, b)) {
                 panic("check_stmt: not assignment `%s` and `%s`: %s",
                         types_exprString(stmt->assign.x),
@@ -945,12 +909,6 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
             expr_t *a = w->result;
             assert(a);
             expr_t *b = check_expr(w, stmt->return_.x);
-            if (a->type == ast_TYPE_QUAL) {
-                a = a->qual.type;
-            }
-            if (b->type == ast_TYPE_QUAL) {
-                b = b->qual.type;
-            }
             if (!types_areAssignable(a, b)) {
                 panic("check_stmt: not returnable: %s and %s: %s",
                         types_typeString(a),
@@ -1057,16 +1015,9 @@ static void check_decl(checker_t *w, decl_t *decl) {
                 valType = check_expr(w, decl->value.value);
             }
             if (decl->value.type == NULL) {
-                if (valType->type == ast_TYPE_QUAL) {
-                    decl->value.type = valType->qual.type;
-                } else {
-                    decl->value.type = valType;
-                }
+                decl->value.type = valType;
             }
             if (valType != NULL) {
-                if (valType->type == ast_TYPE_QUAL) {
-                    valType = valType->qual.type;
-                }
                 expr_t *varType = decl->value.type;
                 if (!types_areAssignable(varType, valType)) {
                     panic("check_decl: not assignable %s and %s: %s",

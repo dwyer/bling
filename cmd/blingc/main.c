@@ -170,5 +170,8 @@ int main(int argc, char *argv[]) {
     } else {
         compile_bling(argv);
     }
+    print("expr_t: %d", sizeof(expr_t));
+    print("decl_t: %d", sizeof(decl_t));
+    print("stmt_t: %d", sizeof(stmt_t));
     return 0;
 }

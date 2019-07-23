@@ -307,6 +307,10 @@ static bool is_void(expr_t *type) {
 }
 
 extern void print_type(emitter_t *p, expr_t *type) {
+    if (type->is_const) {
+        emit_token(p, token_CONST);
+        emit_space(p);
+    }
     switch (type->type) {
     case ast_TYPE_ARRAY:
         emit_token(p, token_LBRACK);
@@ -386,12 +390,6 @@ extern void print_type(emitter_t *p, expr_t *type) {
             emit_token(p, token_MUL);
             print_type(p, type);
         }
-        break;
-
-    case ast_TYPE_QUAL:
-        emit_token(p, type->qual.qual);
-        emit_space(p);
-        print_type(p, type->qual.type);
         break;
 
     case ast_TYPE_STRUCT:

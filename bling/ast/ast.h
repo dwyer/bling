@@ -57,7 +57,6 @@ typedef enum {
     ast_TYPE_ENUM,
     ast_TYPE_NATIVE,
     ast_TYPE_FUNC,
-    ast_TYPE_QUAL,
     ast_TYPE_STRUCT,
     _ast_TYPE_END,
 
@@ -81,7 +80,6 @@ typedef struct {
 
 typedef struct decl_t {
     ast_node_type_t type;
-    token_t store;
     union {
 
         struct {
@@ -120,6 +118,8 @@ typedef struct decl_t {
 
 typedef struct expr_t {
     ast_node_type_t type;
+    bool is_const;
+
     union {
 
         struct {

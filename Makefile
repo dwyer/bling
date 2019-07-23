@@ -24,12 +24,12 @@ SRCS=bootstrap/bootstrap.h \
      subc/emitter/emitter.h subc/emitter/emitter.c \
      cmd/blingc/main.c
 
-hello: $(BLINGC) all.bling
-	$(BLINGC) -o /dev/null -w cmd/blingc/blingc.bling
-
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
 	cc all.c bazel-bin/bootstrap/libbootstrap.a bazel-bin/fmt/libfmt.a bazel-bin/os/libos.a
+
+hello: $(BLINGC) all.bling
+	$(BLINGC) -o /dev/null -w cmd/blingc/blingc.bling
 
 test_compiler: $(BLINGC)
 	./test_compiler.sh

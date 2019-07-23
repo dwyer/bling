@@ -75,9 +75,6 @@ extern bool ast_isNil(expr_t *x) {
 }
 
 extern bool ast_isVoid(expr_t *x) {
-    if (x->type == ast_TYPE_QUAL) {
-        x = x->qual.type;
-    }
     return ast_isIdent(x) && streq(x->ident.name, "void");
 }
 

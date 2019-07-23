@@ -474,14 +474,7 @@ static expr_t *declarator(parser_t *p, expr_t **type_ptr) {
 static expr_t *type_qualifier(parser_t *p, expr_t *type) {
     // type_qualifier_list : type_qualifier+ ;
     if (accept(p, token_CONST)) {
-        expr_t x = {
-            .type = ast_TYPE_QUAL,
-            .qual = {
-                .qual = token_CONST,
-                .type = type,
-            }
-        };
-        type = esc(x);
+        type->is_const = true;
     }
     return type;
 }
@@ -1059,14 +1052,7 @@ static expr_t *declaration_specifiers(parser_t *p, bool is_top) {
     bool is_const = accept(p, token_CONST);
     expr_t *type = type_specifier(p);
     if (is_const) {
-        expr_t x = {
-            .type = ast_TYPE_QUAL,
-            .qual = {
-                .qual = token_CONST,
-                .type = type,
-            }
-        };
-        type = esc(x);
+        type->is_const = is_const;
     }
     return type;
 }

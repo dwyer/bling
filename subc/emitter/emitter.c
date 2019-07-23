@@ -301,6 +301,10 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
     if (type == NULL) {
         panic("emit_c_type: type is nil");
     }
+    if (type->is_const && type->type != ast_EXPR_STAR) {
+        emit_token(e, token_CONST);
+        emit_space(e);
+    }
     switch (type->type) {
     case ast_TYPE_ARRAY:
         emit_c_type(e, type->array.elt, name);
@@ -390,21 +394,6 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
         }
         break;
 
-    case ast_TYPE_QUAL:
-        // TODO: ensure that the C parser is able to parse both of these
-        // regardless of the const type.
-        if (type->qual.type->type == ast_EXPR_STAR) {
-            emit_c_type(e, type->qual.type, NULL);
-            emit_space(e);
-            emit_token(e, type->qual.qual);
-        } else {
-            emit_token(e, type->qual.qual);
-            emit_space(e);
-            emit_c_type(e, type->qual.type, name);
-            name = NULL;
-        }
-        break;
-
     case ast_TYPE_STRUCT:
         emit_token(e, type->struct_.tok);
         if (type->struct_.name) {
@@ -437,6 +426,11 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
         panic("Unknown type: %d", type->type);
     }
 
+    if (type->is_const && type->type == ast_EXPR_STAR) {
+        emit_space(e);
+        emit_token(e, token_CONST);
+    }
+
     if (name) {
         emit_space(e);
         emit_c_expr(e, name);
@@ -444,9 +438,6 @@ static void emit_c_type(emitter_t *e, expr_t *type, expr_t *name) {
 }
 
 static void emit_c_decl(emitter_t *e, decl_t *decl) {
-    if (decl->store != token_ILLEGAL) {
-        emit_token(e, decl->store);
-    }
     switch (decl->type) {
 
     case ast_DECL_FIELD:

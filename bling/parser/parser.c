@@ -916,14 +916,9 @@ static expr_t *parse_func_type(parser_t *p) {
 
 static expr_t *parse_type_qualifier(parser_t *p, token_t tok) {
     expect(p, tok);
-    expr_t x = {
-        .type = ast_TYPE_QUAL,
-        .qual = {
-            .qual = tok,
-            .type = parse_type_spec(p),
-        },
-    };
-    return esc(x);
+    expr_t *type = parse_type_spec(p);
+    type->is_const = true;
+    return type;
 }
 
 static expr_t *parse_type_spec(parser_t *p) {
