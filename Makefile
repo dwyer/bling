@@ -4,24 +4,40 @@ BLINGC=bazel-bin/cmd/blingc/blingc
 
 .PHONY: test $(BLINGC) all.bling
 
-SRCS=bootstrap/bootstrap.h \
+HRDS=bootstrap/bootstrap.h \
      fmt/fmt.h \
-     error/error.h error/error.c \
-     slice/slice.h slice/slice.c \
-     map/map.h map/map.c \
-     bytes/bytes.h bytes/bytes.c \
-     strings/strings.h strings/strings.c \
-     path/path.h path/path.c \
+     error/error.h \
+     slice/slice.h \
+     map/map.h \
+     bytes/bytes.h \
+     strings/strings.h \
+     path/path.h \
      os/os.h \
-     io/ioutil/ioutil.h io/ioutil/ioutil.c \
-     bling/token/token.h bling/token/token.c \
-     bling/ast/ast.h bling/ast/ast.c \
-     bling/scanner/scanner.h bling/scanner/scanner.c \
-     bling/parser/parser.h bling/parser/parser.c \
-     bling/emitter/emitter.h bling/emitter/emitter.c \
-     bling/types/types.h bling/types/types.c \
-     subc/parser/parser.h subc/parser/parser.c \
-     subc/emitter/emitter.h subc/emitter/emitter.c \
+     io/ioutil/ioutil.h \
+     bling/token/token.h \
+     bling/ast/ast.h \
+     bling/scanner/scanner.h \
+     bling/parser/parser.h \
+     bling/emitter/emitter.h \
+     bling/types/types.h \
+     subc/parser/parser.h \
+     subc/emitter/emitter.h
+
+SRCS=error/error.c \
+     slice/slice.c \
+     map/map.c \
+     bytes/bytes.c \
+     strings/strings.c \
+     path/path.c \
+     io/ioutil/ioutil.c \
+     bling/token/token.c \
+     bling/ast/ast.c \
+     bling/scanner/scanner.c \
+     bling/parser/parser.c \
+     bling/emitter/emitter.c \
+     bling/types/types.c \
+     subc/parser/parser.c \
+     subc/emitter/emitter.c \
      cmd/blingc/main.c
 
 a.out: $(BLINGC) all.bling
@@ -35,16 +51,15 @@ test_compiler: $(BLINGC)
 	./test_compiler.sh
 
 all.bling: $(BLINGC)
-	$(BLINGC) -c -o all.bling $(SRCS)
+	$(BLINGC) -c -o all.bling $(HRDS) $(SRCS)
 	./splitall.py
 
-debug: $(BLINGC)
-	lldb $(BLINGC)
+debug:
+	cc -g -I. $(SRCS) bootstrap/bootstrap.c fmt/fmt.c os/os.c
+	lldb a.out
 
 $(BLINGC):
 	bazel build \
-	    -c dbg \
-	    --strip=never \
 	    --copt="-Wall" \
 	    --copt="-Werror" \
 	    --copt="-fms-extensions" \

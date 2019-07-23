@@ -3,10 +3,6 @@
 #include "bling/parser/parser.h"
 #include "bling/types/types.h"
 
-extern void printlg(const char *fmt, ...) {}
-
-#define printlg(...) print(__VA_ARGS__)
-
 static struct {
     char *name;
     int size;
@@ -309,13 +305,12 @@ static void scope_declare(scope_t *s, decl_t *decl) {
                 !types_areIdentical(alt->decl->value.type, decl->value.value);
             break;
         default:
-            printlg("unknown kind: %d", kind);
+            panic("unknown kind: %d", kind);
             break;
         }
         if (!redecl) {
             panic("already declared: %s", ident->ident.name);
         }
-        printlg("redeclaring %s", obj->name);
         alt->decl = decl;
     }
 }
@@ -342,8 +337,6 @@ extern void declare_builtins(scope_t *s) {
                 .type = esc(type),
             },
         };
-        printlg("declare_natives: declaring %s (size %d)",
-                natives[i].name, natives[i].size);
         scope_declare(s, esc(decl));
     }
 }
@@ -390,7 +383,6 @@ static void check_type(checker_t *w, expr_t *expr) {
             if (w->typedefName) {
                 decl->value.type = w->typedefName;
             }
-            printlg("check_type: declaring %s", decl->value.name->ident.name);
             scope_declare(w->scope, decl);
         }
         break;
@@ -419,11 +411,7 @@ static void check_type(checker_t *w, expr_t *expr) {
                 decl_t *field = expr->struct_.fields[i];
                 check_type(w, field->field.type);
                 if (field->field.name) {
-                    printlg("check_type: declaring %s",
-                            field->field.name->ident.name);
                     scope_declare(w->scope, field);
-                } else {
-                    printlg("anonymous struct");
                 }
             }
             checker_closeScope(w);
@@ -615,11 +603,8 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
 
     case ast_EXPR_BINARY:
         {
-            printlg("walking binary x");
             expr_t *typ1 = check_expr(w, expr->binary.x);
-            printlg("walking binary y");
             expr_t *typ2 = check_expr(w, expr->binary.y);
-            printlg("walked binary");
             if (!types_areComparable(typ1, typ2)) {
                 panic("not compariable: %s and %s: %s",
                         types_typeString(typ1),
@@ -762,7 +747,6 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
                 assert(expr->selector.tok != token_ARROW);
             }
             type = types_getBaseType(type);
-            printlg("selector: %s", expr->selector.sel->ident.name);
             decl_t *field = find_field(type, expr->selector.sel);
             if (field == NULL) {
                 panic("struct `%s` (`%s`) has no field `%s`",
@@ -878,13 +862,11 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
             check_stmt(w, stmt->iter.init);
         }
         if (stmt->iter.cond) {
-            printlg("walking for/while cond");
             check_expr(w, stmt->iter.cond);
         }
         if (stmt->iter.post) {
             check_stmt(w, stmt->iter.post);
         }
-        printlg("walking for/while body");
         check_stmt(w, stmt->iter.body);
         if (stmt->iter.init || stmt->iter.post) {
             checker_closeScope(w);
@@ -961,12 +943,10 @@ static void check_file(checker_t *w, file_t *file);
 
 static void check_import(checker_t *w, decl_t *imp) {
     char *path = constant_stringVal(imp->imp.path);
-    printlg("importing %s", path);
     for (int i = 0; i < len(w->scope->filenames); i++) {
         char *s = NULL;
         slice_get(&w->scope->filenames, i, &s);
         if (streq(path, s)) {
-            printlg("already imported \"%s\"", path);
             free(path);
             return;
         }
@@ -986,7 +966,6 @@ static void check_decl(checker_t *w, decl_t *decl) {
     switch (decl->type) {
     case ast_DECL_FUNC:
         check_type(w, decl->func.type);
-        printlg("check_decl: declaring %s", decl->func.name->ident.name);
         scope_declare(w->scope, decl);
         break;
     case ast_DECL_PRAGMA:
@@ -995,7 +974,6 @@ static void check_decl(checker_t *w, decl_t *decl) {
         w->typedefName = decl->typedef_.name;
         check_type(w, decl->typedef_.type);
         w->typedefName = NULL;
-        printlg("check_decl: declaring %s", decl->typedef_.name->ident.name);
         scope_declare(w->scope, decl);
         break;
     case ast_DECL_VALUE:
@@ -1026,7 +1004,6 @@ static void check_decl(checker_t *w, decl_t *decl) {
                             types_declString(decl));
                 }
             }
-            printlg("check_decl: declaring %s", decl->value.name->ident.name);
             scope_declare(w->scope, decl);
             break;
         }
@@ -1037,15 +1014,12 @@ static void check_decl(checker_t *w, decl_t *decl) {
 
 static void check_func(checker_t *w, decl_t *decl) {
     if (decl->type == ast_DECL_FUNC && decl->func.body) {
-        printlg("check_func: walking func %s", decl->func.name->ident.name);
         checker_openScope(w);
         expr_t *type = decl->func.type;
         for (int i = 0; type->func.params && type->func.params[i]; i++) {
             decl_t *param = type->func.params[i];
             assert(param->type == ast_DECL_FIELD);
             if (param->field.name) {
-                printlg("check_func: declaring param `%s`",
-                        param->field.name->ident.name);
                 scope_declare(w->scope, param);
             }
         }
@@ -1060,7 +1034,6 @@ static void check_func(checker_t *w, decl_t *decl) {
 }
 
 static void check_file(checker_t *w, file_t *file) {
-    printlg("checking file `%s`", file->filename);
     for (int i = 0; file->imports[i] != NULL; i++) {
         check_import(w, file->imports[i]);
     }

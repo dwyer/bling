@@ -92,7 +92,6 @@ void compile_bling(char *argv[]) {
     scope_t *scope = scope_new(NULL);
     declare_builtins(scope);
     if (conf.strict) {
-        print("walking BUILTINS");
         file_t *file = parser_parse_file("builtin/builtin.bling");
         file->scope = scope;
         types_checkFile(&conf, file);
@@ -134,7 +133,6 @@ void compile_bling(char *argv[]) {
     char *out = emitter_string(&emitter);
     if (dst) {
         if (is_ext(dst, ".out")) {
-            print("compiling %s", dst);
             char *tmp = "/tmp/tmp.c";
             ioutil_writeFile(tmp, out, 0644);
             char *args[] = {
@@ -170,8 +168,5 @@ int main(int argc, char *argv[]) {
     } else {
         compile_bling(argv);
     }
-    print("expr_t: %d", sizeof(expr_t));
-    print("decl_t: %d", sizeof(decl_t));
-    print("stmt_t: %d", sizeof(stmt_t));
     return 0;
 }
