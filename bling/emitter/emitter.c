@@ -124,7 +124,7 @@ extern void print_expr(emitter_t *p, expr_t *expr) {
 
     case ast_EXPR_SELECTOR:
         print_expr(p, expr->selector.x);
-        emit_token(p, expr->selector.tok);
+        emit_token(p, token_PERIOD);
         print_expr(p, expr->selector.sel);
         break;
 
