@@ -513,7 +513,7 @@ extern void printer_print_file(emitter_t *p, file_t *file) {
     for (decl_t **imports = file->imports; imports && *imports; imports++) {
         emit_token(p, token_IMPORT);
         emit_space(p);
-        print_expr(p, (*imports)->import.path);
+        print_expr(p, (*imports)->imp.path);
         emit_newline(p);
     }
     for (decl_t **decls = file->decls; decls && *decls; decls++) {

@@ -3,8 +3,8 @@
 #include "bytes/bytes.h"
 #include "slice/slice.h"
 
-$import("bytes");
-$import("error");
+import("bytes");
+import("error");
 
 extern char *strings_join(const char *a[], int size, const char *sep);
 

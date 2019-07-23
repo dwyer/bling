@@ -1092,7 +1092,7 @@ static file_t *parse_file(parser_t *p) {
         expect(p, token_SEMICOLON);
         decl_t decl = {
             .type = ast_DECL_IMPORT,
-            .import = {
+            .imp = {
                 .path = path,
             },
         };

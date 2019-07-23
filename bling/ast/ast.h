@@ -2,8 +2,8 @@
 #include "bling/token/token.h"
 #include "map/map.h"
 
-$import("bling/token");
-$import("map");
+import("bling/token");
+import("map");
 
 typedef enum {
 
@@ -86,7 +86,7 @@ typedef struct decl_t {
 
         struct {
             expr_t *path;
-        } import;
+        } imp;
 
         struct {
             char *lit;

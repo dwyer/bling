@@ -4,8 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define $import(_)
-#define $package(_)
+#define import(_)
+#define package(_)
 
 #define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
 

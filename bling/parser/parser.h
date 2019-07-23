@@ -4,13 +4,13 @@
 #include "bling/scanner/scanner.h"
 #include "bling/token/token.h"
 
-$import("bling/ast");
-$import("bling/scanner");
-$import("bling/token");
-$import("bytes");
-$import("fmt");
-$import("io/ioutil");
-$import("path");
+import("bling/ast");
+import("bling/scanner");
+import("bling/token");
+import("bytes");
+import("fmt");
+import("io/ioutil");
+import("path");
 
 extern file_t *parser_parse_file(char *filename);
 extern file_t **parser_parseDir(const char *path, error_t **first);

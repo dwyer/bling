@@ -5,12 +5,12 @@
 #include "subc/emitter/emitter.h"
 #include "subc/parser/parser.h"
 
-$import("bling/parser");
-$import("bling/types");
-$import("os");
-$import("path");
-$import("subc/parser");
-$import("subc/emitter");
+import("bling/parser");
+import("bling/types");
+import("os");
+import("path");
+import("subc/parser");
+import("subc/emitter");
 
 int execve(const char *path, char *const argv[], char *envp[]);
 

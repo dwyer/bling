@@ -2,8 +2,8 @@
 #include "bling/ast/ast.h"
 #include "bytes/bytes.h"
 
-$import("bling/ast");
-$import("bytes");
+import("bling/ast");
+import("bytes");
 
 typedef struct {
     buffer_t buf;

@@ -1,7 +1,7 @@
 #pragma once
 
-#define $import(_)
-#define $package(_)
+#define import(_)
+#define package(_)
 
 typedef char bool;
 

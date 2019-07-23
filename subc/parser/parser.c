@@ -1177,7 +1177,7 @@ static file_t *parse_cfile(parser_t *p) {
         expect(p, token_SEMICOLON);
         decl_t decl = {
             .type = ast_DECL_IMPORT,
-            .import = {
+            .imp = {
                 .path = path,
             },
         };

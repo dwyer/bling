@@ -2,8 +2,8 @@
 #include "bootstrap/bootstrap.h"
 #include "error/error.h"
 
-$import("error");
-$import("path");
+import("error");
+import("path");
 
 typedef uint64_t time_Time;
 

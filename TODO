@@ -82,8 +82,6 @@ Use dollar-sign ('$') to select members of a package. For instance:
     and '->').
 
     Roadmap:
-        - Remove dollar sign from keywords ($package, $import, $var, $func).
-        - Change the name of things that use those keywords.
         - Make '$' a token.
         - Prepend pkg$ to names of all package decls (excluding builtins and C
                 primatives).

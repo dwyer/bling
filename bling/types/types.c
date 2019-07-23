@@ -953,8 +953,8 @@ static char *constant_stringVal(expr_t *x) {
 
 static void check_file(checker_t *w, file_t *file);
 
-static void check_import(checker_t *w, decl_t *import) {
-    char *path = constant_stringVal(import->import.path);
+static void check_import(checker_t *w, decl_t *imp) {
+    char *path = constant_stringVal(imp->imp.path);
     printlg("importing %s", path);
     for (int i = 0; i < len(w->scope->filenames); i++) {
         char *s = NULL;

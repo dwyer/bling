@@ -1,7 +1,7 @@
 #pragma once
 #include "bling/token/token.h"
 
-$import("bling/token");
+import("bling/token");
 
 typedef struct {
     char *src;

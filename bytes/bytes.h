@@ -3,8 +3,8 @@
 #include "error/error.h"
 #include "slice/slice.h"
 
-$import("error");
-$import("slice");
+import("error");
+import("slice");
 
 extern char *bytes_join(const char *a[], int size, const char *sep);
 

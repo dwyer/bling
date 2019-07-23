@@ -2,7 +2,7 @@
 
 #include "slice/slice.h"
 
-$import("slice");
+import("slice");
 
 typedef struct {
     int len;

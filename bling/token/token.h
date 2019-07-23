@@ -1,7 +1,7 @@
 #pragma once
 #include "bootstrap/bootstrap.h"
 
-$package(token);
+package(token);
 
 typedef enum {
     token_ILLEGAL = 0,
@@ -35,7 +35,6 @@ typedef enum {
     token_STATIC,
     token_STRUCT,
     token_SWITCH,
-    token_TYPE,
     token_TYPEDEF,
     token_UNION,
     token_UNSIGNED,
