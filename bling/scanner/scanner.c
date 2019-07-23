@@ -8,7 +8,7 @@ static void next0(scanner_t *s) {
 }
 
 static void skip_whitespace(scanner_t *s) {
-    while (s->ch == ' ' || s->ch == '\n' || s->ch == '\t') {
+    while (s->ch == ' ' || (s->ch == '\n' && !s->insertSemi) || s->ch == '\t') {
         next0(s);
     }
 }
@@ -164,16 +164,21 @@ scan_again:
     tok = token_ILLEGAL;
     skip_whitespace(s);
     s->offset = s->rd_offset-1;
+    bool insertSemi = false;
     *lit = NULL;
     if (is_letter(s->ch)) {
+        insertSemi = true;
         *lit = scan_ident(s);
         tok = token_lookup(*lit);
     } else if (is_digit(s->ch)) {
+        insertSemi = true;
         *lit = scan_number(s, &tok);
     } else if (s->ch == '\'') {
+        insertSemi = true;
         *lit = scan_rune(s);
         tok = token_CHAR;
     } else if (s->ch == '"') {
+        insertSemi = true;
         *lit = scan_string(s);
         tok = token_STRING;
     } else {
@@ -182,8 +187,13 @@ scan_again:
         switch (ch) {
             // structure
         case '\0':
+            insertSemi = true;
             tok = token_EOF;
             break;
+        case '\n':
+            assert(s->insertSemi);
+            s->insertSemi = false;
+            return token_SEMICOLON;
         case '#':
             tok = token_HASH;
             *lit = scan_pragma(s);
@@ -192,6 +202,7 @@ scan_again:
             tok = token_LPAREN;
             break;
         case ')':
+            insertSemi = true;
             tok = token_RPAREN;
             break;
         case ',':
@@ -210,12 +221,14 @@ scan_again:
             tok = token_LBRACK;
             break;
         case ']':
+            insertSemi = true;
             tok = token_RBRACK;
             break;
         case '{':
             tok = token_LBRACE;
             break;
         case '}':
+            insertSemi = true;
             tok = token_RBRACE;
             break;
 
@@ -237,6 +250,9 @@ scan_again:
             break;
         case '+':
             tok = switch3(s, token_ADD, token_ADD_ASSIGN, '+', token_INC);
+            if (tok == token_INC) {
+                insertSemi = true;
+            }
             break;
         case '-':
             if (s->ch == '>') {
@@ -244,6 +260,9 @@ scan_again:
                 tok = token_ARROW;
             } else {
                 tok = switch3(s, token_SUB, token_SUB_ASSIGN, '-', token_DEC);
+                if (tok == token_DEC) {
+                    insertSemi = true;
+                }
             }
             break;
         case '.':
@@ -279,6 +298,9 @@ scan_again:
             break;
         }
     }
+    if (!s->dontInsertSemis) {
+        s->insertSemi = insertSemi;
+    }
     return tok;
 }
 
@@ -286,5 +308,8 @@ extern void scanner_init(scanner_t *s, char *src) {
     s->src = src;
     s->rd_offset = 0;
     s->offset = 0;
+    s->insertSemi = false;
+    s->dontInsertSemis = true;
     next0(s);
+    s->dontInsertSemis = false;
 }

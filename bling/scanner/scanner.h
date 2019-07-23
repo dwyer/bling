@@ -8,6 +8,8 @@ typedef struct {
     int rd_offset;
     int offset;
     int ch;
+    bool insertSemi;
+    bool dontInsertSemis;
 } scanner_t;
 
 extern token_t scanner_scan(scanner_t *s, char **lit);

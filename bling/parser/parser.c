@@ -17,9 +17,10 @@ extern decl_t *parse_pragma(parser_t *p) {
 }
 
 extern void parser_init(parser_t *p, char *filename, char *src) {
-    p->filename = filename;
+    p->filename = strdup(filename);
     p->lit = NULL;
     scanner_init(&p->scanner, src);
+    p->scanner.dontInsertSemis = !path_matchExt(".bling", filename);
     parser_next(p);
 }
 
@@ -758,6 +759,7 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
         clauses = append(clauses, &clause);
     }
     expect(p, token_RBRACE);
+    accept(p, token_SEMICOLON);
     stmt_t stmt = {
         .type = ast_STMT_SWITCH,
         .switch_ = {
@@ -862,6 +864,7 @@ static stmt_t *parse_block_stmt(parser_t *p) {
         stmts = append(stmts, &stmt);
     }
     expect(p, token_RBRACE);
+    accept(p, token_SEMICOLON);
     stmt_t stmt = {
         .type = ast_STMT_BLOCK,
         .block = {

@@ -160,7 +160,6 @@ extern void print_stmt(emitter_t *p, stmt_t *stmt) {
         emit_token(p, stmt->assign.op);
         emit_space(p);
         print_expr(p, stmt->assign.y);
-        emit_token(p, token_SEMICOLON);
         break;
 
     case ast_STMT_BLOCK:
@@ -212,7 +211,6 @@ extern void print_stmt(emitter_t *p, stmt_t *stmt) {
 
     case ast_STMT_EXPR:
         print_expr(p, stmt->expr.x);
-        emit_token(p, token_SEMICOLON);
         break;
 
     case ast_STMT_IF:
@@ -235,11 +233,9 @@ extern void print_stmt(emitter_t *p, stmt_t *stmt) {
         if (stmt->iter.kind == token_FOR) {
             if (stmt->iter.init) {
                 print_stmt(p, stmt->iter.init);
-                emit_space(p);
-            } else {
-                emit_token(p, token_SEMICOLON);
-                emit_space(p);
             }
+            emit_token(p, token_SEMICOLON);
+            emit_space(p);
         }
         if (stmt->iter.cond) {
             print_expr(p, stmt->iter.cond);
@@ -263,7 +259,6 @@ extern void print_stmt(emitter_t *p, stmt_t *stmt) {
             emit_space(p);
             print_expr(p, stmt->jump.label);
         }
-        emit_token(p, token_SEMICOLON);
         break;
 
     case ast_STMT_LABEL:
@@ -276,7 +271,6 @@ extern void print_stmt(emitter_t *p, stmt_t *stmt) {
     case ast_STMT_POSTFIX:
         print_expr(p, stmt->postfix.x);
         emit_token(p, stmt->postfix.op);
-        emit_token(p, token_SEMICOLON);
         break;
 
     case ast_STMT_RETURN:
@@ -285,7 +279,6 @@ extern void print_stmt(emitter_t *p, stmt_t *stmt) {
             emit_space(p);
             print_expr(p, stmt->return_.x);
         }
-        emit_token(p, token_SEMICOLON);
         break;
 
     case ast_STMT_SWITCH:
@@ -416,7 +409,6 @@ extern void print_type(emitter_t *p, expr_t *type) {
                     fields++) {
                 emit_tabs(p);
                 print_decl(p, *fields);
-                emit_token(p, token_SEMICOLON);
                 emit_newline(p);
             }
             p->indent--;
@@ -457,8 +449,6 @@ extern void print_decl(emitter_t *p, decl_t *decl) {
         if (decl->func.body) {
             emit_space(p);
             print_stmt(p, decl->func.body);
-        } else {
-            emit_token(p, token_SEMICOLON);
         }
         break;
 
@@ -468,7 +458,6 @@ extern void print_decl(emitter_t *p, decl_t *decl) {
         print_expr(p, decl->typedef_.name);
         emit_space(p);
         print_type(p, decl->typedef_.type);
-        emit_token(p, token_SEMICOLON);
         break;
 
     case ast_DECL_PRAGMA:
@@ -498,7 +487,6 @@ extern void print_decl(emitter_t *p, decl_t *decl) {
                 emit_space(p);
                 print_expr(p, decl->value.value);
             }
-            emit_token(p, token_SEMICOLON);
             break;
         case token_CONST:
             emit_token(p, token_HASH);
@@ -525,7 +513,6 @@ extern void printer_print_file(emitter_t *p, file_t *file) {
         emit_token(p, token_IMPORT);
         emit_space(p);
         print_expr(p, (*imports)->import.path);
-        emit_token(p, token_SEMICOLON);
         emit_newline(p);
     }
     for (decl_t **decls = file->decls; decls && *decls; decls++) {
