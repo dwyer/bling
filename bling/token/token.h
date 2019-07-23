@@ -3,6 +3,8 @@
 
 package(token);
 
+import("map");
+
 typedef enum {
     token_ILLEGAL = 0,
 
@@ -14,6 +16,7 @@ typedef enum {
     token_INT,
     token_STRING,
 
+    _token_keyword_beg,
     token_BREAK,
     token_CASE,
     token_CONST,
@@ -39,6 +42,7 @@ typedef enum {
     token_UNSIGNED,
     token_VAR,
     token_WHILE,
+    _token_keyword_end,
 
     token_ARROW,
     token_COLON,

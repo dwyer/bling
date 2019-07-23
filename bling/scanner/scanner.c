@@ -166,9 +166,22 @@ scan_again:
     bool insertSemi = false;
     *lit = NULL;
     if (is_letter(s->ch)) {
-        insertSemi = true;
         *lit = scan_ident(s);
-        tok = token_lookup(*lit);
+        if (strlen(*lit) > 1) {
+            tok = token_lookup(*lit);
+            switch (tok) {
+            case token_IDENT:
+            case token_BREAK:
+            case token_CONTINUE:
+            case token_RETURN:
+                insertSemi = true;
+            default:
+                break;
+            }
+        } else {
+            insertSemi = true;
+            tok = token_IDENT;
+        }
     } else if (is_digit(s->ch)) {
         insertSemi = true;
         *lit = scan_number(s, &tok);
@@ -284,13 +297,15 @@ scan_again:
             }
             break;
         case '<':
-            tok = switch4(s, token_LT, token_LT_EQUAL, '<', token_SHL, token_SHL_ASSIGN);
+            tok = switch4(s, token_LT, token_LT_EQUAL, '<', token_SHL,
+                    token_SHL_ASSIGN);
             break;
         case '=':
             tok = switch2(s, token_ASSIGN, token_EQUAL);
             break;
         case '>':
-            tok = switch4(s, token_GT, token_GT_EQUAL, '>', token_SHR, token_SHR_ASSIGN);
+            tok = switch4(s, token_GT, token_GT_EQUAL, '>', token_SHR,
+                    token_SHR_ASSIGN);
             break;
         case '|':
             tok = switch3(s, token_OR, token_OR_ASSIGN, '|', token_LOR);

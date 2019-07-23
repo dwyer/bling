@@ -1,4 +1,5 @@
-#include "token.h"
+#include "bling/token/token.h"
+#include "map/map.h"
 
 static char *tokens[] = {
     [token_ILLEGAL] = "ILLEGAL",
@@ -91,14 +92,20 @@ extern char *token_string(token_t tok) {
     return tokens[tok];
 }
 
+static map_t keywords = {};
+
 extern token_t token_lookup(char *ident) {
-    for (token_t tok = token_BREAK; tok <= token_WHILE; tok++) {
-        char *s = token_string(tok);
-        if (streq(ident, s)) {
-            return tok;
+    if (keywords.val_size == 0) {
+        keywords = map_init(sizeof(token_t));
+        for (token_t tok = _token_keyword_beg + 1; tok < _token_keyword_end;
+                tok++) {
+            char *s = token_string(tok);
+            map_set(&keywords, s, &tok);
         }
     }
-    return token_IDENT;
+    token_t tok = token_IDENT;
+    map_get(&keywords, ident, &tok);
+    return tok;
 }
 
 extern int token_precedence(token_t op) {
