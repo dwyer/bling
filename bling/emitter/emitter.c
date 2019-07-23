@@ -264,6 +264,7 @@ extern void print_stmt(emitter_t *p, stmt_t *stmt) {
     case ast_STMT_LABEL:
         print_expr(p, stmt->label.label);
         emit_token(p, token_COLON);
+        emit_newline(p);
         emit_tabs(p);
         print_stmt(p, stmt->label.stmt);
         break;
