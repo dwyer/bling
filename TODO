@@ -68,10 +68,6 @@ Allow switch-case to take multiple expressions:
             break;
         }
 
-Allow key/value pairs as array elements.
-    in C:       char *strings[256] = {[0] = "hello", [42] = "world"};
-    in bling:   var strings [256]*char = {0: "hello", 42: "world"};
-
 Use dollar-sign ('$') to select members of a package. For instance:
 
     var x pkg$Type = a
