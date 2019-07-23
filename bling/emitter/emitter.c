@@ -477,20 +477,32 @@ extern void print_decl(emitter_t *p, decl_t *decl) {
         break;
 
     case ast_DECL_VALUE:
-        emit_token(p, token_VAR);
-        if (decl->value.name) {
+        switch (decl->value.kind) {
+        case token_VAR:
+            emit_token(p, token_VAR);
+            if (decl->value.name) {
+                emit_space(p);
+                print_expr(p, decl->value.name);
+            }
             emit_space(p);
-            print_expr(p, decl->value.name);
-        }
-        emit_space(p);
-        print_type(p, decl->value.type);
-        if (decl->value.value) {
-            emit_space(p);
-            emit_token(p, token_ASSIGN);
+            print_type(p, decl->value.type);
+            if (decl->value.value) {
+                emit_space(p);
+                emit_token(p, token_ASSIGN);
+                emit_space(p);
+                print_expr(p, decl->value.value);
+            }
+            emit_token(p, token_SEMICOLON);
+            break;
+        case token_CONST:
+            emit_token(p, token_HASH);
+            emit_string(p, "define");
             emit_space(p);
             print_expr(p, decl->value.value);
+        default:
+            panic("bad kind for ast_DECL_VALUE: %s", token_string(decl->value.kind));
+            break;
         }
-        emit_token(p, token_SEMICOLON);
         break;
 
     default:

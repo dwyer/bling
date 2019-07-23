@@ -991,9 +991,11 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
             };
             return esc(decl);
         }
+    case token_CONST:
     case token_VAR:
         {
-            expect(p, token_VAR);
+            token_t tok = p->tok;
+            expect(p, tok);
             expr_t *ident = identifier(p);
             expr_t *type = NULL;
             if (p->tok != token_ASSIGN) {
@@ -1010,6 +1012,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
                     .name = ident,
                     .type = type,
                     .value = value,
+                    .kind = tok,
                 },
             };
             return esc(decl);

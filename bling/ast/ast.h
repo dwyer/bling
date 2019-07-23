@@ -101,6 +101,7 @@ typedef struct decl_t {
             expr_t *name;
             expr_t *type;
             expr_t *value;
+            token_t kind;
         } value;
 
         struct {

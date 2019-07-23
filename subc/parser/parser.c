@@ -377,6 +377,7 @@ static expr_t *enum_specifier(parser_t *p) {
                 .type = ast_DECL_VALUE,
                 .value = {
                     .name = identifier(p),
+                    .kind = token_VAR,
                 },
             };
             if (accept(p, token_ASSIGN)) {
@@ -1130,6 +1131,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
                 .type = type,
                 .name = name,
                 .value = value,
+                .kind = token_VAR,
             },
         };
         return esc(decl);

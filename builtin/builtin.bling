@@ -1,11 +1,10 @@
-
 typedef bool char;
 
-$var false const bool = $as(bool) 0;
+const false = $as(bool) 0;
 
-$var true const bool = !false;
+const true = !false;
 
-$var NULL *void = $as(*void) 0;
+const NULL = $as(*void) 0;
 
 $func esc(*void) *void;
 

@@ -28,7 +28,11 @@ extern void *slice_ref(const slice_t *s, int i) {
 }
 
 extern void slice_get(const slice_t *s, int i, void *dst) {
-    memcpy(dst, slice_ref(s, i), s->size);
+    if (s->size == 1) {
+         *(char *)dst = ((char *)s->array)[i];
+    } else {
+        memcpy(dst, slice_ref(s, i), s->size);
+    }
 }
 
 static void slice_set_cap(slice_t *s, int cap) {
@@ -63,7 +67,11 @@ extern void slice_set_len(slice_t *s, int len) {
 }
 
 extern void slice_set(slice_t *s, int i, const void *x) {
-    memcpy(slice_ref(s, i), x, s->size);
+    if (s->size == 1) {
+        ((char *)s->array)[i] = *(char *)x;
+    } else {
+        memcpy(slice_ref(s, i), x, s->size);
+    }
 }
 
 extern void slice_append(slice_t *s, const void *x) {
