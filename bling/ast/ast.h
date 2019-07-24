@@ -215,11 +215,6 @@ typedef struct expr_t {
         } struct_;
 
         struct {
-            token_t qual;
-            expr_t *type;
-        } qual;
-
-        struct {
             token_t op;
             expr_t *x;
         } unary;
