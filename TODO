@@ -73,7 +73,7 @@ Use dollar-sign ('$') to select members of a package. For instance:
     var x pkg$Type = a
     var y = pkg$function(x)
 
-    Dollar is used because cc interprets it has an ident, making it useful for
+    Dollar is used because cc interprets it as an ident, making it useful for
     name mangling, while blingc will interpret it as a selector op (such as '.'
     and '->').
 
