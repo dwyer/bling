@@ -14,7 +14,7 @@ Allow extending structs:
     };
 
     typedef vec3 struct {
-        vec3;
+        vec2;
         z int;
     }
 
