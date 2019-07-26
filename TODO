@@ -18,55 +18,32 @@ Allow extending structs:
         z int;
     }
 
-Allow switch-case to take multiple expressions:
+Eventually we want to have switch cases to have an implicit break and to open a
+new scope by default. So the above example would be converted to:
 
     // in bling
     switch (x) {
     case A, B, C:
-        doSomething();
-        break;
+        var y = x + 1;
+        doSomething(y);
     default:
-        break;
+        doSomethingElse();
     }
 
     // in C
     switch (x) {
     case A:
     case B:
-    case C:
-        doSomething();
-        break;
-    default:
-        break;
-    }
-
-    Later:
-        Eventually we want to have switch cases to have an implicit break and to
-        open a new scope by default. So the above example would be converted to:
-
-        // in bling
-        switch (x) {
-        case A, B, C:
-            var y = x + 1;
+    case C: {
+            int y = x + 1;
             doSomething(y);
-        default:
+        }
+        break;
+    default: {
             doSomethingElse();
         }
-
-        // in C
-        switch (x) {
-        case A:
-        case B:
-        case C: {
-                int y = x + 1;
-                doSomething(y);
-            }
-            break;
-        default: {
-                doSomethingElse();
-            }
-            break;
-        }
+        break;
+    }
 
 Use dollar-sign ('$') to select members of a package. For instance:
 

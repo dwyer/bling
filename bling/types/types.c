@@ -906,8 +906,8 @@ static void check_stmt(checker_t *w, stmt_t *stmt) {
             for (int i = 0; stmt->switch_.stmts[i]; i++) {
                 stmt_t *clause = stmt->switch_.stmts[i];
                 assert(clause->type == ast_STMT_CASE);
-                if (clause->case_.expr) {
-                    expr_t *type2 = check_expr(w, clause->case_.expr);
+                for (int j = 0; clause->case_.exprs && clause->case_.exprs[j]; j++) {
+                    expr_t *type2 = check_expr(w, clause->case_.exprs[j]);
                     if (!types_areComparable(type1, type2)) {
                         panic("check_stmt: not comparable: %s and %s: %s",
                                 types_typeString(type1),

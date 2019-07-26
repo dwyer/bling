@@ -848,13 +848,16 @@ static stmt_t *statement(parser_t *p) {
             //         | CASE constant_expression ':' statement+
             //         | DEFAULT ':' statement+
             //         ;
-            expr_t *expr = NULL;
-            if (accept(p, token_CASE)) {
-                expr = constant_expression(p);
-            } else {
-                expect(p, token_DEFAULT);
+            slice_t exprs = {.size=sizeof(expr_t *)};
+            while (accept(p, token_CASE)) {
+                expr_t *expr = constant_expression(p);
+                expect(p, token_COLON);
+                exprs = append(exprs, &expr);
             }
-            expect(p, token_COLON);
+            if (len(exprs) == 0) {
+                expect(p, token_DEFAULT);
+                expect(p, token_COLON);
+            }
             slice_t stmts = {.size = sizeof(stmt_t *)};
             bool loop = true;
             while (loop) {
@@ -875,7 +878,7 @@ static stmt_t *statement(parser_t *p) {
             stmt_t stmt = {
                 .type = ast_STMT_CASE,
                 .case_ = {
-                    .expr = expr,
+                    .exprs = slice_to_nil_array(exprs),
                     .stmts = slice_to_nil_array(stmts),
                 },
             };

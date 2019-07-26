@@ -723,9 +723,15 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
         //         | CASE constant_expression ':' statement+
         //         | DEFAULT ':' statement+
         //         ;
-        expr_t *expr = NULL;
+        slice_t exprs = {.size=sizeof(expr_t *)};
         if (accept(p, token_CASE)) {
-            expr = parse_const_expr(p);
+            for (;;) {
+                expr_t *expr = parse_const_expr(p);
+                exprs = append(exprs, &expr);
+                if (!accept(p, token_COMMA)) {
+                    break;
+                }
+            }
         } else {
             expect(p, token_DEFAULT);
         }
@@ -750,7 +756,7 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
         stmt_t stmt = {
             .type = ast_STMT_CASE,
             .case_ = {
-                .expr = expr,
+                .exprs = slice_to_nil_array(exprs),
                 .stmts = slice_to_nil_array(stmts),
             },
         };

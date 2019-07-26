@@ -237,7 +237,7 @@ typedef struct stmt_t {
         } block;
 
         struct {
-            expr_t *expr;
+            expr_t **exprs;
             stmt_t **stmts;
         } case_;
 

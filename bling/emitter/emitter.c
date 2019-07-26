@@ -182,10 +182,16 @@ extern void print_stmt(emitter_t *p, stmt_t *stmt) {
         break;
 
     case ast_STMT_CASE:
-        if (stmt->case_.expr) {
+        if (stmt->case_.exprs && *stmt->case_.exprs) {
             emit_token(p, token_CASE);
             emit_space(p);
-            print_expr(p, stmt->case_.expr);
+            for (int i = 0; stmt->case_.exprs[i]; i++) {
+                if (i > 0) {
+                    emit_token(p, token_COMMA);
+                    emit_space(p);
+                }
+                print_expr(p, stmt->case_.exprs[i]);
+            }
         } else {
             emit_token(p, token_DEFAULT);
         }

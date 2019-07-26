@@ -165,10 +165,17 @@ static void emit_stmt(emitter_t *e, stmt_t *stmt) {
         break;
 
     case ast_STMT_CASE:
-        if (stmt->case_.expr) {
-            emit_token(e, token_CASE);
-            emit_space(e);
-            emit_c_expr(e, stmt->case_.expr);
+        if (stmt->case_.exprs && *stmt->case_.exprs) {
+            for (int i = 0; stmt->case_.exprs[i]; i++) {
+                if (i > 0) {
+                    emit_token(e, token_COLON);
+                    emit_newline(e);
+                    emit_tabs(e);
+                }
+                emit_token(e, token_CASE);
+                emit_space(e);
+                emit_c_expr(e, stmt->case_.exprs[i]);
+            }
         } else {
             emit_token(e, token_DEFAULT);
         }
