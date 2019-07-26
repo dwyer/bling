@@ -1052,7 +1052,7 @@ extern package_t types_checkFile(config_t *conf, file_t *file) {
     checker_t w = {
         .conf = conf,
         .scope = file->scope,
-        .files = slice_init(sizeof(file_t *), 0, 0),
+        .files = slice_init(sizeof(file_t *)),
     };
     check_file(&w, file);
     package_t pkg = {

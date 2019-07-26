@@ -9,7 +9,7 @@ typedef struct {
     void *array;
 } slice_t;
 
-extern slice_t slice_init(int size, int len, int cap);
+extern slice_t slice_init(int size);
 extern void slice_deinit(slice_t *s);
 
 extern int slice_len(const slice_t *s);
@@ -26,5 +26,3 @@ extern int len(slice_t s);
 extern int cap(slice_t s);
 extern void *get_ptr(slice_t s, int index);
 extern slice_t append(slice_t s, const void *obj);
-
-extern slice_t make_slice(int size, int len, int cap);

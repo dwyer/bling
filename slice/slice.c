@@ -1,13 +1,12 @@
 #include "slice/slice.h"
 
-extern slice_t slice_init(int size, int len, int cap) {
+extern slice_t slice_init(int size) {
     slice_t s = {
         .size = size,
         .len = 0,
         .cap = 0,
         .array = NULL,
     };
-    slice_set_len(&s, len);
     return s;
 }
 
@@ -100,8 +99,4 @@ extern void *get_ptr(slice_t s, int index) {
 extern slice_t append(slice_t s, const void *obj) {
     slice_append(&s, obj);
     return s;
-}
-
-extern slice_t make_slice(int size, int len, int cap) {
-    return slice_init(size, len, cap);
 }

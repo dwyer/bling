@@ -1060,7 +1060,7 @@ extern file_t **parser_parseDir(const char *path, error_t **first) {
     if (err) {
         error_move(err, first);
     }
-    slice_t files = slice_init(sizeof(uintptr_t), 0, 0);
+    slice_t files = slice_init(sizeof(uintptr_t));
     while (*infos != NULL) {
         char *name = os_FileInfo_name(**infos);
         if (isBlingFile(name) && !isTestFile(name)) {
@@ -1074,8 +1074,8 @@ extern file_t **parser_parseDir(const char *path, error_t **first) {
 
 static file_t *parse_file(parser_t *p) {
     expr_t *name = NULL;
-    slice_t imports = slice_init(sizeof(uintptr_t), 0, 0);
-    slice_t decls = slice_init(sizeof(decl_t *), 0, 0);
+    slice_t imports = slice_init(sizeof(uintptr_t));
+    slice_t decls = slice_init(sizeof(decl_t *));
     while (p->tok == token_HASH) {
         decl_t *lit = parse_pragma(p);
         decls = append(decls, &lit);

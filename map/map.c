@@ -32,10 +32,11 @@ typedef struct {
 extern map_t map_init(int val_size) {
     map_t m = {
         .len = 0,
-        .pairs = slice_init(sizeof(pair_t), default_cap, 0),
+        .pairs = slice_init(sizeof(pair_t)),
         .key_size = sizeof(uintptr_t),
         .val_size = val_size,
     };
+    slice_set_len(&m.pairs, default_cap);
     return m;
 }
 
@@ -104,7 +105,8 @@ extern void map_set(map_t *m, const char *key, const void *val) {
     if (load_factor >= max_load_factor) {
         int new_cap = map_cap(m) * 2;
         slice_t pairs = m->pairs;
-        m->pairs = slice_init(m->pairs.size, new_cap, 0);
+        m->pairs = slice_init(m->pairs.size);
+        slice_set_len(&m->pairs, new_cap);
         m->len = 0;
         for (int i = 0; i < slice_len(&pairs); i++) {
             pair_t *p = (pair_t *)slice_ref(&pairs, i);

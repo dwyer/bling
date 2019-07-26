@@ -16,7 +16,7 @@ extern scope_t *scope_new(scope_t *outer) {
     scope_t s = {
         .outer = outer,
         .objects = map_init(sizeof(object_t)),
-        .filenames = make_slice(sizeof(char *), 0, 0),
+        .filenames = slice_init(sizeof(char *)),
     };
     return esc(s);
 }
