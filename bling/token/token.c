@@ -1,4 +1,6 @@
 #include "bling/token/token.h"
+
+#include "fmt/fmt.h"
 #include "map/map.h"
 
 static char *tokens[] = {
@@ -139,4 +141,8 @@ extern int token_precedence(token_t op) {
     default:
         return token_lowest_prec;
     }
+}
+
+extern char *Position_string(Position *p) {
+    return fmt_sprintf("%s:%d:%d", p->filename, p->line, p->column);
 }

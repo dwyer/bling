@@ -51,10 +51,6 @@ static stmt_t *parse_block_stmt(parser_t *p);
 static decl_t *parse_decl(parser_t *p, bool is_external);
 static decl_t *parse_field(parser_t *p, bool anon);
 
-extern char *Position_string(Position *p) {
-    return fmt_sprintf("%s:%d:%d", p->filename, p->line, p->column);
-}
-
 extern void parser_error(parser_t *p, pos_t pos, char *fmt, ...) {
     buffer_t buf = {};
     for (int i = pos; ; i++) {

@@ -1,8 +1,7 @@
 #pragma once
 #include "bootstrap/bootstrap.h"
 
-package(token);
-
+import("fmt");
 import("map");
 
 typedef enum {
@@ -108,8 +107,15 @@ typedef enum {
 extern int token_precedence(token_t op);
 
 typedef struct {
+    char *name;
+} token_File;
+
+typedef struct {
     char *filename;
     int offset;
     int line;
+    int lineOffset;
     int column;
 } Position;
+
+extern char *Position_string(Position *p);

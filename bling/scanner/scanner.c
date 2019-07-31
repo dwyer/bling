@@ -331,14 +331,16 @@ extern void scanner_init(scanner_t *s, const char *filename, char *src) {
 
 extern Position scanner_position(scanner_t *s, pos_t p) {
     Position pos = {
-        .filename = NULL,
+        .filename = s->filename,
         .offset = p,
         .line = 1,
+        .lineOffset = 0,
         .column = 1,
     };
     for (int i = 0; i < p; i++) {
         if (s->src[i] == '\n') {
             pos.line++;
+            pos.lineOffset = i;
             pos.column = 1;
         } else {
             pos.column++;

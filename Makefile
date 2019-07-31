@@ -10,7 +10,6 @@ HRDS=bootstrap/bootstrap.h \
      slice/slice.h \
      map/map.h \
      bytes/bytes.h \
-     strings/strings.h \
      path/path.h \
      os/os.h \
      io/ioutil/ioutil.h \
@@ -27,7 +26,6 @@ SRCS=error/error.c \
      slice/slice.c \
      map/map.c \
      bytes/bytes.c \
-     strings/strings.c \
      path/path.c \
      io/ioutil/ioutil.c \
      bling/token/token.c \
