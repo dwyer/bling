@@ -1152,7 +1152,7 @@ static decl_t *declaration(parser_t *p, bool is_external) {
     }
 }
 
-static file_t *parse_cfile(parser_t *p) {
+static ast_File *parse_cfile(parser_t *p) {
     slice_t decls = {.size = sizeof(decl_t *)};
     slice_t imports = {.size = sizeof(decl_t *)};
     expr_t *name = NULL;
@@ -1188,7 +1188,7 @@ static file_t *parse_cfile(parser_t *p) {
         decl_t *decl = declaration(p, true);
         decls = append(decls, &decl);
     }
-    file_t file = {
+    ast_File file = {
         .filename = p->filename,
         .name = name,
         .decls = slice_to_nil_array(decls),
@@ -1197,13 +1197,13 @@ static file_t *parse_cfile(parser_t *p) {
     return esc(file);
 }
 
-extern file_t *parser_parse_cfile(char *filename, scope_t *pkg_scope) {
+extern ast_File *parser_parse_cfile(char *filename, scope_t *pkg_scope) {
     char *src = ioutil_read_file(filename, NULL);
     parser_t p = {};
     parser_init(&p, filename, src);
     p.pkg_scope = pkg_scope;
     p.c_mode = true;
-    file_t *file = parse_cfile(&p);
+    ast_File *file = parse_cfile(&p);
     file->scope = p.pkg_scope;
     free(src);
     return file;

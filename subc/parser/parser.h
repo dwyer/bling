@@ -11,4 +11,4 @@ import("bling/scanner");
 import("bling/token");
 import("io/ioutil");
 
-extern file_t *parser_parse_cfile(char *filename, scope_t *pkg_scope);
+extern ast_File *parser_parse_cfile(char *filename, scope_t *pkg_scope);

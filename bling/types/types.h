@@ -19,4 +19,4 @@ typedef struct {
     bool strict;
 } config_t;
 
-extern package_t types_checkFile(config_t *conf, file_t *file);
+extern package_t types_checkFile(config_t *conf, ast_File *file);

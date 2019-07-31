@@ -12,8 +12,8 @@ import("fmt");
 import("io/ioutil");
 import("path");
 
-extern file_t *parser_parse_file(char *filename);
-extern file_t **parser_parseDir(const char *path, error_t **first);
+extern ast_File *parser_parse_file(char *filename);
+extern ast_File **parser_parseDir(const char *path, error_t **first);
 
 typedef struct {
     scanner_t scanner;

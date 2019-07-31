@@ -314,12 +314,12 @@ typedef struct {
     decl_t **imports;
     decl_t **decls;
     scope_t *scope;
-} file_t;
+} ast_File;
 
 typedef struct {
     char *name;
     scope_t *scope;
-    file_t **files;
+    ast_File **files;
 } package_t;
 
 extern void scope_resolve(scope_t *s, expr_t *x);

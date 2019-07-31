@@ -940,7 +940,7 @@ static char *constant_stringVal(expr_t *x) {
     return val;
 }
 
-static void check_file(checker_t *w, file_t *file);
+static void check_file(checker_t *w, ast_File *file);
 
 static void check_import(checker_t *w, decl_t *imp) {
     char *path = constant_stringVal(imp->imp.path);
@@ -954,7 +954,7 @@ static void check_import(checker_t *w, decl_t *imp) {
     }
     w->scope->filenames = append(w->scope->filenames, &path);
     error_t *err = NULL;
-    file_t **files = parser_parseDir(path, &err);
+    ast_File **files = parser_parseDir(path, &err);
     if (err) {
         panic("%s: %s", path, err->error);
     }
@@ -1034,7 +1034,7 @@ static void check_func(checker_t *w, decl_t *decl) {
     }
 }
 
-static void check_file(checker_t *w, file_t *file) {
+static void check_file(checker_t *w, ast_File *file) {
     for (int i = 0; file->imports[i] != NULL; i++) {
         check_import(w, file->imports[i]);
     }
@@ -1049,11 +1049,11 @@ static void check_file(checker_t *w, file_t *file) {
     }
 }
 
-extern package_t types_checkFile(config_t *conf, file_t *file) {
+extern package_t types_checkFile(config_t *conf, ast_File *file) {
     checker_t w = {
         .conf = conf,
         .scope = file->scope,
-        .files = slice_init(sizeof(file_t *)),
+        .files = slice_init(sizeof(ast_File *)),
     };
     check_file(&w, file);
     package_t pkg = {

@@ -509,7 +509,7 @@ extern void print_decl(emitter_t *p, decl_t *decl) {
     }
 }
 
-extern void printer_print_file(emitter_t *p, file_t *file) {
+extern void printer_print_file(emitter_t *p, ast_File *file) {
     emit_string(p, "//");
     emit_string(p, file->filename);
     emit_newline(p);

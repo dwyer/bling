@@ -48,7 +48,7 @@ void compile_c(char *argv[]) {
     emitter_t emitter = {};
     while (*argv) {
         char *filename = *argv;
-        file_t *file = parser_parse_cfile(filename, scope);
+        ast_File *file = parser_parse_cfile(filename, scope);
         file->scope = scope;
         printer_print_file(&emitter, file);
         argv++;
@@ -92,7 +92,7 @@ void compile_bling(char *argv[]) {
     scope_t *scope = scope_new(NULL);
     declare_builtins(scope);
     if (conf.strict) {
-        file_t *file = parser_parse_file("builtin/builtin.bling");
+        ast_File *file = parser_parse_file("builtin/builtin.bling");
         file->scope = scope;
         types_checkFile(&conf, file);
         free(file->decls);
@@ -108,7 +108,7 @@ void compile_bling(char *argv[]) {
     }
     while (*argv) {
         char *filename = *argv;
-        file_t *file = NULL;
+        ast_File *file = NULL;
         if (is_ext(filename, ".bling")) {
             file = parser_parse_file(filename);
         } else if (is_ext(filename, ".c") || is_ext(filename, ".h")) {
@@ -119,7 +119,7 @@ void compile_bling(char *argv[]) {
         file->scope = scope;
         package_t pkg = types_checkFile(&conf, file);
         for (int i = 0; pkg.files[i]; i++) {
-            file_t *file = pkg.files[i];
+            ast_File *file = pkg.files[i];
             if (emit_as_bling) {
                 printer_print_file(&emitter, file);
             } else {

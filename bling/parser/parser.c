@@ -1116,7 +1116,7 @@ static bool isTestFile(const char *name) {
     return path_match("*_test.bling", name);
 }
 
-extern file_t **parser_parseDir(const char *path, error_t **first) {
+extern ast_File **parser_parseDir(const char *path, error_t **first) {
     error_t *err = NULL;
     os_FileInfo **infos = ioutil_read_dir(path, &err);
     if (err) {
@@ -1126,7 +1126,7 @@ extern file_t **parser_parseDir(const char *path, error_t **first) {
     while (*infos != NULL) {
         char *name = os_FileInfo_name(**infos);
         if (isBlingFile(name) && !isTestFile(name)) {
-            file_t *file = parser_parse_file(name);
+            ast_File *file = parser_parse_file(name);
             files = append(files, &file);
         }
         infos++;
@@ -1134,7 +1134,7 @@ extern file_t **parser_parseDir(const char *path, error_t **first) {
     return slice_to_nil_array(files);
 }
 
-static file_t *parse_file(parser_t *p) {
+static ast_File *parse_file(parser_t *p) {
     expr_t *name = NULL;
     slice_t imports = slice_init(sizeof(uintptr_t));
     slice_t decls = slice_init(sizeof(decl_t *));
@@ -1166,7 +1166,7 @@ static file_t *parse_file(parser_t *p) {
         decl_t *decl = parse_decl(p, true);
         decls = append(decls, &decl);
     }
-    file_t file = {
+    ast_File file = {
         .filename = p->filename,
         .name = name,
         .imports = slice_to_nil_array(imports),
@@ -1175,7 +1175,7 @@ static file_t *parse_file(parser_t *p) {
     return esc(file);
 }
 
-extern file_t *parser_parse_file(char *filename) {
+extern ast_File *parser_parse_file(char *filename) {
     error_t *err = NULL;
     char *src = ioutil_read_file(filename, &err);
     if (err) {
@@ -1183,7 +1183,7 @@ extern file_t *parser_parse_file(char *filename) {
     }
     parser_t p = {};
     parser_init(&p, filename, src);
-    file_t *file = parse_file(&p);
+    ast_File *file = parse_file(&p);
     file->scope = p.pkg_scope;
     free(src);
     return file;
