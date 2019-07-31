@@ -80,6 +80,7 @@ typedef struct {
 
 typedef struct decl_t {
     ast_node_type_t type;
+    pos_t pos;
     union {
 
         struct {
@@ -118,6 +119,7 @@ typedef struct decl_t {
 
 typedef struct expr_t {
     ast_node_type_t type;
+    pos_t pos;
     bool is_const;
 
     union {
@@ -224,6 +226,7 @@ typedef struct expr_t {
 
 typedef struct stmt_t {
     ast_node_type_t type;
+    pos_t pos;
     union {
 
         struct {

@@ -86,6 +86,7 @@ static expr_t *types_makeIdent(const char *name) {
 static expr_t *types_makePtr(expr_t *type) {
     expr_t x = {
         .type = ast_EXPR_STAR,
+        .pos = type->pos,
         .star = {
             .x = type,
         }

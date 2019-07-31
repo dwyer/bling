@@ -5,10 +5,12 @@
 #include "path/path.h"
 
 extern decl_t *parse_pragma(parser_t *p) {
+    pos_t pos = p->pos;
     char *lit = strdup(p->lit);
     expect(p, token_HASH);
     decl_t decl = {
         .type = ast_DECL_PRAGMA,
+        .pos = pos,
         .pragma = {
             .lit = lit,
         },
@@ -76,7 +78,7 @@ extern void parser_error(parser_t *p, char *fmt, ...) {
 
 extern void parser_next(parser_t *p) {
     free(p->lit);
-    p->tok = scanner_scan(&p->scanner, &p->lit);
+    p->tok = scanner_scan(&p->scanner, &p->pos, &p->lit);
 }
 
 extern bool accept(parser_t *p, token_t tok0) {
@@ -87,7 +89,8 @@ extern bool accept(parser_t *p, token_t tok0) {
     return false;
 }
 
-extern void expect(parser_t *p, token_t tok) {
+extern pos_t expect(parser_t *p, token_t tok) {
+    pos_t pos = p->pos;
     if (p->tok != tok) {
         char *lit = p->lit;
         if (lit == NULL) {
@@ -96,11 +99,13 @@ extern void expect(parser_t *p, token_t tok) {
         parser_error(p, fmt_sprintf("expected `%s`, got `%s`", token_string(tok), lit));
     }
     parser_next(p);
+    return pos;
 }
 
 extern expr_t *identifier(parser_t *p) {
     expr_t x = {
         .type = ast_EXPR_IDENT,
+        .pos = p->pos,
     };
     if (p->tok == token_IDENT) {
         x.ident.name = strdup(p->lit);
@@ -110,10 +115,12 @@ extern expr_t *identifier(parser_t *p) {
 }
 
 extern expr_t *basic_lit(parser_t *p, token_t kind) {
+    pos_t pos = p->pos;
     char *value = p->lit;
     expect(p, kind);
     expr_t x = {
         .type = ast_EXPR_BASIC_LIT,
+        .pos = pos,
         .basic_lit = {
             .kind = kind,
             .value = strdup(value),
@@ -141,9 +148,11 @@ extern expr_t *primary_expression(parser_t *p) {
         if (p->c_mode) {
             parser_error(p, "unreachable");
         } else {
+            pos_t pos = p->pos;
             expect(p, token_LPAREN);
             expr_t x = {
                 .type = ast_EXPR_PAREN,
+                .pos = pos,
                 .paren = {
                     .x = parse_expr(p),
                 },
@@ -152,7 +161,7 @@ extern expr_t *primary_expression(parser_t *p) {
             return esc(x);
         }
     default:
-        parser_error(p, fmt_sprintf("bad expr: %s: %s", token_string(p->tok), p->lit)) ;
+        parser_error(p, fmt_sprintf("bad expr: %s: %s", token_string(p->tok), p->lit));
         return NULL;
     }
 }
@@ -173,6 +182,7 @@ static expr_t *parse_postfix_expr(parser_t *p) {
                 expect(p, token_LBRACK);
                 expr_t y = {
                     .type = ast_EXPR_INDEX,
+                    .pos = x->pos,
                     .index = {
                         .x = x,
                         .index = parse_expr(p),
@@ -200,6 +210,7 @@ static expr_t *parse_postfix_expr(parser_t *p) {
                 expect(p, token_RPAREN);
                 expr_t call = {
                     .type = ast_EXPR_CALL,
+                    .pos = x->pos,
                     .call = {
                         .func = x,
                         .args = slice_to_nil_array(args),
@@ -215,6 +226,7 @@ static expr_t *parse_postfix_expr(parser_t *p) {
                 parser_next(p);
                 expr_t y = {
                     .type = ast_EXPR_SELECTOR,
+                    .pos = x->pos,
                     .selector = {
                         .x = x,
                         .tok = tok,
@@ -254,10 +266,12 @@ static expr_t *parse_unary_expr(parser_t *p) {
         //         | '!'
         //         ;
         {
+            pos_t pos = p->pos;
             token_t op = p->tok;
             parser_next(p);
             expr_t x = {
                 .type = ast_EXPR_UNARY,
+                .pos = pos,
                 .unary = {
                     .op = op,
                     .x = parse_cast_expr(p),
@@ -267,9 +281,11 @@ static expr_t *parse_unary_expr(parser_t *p) {
         }
     case token_MUL:
         {
+            pos_t pos = p->pos;
             parser_next(p);
             expr_t x = {
                 .type = ast_EXPR_STAR,
+                .pos = pos,
                 .star = {
                     .x = parse_cast_expr(p),
                 },
@@ -278,10 +294,12 @@ static expr_t *parse_unary_expr(parser_t *p) {
         }
     case token_SIZEOF:
         {
+            pos_t pos = p->pos;
             parser_next(p);
             expect(p, token_LPAREN);
             expr_t x = {
                 .type = ast_EXPR_SIZEOF,
+                .pos = pos,
                 .sizeof_ = {
                     .x = parse_type_spec(p),
                 },
@@ -300,6 +318,7 @@ static expr_t *parse_cast_expr(parser_t *p) {
     //         | '<' type_name '>' cast_expression
     //         | '<' type_name '>' initializer
     //         ;
+    pos_t pos = p->pos;
     if (accept(p, token_LT)) {
         expr_t *type = parse_type_spec(p);
         expect(p, token_GT);
@@ -311,6 +330,7 @@ static expr_t *parse_cast_expr(parser_t *p) {
         }
         expr_t y = {
             .type = ast_EXPR_CAST,
+            .pos = pos,
             .cast = {
                 .type = type,
                 .expr = expr,
@@ -333,6 +353,7 @@ static expr_t *parse_binary_expr(parser_t *p, int prec1) {
         expr_t *y = parse_binary_expr(p, oprec + 1);
         expr_t z = {
             .type = ast_EXPR_BINARY,
+            .pos = x->pos,
             .binary = {
                 .x = x,
                 .op = op,
@@ -355,6 +376,7 @@ static expr_t *parse_ternary_expr(parser_t *p) {
         expr_t *alternative = parse_ternary_expr(p);
         expr_t conditional = {
             .type = ast_EXPR_COND,
+            .pos = x->pos,
             .conditional = {
                 .condition = x,
                 .consequence = consequence,
@@ -383,6 +405,7 @@ static expr_t *parse_struct_or_union_spec(parser_t *p) {
     //         | struct_or_union '{' struct_declaration_list '}'
     //         ;
     // struct_or_union : STRUCT | UNION ;
+    pos_t pos = p->pos;
     token_t keyword = p->tok;
     expr_t *name = NULL;
     expect(p, keyword);
@@ -402,6 +425,7 @@ static expr_t *parse_struct_or_union_spec(parser_t *p) {
         for (;;) {
             decl_t decl = {
                 .type = ast_DECL_FIELD,
+                .pos = p->pos,
             };
             if (p->tok == token_UNION) {
                 // anonymous union
@@ -423,6 +447,7 @@ static expr_t *parse_struct_or_union_spec(parser_t *p) {
     // TODO assert(name || fields)
     expr_t x = {
         .type = ast_TYPE_STRUCT,
+        .pos = pos,
         .struct_ = {
             .tok = keyword,
             .name = name,
@@ -439,6 +464,7 @@ static expr_t *parse_enum_spec(parser_t *p) {
     //         | ENUM IDENTIFIER
     //         ;
     expr_t *name = NULL;
+    pos_t pos = p->pos;
     expect(p, token_ENUM);
     if (p->tok == token_IDENT) {
         name = identifier(p);
@@ -451,6 +477,7 @@ static expr_t *parse_enum_spec(parser_t *p) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             decl_t decl = {
                 .type = ast_DECL_VALUE,
+                .pos = p->pos,
                 .value = {
                     .name = identifier(p),
                 },
@@ -469,6 +496,7 @@ static expr_t *parse_enum_spec(parser_t *p) {
     }
     expr_t x = {
         .type = ast_TYPE_ENUM,
+        .pos = pos,
         .enum_ = {
             .name = name,
             .enums = enums,
@@ -478,9 +506,11 @@ static expr_t *parse_enum_spec(parser_t *p) {
 }
 
 static expr_t *parse_pointer(parser_t *p) {
+    pos_t pos = p->pos;
     expect(p, token_MUL);
     expr_t x = {
         .type = ast_EXPR_STAR,
+        .pos = pos,
         .star = {
             .x = parse_type_spec(p),
         },
@@ -496,10 +526,12 @@ static decl_t **parse_param_type_list(parser_t *p, bool anon) {
         if (!accept(p, token_COMMA)) {
             break;
         }
+        pos_t pos = p->pos;
         if (accept(p, token_ELLIPSIS)) {
             // TODO make this a type
             decl_t decl = {
                 .type = ast_DECL_FIELD,
+                .pos = pos,
             };
             decl_t *param = esc(decl);
             params = append(params, &param);
@@ -519,6 +551,7 @@ static expr_t *parse_init_expr(parser_t *p) {
         //         : designation? initializer
         //         | initializer_list ',' designation? initializer
         //         ;
+        pos_t pos = p->pos;
         expect(p, token_LBRACE);
         slice_t list = {.size = sizeof(expr_t *)};
         while (p->tok != token_RBRACE && p->tok != token_EOF) {
@@ -527,6 +560,7 @@ static expr_t *parse_init_expr(parser_t *p) {
                 expr_t *key = value;
                 expr_t x = {
                     .type = ast_EXPR_KEY_VALUE,
+                    .pos = key->pos,
                     .key_value = {
                         .key = key,
                         .value = parse_init_expr(p),
@@ -542,6 +576,7 @@ static expr_t *parse_init_expr(parser_t *p) {
         expect(p, token_RBRACE);
         expr_t expr = {
             .type = ast_EXPR_COMPOUND,
+            .pos = pos,
             .compound = {
                 .list = slice_to_nil_array(list),
             },
@@ -579,6 +614,7 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
             expr_t *y = parse_expr(p);
             stmt_t stmt = {
                 .type = ast_STMT_ASSIGN,
+                .pos = x->pos,
                 .assign = {
                     .x = x,
                     .op = op,
@@ -593,6 +629,7 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
             parser_next(p);
             stmt_t stmt = {
                 .type = ast_STMT_POSTFIX,
+                .pos = x->pos,
                 .postfix = {
                     .x = x,
                     .op = op,
@@ -612,6 +649,7 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
         if (accept(p, token_COLON)) {
             stmt_t stmt = {
                 .type = ast_STMT_LABEL,
+                .pos = x->pos,
                 .label = {
                     .label = x,
                     .stmt = parse_stmt(p),
@@ -623,6 +661,7 @@ static stmt_t *parse_simple_stmt(parser_t *p, bool labelOk) {
     // expression_statement : expression? ';' ;
     stmt_t stmt = {
         .type = ast_STMT_EXPR,
+        .pos = x->pos,
         .expr = {.x = x},
     };
     return esc(stmt);
@@ -632,7 +671,7 @@ static stmt_t *parse_for_stmt(parser_t *p) {
     // for_statement
     //         | FOR simple_statement? ';' expression? ';' expression?
     //              compound_statement ;
-    expect(p, token_FOR);
+    pos_t pos = expect(p, token_FOR);
     stmt_t *init = NULL;
     if (!accept(p, token_SEMICOLON)) {
         init = parse_stmt(p);
@@ -649,6 +688,7 @@ static stmt_t *parse_for_stmt(parser_t *p) {
     stmt_t *body = parse_block_stmt(p);
     stmt_t stmt = {
         .type = ast_STMT_ITER,
+        .pos = pos,
         .iter = {
             .kind = token_FOR,
             .init = init,
@@ -666,7 +706,7 @@ static stmt_t *parse_if_stmt(parser_t *p) {
     //         | IF expression compound_statement ELSE compound_statement
     //         | IF expression compound_statement ELSE if_statement
     //         ;
-    expect(p, token_IF);
+    pos_t pos = expect(p, token_IF);
     expr_t *cond = parse_expr(p);
     if (p->tok != token_LBRACE) {
         parser_error(p, "`if` must be followed by a compound_statement");
@@ -684,6 +724,7 @@ static stmt_t *parse_if_stmt(parser_t *p) {
     }
     stmt_t stmt = {
         .type = ast_STMT_IF,
+        .pos = pos,
         .if_ = {
             .cond = cond,
             .body = body,
@@ -697,7 +738,7 @@ static stmt_t *parse_return_stmt(parser_t *p) {
     // return_statement
     //         | RETURN expression? ';'
     //         ;
-    expect(p, token_RETURN);
+    pos_t pos = expect(p, token_RETURN);
     expr_t *x = NULL;
     if (p->tok != token_SEMICOLON) {
         x = parse_expr(p);
@@ -705,6 +746,7 @@ static stmt_t *parse_return_stmt(parser_t *p) {
     expect(p, token_SEMICOLON);
     stmt_t stmt = {
         .type = ast_STMT_RETURN,
+        .pos = pos,
         .return_ = {
             .x = x,
         },
@@ -714,7 +756,7 @@ static stmt_t *parse_return_stmt(parser_t *p) {
 
 static stmt_t *parse_switch_stmt(parser_t *p) {
     // switch_statement | SWITCH expression case_statement* ;
-    expect(p, token_SWITCH);
+    pos_t pos = expect(p, token_SWITCH);
     expr_t *tag = parse_expr(p);
     expect(p, token_LBRACE);
     slice_t clauses = {.size = sizeof(stmt_t *)};
@@ -724,6 +766,7 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
         //         | DEFAULT ':' statement+
         //         ;
         slice_t exprs = {.size=sizeof(expr_t *)};
+        pos_t pos = p->pos;
         if (accept(p, token_CASE)) {
             for (;;) {
                 expr_t *expr = parse_const_expr(p);
@@ -755,6 +798,7 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
         }
         stmt_t stmt = {
             .type = ast_STMT_CASE,
+            .pos = pos,
             .case_ = {
                 .exprs = slice_to_nil_array(exprs),
                 .stmts = slice_to_nil_array(stmts),
@@ -767,6 +811,7 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
     accept(p, token_SEMICOLON);
     stmt_t stmt = {
         .type = ast_STMT_SWITCH,
+        .pos = pos,
         .switch_ = {
             .tag = tag,
             .stmts = slice_to_nil_array(clauses),
@@ -777,11 +822,12 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
 
 static stmt_t *parse_while_stmt(parser_t *p) {
     // while_statement : WHILE expression compound_statement ;
-    expect(p, token_WHILE);
+    pos_t pos = expect(p, token_WHILE);
     expr_t *cond = parse_expr(p);
     stmt_t *body = parse_block_stmt(p);
     stmt_t stmt = {
         .type = ast_STMT_ITER,
+        .pos = pos,
         .iter = {
             .kind = token_WHILE,
             .cond = cond,
@@ -797,7 +843,7 @@ static stmt_t *parse_jump_stmt(parser_t *p, token_t keyword) {
     //         | CONTINUE ';'
     //         | BREAK ';'
     //         ;
-    expect(p, keyword);
+    pos_t pos = expect(p, keyword);
     expr_t *label = NULL;
     if (keyword == token_GOTO) {
         label = identifier(p);
@@ -805,6 +851,7 @@ static stmt_t *parse_jump_stmt(parser_t *p, token_t keyword) {
     expect(p, token_SEMICOLON);
     stmt_t stmt = {
         .type = ast_STMT_JUMP,
+        .pos = pos,
         .jump = {
             .keyword = keyword,
             .label = label,
@@ -816,6 +863,7 @@ static stmt_t *parse_jump_stmt(parser_t *p, token_t keyword) {
 static stmt_t *parse_decl_stmt(parser_t *p) {
     stmt_t stmt = {
         .type = ast_STMT_DECL,
+        .pos = p->pos,
         .decl = parse_decl(p, false),
     };
     return esc(stmt);
@@ -846,9 +894,11 @@ static stmt_t *parse_stmt(parser_t *p) {
     default:
         break;
     }
+    pos_t pos = p->pos;
     if (accept(p, token_SEMICOLON)) {
         stmt_t stmt = {
             .type = ast_STMT_EXPR,
+            .pos = pos,
         };
         return esc(stmt);
     }
@@ -862,7 +912,7 @@ static stmt_t *parse_stmt(parser_t *p) {
 static stmt_t *parse_block_stmt(parser_t *p) {
     // compound_statement : '{' statement_list? '}' ;
     slice_t stmts = {.size = sizeof(stmt_t *)};
-    expect(p, token_LBRACE);
+    pos_t pos = expect(p, token_LBRACE);
     // statement_list : statement+ ;
     while (p->tok != token_RBRACE) {
         stmt_t *stmt = parse_stmt(p);
@@ -872,6 +922,7 @@ static stmt_t *parse_block_stmt(parser_t *p) {
     accept(p, token_SEMICOLON);
     stmt_t stmt = {
         .type = ast_STMT_BLOCK,
+        .pos = pos,
         .block = {
             .stmts = slice_to_nil_array(stmts),
         }
@@ -882,6 +933,7 @@ static stmt_t *parse_block_stmt(parser_t *p) {
 static decl_t *parse_field(parser_t *p, bool anon) {
     decl_t decl = {
         .type = ast_DECL_FIELD,
+        .pos = p->pos,
     };
     if (p->tok == token_IDENT) {
         decl.field.name = identifier(p);
@@ -896,7 +948,7 @@ static decl_t *parse_field(parser_t *p, bool anon) {
 }
 
 static expr_t *parse_func_type(parser_t *p) {
-    expect(p, token_FUNC);
+    pos_t pos = expect(p, token_FUNC);
     expect(p, token_LPAREN);
     decl_t **params = parse_param_type_list(p, false);
     expect(p, token_RPAREN);
@@ -906,6 +958,7 @@ static expr_t *parse_func_type(parser_t *p) {
     }
     expr_t type = {
         .type = ast_TYPE_FUNC,
+        .pos = pos,
         .func = {
             .params = params,
             .result = result,
@@ -913,6 +966,7 @@ static expr_t *parse_func_type(parser_t *p) {
     };
     expr_t ptr = {
         .type = ast_EXPR_STAR,
+        .pos = type.pos,
         .star = {
             .x = esc(type),
         },
@@ -951,7 +1005,7 @@ static expr_t *parse_type_spec(parser_t *p) {
         break;
     case token_LBRACK:
         {
-            expect(p, token_LBRACK);
+            pos_t pos = expect(p, token_LBRACK);
             expr_t *len = NULL;
             if (p->tok != token_RBRACK) {
                 len = parse_const_expr(p);
@@ -959,6 +1013,7 @@ static expr_t *parse_type_spec(parser_t *p) {
             expect(p, token_RBRACK);
             expr_t type = {
                 .type = ast_TYPE_ARRAY,
+                .pos = pos,
                 .array = {
                     .elt = parse_type_spec(p),
                     .len = len,
@@ -981,12 +1036,13 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
     case token_TYPEDEF:
         {
             token_t keyword = p->tok;
-            expect(p, keyword);
+            pos_t pos = expect(p, keyword);
             expr_t *ident = identifier(p);
             expr_t *type = parse_type_spec(p);
             expect(p, token_SEMICOLON);
             decl_t decl = {
                 .type = ast_DECL_TYPEDEF,
+                .pos = pos,
                 .typedef_ = {
                     .name = ident,
                     .type = type,
@@ -998,7 +1054,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
     case token_VAR:
         {
             token_t tok = p->tok;
-            expect(p, tok);
+            pos_t pos = expect(p, tok);
             expr_t *ident = identifier(p);
             expr_t *type = NULL;
             if (p->tok != token_ASSIGN) {
@@ -1011,6 +1067,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
             expect(p, token_SEMICOLON);
             decl_t decl = {
                 .type = ast_DECL_VALUE,
+                .pos = pos,
                 .value = {
                     .name = ident,
                     .type = type,
@@ -1022,12 +1079,22 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
         }
     case token_FUNC:
         {
-            decl_t decl = {.type = ast_DECL_FUNC};
-            expect(p, token_FUNC);
-            decl.func.name = identifier(p);
+            pos_t pos = expect(p, token_FUNC);
+            decl_t decl = {
+                .type = ast_DECL_FUNC,
+                .pos = pos,
+                .func = {
+                    .name = identifier(p),
+                },
+            };
             expect(p, token_LPAREN);
-            expr_t type = {.type = ast_TYPE_FUNC};
-            type.func.params = parse_param_type_list(p, false);
+            expr_t type = {
+                .type = ast_TYPE_FUNC,
+                .pos = pos,
+                .func = {
+                    .params = parse_param_type_list(p, false),
+                },
+            };
             expect(p, token_RPAREN);
             if (p->tok != token_LBRACE && p->tok != token_SEMICOLON) {
                 type.func.result = parse_type_spec(p);
@@ -1087,11 +1154,12 @@ static file_t *parse_file(parser_t *p) {
         expect(p, token_SEMICOLON);
     }
     while (p->tok == token_IMPORT) {
-        expect(p, token_IMPORT);
+        pos_t pos = expect(p, token_IMPORT);
         expr_t *path = basic_lit(p, token_STRING);
         expect(p, token_SEMICOLON);
         decl_t decl = {
             .type = ast_DECL_IMPORT,
+            .pos = pos,
             .imp = {
                 .path = path,
             },

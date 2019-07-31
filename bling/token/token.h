@@ -94,6 +94,8 @@ typedef enum {
     token_XOR_ASSIGN,
 } token_t;
 
+typedef int pos_t;
+
 extern char *token_string(token_t tok);
 extern token_t token_lookup(char *ident);
 

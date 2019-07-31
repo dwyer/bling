@@ -157,12 +157,12 @@ static void scan_comment(scanner_t *s) {
     }
 }
 
-extern token_t scanner_scan(scanner_t *s, char **lit) {
+extern token_t scanner_scan(scanner_t *s, pos_t *pos, char **lit) {
     token_t tok;
 scan_again:
     tok = token_ILLEGAL;
     skip_whitespace(s);
-    s->offset = s->rd_offset-1;
+    *pos = s->offset;
     bool insertSemi = false;
     *lit = NULL;
     if (is_letter(s->ch)) {
