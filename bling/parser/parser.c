@@ -21,7 +21,7 @@ extern decl_t *parse_pragma(parser_t *p) {
 extern void parser_init(parser_t *p, char *filename, char *src) {
     p->filename = strdup(filename);
     p->lit = NULL;
-    scanner_init(&p->scanner, src);
+    scanner_init(&p->scanner, filename, src);
     p->scanner.dontInsertSemis = !path_matchExt(".bling", filename);
     parser_next(p);
 }
@@ -51,28 +51,23 @@ static stmt_t *parse_block_stmt(parser_t *p);
 static decl_t *parse_decl(parser_t *p, bool is_external);
 static decl_t *parse_field(parser_t *p, bool anon);
 
-extern void parser_error(parser_t *p, char *fmt, ...) {
-    int line = 1;
-    int col = 1;
-    int line_offset = 0;
-    for (int i = 0; i < p->scanner.offset; i++) {
-        if (p->scanner.src[i] == '\n') {
-            line++;
-            line_offset = i + 1;
-            col = 1;
-        } else {
-            col++;
-        }
-    }
+extern char *Position_string(Position *p) {
+    return fmt_sprintf("%s:%d:%d", p->filename, p->line, p->column);
+}
+
+extern void parser_error(parser_t *p, pos_t pos, char *fmt, ...) {
     buffer_t buf = {};
-    for (int i = line_offset; ; i++) {
+    for (int i = pos; ; i++) {
         int ch = p->scanner.src[i];
         buffer_writeByte(&buf, ch, NULL);
-        if (!ch || ch == '\n') {
+        if (ch <= 0 || ch == '\n') {
             break;
         }
     }
-    panic(fmt_sprintf("%s:%d:%d: %s\n%s", p->filename, line, col, fmt,
+    Position pos0 = scanner_position(&p->scanner, pos);
+    panic(fmt_sprintf("%s: %s\n%s",
+                Position_string(&pos0),
+                fmt,
                 buffer_string(&buf)));
 }
 
@@ -96,7 +91,7 @@ extern pos_t expect(parser_t *p, token_t tok) {
         if (lit == NULL) {
             lit = token_string(p->tok);
         }
-        parser_error(p, fmt_sprintf("expected `%s`, got `%s`", token_string(tok), lit));
+        parser_error(p, pos, fmt_sprintf("expected `%s`, got `%s`", token_string(tok), lit));
     }
     parser_next(p);
     return pos;
@@ -146,7 +141,7 @@ extern expr_t *primary_expression(parser_t *p) {
         return basic_lit(p, p->tok);
     case token_LPAREN:
         if (p->c_mode) {
-            parser_error(p, "unreachable");
+            parser_error(p, p->pos, "unreachable");
         } else {
             pos_t pos = p->pos;
             expect(p, token_LPAREN);
@@ -161,7 +156,7 @@ extern expr_t *primary_expression(parser_t *p) {
             return esc(x);
         }
     default:
-        parser_error(p, fmt_sprintf("bad expr: %s: %s", token_string(p->tok), p->lit));
+        parser_error(p, p->pos, fmt_sprintf("bad expr: %s: %s", token_string(p->tok), p->lit));
         return NULL;
     }
 }
@@ -709,7 +704,7 @@ static stmt_t *parse_if_stmt(parser_t *p) {
     pos_t pos = expect(p, token_IF);
     expr_t *cond = parse_expr(p);
     if (p->tok != token_LBRACE) {
-        parser_error(p, "`if` must be followed by a compound_statement");
+        parser_error(p, p->pos, "`if` must be followed by a compound_statement");
     }
     stmt_t *body = parse_block_stmt(p);
     stmt_t *else_ = NULL;
@@ -719,7 +714,7 @@ static stmt_t *parse_if_stmt(parser_t *p) {
         } else if (p->tok == token_LBRACE) {
             else_ = parse_block_stmt(p);
         } else {
-            parser_error(p, "`else` must be followed by an if_statement or compound_statement");
+            parser_error(p, p->pos, "`else` must be followed by an if_statement or compound_statement");
         }
     }
     stmt_t stmt = {
@@ -1023,7 +1018,7 @@ static expr_t *parse_type_spec(parser_t *p) {
         }
         break;
     default:
-        parser_error(p, fmt_sprintf("expected type, got %s", token_string(p->tok)));
+        parser_error(p, p->pos, fmt_sprintf("expected type, got %s", token_string(p->tok)));
         break;
     }
     return x;
@@ -1108,7 +1103,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
             return esc(decl);
         }
     default:
-        parser_error(p, fmt_sprintf("cant handle it: %s", token_string(p->tok)));
+        parser_error(p, p->pos, fmt_sprintf("cant handle it: %s", token_string(p->tok)));
         return NULL;
     }
 }

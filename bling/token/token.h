@@ -106,3 +106,10 @@ typedef enum {
 } prec_t;
 
 extern int token_precedence(token_t op);
+
+typedef struct {
+    char *filename;
+    int offset;
+    int line;
+    int column;
+} Position;

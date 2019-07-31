@@ -318,7 +318,8 @@ scan_again:
     return tok;
 }
 
-extern void scanner_init(scanner_t *s, char *src) {
+extern void scanner_init(scanner_t *s, const char *filename, char *src) {
+    s->filename = strdup(filename);
     s->src = src;
     s->rd_offset = 0;
     s->offset = 0;
@@ -326,4 +327,22 @@ extern void scanner_init(scanner_t *s, char *src) {
     s->dontInsertSemis = true;
     next0(s);
     s->dontInsertSemis = false;
+}
+
+extern Position scanner_position(scanner_t *s, pos_t p) {
+    Position pos = {
+        .filename = NULL,
+        .offset = p,
+        .line = 1,
+        .column = 1,
+    };
+    for (int i = 0; i < p; i++) {
+        if (s->src[i] == '\n') {
+            pos.line++;
+            pos.column = 1;
+        } else {
+            pos.column++;
+        }
+    }
+    return pos;
 }
