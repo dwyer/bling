@@ -4,6 +4,7 @@
 
 import("error");
 import("path");
+import("slice");
 
 typedef uint64_t time_Time;
 

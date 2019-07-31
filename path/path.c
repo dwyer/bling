@@ -1,5 +1,7 @@
 #include "path/path.h"
 
+#include "bytes/bytes.h"
+
 extern char *basename(char *); // clib
 extern char *dirname(char *); // clib
 
@@ -30,14 +32,14 @@ extern bool path_isAbs(const char *path) {
 }
 
 extern char *path_join(const char **elems, int n) {
-    return strings_join(elems, n, "/");
+    return bytes_join(elems, n, "/");
 }
 
 extern char *path_join2(const char *a, const char *b) {
     slice_t elems = {.size = sizeof(char *)};
     elems = append(elems, &a);
     elems = append(elems, &b);
-    return strings_join(elems.array, len(elems), "/");
+    return bytes_join(elems.array, len(elems), "/");
 }
 
 extern char **path_split(const char *path) {

@@ -1,6 +1,7 @@
 #include "os/os.h"
 
 #include "path/path.h"
+#include "slice/slice.h"
 
 #include <dirent.h> // DIR, dirent, opendir, readdir, closedir
 #include <fcntl.h> // open

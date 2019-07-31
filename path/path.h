@@ -1,7 +1,7 @@
 #pragma once
-#include "strings/strings.h"
+#include "bootstrap/bootstrap.h"
 
-import("strings");
+import("bytes");
 
 extern char *path_base(const char *path);
 extern char *path_clean(const char *path);
