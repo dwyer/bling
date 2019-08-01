@@ -1189,7 +1189,7 @@ static ast_File *parse_cfile(parser_t *p) {
         decls = append(decls, &decl);
     }
     ast_File file = {
-        .filename = p->filename,
+        .filename = p->file->name,
         .name = name,
         .decls = slice_to_nil_array(decls),
         .imports = slice_to_nil_array(imports),

@@ -108,6 +108,7 @@ extern int token_precedence(token_t op);
 
 typedef struct {
     char *name;
+    char *src; // TODO remove
 } token_File;
 
 typedef struct {
@@ -116,6 +117,7 @@ typedef struct {
     int line;
     int lineOffset;
     int column;
-} Position;
+} token_Position;
 
-extern char *Position_string(Position *p);
+extern char *token_Position_string(token_Position *p);
+extern token_Position token_File_position(token_File *f, pos_t p);

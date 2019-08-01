@@ -19,9 +19,13 @@ extern decl_t *parse_pragma(parser_t *p) {
 }
 
 extern void parser_init(parser_t *p, char *filename, char *src) {
-    p->filename = strdup(filename);
+    token_File file = {
+        .name = strdup(filename),
+        .src = src,
+    };
+    p->file = esc(file);
     p->lit = NULL;
-    scanner_init(&p->scanner, filename, src);
+    scanner_init(&p->scanner, p->file, src);
     p->scanner.dontInsertSemis = !path_matchExt(".bling", filename);
     parser_next(p);
 }
@@ -52,17 +56,17 @@ static decl_t *parse_decl(parser_t *p, bool is_external);
 static decl_t *parse_field(parser_t *p, bool anon);
 
 extern void parser_error(parser_t *p, pos_t pos, char *fmt, ...) {
+    token_Position position = token_File_position(p->file, pos);
     buffer_t buf = {};
-    for (int i = pos; ; i++) {
-        int ch = p->scanner.src[i];
+    int i = position.lineOffset;
+    int ch = p->scanner.src[i];
+    while (ch > 0 && ch != '\n') {
         buffer_writeByte(&buf, ch, NULL);
-        if (ch <= 0 || ch == '\n') {
-            break;
-        }
+        i++;
+        ch = p->scanner.src[i];
     }
-    Position pos0 = scanner_position(&p->scanner, pos);
     panic(fmt_sprintf("%s: %s\n%s",
-                Position_string(&pos0),
+                token_Position_string(&position),
                 fmt,
                 buffer_string(&buf)));
 }
@@ -1163,7 +1167,7 @@ static ast_File *parse_file(parser_t *p) {
         decls = append(decls, &decl);
     }
     ast_File file = {
-        .filename = p->filename,
+        .filename = p->file->name,
         .name = name,
         .imports = slice_to_nil_array(imports),
         .decls = slice_to_nil_array(decls),

@@ -16,11 +16,12 @@ extern ast_File *parser_parse_file(char *filename);
 extern ast_File **parser_parseDir(const char *path, error_t **first);
 
 typedef struct {
+    token_File *file;
     scanner_t scanner;
+
     pos_t pos;
     token_t tok;
     char *lit;
-    char *filename;
     scope_t *pkg_scope;
     bool c_mode;
 } parser_t;

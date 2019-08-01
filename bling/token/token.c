@@ -143,6 +143,26 @@ extern int token_precedence(token_t op) {
     }
 }
 
-extern char *Position_string(Position *p) {
+extern char *token_Position_string(token_Position *p) {
     return fmt_sprintf("%s:%d:%d", p->filename, p->line, p->column);
+}
+
+extern token_Position token_File_position(token_File *f, pos_t p) {
+    token_Position pos = {
+        .filename = f->name,
+        .offset = p,
+        .line = 1,
+        .lineOffset = 0,
+        .column = 1,
+    };
+    for (int i = 0; i < p; i++) {
+        if (f->src[i] == '\n') {
+            pos.line++;
+            pos.lineOffset = i+1;
+            pos.column = 1;
+        } else {
+            pos.column++;
+        }
+    }
+    return pos;
 }
