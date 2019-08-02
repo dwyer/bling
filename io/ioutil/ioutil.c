@@ -52,18 +52,22 @@ end:
     return ret;
 }
 
-extern error_t *ioutil_writeFile(const char *filename, const char *data, int perm) {
+extern void ioutil_writeFile(const char *filename, const char *data, int perm,
+        error_t **error) {
     (void)perm; // TODO use this when we have meaningful consts in os.
     error_t *err = NULL;
     os_File *file = os_create(filename, &err);
     if (err) {
-        return err;
+        error_move(err, error);
+        goto end;
     }
     os_write(file, data, &err);
     if (err) {
+        error_move(err, error);
         goto end;
     }
 end:
-    os_close(file, NULL);
-    return err;
+    if (file) {
+        os_close(file, NULL);
+    }
 }

@@ -134,7 +134,7 @@ void compile_bling(char *argv[]) {
     if (dst) {
         if (is_ext(dst, ".out")) {
             char *tmp = "/tmp/tmp.c";
-            ioutil_writeFile(tmp, out, 0644);
+            ioutil_writeFile(tmp, out, 0644, NULL);
             char *args[] = {
                 "/usr/bin/cc",
                 "-o", dst,
@@ -149,7 +149,7 @@ void compile_bling(char *argv[]) {
                 print("%s exited with code: %d", argv[0], code);
             }
         } else {
-            ioutil_writeFile(dst, out, 0644);
+            ioutil_writeFile(dst, out, 0644, NULL);
         }
     } else {
         os_write(os_stdout, out, &err);
