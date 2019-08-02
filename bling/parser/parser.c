@@ -6,7 +6,8 @@
 
 extern decl_t *parse_pragma(parser_t *p) {
     pos_t pos = p->pos;
-    char *lit = strdup(p->lit);
+    char *lit = p->lit;
+    p->lit = NULL;
     expect(p, token_HASH);
     decl_t decl = {
         .type = ast_DECL_PRAGMA,
@@ -69,7 +70,6 @@ extern void parser_error(parser_t *p, pos_t pos, char *fmt, ...) {
 }
 
 extern void parser_next(parser_t *p) {
-    free(p->lit);
     p->tok = scanner_scan(&p->scanner, &p->pos, &p->lit);
 }
 
@@ -100,14 +100,16 @@ extern expr_t *identifier(parser_t *p) {
         .pos = p->pos,
     };
     if (p->tok == token_IDENT) {
-        x.ident.name = strdup(p->lit);
+        x.ident.name = p->lit;
+        p->lit = NULL;
     }
     expect(p, token_IDENT);
     return esc(x);
 }
 
 extern expr_t *basic_lit(parser_t *p, token_t kind) {
-    char *value = strdup(p->lit);
+    char *value = p->lit;
+    p->lit = NULL;
     pos_t pos = expect(p, kind);
     expr_t x = {
         .type = ast_EXPR_BASIC_LIT,

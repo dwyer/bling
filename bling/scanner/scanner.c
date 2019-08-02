@@ -172,6 +172,10 @@ scan_again:
         *lit = scan_ident(s);
         if (strlen(*lit) > 1) {
             tok = token_lookup(*lit);
+            if (tok != token_IDENT) {
+                free(*lit);
+                *lit = NULL;
+            }
             switch (tok) {
             case token_IDENT:
             case token_BREAK:
