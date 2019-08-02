@@ -1,5 +1,4 @@
 #include "bling/scanner/scanner.h"
-#include "bling/token/token.h"
 
 static void next0(scanner_t *s) {
     s->offset = s->rd_offset;

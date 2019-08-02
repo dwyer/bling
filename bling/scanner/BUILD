@@ -7,7 +7,6 @@ cc_library(
         "scanner.h",
     ],
     deps = [
-        "//bling/ast",
         "//bling/token",
     ],
     visibility = ["//visibility:public"],
