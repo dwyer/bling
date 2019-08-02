@@ -1,8 +1,9 @@
 #pragma once
-#include "bootstrap/bootstrap.h"
+#include "slice/slice.h"
 
 import("fmt");
 import("map");
+import("slice");
 
 typedef enum {
     token_ILLEGAL = 0,
@@ -108,16 +109,18 @@ extern int token_precedence(token_t op);
 
 typedef struct {
     char *name;
-    char *src; // TODO remove
+    slice_t lines;
 } token_File;
 
 typedef struct {
     char *filename;
     int offset;
     int line;
-    int lineOffset;
     int column;
 } token_Position;
 
 extern char *token_Position_string(token_Position *p);
-extern token_Position token_File_position(token_File *f, pos_t p);
+
+extern token_File      *token_File_new(const char *filename);
+extern void             token_File_addLine(token_File *f, int offset);
+extern token_Position   token_File_position(token_File *f, pos_t p);

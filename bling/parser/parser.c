@@ -19,11 +19,7 @@ extern decl_t *parse_pragma(parser_t *p) {
 }
 
 extern void parser_init(parser_t *p, char *filename, char *src) {
-    token_File file = {
-        .name = strdup(filename),
-        .src = src,
-    };
-    p->file = esc(file);
+    p->file = token_File_new(filename);
     p->lit = NULL;
     scanner_init(&p->scanner, p->file, src);
     p->scanner.dontInsertSemis = !path_matchExt(".bling", filename);
@@ -58,7 +54,8 @@ static decl_t *parse_field(parser_t *p, bool anon);
 extern void parser_error(parser_t *p, pos_t pos, char *fmt, ...) {
     token_Position position = token_File_position(p->file, pos);
     buffer_t buf = {};
-    int i = position.lineOffset;
+    int i = 0;
+    slice_get(&p->file->lines, position.line-1, &i);
     int ch = p->scanner.src[i];
     while (ch > 0 && ch != '\n') {
         buffer_writeByte(&buf, ch, NULL);
@@ -110,15 +107,14 @@ extern expr_t *identifier(parser_t *p) {
 }
 
 extern expr_t *basic_lit(parser_t *p, token_t kind) {
-    pos_t pos = p->pos;
-    char *value = p->lit;
-    expect(p, kind);
+    char *value = strdup(p->lit);
+    pos_t pos = expect(p, kind);
     expr_t x = {
         .type = ast_EXPR_BASIC_LIT,
         .pos = pos,
         .basic_lit = {
             .kind = kind,
-            .value = strdup(value),
+            .value = value,
         },
     };
     return esc(x);
@@ -1121,6 +1117,7 @@ extern ast_File **parser_parseDir(const char *path, error_t **first) {
     os_FileInfo **infos = ioutil_read_dir(path, &err);
     if (err) {
         error_move(err, first);
+        return NULL;
     }
     slice_t files = slice_init(sizeof(uintptr_t));
     while (*infos != NULL) {

@@ -27,6 +27,9 @@ extern void *slice_ref(const slice_t *s, int i) {
 }
 
 extern void slice_get(const slice_t *s, int i, void *dst) {
+    if (i >= s->len) {
+        panic("out of range: index=%d, len=%d", i, s->len);
+    }
     if (s->size == 1) {
          *(char *)dst = ((char *)s->array)[i];
     } else {

@@ -3,6 +3,9 @@
 
 static void next0(scanner_t *s) {
     s->offset = s->rd_offset;
+    if (s->ch == '\n') {
+        token_File_addLine(s->file, s->offset);
+    }
     s->ch = s->src[s->rd_offset];
     s->rd_offset++;
 }

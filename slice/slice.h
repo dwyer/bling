@@ -1,5 +1,4 @@
 #pragma once
-
 #include "bootstrap/bootstrap.h"
 
 typedef struct {

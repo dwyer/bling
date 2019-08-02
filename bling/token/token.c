@@ -147,22 +147,48 @@ extern char *token_Position_string(token_Position *p) {
     return fmt_sprintf("%s:%d:%d", p->filename, p->line, p->column);
 }
 
-extern token_Position token_File_position(token_File *f, pos_t p) {
-    token_Position pos = {
-        .filename = f->name,
-        .offset = p,
-        .line = 1,
-        .lineOffset = 0,
-        .column = 1,
+extern token_File *token_File_new(const char *filename) {
+    token_File file = {
+        .name = strdup(filename),
+        .lines = slice_init(sizeof(int)),
     };
-    for (int i = 0; i < p; i++) {
-        if (f->src[i] == '\n') {
-            pos.line++;
-            pos.lineOffset = i+1;
-            pos.column = 1;
+    int zero = 0;
+    slice_append(&file.lines, &zero);
+    return esc(file);
+}
+
+extern void token_File_addLine(token_File *f, int offset) {
+    slice_append(&f->lines, &offset);
+}
+
+static int getInt(slice_t *a, int i) {
+    int x;
+    slice_get(a, i, &x);
+    return x;
+}
+
+static int searchInts(slice_t *a, int x) {
+    int i = 0;
+    int j = slice_len(a);
+    while (i < j) {
+        int h = i + (j - i) / 2;
+        if (getInt(a, h) <= x) {
+            i = h + 1;
         } else {
-            pos.column++;
+            j = h;
         }
     }
-    return pos;
+    return i - 1;
+}
+
+extern token_Position token_File_position(token_File *f, pos_t p) {
+    int offset = p;
+    int i = searchInts(&f->lines, offset);
+    token_Position epos = {
+        .filename = f->name,
+        .offset = offset,
+        .line = i + 1,
+        .column = offset - getInt(&f->lines, i) + 1,
+    };
+    return epos;
 }
