@@ -298,7 +298,6 @@ typedef struct scope_t scope_t;
 typedef struct scope_t {
     scope_t *outer;
     map_t objects;
-    slice_t filenames;
 } scope_t;
 
 extern bool is_expr_type(expr_t *x);

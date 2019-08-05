@@ -16,7 +16,6 @@ extern scope_t *scope_new(scope_t *outer) {
     scope_t s = {
         .outer = outer,
         .objects = map_init(sizeof(object_t)),
-        .filenames = slice_init(sizeof(char *)),
     };
     return esc(s);
 }
@@ -57,7 +56,6 @@ extern void scope_resolve(scope_t *s, expr_t *x) {
 }
 
 extern void scope_free(scope_t *s) {
-    slice_deinit(&s->filenames);
     map_deinit(&s->objects);
     free(s);
 }
