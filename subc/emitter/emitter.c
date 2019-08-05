@@ -496,10 +496,19 @@ static void emit_c_decl(emitter_t *e, decl_t *decl) {
 }
 
 extern void emitter_emit_file(emitter_t *e, ast_File *file) {
-    emit_string(e, "// ");
+    emit_string(e, "//");
     emit_string(e, file->filename);
     emit_newline(e);
     emit_newline(e);
+    if (file->name != NULL) {
+        emit_token(e, token_PACKAGE);
+        emit_token(e, token_LPAREN);
+        emit_c_expr(e, file->name);
+        emit_token(e, token_RPAREN);
+        emit_token(e, token_SEMICOLON);
+        emit_newline(e);
+        emit_newline(e);
+    }
     for (decl_t **decls = file->decls; decls && *decls; decls++) {
         emit_c_decl(e, *decls);
         emit_newline(e);

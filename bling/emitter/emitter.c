@@ -513,6 +513,14 @@ extern void printer_print_file(emitter_t *p, ast_File *file) {
     emit_string(p, "//");
     emit_string(p, file->filename);
     emit_newline(p);
+    emit_newline(p);
+    if (file->name != NULL) {
+        emit_token(p, token_PACKAGE);
+        emit_space(p);
+        print_expr(p, file->name);
+        emit_newline(p);
+        emit_newline(p);
+    }
     for (decl_t **imports = file->imports; imports && *imports; imports++) {
         emit_token(p, token_IMPORT);
         emit_space(p);
