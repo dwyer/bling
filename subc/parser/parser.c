@@ -39,7 +39,7 @@ static bool is_type(parser_t *p) {
         return true;
     case token_IDENT:
         {
-            object_t *obj = scope_lookup(p->pkg_scope, p->lit);
+            ast_Object *obj = scope_lookup(p->pkg_scope, p->lit);
             return obj && obj->kind == obj_kind_TYPE;
         }
     default:

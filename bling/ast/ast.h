@@ -76,7 +76,7 @@ typedef struct {
     obj_kind_t kind;
     char *name;
     decl_t *decl;
-} object_t;
+} ast_Object;
 
 typedef struct decl_t {
     ast_node_type_t type;
@@ -173,7 +173,7 @@ typedef struct expr_t {
 
         struct {
             char *name;
-            object_t *obj;
+            ast_Object *obj;
         } ident;
 
         struct {
@@ -291,7 +291,7 @@ typedef struct stmt_t {
     };
 } stmt_t;
 
-extern object_t *object_new(obj_kind_t kind, char *name);
+extern ast_Object *object_new(obj_kind_t kind, char *name);
 
 typedef struct scope_t scope_t;
 
@@ -304,8 +304,8 @@ extern bool is_expr_type(expr_t *x);
 
 extern scope_t *scope_new(scope_t *outer);
 extern void scope_deinit(scope_t *s);
-extern object_t *scope_insert(scope_t *s, object_t *obj);
-extern object_t *scope_lookup(scope_t *s, char *name);
+extern ast_Object *scope_insert(scope_t *s, ast_Object *obj);
+extern ast_Object *scope_lookup(scope_t *s, char *name);
 
 typedef struct {
     const char *filename;

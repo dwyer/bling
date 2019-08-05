@@ -30,7 +30,7 @@ extern void parser_init(parser_t *p, const char *filename, char *src) {
 extern void parser_declare(parser_t *p, scope_t *s, decl_t *decl,
         obj_kind_t kind, expr_t *name) {
     assert(name->type == ast_EXPR_IDENT);
-    object_t *obj = object_new(kind, name->ident.name);
+    ast_Object *obj = object_new(kind, name->ident.name);
     obj->decl = decl;
     scope_insert(s, obj);
 }

@@ -4,8 +4,8 @@ extern bool is_expr_type(expr_t *x) {
     return _ast_TYPE_START < x->type && x->type < _ast_DECL_END;
 }
 
-extern object_t *object_new(obj_kind_t kind, char *name) {
-    object_t obj = {
+extern ast_Object *object_new(obj_kind_t kind, char *name) {
+    ast_Object obj = {
         .kind = kind,
         .name = name,
     };
@@ -15,7 +15,7 @@ extern object_t *object_new(obj_kind_t kind, char *name) {
 extern scope_t *scope_new(scope_t *outer) {
     scope_t s = {
         .outer = outer,
-        .objects = map_init(sizeof(object_t)),
+        .objects = map_init(sizeof(ast_Object)),
     };
     return esc(s);
 }
@@ -24,8 +24,8 @@ extern void scope_deinit(scope_t *s) {
     map_deinit(&s->objects);
 }
 
-extern object_t *scope_insert(scope_t *s, object_t *obj) {
-    object_t *alt = NULL;
+extern ast_Object *scope_insert(scope_t *s, ast_Object *obj) {
+    ast_Object *alt = NULL;
     map_get(&s->objects, obj->name, &alt);
     if (alt == NULL) {
         map_set(&s->objects, obj->name, &obj);
@@ -33,8 +33,8 @@ extern object_t *scope_insert(scope_t *s, object_t *obj) {
     return alt;
 }
 
-extern object_t *scope_lookup(scope_t *s, char *name) {
-    object_t *obj = NULL;
+extern ast_Object *scope_lookup(scope_t *s, char *name) {
+    ast_Object *obj = NULL;
     map_get(&s->objects, name, &obj);
     return obj;
 }
@@ -45,7 +45,7 @@ extern void scope_resolve(scope_t *s, expr_t *x) {
     }
     assert(x->ident.obj == NULL);
     while (s != NULL) {
-        object_t *obj = scope_lookup(s, x->ident.name);
+        ast_Object *obj = scope_lookup(s, x->ident.name);
         if (obj != NULL) {
             x->ident.obj = obj;
             return;

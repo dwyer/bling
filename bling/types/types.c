@@ -279,10 +279,10 @@ static void scope_declare(scope_t *s, decl_t *decl) {
     if (ident->ident.obj != NULL) {
         panic("already declared: %s", ident->ident.name);
     }
-    object_t *obj = object_new(kind, ident->ident.name);
+    ast_Object *obj = object_new(kind, ident->ident.name);
     obj->decl = decl;
     ident->ident.obj = obj;
-    object_t *alt = scope_insert(s, obj);
+    ast_Object *alt = scope_insert(s, obj);
     if (alt != NULL) {
         if (alt->kind != kind) {
             panic("incompatible redefinition of `%s`: %s",
@@ -464,7 +464,7 @@ static expr_t *get_decl_type(decl_t *decl) {
 
 static expr_t *get_ident_type(expr_t *ident) {
     assert(ident->type == ast_EXPR_IDENT);
-    object_t *obj = ident->ident.obj;
+    ast_Object *obj = ident->ident.obj;
     assert(obj);
     return get_decl_type(obj->decl);
 }
