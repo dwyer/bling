@@ -72,6 +72,10 @@ static void emit_c_expr(emitter_t *e, expr_t *expr) {
         break;
 
     case ast_EXPR_IDENT:
+        if (expr->ident.obj && expr->ident.obj->pkg) {
+            emit_string(e, expr->ident.obj->pkg);
+            emit_token(e, token_DOLLAR);
+        }
         emit_string(e, expr->ident.name);
         break;
 

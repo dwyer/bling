@@ -76,6 +76,7 @@ typedef struct {
     obj_kind_t kind;
     char *name;
     decl_t *decl;
+    char *pkg;
 } ast_Object;
 
 typedef struct decl_t {
@@ -298,6 +299,7 @@ typedef struct ast_Scope ast_Scope;
 typedef struct ast_Scope {
     ast_Scope *outer;
     map_t objects;
+    char *pkg;
 } ast_Scope;
 
 extern bool is_expr_type(expr_t *x);

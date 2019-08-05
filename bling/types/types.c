@@ -281,6 +281,7 @@ static void scope_declare(ast_Scope *s, decl_t *decl) {
     }
     ast_Object *obj = object_new(kind, ident->ident.name);
     obj->decl = decl;
+    obj->pkg = s->pkg;
     ident->ident.obj = obj;
     ast_Object *alt = scope_insert(s, obj);
     if (alt != NULL) {
@@ -1036,6 +1037,10 @@ static void check_func(checker_t *w, decl_t *decl) {
 }
 
 static void check_file(checker_t *w, ast_File *file) {
+    if (file->name) {
+        checker_openScope(w);
+        w->scope->pkg = file->name->ident.name;
+    }
     for (int i = 0; file->imports[i] != NULL; i++) {
         check_import(w, file->imports[i]);
     }
@@ -1047,6 +1052,9 @@ static void check_file(checker_t *w, ast_File *file) {
         for (int i = 0; file->decls[i] != NULL; i++) {
             check_func(w, file->decls[i]);
         }
+    }
+    if (file->name) {
+        checker_closeScope(w);
     }
 }
 
