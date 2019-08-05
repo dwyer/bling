@@ -18,12 +18,3 @@ extern char *fmt_sprintf(const char *s, ...) {
     va_end(ap);
     return res;
 }
-
-extern char *fmt(const char *s, ...) {
-    char *res = NULL;
-    va_list ap;
-    va_start(ap, s);
-    vasprintf(&res, s, ap);
-    va_end(ap);
-    return res;
-}
