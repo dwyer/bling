@@ -15,7 +15,7 @@ extern ast_Object *object_new(obj_kind_t kind, char *name) {
 extern ast_Scope *scope_new(ast_Scope *outer) {
     ast_Scope s = {
         .outer = outer,
-        .objects = map_init(sizeof(ast_Object)),
+        .objects = map_init(sizeof(ast_Object *)),
     };
     return esc(s);
 }
