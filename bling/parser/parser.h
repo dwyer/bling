@@ -12,7 +12,7 @@ import("fmt");
 import("io/ioutil");
 import("path");
 
-extern ast_File *parser_parse_file(char *filename);
+extern ast_File *parser_parse_file(const char *filename);
 extern ast_File **parser_parseDir(const char *path, error_t **first);
 
 typedef struct {
@@ -28,7 +28,7 @@ typedef struct {
 
 extern void parser_declare(parser_t *p, scope_t *s, decl_t *decl, obj_kind_t kind, expr_t *name);
 extern void parser_next(parser_t *p);
-extern void parser_init(parser_t *p, char *filename, char *src);
+extern void parser_init(parser_t *p, const char *filename, char *src);
 extern void parser_error(parser_t *p, pos_t pos, char *fmt, ...);
 extern bool accept(parser_t *p, token_t tok);
 extern pos_t expect(parser_t *p, token_t tok);

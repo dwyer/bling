@@ -19,7 +19,7 @@ extern decl_t *parse_pragma(parser_t *p) {
     return esc(decl);
 }
 
-extern void parser_init(parser_t *p, char *filename, char *src) {
+extern void parser_init(parser_t *p, const char *filename, char *src) {
     p->file = token_File_new(filename);
     p->lit = NULL;
     scanner_init(&p->scanner, p->file, src);
@@ -1142,9 +1142,7 @@ static ast_File *parse_file(parser_t *p) {
         decls = append(decls, &lit);
     }
     if (accept(p, token_PACKAGE)) {
-        expect(p, token_LPAREN);
         name = identifier(p);
-        expect(p, token_RPAREN);
         expect(p, token_SEMICOLON);
     }
     while (p->tok == token_IMPORT) {
@@ -1174,7 +1172,7 @@ static ast_File *parse_file(parser_t *p) {
     return esc(file);
 }
 
-extern ast_File *parser_parse_file(char *filename) {
+extern ast_File *parser_parse_file(const char *filename) {
     error_t *err = NULL;
     char *src = ioutil_read_file(filename, &err);
     if (err) {
