@@ -1,5 +1,14 @@
 #include "bytes/bytes.h"
 
+extern bool bytes_hasSuffix(const char *s, const char *suffix) {
+    for (int i = 0; s[i]; i++) {
+        if (streq(&s[i], suffix)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 extern char *bytes_join(const char *a[], int size, const char *sep) {
     switch (size) {
     case 0:

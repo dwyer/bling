@@ -4,10 +4,10 @@ cc_binary(
         "main.c",
     ],
     deps = [
+        "//bytes",
         "//bling/parser",
         "//bling/types",
         "//os",
-        "//path",
         "//subc/parser",
         "//subc/emitter",
     ],

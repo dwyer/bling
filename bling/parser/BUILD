@@ -11,6 +11,7 @@ cc_library(
         "//bling/ast",
         "//bling/scanner",
         "//bling/token",
+        "//bytes",
         "//fmt",
         "//io/ioutil",
         "//path",

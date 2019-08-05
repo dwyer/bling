@@ -68,7 +68,3 @@ extern bool path_match(const char *pattern, const char *path) {
     }
     return false;
 }
-
-extern bool path_matchExt(const char *ext, const char *path) {
-    return streq(ext, path_ext(path));
-}

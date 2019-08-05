@@ -23,7 +23,7 @@ extern void parser_init(parser_t *p, const char *filename, char *src) {
     p->file = token_File_new(filename);
     p->lit = NULL;
     scanner_init(&p->scanner, p->file, src);
-    p->scanner.dontInsertSemis = !path_matchExt(".bling", filename);
+    p->scanner.dontInsertSemis = !bytes_hasSuffix(filename, ".bling");
     parser_next(p);
 }
 
@@ -1107,7 +1107,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
 }
 
 static bool isBlingFile(const char *name) {
-    return path_matchExt(".bling", name);
+    return bytes_hasSuffix(name, ".bling");
 }
 
 static bool isTestFile(const char *name) {

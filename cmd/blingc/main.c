@@ -1,7 +1,6 @@
 #include "bling/parser/parser.h"
 #include "bling/types/types.h"
 #include "os/os.h"
-#include "path/path.h"
 #include "subc/emitter/emitter.h"
 #include "subc/parser/parser.h"
 
@@ -13,10 +12,6 @@ import("subc/parser");
 import("subc/emitter");
 
 int execve(const char *path, char *const argv[], char *envp[]);
-
-bool is_ext(const char *path, const char *ext) {
-    return path_matchExt(ext, path);
-}
 
 void usage(const char *progname) {
     panic("usage: %s -o DST SRCS", progname);
@@ -99,7 +94,7 @@ void compile_bling(char *argv[]) {
         free(file);
     }
     if (dst) {
-        emit_as_bling = is_ext(dst, ".bling");
+        emit_as_bling = bytes_hasSuffix(dst, ".bling");
     }
     emitter_t emitter = {};
     error_t *err = NULL;
@@ -109,9 +104,9 @@ void compile_bling(char *argv[]) {
     while (*argv) {
         char *filename = *argv;
         ast_File *file = NULL;
-        if (is_ext(filename, ".bling")) {
+        if (bytes_hasSuffix(filename, ".bling")) {
             file = parser_parse_file(filename);
-        } else if (is_ext(filename, ".c") || is_ext(filename, ".h")) {
+        } else if (bytes_hasSuffix(filename, ".c") || bytes_hasSuffix(filename, ".h")) {
             file = parser_parse_cfile(filename, scope);
         } else {
             panic("unknown file type: %s", filename);
@@ -132,7 +127,7 @@ void compile_bling(char *argv[]) {
     }
     char *out = emitter_string(&emitter);
     if (dst) {
-        if (is_ext(dst, ".out")) {
+        if (bytes_hasSuffix(dst, ".out")) {
             char *tmp = "/tmp/tmp.c";
             ioutil_writeFile(tmp, out, 0644, NULL);
             char *args[] = {
