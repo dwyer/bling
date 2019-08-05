@@ -68,6 +68,7 @@ typedef enum {
     token_DEC,
     token_DIV,
     token_DIV_ASSIGN,
+    token_DOLLAR,
     token_EQUAL,
     token_GT,
     token_GT_EQUAL,

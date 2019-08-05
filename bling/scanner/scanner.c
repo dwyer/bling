@@ -257,6 +257,9 @@ scan_again:
         case '!':
             tok = switch2(s, token_NOT, token_NOT_EQUAL);
             break;
+        case '$':
+            tok = token_DOLLAR;
+            break;
         case '%':
             tok = switch2(s, token_MOD, token_MOD_ASSIGN);
             break;
