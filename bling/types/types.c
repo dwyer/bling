@@ -251,7 +251,7 @@ static bool types_areComparable(expr_t *a, expr_t *b) {
     return types_areIdentical(a, b);
 }
 
-static void scope_declare(scope_t *s, decl_t *decl) {
+static void scope_declare(ast_Scope *s, decl_t *decl) {
     obj_kind_t kind;
     expr_t *ident = NULL;
     switch (decl->type) {
@@ -316,7 +316,7 @@ static void scope_declare(scope_t *s, decl_t *decl) {
     }
 }
 
-extern void declare_builtins(scope_t *s) {
+extern void declare_builtins(ast_Scope *s) {
     for (int i = 0; natives[i].name != NULL; i++) {
         expr_t name = {
             .type = ast_EXPR_IDENT,
@@ -344,7 +344,7 @@ extern void declare_builtins(scope_t *s) {
 
 typedef struct {
     config_t *conf;
-    scope_t *scope;
+    ast_Scope *scope;
     expr_t *result;
     slice_t files;
     expr_t *typedefName;
@@ -356,7 +356,7 @@ static void checker_openScope(checker_t *w) {
 }
 
 static void checker_closeScope(checker_t *w) {
-    scope_t *inner = w->scope;
+    ast_Scope *inner = w->scope;
     w->scope = w->scope->outer;
     scope_free(inner);
 }

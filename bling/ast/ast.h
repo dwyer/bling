@@ -293,36 +293,36 @@ typedef struct stmt_t {
 
 extern ast_Object *object_new(obj_kind_t kind, char *name);
 
-typedef struct scope_t scope_t;
+typedef struct ast_Scope ast_Scope;
 
-typedef struct scope_t {
-    scope_t *outer;
+typedef struct ast_Scope {
+    ast_Scope *outer;
     map_t objects;
-} scope_t;
+} ast_Scope;
 
 extern bool is_expr_type(expr_t *x);
 
-extern scope_t *scope_new(scope_t *outer);
-extern void scope_deinit(scope_t *s);
-extern ast_Object *scope_insert(scope_t *s, ast_Object *obj);
-extern ast_Object *scope_lookup(scope_t *s, char *name);
+extern ast_Scope *scope_new(ast_Scope *outer);
+extern void scope_deinit(ast_Scope *s);
+extern ast_Object *scope_insert(ast_Scope *s, ast_Object *obj);
+extern ast_Object *scope_lookup(ast_Scope *s, char *name);
 
 typedef struct {
     const char *filename;
     expr_t *name;
     decl_t **imports;
     decl_t **decls;
-    scope_t *scope;
+    ast_Scope *scope;
 } ast_File;
 
 typedef struct {
     char *name;
-    scope_t *scope;
+    ast_Scope *scope;
     ast_File **files;
 } package_t;
 
-extern void scope_resolve(scope_t *s, expr_t *x);
-extern void scope_free(scope_t *s);
+extern void scope_resolve(ast_Scope *s, expr_t *x);
+extern void scope_free(ast_Scope *s);
 
 
 extern bool ast_isIdent(expr_t *x);

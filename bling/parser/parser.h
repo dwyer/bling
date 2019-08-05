@@ -22,11 +22,11 @@ typedef struct {
     pos_t pos;
     token_t tok;
     char *lit;
-    scope_t *pkg_scope;
+    ast_Scope *pkg_scope;
     bool c_mode;
 } parser_t;
 
-extern void parser_declare(parser_t *p, scope_t *s, decl_t *decl, obj_kind_t kind, expr_t *name);
+extern void parser_declare(parser_t *p, ast_Scope *s, decl_t *decl, obj_kind_t kind, expr_t *name);
 extern void parser_next(parser_t *p);
 extern void parser_init(parser_t *p, const char *filename, char *src);
 extern void parser_error(parser_t *p, pos_t pos, char *fmt, ...);

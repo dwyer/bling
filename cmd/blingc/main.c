@@ -43,7 +43,7 @@ void compile_c(char *argv[]) {
         }
         argv++;
     }
-    scope_t *scope = scope_new(NULL);
+    ast_Scope *scope = scope_new(NULL);
     declare_builtins(scope);
     emitter_t emitter = {};
     while (*argv) {
@@ -89,7 +89,7 @@ void compile_bling(char *argv[]) {
         }
         argv++;
     }
-    scope_t *scope = scope_new(NULL);
+    ast_Scope *scope = scope_new(NULL);
     declare_builtins(scope);
     if (conf.strict) {
         ast_File *file = parser_parse_file("builtin/builtin.bling");

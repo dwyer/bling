@@ -5,7 +5,7 @@ import("bling/ast");
 import("bling/emitter");
 import("bling/parser");
 
-extern void declare_builtins(scope_t *s);
+extern void declare_builtins(ast_Scope *s);
 
 extern bool types_isIdent(expr_t *expr);
 extern bool types_isVoid(expr_t *type);
