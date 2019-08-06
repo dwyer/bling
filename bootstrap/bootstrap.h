@@ -16,8 +16,8 @@ typedef char bool;
 static const bool false = (bool)0;
 static const bool true = !false;
 
-extern void print(const char *fmt, ...);
-extern void panic(const char *fmt, ...);
+extern void print(const char *s, ...);
+extern void panic(const char *s, ...);
 extern bool streq(const char *a, const char *b);
 
 extern int memcmp(const void *, const void *, size_t);

@@ -145,7 +145,7 @@ extern int token_precedence(token_t op) {
 }
 
 extern char *token_Position_string(token_Position *p) {
-    return fmt_sprintf("%s:%d:%d", p->filename, p->line, p->column);
+    return fmt$sprintf("%s:%d:%d", p->filename, p->line, p->column);
 }
 
 extern token_File *token_File_new(const char *filename) {

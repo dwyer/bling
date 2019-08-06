@@ -22,7 +22,8 @@ static void skip_line(scanner_t *s) {
 }
 
 static bool is_letter(int ch) {
-    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_';
+    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_' ||
+        ch == '$';
 }
 
 static bool is_digit(int ch) {

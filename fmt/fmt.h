@@ -1,4 +1,4 @@
 #pragma once
 
-extern void fmt_printf(const char *s, ...);
-extern char *fmt_sprintf(const char *s, ...);
+extern void fmt$printf(const char *s, ...);
+extern char *fmt$sprintf(const char *s, ...);
