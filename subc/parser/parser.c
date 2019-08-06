@@ -1025,11 +1025,7 @@ static expr_t *type_specifier(parser_t *p) {
         if (is_type(p)) {
             x = identifier(p);
         } else {
-            if (p->lit) {
-                parser_error(p, p->pos, fmt$sprintf("expected type, got %s", p->lit));
-            } else {
-                parser_error(p, p->pos, fmt$sprintf("expected type, got %s", token_string(p->tok)));
-            }
+            parser_errorExpected(p, p->pos, "type");
         }
         break;
     }

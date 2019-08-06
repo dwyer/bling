@@ -31,7 +31,8 @@ typedef struct {
 extern void parser_declare(parser_t *p, ast_Scope *s, decl_t *decl, obj_kind_t kind, expr_t *name);
 extern void parser_next(parser_t *p);
 extern void parser_init(parser_t *p, const char *filename, char *src);
-extern void parser_error(parser_t *p, pos_t pos, char *msg, ...);
+extern void parser_error(parser_t *p, pos_t pos, char *msg);
+extern void parser_errorExpected(parser_t *p, pos_t pos, char *msg);
 extern bool accept(parser_t *p, token_t tok);
 extern pos_t expect(parser_t *p, token_t tok);
 extern expr_t *basic_lit(parser_t *p, token_t kind);

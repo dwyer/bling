@@ -51,6 +51,9 @@ extern char *buffer_string(buffer_t *b) {
 
 extern int buffer_write(buffer_t *b, const char *p, int size, error_t **error) {
     buffer_init(b);
+    if (size < 0) {
+        size = strlen(p);
+    }
     for (int i = 0; i < size; i++) {
         *b = append(*b, &p[i]);
     }
