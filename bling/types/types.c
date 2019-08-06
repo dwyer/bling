@@ -349,7 +349,7 @@ typedef struct {
     expr_t *result;
     slice_t files;
     expr_t *typedefName;
-    slice_t filenames;
+    map_t scopes;
 } checker_t;
 
 static void checker_openScope(checker_t *w) {
@@ -946,15 +946,13 @@ static void check_file(checker_t *w, ast_File *file);
 
 static void check_import(checker_t *w, decl_t *imp) {
     char *path = constant_stringVal(imp->imp.path);
-    for (int i = 0; i < len(w->filenames); i++) {
-        char *s = NULL;
-        slice_get(&w->filenames, i, &s);
-        if (streq(path, s)) {
-            free(path);
-            return;
-        }
+    ast_Scope *scope = NULL;
+    map_get(&w->scopes, path, &scope);
+    if (scope) {
+        free(path);
+        return;
     }
-    w->filenames = append(w->filenames, &path);
+    map_set(&w->scopes, path, &w->scope);
     error_t *err = NULL;
     ast_File **files = parser_parseDir(path, &err);
     if (err) {
@@ -1063,7 +1061,7 @@ extern package_t types_checkFile(config_t *conf, ast_File *file) {
         .conf = conf,
         .scope = file->scope,
         .files = slice_init(sizeof(ast_File *)),
-        .filenames = slice_init(sizeof(char *)),
+        .scopes = map_init(sizeof(ast_Scope *)),
     };
     check_file(&w, file);
     package_t pkg = {
