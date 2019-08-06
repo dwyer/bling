@@ -1090,7 +1090,7 @@ extern package_t types_checkFile(config_t *conf, ast_File *file) {
     checker_t w = {
         .conf = conf,
         .pkg = {
-            .scope = file->scope,
+            .scope = types_universe(),
         },
         .files = slice_init(sizeof(ast_File *)),
         .scopes = map_init(sizeof(ast_Scope *)),

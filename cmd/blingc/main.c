@@ -79,7 +79,6 @@ void compile_bling(char *argv[]) {
         }
         argv++;
     }
-    ast_Scope *scope = types_universe();
     if (dst) {
         emit_as_bling = bytes_hasSuffix(dst, ".bling");
     }
@@ -96,7 +95,6 @@ void compile_bling(char *argv[]) {
         } else {
             panic("unknown file type: %s", filename);
         }
-        file->scope = scope;
         package_t pkg = types_checkFile(&conf, file);
         for (int i = 0; pkg.files[i]; i++) {
             ast_File *file = pkg.files[i];
