@@ -74,21 +74,12 @@ void compile_bling(char *argv[]) {
         if (streq(*argv, "-o")) {
             argv++;
             dst = *argv;
-        } else if (streq(*argv, "-w")) {
-            conf.strict = true;
         } else {
             panic("unknown option: %s", *argv);
         }
         argv++;
     }
     ast_Scope *scope = types_universe();
-    if (conf.strict) {
-        ast_File *file = parser_parse_file("builtin/builtin.bling");
-        file->scope = scope;
-        types_checkFile(&conf, file);
-        free(file->decls);
-        free(file);
-    }
     if (dst) {
         emit_as_bling = bytes_hasSuffix(dst, ".bling");
     }

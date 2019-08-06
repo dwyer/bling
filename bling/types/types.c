@@ -357,6 +357,12 @@ extern ast_Scope *types_universe() {
     if (_universe == NULL) {
         _universe = scope_new(NULL);
         declare_builtins(_universe);
+        ast_File *file = parser_parse_file("builtin/builtin.bling");
+        file->scope = _universe;
+        config_t conf = {.strict = true};
+        types_checkFile(&conf, file);
+        free(file->decls);
+        free(file);
     }
     return _universe;
 }
