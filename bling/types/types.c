@@ -351,10 +351,14 @@ static void declare_builtins(ast_Scope *s) {
     }
 }
 
+ast_Scope *_universe = NULL;
+
 extern ast_Scope *types_universe() {
-    ast_Scope *universe = scope_new(NULL);
-    declare_builtins(universe);
-    return universe;
+    if (_universe == NULL) {
+        _universe = scope_new(NULL);
+        declare_builtins(_universe);
+    }
+    return _universe;
 }
 
 typedef struct {
