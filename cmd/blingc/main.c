@@ -38,11 +38,10 @@ void compile_c(char *argv[]) {
         }
         argv++;
     }
-    ast_Scope *scope = types_universe();
     emitter_t emitter = {};
     while (*argv) {
         char *filename = *argv;
-        ast_File *file = parser_parse_cfile(filename, scope);
+        ast_File *file = parser_parse_cfile(filename, types_universe());
         printer_print_file(&emitter, file);
         argv++;
     }
