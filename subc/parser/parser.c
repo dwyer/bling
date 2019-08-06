@@ -820,7 +820,7 @@ static stmt_t *statement(parser_t *p) {
 
     if (accept(p, token_RETURN)) {
         // return_statement
-        //         | RETURN expression? ';'
+        //         : RETURN expression? ';'
         //         ;
         expr_t *x = NULL;
         if (p->tok != token_SEMICOLON) {
@@ -837,7 +837,7 @@ static stmt_t *statement(parser_t *p) {
     }
 
     if (accept(p, token_SWITCH)) {
-        // switch_statement | SWITCH '(' expression ')' case_statement* ;
+        // switch_statement : SWITCH '(' expression ')' case_statement* ;
         expect(p, token_LPAREN);
         expr_t *tag = expression(p);
         expect(p, token_RPAREN);
@@ -845,7 +845,7 @@ static stmt_t *statement(parser_t *p) {
         slice_t clauses = {.size = sizeof(stmt_t *)};
         while (p->tok == token_CASE || p->tok == token_DEFAULT) {
             // case_statement
-            //         | CASE constant_expression ':' statement+
+            //         : CASE constant_expression ':' statement+
             //         | DEFAULT ':' statement+
             //         ;
             slice_t exprs = {.size=sizeof(expr_t *)};
