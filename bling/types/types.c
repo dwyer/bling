@@ -317,7 +317,7 @@ static void scope_declare(ast_Scope *s, decl_t *decl) {
     }
 }
 
-extern void declare_builtins(ast_Scope *s) {
+static void declare_builtins(ast_Scope *s) {
     for (int i = 0; natives[i].name != NULL; i++) {
         expr_t name = {
             .type = ast_EXPR_IDENT,
@@ -341,6 +341,12 @@ extern void declare_builtins(ast_Scope *s) {
         };
         scope_declare(s, esc(decl));
     }
+}
+
+extern ast_Scope *types_universe() {
+    ast_Scope *universe = scope_new(NULL);
+    declare_builtins(universe);
+    return universe;
 }
 
 typedef struct {

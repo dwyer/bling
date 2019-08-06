@@ -1181,7 +1181,6 @@ extern ast_File *parser_parse_file(const char *filename) {
     parser_t p = {};
     parser_init(&p, filename, src);
     ast_File *file = parse_file(&p);
-    file->scope = p.pkg_scope;
     free(src);
     return file;
 }

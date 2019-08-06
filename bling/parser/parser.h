@@ -24,6 +24,8 @@ typedef struct {
     char *lit;
     ast_Scope *pkg_scope;
     bool c_mode;
+
+    char *pkgName;
 } parser_t;
 
 extern void parser_declare(parser_t *p, ast_Scope *s, decl_t *decl, obj_kind_t kind, expr_t *name);

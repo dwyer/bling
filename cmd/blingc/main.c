@@ -38,13 +38,11 @@ void compile_c(char *argv[]) {
         }
         argv++;
     }
-    ast_Scope *scope = scope_new(NULL);
-    declare_builtins(scope);
+    ast_Scope *scope = types_universe();
     emitter_t emitter = {};
     while (*argv) {
         char *filename = *argv;
         ast_File *file = parser_parse_cfile(filename, scope);
-        file->scope = scope;
         printer_print_file(&emitter, file);
         argv++;
     }
@@ -84,8 +82,7 @@ void compile_bling(char *argv[]) {
         }
         argv++;
     }
-    ast_Scope *scope = scope_new(NULL);
-    declare_builtins(scope);
+    ast_Scope *scope = types_universe();
     if (conf.strict) {
         ast_File *file = parser_parse_file("builtin/builtin.bling");
         file->scope = scope;
@@ -106,8 +103,6 @@ void compile_bling(char *argv[]) {
         ast_File *file = NULL;
         if (bytes_hasSuffix(filename, ".bling")) {
             file = parser_parse_file(filename);
-        } else if (bytes_hasSuffix(filename, ".c") || bytes_hasSuffix(filename, ".h")) {
-            file = parser_parse_cfile(filename, scope);
         } else {
             panic("unknown file type: %s", filename);
         }
