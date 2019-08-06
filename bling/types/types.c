@@ -2,6 +2,7 @@
 #include "bling/emitter/emitter.h"
 #include "bling/parser/parser.h"
 #include "bling/types/types.h"
+#include "path/path.h"
 
 static struct {
     char *name;
@@ -263,6 +264,10 @@ static void scope_declare(ast_Scope *s, decl_t *decl) {
         kind = obj_kind_FUNC;
         ident = decl->func.name;
         break;
+    case ast_DECL_IMPORT:
+        kind = obj_kind_PKG;
+        ident = decl->imp.name;
+        break;
     case ast_DECL_TYPEDEF:
         kind = obj_kind_TYPE;
         ident = decl->typedef_.name;
@@ -296,6 +301,9 @@ static void scope_declare(ast_Scope *s, decl_t *decl) {
             redecl =
                 (alt->decl->func.body == NULL || decl->func.body == NULL) &&
                 types_areIdentical(alt->decl->func.type, decl->func.type);
+            break;
+        case obj_kind_PKG:
+            redecl = true;
             break;
         case obj_kind_TYPE:
             if (alt->decl->typedef_.type->type == ast_TYPE_STRUCT) {
@@ -351,7 +359,7 @@ extern ast_Scope *types_universe() {
 
 typedef struct {
     config_t *conf;
-    ast_Scope *scope;
+    package_t pkg;
     expr_t *result;
     slice_t files;
     expr_t *typedefName;
@@ -359,12 +367,12 @@ typedef struct {
 } checker_t;
 
 static void checker_openScope(checker_t *w) {
-    w->scope = scope_new(w->scope);
+    w->pkg.scope = scope_new(w->pkg.scope);
 }
 
 static void checker_closeScope(checker_t *w) {
-    ast_Scope *inner = w->scope;
-    w->scope = w->scope->outer;
+    ast_Scope *inner = w->pkg.scope;
+    w->pkg.scope = w->pkg.scope->outer;
     scope_free(inner);
 }
 
@@ -375,7 +383,7 @@ static void check_type(checker_t *w, expr_t *expr) {
     switch (expr->type) {
 
     case ast_EXPR_IDENT:
-        scope_resolve(w->scope, expr);
+        scope_resolve(w->pkg.scope, expr);
         break;
 
     case ast_TYPE_ARRAY:
@@ -392,7 +400,7 @@ static void check_type(checker_t *w, expr_t *expr) {
             if (w->typedefName) {
                 decl->value.type = w->typedefName;
             }
-            scope_declare(w->scope, decl);
+            scope_declare(w->pkg.scope, decl);
         }
         break;
 
@@ -420,7 +428,7 @@ static void check_type(checker_t *w, expr_t *expr) {
                 decl_t *field = expr->struct_.fields[i];
                 check_type(w, field->field.type);
                 if (field->field.name) {
-                    scope_declare(w->scope, field);
+                    scope_declare(w->pkg.scope, field);
                 }
             }
             checker_closeScope(w);
@@ -718,7 +726,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
 
     case ast_EXPR_IDENT:
         {
-            scope_resolve(w->scope, expr);
+            scope_resolve(w->pkg.scope, expr);
             return get_ident_type(expr);
         }
 
@@ -771,7 +779,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
         {
             check_type(w, expr->sizeof_.x);
             expr_t *ident = types_makeIdent("size_t");
-            scope_resolve(w->scope, ident);
+            scope_resolve(w->pkg.scope, ident);
             return ident;
         }
 
@@ -952,13 +960,19 @@ static void check_file(checker_t *w, ast_File *file);
 
 static void check_import(checker_t *w, decl_t *imp) {
     char *path = constant_stringVal(imp->imp.path);
+    if (imp->imp.name == NULL) {
+        char *base = path_base(path);
+        imp->imp.name = types_makeIdent(base);
+    }
     ast_Scope *scope = NULL;
     map_get(&w->scopes, path, &scope);
     if (scope) {
+        scope_declare(w->pkg.scope, imp);
         free(path);
         return;
     }
-    map_set(&w->scopes, path, &w->scope);
+    scope = w->pkg.scope;
+    map_set(&w->scopes, path, &scope);
     error_t *err = NULL;
     ast_File **files = parser_parseDir(path, &err);
     if (err) {
@@ -973,7 +987,7 @@ static void check_decl(checker_t *w, decl_t *decl) {
     switch (decl->type) {
     case ast_DECL_FUNC:
         check_type(w, decl->func.type);
-        scope_declare(w->scope, decl);
+        scope_declare(w->pkg.scope, decl);
         break;
     case ast_DECL_PRAGMA:
         break;
@@ -981,7 +995,7 @@ static void check_decl(checker_t *w, decl_t *decl) {
         w->typedefName = decl->typedef_.name;
         check_type(w, decl->typedef_.type);
         w->typedefName = NULL;
-        scope_declare(w->scope, decl);
+        scope_declare(w->pkg.scope, decl);
         break;
     case ast_DECL_VALUE:
         {
@@ -1011,7 +1025,7 @@ static void check_decl(checker_t *w, decl_t *decl) {
                             types_declString(decl));
                 }
             }
-            scope_declare(w->scope, decl);
+            scope_declare(w->pkg.scope, decl);
             break;
         }
     default:
@@ -1027,7 +1041,7 @@ static void check_func(checker_t *w, decl_t *decl) {
             decl_t *param = type->func.params[i];
             assert(param->type == ast_DECL_FIELD);
             if (param->field.name) {
-                scope_declare(w->scope, param);
+                scope_declare(w->pkg.scope, param);
             }
         }
         w->result = decl->func.type->func.result;
@@ -1043,7 +1057,7 @@ static void check_func(checker_t *w, decl_t *decl) {
 static void check_file(checker_t *w, ast_File *file) {
     if (file->name) {
         checker_openScope(w);
-        w->scope->pkg = file->name->ident.name;
+        w->pkg.scope->pkg = file->name->ident.name;
     }
     for (int i = 0; file->imports[i] != NULL; i++) {
         check_import(w, file->imports[i]);
@@ -1065,14 +1079,13 @@ static void check_file(checker_t *w, ast_File *file) {
 extern package_t types_checkFile(config_t *conf, ast_File *file) {
     checker_t w = {
         .conf = conf,
-        .scope = file->scope,
+        .pkg = {
+            .scope = file->scope,
+        },
         .files = slice_init(sizeof(ast_File *)),
         .scopes = map_init(sizeof(ast_Scope *)),
     };
     check_file(&w, file);
-    package_t pkg = {
-        .files = slice_to_nil_array(w.files),
-        .scope = w.scope,
-    };
-    return pkg;
+    w.pkg.files = slice_to_nil_array(w.files);
+    return w.pkg;
 }

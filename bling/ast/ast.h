@@ -68,6 +68,7 @@ typedef struct stmt_t stmt_t;
 
 typedef enum {
     obj_kind_FUNC,
+    obj_kind_PKG,
     obj_kind_TYPE,
     obj_kind_VALUE,
 } obj_kind_t;
@@ -85,6 +86,7 @@ typedef struct decl_t {
     union {
 
         struct {
+            expr_t *name;
             expr_t *path;
         } imp;
 
@@ -325,7 +327,6 @@ typedef struct {
 
 extern void scope_resolve(ast_Scope *s, expr_t *x);
 extern void scope_free(ast_Scope *s);
-
 
 extern bool ast_isIdent(expr_t *x);
 extern bool ast_isIdentNamed(expr_t *x, const char *name);
