@@ -1068,8 +1068,8 @@ static void check_func(checker_t *w, decl_t *decl) {
 
 static void check_file(checker_t *w, ast_File *file) {
     if (file->name) {
-        checker_openScope(w);
-        w->pkg.scope->pkg = file->name->ident.name;
+        // checker_openScope(w);
+        // w->pkg.scope->pkg = file->name->ident.name;
     }
     for (int i = 0; file->imports[i] != NULL; i++) {
         check_import(w, file->imports[i]);
@@ -1084,15 +1084,18 @@ static void check_file(checker_t *w, ast_File *file) {
         }
     }
     if (file->name) {
-        checker_closeScope(w);
+        // checker_closeScope(w);
     }
 }
 
 extern package_t types_checkFile(config_t *conf, ast_File *file) {
+    if (file->scope == NULL) {
+        file->scope = scope_new(types_universe());
+    }
     checker_t w = {
         .conf = conf,
         .pkg = {
-            .scope = types_universe(),
+            .scope = file->scope,
         },
         .files = slice_init(sizeof(ast_File *)),
         .scopes = map_init(sizeof(ast_Scope *)),

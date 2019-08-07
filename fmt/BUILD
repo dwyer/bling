@@ -6,5 +6,8 @@ cc_library(
     hdrs = [
         "fmt.h",
     ],
+    deps = [
+        "//bootstrap",
+    ],
     visibility = ["//visibility:public"],
 )
