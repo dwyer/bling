@@ -498,7 +498,8 @@ extern void print_decl(emitter_t *p, decl_t *decl) {
             emit_space(p);
             print_expr(p, decl->value.value);
         default:
-            panic("bad kind for ast_DECL_VALUE: %s", token_string(decl->value.kind));
+            panic("bad kind for ast_DECL_VALUE: %s",
+                    token_string(decl->value.kind));
             break;
         }
         break;
@@ -513,12 +514,10 @@ extern void printer_print_file(emitter_t *p, ast_File *file) {
     emit_string(p, "//");
     emit_string(p, file->filename);
     emit_newline(p);
-    emit_newline(p);
     if (file->name != NULL) {
         emit_token(p, token_PACKAGE);
         emit_space(p);
         print_expr(p, file->name);
-        emit_newline(p);
         emit_newline(p);
     }
     for (decl_t **imports = file->imports; imports && *imports; imports++) {
