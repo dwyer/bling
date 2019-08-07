@@ -19,7 +19,7 @@ void usage(const char *progname) {
 
 void emit_rawfile(emitter_t *e, const char *filename) {
     error_t *err = NULL;
-    char *src = ioutil_read_file(filename, &err);
+    char *src = ioutil_readFile(filename, &err);
     if (err) {
         panic(err->error);
     }

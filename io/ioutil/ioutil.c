@@ -1,6 +1,33 @@
 #include "io/ioutil/ioutil.h"
 
-extern os_FileInfo **ioutil_read_dir(const char *name, error_t **error) {
+extern char *ioutil_readAll(os_File *file, error_t **error) {
+    const int bufsiz = 1024;
+    char *ret = NULL;
+    error_t *err = NULL;
+    if (err != NULL) {
+        goto end;
+    }
+    buffer_t b = {};
+    for (;;) {
+        char buf[bufsiz];
+        int n = os_read(file, buf, bufsiz, &err);
+        if (err != NULL) {
+            goto end;
+        }
+        buffer_write(&b, buf, n, NULL); // ignore error
+        if (n < bufsiz) {
+            break;
+        }
+    }
+    ret = buffer_string(&b);
+end:
+    if (err != NULL) {
+        error_move(err, error);
+    }
+    return ret;
+}
+
+extern os_FileInfo **ioutil_readDir(const char *name, error_t **error) {
     os_FileInfo **info = NULL;
     error_t *err = NULL;
     os_File *file = os_openDir(name, &err);
@@ -21,27 +48,13 @@ end:
     return info;
 }
 
-extern char *ioutil_read_file(const char *name, error_t **error) {
-    const int bufsiz = 1024;
-    char *ret = NULL;
+extern char *ioutil_readFile(const char *name, error_t **error) {
     error_t *err = NULL;
     os_File *file = os_open(name, &err);
+    char *ret = ioutil_readAll(file, &err);
     if (err != NULL) {
         goto end;
     }
-    buffer_t b = {};
-    for (;;) {
-        char buf[bufsiz];
-        int n = os_read(file, buf, bufsiz, &err);
-        if (err != NULL) {
-            goto end;
-        }
-        buffer_write(&b, buf, n, NULL); // ignore error
-        if (n < bufsiz) {
-            break;
-        }
-    }
-    ret = buffer_string(&b);
 end:
     if (file != NULL) {
         os_close(file, &err);

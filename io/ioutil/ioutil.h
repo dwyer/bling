@@ -5,7 +5,8 @@
 import("bytes");
 import("os");
 
-extern os_FileInfo **ioutil_read_dir(const char *filename, error_t **error);
-extern char *ioutil_read_file(const char *filename, error_t **error);
+extern char *ioutil_readAll(os_File *file, error_t **error);
+extern os_FileInfo **ioutil_readDir(const char *filename, error_t **error);
+extern char *ioutil_readFile(const char *filename, error_t **error);
 extern void ioutil_writeFile(const char *filename, const char *data, int perm,
         error_t **error);

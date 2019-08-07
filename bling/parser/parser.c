@@ -1135,7 +1135,7 @@ static bool isTestFile(const char *name) {
 
 extern ast_File **parser_parseDir(const char *path, error_t **first) {
     error_t *err = NULL;
-    os_FileInfo **infos = ioutil_read_dir(path, &err);
+    os_FileInfo **infos = ioutil_readDir(path, &err);
     if (err) {
         error_move(err, first);
         return NULL;
@@ -1193,7 +1193,7 @@ static ast_File *parse_file(parser_t *p) {
 
 extern ast_File *parser_parse_file(const char *filename) {
     error_t *err = NULL;
-    char *src = ioutil_read_file(filename, &err);
+    char *src = ioutil_readFile(filename, &err);
     if (err) {
         panic("%s: %s", filename, err->error);
     }
