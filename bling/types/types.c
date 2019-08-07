@@ -174,18 +174,20 @@ static bool types_areIdentical(expr_t *a, expr_t *b) {
                 return false;
             }
             int i = 0;
-            for (; a->func.params[i]; i++) {
-                decl_t *param1 = a->func.params[i];
-                decl_t *param2 = b->func.params[i];
-                if (param2 == NULL) {
+            if (a->func.params) {
+                for (; a->func.params[i]; i++) {
+                    decl_t *param1 = a->func.params[i];
+                    decl_t *param2 = b->func.params[i];
+                    if (param2 == NULL) {
+                        return false;
+                    }
+                    if (!types_areIdentical(param1->field.type, param2->field.type)) {
+                        return false;
+                    }
+                }
+                if (b->func.params[i]) {
                     return false;
                 }
-                if (!types_areIdentical(param1->field.type, param2->field.type)) {
-                    return false;
-                }
-            }
-            if (b->func.params[i]) {
-                return false;
             }
         }
         return true;

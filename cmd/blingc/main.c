@@ -93,6 +93,8 @@ void compile_bling(char *argv[]) {
         ast_File *file = NULL;
         if (bytes_hasSuffix(filename, ".bling")) {
             file = parser_parse_file(filename);
+        } else if (bytes_hasSuffix(filename, ".c")) {
+            file = parser_parse_cfile(filename, types_universe());
         } else {
             panic("unknown file type: %s", filename);
         }
