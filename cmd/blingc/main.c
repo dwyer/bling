@@ -1,6 +1,7 @@
 #include "bling/parser/parser.h"
 #include "bling/types/types.h"
 #include "os/os.h"
+#include "path/path.h"
 #include "subc/emitter/emitter.h"
 #include "subc/parser/parser.h"
 
@@ -111,7 +112,7 @@ void compile_bling(char *argv[]) {
     char *out = emitter_string(&emitter);
     if (dst) {
         if (bytes_hasSuffix(dst, ".out")) {
-            char *tmp = "/tmp/tmp.c";
+            char *tmp = path_join2(os_tempDir(), "tmp.c");
             ioutil_writeFile(tmp, out, 0644, NULL);
             char *args[] = {
                 "/usr/bin/cc",

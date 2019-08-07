@@ -36,10 +36,8 @@ extern char *path_join(const char **elems, int n) {
 }
 
 extern char *path_join2(const char *a, const char *b) {
-    slice_t elems = {.size = sizeof(char *)};
-    elems = append(elems, &a);
-    elems = append(elems, &b);
-    return bytes_join(elems.array, len(elems), "/");
+    const char *elems[] = {a, b};
+    return path_join(elems, 2);
 }
 
 extern char **path_split(const char *path) {

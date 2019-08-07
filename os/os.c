@@ -168,3 +168,7 @@ extern bool os_FileInfo_is_dir(os_FileInfo info) {
 extern void *os_FileInfo_sys(os_FileInfo info) {
     return info._sys;
 }
+
+extern const char *os_tempDir() {
+    return "/tmp";
+}

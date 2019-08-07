@@ -20,6 +20,8 @@ extern os_File *os_stdin;
 extern os_File *os_stdout;
 extern os_File *os_stderr;
 
+extern const char *os_tempDir();
+
 extern os_File *os_newFile(uintptr_t fd, const char *name);
 
 extern os_File *os_openFile(const char *filename, int mode, int perm, error_t **error);
