@@ -1147,7 +1147,7 @@ extern ast$File **parser$parseDir(const char *path, errors$Error **first) {
     errors$Error *err = NULL;
     os$FileInfo **infos = ioutil$readDir(path, &err);
     if (err) {
-        errors$move(err, first);
+        errors$Error_move(err, first);
         return NULL;
     }
     utils$Slice files = utils$Slice_init(sizeof(uintptr_t));

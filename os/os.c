@@ -25,10 +25,10 @@ extern os$File *os$newFile(uintptr_t fd, const char *name) {
 }
 
 extern os$File *os$openFile(const char *filename, int mode, int perm, errors$Error **error) {
-    errors$clear();
+    errors$clearError();
     int fd = open(filename, mode, perm);
     if (fd == -1) {
-        errors$check(error);
+        errors$Error_check(error);
         return NULL;
     }
     return os$newFile(fd, filename);
@@ -43,35 +43,35 @@ extern os$File *os$create(const char *filename, errors$Error **error) {
 }
 
 extern int os$read(os$File *file, char *b, int n, errors$Error **error) {
-    errors$clear();
+    errors$clearError();
     n = read(file->fd, b, n);
-    errors$check(error);
+    errors$Error_check(error);
     return n;
 }
 
 extern int os$write(os$File *file, const char *b, errors$Error **error) {
-    errors$clear();
+    errors$clearError();
     int n = write(file->fd, b, strlen(b));
-    errors$check(error);
+    errors$Error_check(error);
     return n;
 }
 
 extern void os$close(os$File *file, errors$Error **error) {
-    errors$clear();
+    errors$clearError();
     if (file->is_dir) {
         closedir((DIR *)file->fd);
     } else {
         close(file->fd);
     }
-    errors$check(error);
+    errors$Error_check(error);
 }
 
 extern os$FileInfo os$stat(const char *name, errors$Error **error) {
     struct stat st;
     os$FileInfo info = {};
-    errors$clear();
+    errors$clearError();
     if (stat(name, &st) != 0) {
-        errors$check(error);
+        errors$Error_check(error);
         return info;
     }
     info._name = strdup(name);
@@ -87,7 +87,7 @@ extern void os$FileInfo_free(os$FileInfo info) {
 extern os$File *os$openDir(const char *name, errors$Error **error) {
     DIR *dp = opendir(name);
     if (dp == NULL) {
-        errors$check(error);
+        errors$Error_check(error);
         return NULL;
     }
     os$File *file = os$newFile((uintptr_t)dp, name);
@@ -119,7 +119,7 @@ extern os$FileInfo **os$readdir(os$File *file, errors$Error **error) {
     char **names = os$readdirnames(file, &err);
     if (err != NULL) {
         os$close(file, NULL);
-        errors$move(err, error);
+        errors$Error_move(err, error);
         return NULL;
     }
     utils$Slice arr = {.size = sizeof(uintptr_t)};
@@ -129,7 +129,7 @@ extern os$FileInfo **os$readdir(os$File *file, errors$Error **error) {
         os$FileInfo info = os$stat(path, &err);
         if (err != NULL) {
             os$close(file, NULL);
-            errors$move(err, error);
+            errors$Error_move(err, error);
             return NULL;
         }
         os$FileInfo *ptr = esc(info);

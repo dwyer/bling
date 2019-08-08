@@ -22,7 +22,7 @@ extern char *ioutil$readAll(os$File *file, errors$Error **error) {
     ret = bytes$Buffer_string(&b);
 end:
     if (err != NULL) {
-        errors$move(err, error);
+        errors$Error_move(err, error);
     }
     return ret;
 }
@@ -43,7 +43,7 @@ end:
         os$close(file, NULL);
     }
     if (err != NULL) {
-        errors$move(err, error);
+        errors$Error_move(err, error);
     }
     return info;
 }
@@ -60,7 +60,7 @@ end:
         os$close(file, &err);
     }
     if (err != NULL) {
-        errors$move(err, error);
+        errors$Error_move(err, error);
     }
     return ret;
 }
@@ -71,12 +71,12 @@ extern void ioutil$writeFile(const char *filename, const char *data, int perm,
     errors$Error *err = NULL;
     os$File *file = os$create(filename, &err);
     if (err) {
-        errors$move(err, error);
+        errors$Error_move(err, error);
         goto end;
     }
     os$write(file, data, &err);
     if (err) {
-        errors$move(err, error);
+        errors$Error_move(err, error);
         goto end;
     }
 end:
