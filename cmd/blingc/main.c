@@ -68,7 +68,7 @@ void compile_c(char *argv[]) {
 }
 
 void compile_bling(char *argv[]) {
-    bool emitter$emit_as_bling = false;
+    bool emit_as_bling = false;
     types$Config conf = {.strict = true};
     char *dst = NULL;
     while (**argv == '-') {
@@ -81,11 +81,11 @@ void compile_bling(char *argv[]) {
         argv++;
     }
     if (dst) {
-        emitter$emit_as_bling = bytes$hasSuffix(dst, ".bling");
+        emit_as_bling = bytes$hasSuffix(dst, ".bling");
     }
     emitter$Emitter emitter = {};
     error$Error *err = NULL;
-    if (!emitter$emit_as_bling) {
+    if (!emit_as_bling) {
         emitter$emit_rawfile(&emitter, "bootstrap/bootstrap.h");
     }
     while (*argv) {
@@ -101,7 +101,7 @@ void compile_bling(char *argv[]) {
         ast$Package pkg = types$checkFile(&conf, file);
         for (int i = 0; pkg.files[i]; i++) {
             ast$File *file = pkg.files[i];
-            if (emitter$emit_as_bling) {
+            if (emit_as_bling) {
                 emitter$emitFile(&emitter, file);
             } else {
                 cemitter$emitFile(&emitter, file);
