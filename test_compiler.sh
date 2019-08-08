@@ -1,5 +1,7 @@
 #!/bin/bash
 
+TESTS_DIR=.nora_test
+
 padding_dots=$(printf '%0.1s' "."{1..60})
 padlength=100
 cmp=./wrapper.sh
@@ -54,7 +56,7 @@ test_stage () {
     echo "===================================================="
     echo "STAGE $1"
     echo "===================Valid Programs==================="
-    for prog in `find . -type f -name "*.c" -path "./nora_test/stage_$1/valid/*" -not -path "*/valid_multifile/*" 2>/dev/null`; do
+    for prog in `find . -type f -name "*.c" -path "./${TESTS_DIR}/stage_$1/valid/*" -not -path "*/valid_multifile/*" 2>/dev/null`; do
 
         gcc -w $prog
         run_correct_program
@@ -83,7 +85,7 @@ test_stage () {
         fi
     done
     # programs with multiple source files
-    for dir in `ls -d nora_test/stage_$1/valid_multifile/* 2>/dev/null` ; do
+    for dir in `ls -d ${TESTS_DIR}/stage_$1/valid_multifile/* 2>/dev/null` ; do
         gcc -w $dir/*
 
         run_correct_program
@@ -102,7 +104,7 @@ test_stage () {
 
     done
     echo "===================Invalid Programs================="
-    for prog in `ls nora_test/stage_$1/invalid/{,**/}*.c 2>/dev/null`; do
+    for prog in `ls ${TESTS_DIR}/stage_$1/invalid/{,**/}*.c 2>/dev/null`; do
 
         base="${prog%.*}" #name of executable (filename w/out extension)
         test_name="${base##*invalid/}"
