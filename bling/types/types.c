@@ -254,7 +254,7 @@ static bool types$areComparable(ast$Expr *a, ast$Expr *b) {
     return types$areIdentical(a, b);
 }
 
-static void ast$Scope_declare(ast$Scope *s, ast$Decl *decl) {
+static void types$Scope_declare(ast$Scope *s, ast$Decl *decl) {
     ast$ObjKind kind;
     ast$Expr *ident = NULL;
     switch (decl->type) {
@@ -279,7 +279,7 @@ static void ast$Scope_declare(ast$Scope *s, ast$Decl *decl) {
         ident = decl->value.name;
         break;
     default:
-        panic("ast$Scope_declare: bad decl: %d", decl->type);
+        panic("types$Scope_declare: bad decl: %d", decl->type);
         return;
     }
     assert(ident->type == ast$EXPR_IDENT);
@@ -349,7 +349,7 @@ static void declare_builtins(ast$Scope *s) {
                 .type = esc(type),
             },
         };
-        ast$Scope_declare(s, esc(decl));
+        types$Scope_declare(s, esc(decl));
     }
 }
 
@@ -412,7 +412,7 @@ static void check_type(checker_t *w, ast$Expr *expr) {
             if (w->typedefName) {
                 decl->value.type = w->typedefName;
             }
-            ast$Scope_declare(w->pkg.scope, decl);
+            types$Scope_declare(w->pkg.scope, decl);
         }
         break;
 
@@ -440,7 +440,7 @@ static void check_type(checker_t *w, ast$Expr *expr) {
                 ast$Decl *field = expr->struct_.fields[i];
                 check_type(w, field->field.type);
                 if (field->field.name) {
-                    ast$Scope_declare(w->pkg.scope, field);
+                    types$Scope_declare(w->pkg.scope, field);
                 }
             }
             checker_closeScope(w);
@@ -979,7 +979,7 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     ast$Scope *scope = NULL;
     map$get(&w->scopes, path, &scope);
     if (scope) {
-        ast$Scope_declare(w->pkg.scope, imp);
+        types$Scope_declare(w->pkg.scope, imp);
         free(path);
         return;
     }
@@ -999,7 +999,7 @@ static void check_decl(checker_t *w, ast$Decl *decl) {
     switch (decl->type) {
     case ast$DECL_FUNC:
         check_type(w, decl->func.type);
-        ast$Scope_declare(w->pkg.scope, decl);
+        types$Scope_declare(w->pkg.scope, decl);
         break;
     case ast$DECL_PRAGMA:
         break;
@@ -1007,7 +1007,7 @@ static void check_decl(checker_t *w, ast$Decl *decl) {
         w->typedefName = decl->typedef_.name;
         check_type(w, decl->typedef_.type);
         w->typedefName = NULL;
-        ast$Scope_declare(w->pkg.scope, decl);
+        types$Scope_declare(w->pkg.scope, decl);
         break;
     case ast$DECL_VALUE:
         {
@@ -1037,7 +1037,7 @@ static void check_decl(checker_t *w, ast$Decl *decl) {
                             types$declString(decl));
                 }
             }
-            ast$Scope_declare(w->pkg.scope, decl);
+            types$Scope_declare(w->pkg.scope, decl);
             break;
         }
     default:
@@ -1053,7 +1053,7 @@ static void check_func(checker_t *w, ast$Decl *decl) {
             ast$Decl *param = type->func.params[i];
             assert(param->type == ast$DECL_FIELD);
             if (param->field.name) {
-                ast$Scope_declare(w->pkg.scope, param);
+                types$Scope_declare(w->pkg.scope, param);
             }
         }
         w->result = decl->func.type->func.result;
