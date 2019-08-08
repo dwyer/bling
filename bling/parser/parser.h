@@ -14,7 +14,7 @@ import("errors");
 import("io/ioutil");
 import("os");
 import("paths");
-import("slice");
+import("utils");
 import("sys");
 
 extern ast$File *parser$parse_file(const char *filename);

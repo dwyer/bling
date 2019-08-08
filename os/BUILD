@@ -9,7 +9,7 @@ cc_library(
     deps = [
         "//errors",
         "//paths",
-        "//slice",
+        "//utils",
     ],
     visibility = ["//visibility:public"],
 )

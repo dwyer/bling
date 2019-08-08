@@ -1,10 +1,10 @@
 #pragma once
-#include "slice/slice.h"
+#include "utils/utils.h"
 
 package(token);
 
 import("map");
-import("slice");
+import("utils");
 import("sys");
 
 typedef enum {
@@ -112,7 +112,7 @@ extern int token$precedence(token$Token op);
 
 typedef struct {
     char *name;
-    slice$Slice lines;
+    utils$Slice lines;
 } token$File;
 
 typedef struct {

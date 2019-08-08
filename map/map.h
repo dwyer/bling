@@ -1,16 +1,16 @@
 #pragma once
 
-#include "slice/slice.h"
+#include "utils/utils.h"
 
 package(map);
 
-import("slice");
+import("utils");
 
 typedef struct {
     int len;
     int key_size;
     int val_size;
-    slice$Slice pairs;
+    utils$Slice pairs;
 } map$Map;
 
 typedef enum {

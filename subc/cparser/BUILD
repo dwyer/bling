@@ -12,7 +12,7 @@ cc_library(
         "//bling/scanner",
         "//bling/parser",
         "//io/ioutil",
-        "//slice",
+        "//utils",
     ],
     visibility = ["//visibility:public"],
 )

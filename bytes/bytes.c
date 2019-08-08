@@ -33,7 +33,7 @@ static void bytes$Buffer_init(bytes$Buffer *b) {
 }
 
 extern int bytes$Buffer_len(bytes$Buffer *b) {
-    return slice$len(b);
+    return utils$len(b);
 }
 
 extern char *bytes$Buffer_bytes(bytes$Buffer *b) {
@@ -55,12 +55,12 @@ extern int bytes$Buffer_write(bytes$Buffer *b, const char *p, int size, errors$E
         size = strlen(p);
     }
     for (int i = 0; i < size; i++) {
-        slice$append(b, &p[i]);
+        utils$append(b, &p[i]);
     }
     return size;
 }
 
 extern void bytes$Buffer_writeByte(bytes$Buffer *b, char p, errors$Error **error) {
     bytes$Buffer_init(b);
-    slice$append(b, &p);
+    utils$append(b, &p);
 }

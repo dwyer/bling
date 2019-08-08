@@ -1,7 +1,7 @@
 #pragma once
 
 #include "bytes/bytes.h"
-#include "slice/slice.h"
+#include "utils/utils.h"
 
 package(strings);
 
@@ -11,7 +11,7 @@ import("errors");
 extern char *strings$join(const char *a[], int size, const char *sep);
 
 typedef struct {
-    slice$Slice _buf;
+    utils$Slice _buf;
 } strings$Builder;
 
 extern int strings$Builder_len(strings$Builder *b);

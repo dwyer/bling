@@ -1,10 +1,10 @@
 cc_library(
-    name = "slice",
+    name = "utils",
     srcs = [
         "slice.c",
     ],
     hdrs = [
-        "slice.h",
+        "utils.h",
     ],
     deps = [
         "//bootstrap",

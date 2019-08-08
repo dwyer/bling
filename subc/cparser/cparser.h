@@ -13,7 +13,7 @@ import("bling/scanner");
 import("bling/token");
 import("errors");
 import("io/ioutil");
-import("slice");
+import("utils");
 import("sys");
 
 extern ast$File *cparser$parseFile(const char *filename, ast$Scope *pkg_scope);

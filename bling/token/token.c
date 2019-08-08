@@ -151,26 +151,26 @@ extern char *token$Position_string(token$Position *p) {
 extern token$File *token$File_new(const char *filename) {
     token$File file = {
         .name = strdup(filename),
-        .lines = slice$init(sizeof(int)),
+        .lines = utils$init(sizeof(int)),
     };
     int zero = 0;
-    slice$append(&file.lines, &zero);
+    utils$append(&file.lines, &zero);
     return esc(file);
 }
 
 extern void token$File_addLine(token$File *f, int offset) {
-    slice$append(&f->lines, &offset);
+    utils$append(&f->lines, &offset);
 }
 
-static int getInt(slice$Slice *a, int i) {
+static int getInt(utils$Slice *a, int i) {
     int x;
-    slice$get(a, i, &x);
+    utils$get(a, i, &x);
     return x;
 }
 
-static int searchInts(slice$Slice *a, int x) {
+static int searchInts(utils$Slice *a, int x) {
     int i = 0;
-    int j = slice$len(a);
+    int j = utils$len(a);
     while (i < j) {
         int h = i + (j - i) / 2;
         if (getInt(a, h) <= x) {

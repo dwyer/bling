@@ -1,17 +1,17 @@
 #pragma once
 
 #include "errors/errors.h"
-#include "slice/slice.h"
+#include "utils/utils.h"
 
 package(bytes);
 
 import("errors");
-import("slice");
+import("utils");
 
 extern bool bytes$hasSuffix(const char *s, const char *suffix);
 extern char *bytes$join(const char *a[], int size, const char *sep);
 
-typedef slice$Slice bytes$Buffer;
+typedef utils$Slice bytes$Buffer;
 
 extern char *bytes$Buffer_bytes(bytes$Buffer *b);
 extern int bytes$Buffer_len(bytes$Buffer *b);

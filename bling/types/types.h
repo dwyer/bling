@@ -10,7 +10,7 @@ import("bling/token");
 import("errors");
 import("map");
 import("paths");
-import("slice");
+import("utils");
 
 extern ast$Scope *types$universe();
 

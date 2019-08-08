@@ -30,6 +30,6 @@ extern size_t strlen(const char *);
 
 extern void *malloc(size_t);
 extern void free(void *);
-extern void *realloc(void *, size_t); // used by slice append
+extern void *realloc(void *, size_t); // used by utils append
 
 #endif

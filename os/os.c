@@ -1,7 +1,7 @@
 #include "os/os.h"
 
 #include "paths/paths.h"
-#include "slice/slice.h"
+#include "utils/utils.h"
 
 #include <dirent.h> // DIR, dirent, opendir, readdir, closedir
 #include <fcntl.h> // open
@@ -96,7 +96,7 @@ extern os$File *os$openDir(const char *name, errors$Error **error) {
 }
 
 extern char **os$readdirnames(os$File *file, errors$Error **error) {
-    slice$Slice arr = {.size = sizeof(char *)};
+    utils$Slice arr = {.size = sizeof(char *)};
     DIR *dp = (DIR *)file->fd;
     for (;;) {
         struct dirent *dirent = readdir(dp);
@@ -107,10 +107,10 @@ extern char **os$readdirnames(os$File *file, errors$Error **error) {
             continue;
         }
         char *name = strdup(dirent->d_name);
-        slice$append(&arr, &name);
+        utils$append(&arr, &name);
     }
     char *nil = NULL;
-    slice$append(&arr, &nil);
+    utils$append(&arr, &nil);
     return arr.array;
 }
 
@@ -122,7 +122,7 @@ extern os$FileInfo **os$readdir(os$File *file, errors$Error **error) {
         errors$move(err, error);
         return NULL;
     }
-    slice$Slice arr = {.size = sizeof(uintptr_t)};
+    utils$Slice arr = {.size = sizeof(uintptr_t)};
     for (int i = 0; names[i] != NULL; i++) {
         char *path = paths$join2(file->name, names[i]);
         free(names[i]);
@@ -133,11 +133,11 @@ extern os$FileInfo **os$readdir(os$File *file, errors$Error **error) {
             return NULL;
         }
         os$FileInfo *ptr = esc(info);
-        slice$append(&arr, &ptr);
+        utils$append(&arr, &ptr);
     }
     free(names);
     const void *nil = NULL;
-    slice$append(&arr, &nil);
+    utils$append(&arr, &nil);
     return arr.array;
 }
 
