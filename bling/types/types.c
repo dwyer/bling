@@ -30,39 +30,39 @@ static struct {
     {NULL},
 };
 
-extern char *types_declString(ast$Decl *decl) {
+extern char *types$declString(ast$Decl *decl) {
     emitter_t e = {};
     print_decl(&e, decl);
     return emitter_string(&e);
 }
 
-extern char *types_exprString(ast$Expr *expr) {
+extern char *types$exprString(ast$Expr *expr) {
     emitter_t e = {};
     print_expr(&e, expr);
     return emitter_string(&e);
 }
 
-extern char *types_stmtString(ast$Stmt *stmt) {
+extern char *types$stmtString(ast$Stmt *stmt) {
     emitter_t e = {};
     print_stmt(&e, stmt);
     return emitter_string(&e);
 }
 
-extern char *types_typeString(ast$Expr *expr) {
+extern char *types$typeString(ast$Expr *expr) {
     emitter_t e = {};
     print_type(&e, expr);
     return emitter_string(&e);
 }
 
-extern bool types_isType(ast$Expr *expr) {
+extern bool types$isType(ast$Expr *expr) {
     switch (expr->type) {
     case ast$EXPR_IDENT:
         if (expr->ident.obj == NULL) {
-            panic("types_isType: unresolved identifier %s", expr->ident.name);
+            panic("types$isType: unresolved identifier %s", expr->ident.name);
         }
         return expr->ident.obj->decl->type == ast$DECL_TYPEDEF;
     case ast$EXPR_STAR:
-        return types_isType(expr->star.x);
+        return types$isType(expr->star.x);
     case ast$TYPE_ARRAY:
     case ast$TYPE_ENUM:
     case ast$TYPE_FUNC:
@@ -74,7 +74,7 @@ extern bool types_isType(ast$Expr *expr) {
     }
 }
 
-static ast$Expr *types_makeIdent(const char *name) {
+static ast$Expr *types$makeIdent(const char *name) {
     ast$Expr x = {
         .type = ast$EXPR_IDENT,
         .ident = {
@@ -84,7 +84,7 @@ static ast$Expr *types_makeIdent(const char *name) {
     return esc(x);
 }
 
-static ast$Expr *types_makePtr(ast$Expr *type) {
+static ast$Expr *types$makePtr(ast$Expr *type) {
     ast$Expr x = {
         .type = ast$EXPR_STAR,
         .pos = type->pos,
@@ -98,12 +98,12 @@ static ast$Expr *types_makePtr(ast$Expr *type) {
 static ast$Expr *lookup_typedef(ast$Expr *ident) {
     ast$Decl *decl = ident->ident.obj->decl;
     if (decl->type != ast$DECL_TYPEDEF) {
-        panic("not a typedef: %s", types_typeString(ident));
+        panic("not a typedef: %s", types$typeString(ident));
     }
     return decl->typedef_.type;
 }
 
-static ast$Expr *types_getBaseType(ast$Expr *type) {
+static ast$Expr *types$getBaseType(ast$Expr *type) {
     for (;;) {
         switch (type->type) {
         case ast$EXPR_IDENT:
@@ -115,15 +115,15 @@ static ast$Expr *types_getBaseType(ast$Expr *type) {
         case ast$TYPE_STRUCT:
             return type;
         default:
-            panic("not a typedef: %s", types_typeString(type));
+            panic("not a typedef: %s", types$typeString(type));
         }
     }
 }
 
-static bool types_isArithmetic(ast$Expr *type) {
+static bool types$isArithmetic(ast$Expr *type) {
     switch (type->type) {
     case ast$EXPR_IDENT:
-        return types_isArithmetic(types_getBaseType(type));
+        return types$isArithmetic(types$getBaseType(type));
     case ast$EXPR_STAR:
     case ast$TYPE_ENUM:
         return true;
@@ -134,7 +134,7 @@ static bool types_isArithmetic(ast$Expr *type) {
     }
 }
 
-static bool types_isNative(ast$Expr *type, const char *name) {
+static bool types$isNative(ast$Expr *type, const char *name) {
     switch (type->type) {
     case ast$EXPR_IDENT:
         return streq(type->ident.name, name);
@@ -145,7 +145,7 @@ static bool types_isNative(ast$Expr *type, const char *name) {
     }
 }
 
-static bool types_areIdentical(ast$Expr *a, ast$Expr *b) {
+static bool types$areIdentical(ast$Expr *a, ast$Expr *b) {
     if (a == b) {
         return true;
     }
@@ -164,13 +164,13 @@ static bool types_areIdentical(ast$Expr *a, ast$Expr *b) {
         if (ast$isVoidPtr(a) || ast$isVoidPtr(b)) {
             return true;
         }
-        return types_areIdentical(a->star.x, b->star.x);
+        return types$areIdentical(a->star.x, b->star.x);
     case ast$TYPE_ARRAY:
         // TODO check lengths
-        return types_areIdentical(a->array.elt, b->array.elt);
+        return types$areIdentical(a->array.elt, b->array.elt);
     case ast$TYPE_FUNC:
         {
-            if (!types_areIdentical(a->func.result, b->func.result)) {
+            if (!types$areIdentical(a->func.result, b->func.result)) {
                 return false;
             }
             int i = 0;
@@ -181,7 +181,7 @@ static bool types_areIdentical(ast$Expr *a, ast$Expr *b) {
                     if (param2 == NULL) {
                         return false;
                     }
-                    if (!types_areIdentical(param1->field.type, param2->field.type)) {
+                    if (!types$areIdentical(param1->field.type, param2->field.type)) {
                         return false;
                     }
                 }
@@ -192,36 +192,36 @@ static bool types_areIdentical(ast$Expr *a, ast$Expr *b) {
         }
         return true;
     default:
-        panic("unreachable: %s == %s", types_typeString(a), types_typeString(b));
+        panic("unreachable: %s == %s", types$typeString(a), types$typeString(b));
         return false;
     }
 }
 
-static bool types_isPointer(ast$Expr *t) {
+static bool types$isPointer(ast$Expr *t) {
     return t->type == ast$EXPR_STAR || t->type == ast$TYPE_ARRAY;
 }
 
-static ast$Expr *types_pointerBase(ast$Expr *t) {
+static ast$Expr *types$pointerBase(ast$Expr *t) {
     switch (t->type) {
     case ast$EXPR_STAR:
         return t->star.x;
     case ast$TYPE_ARRAY:
         return t->array.elt;
     default:
-        panic("not a pointer: %s", types_typeString(t));
+        panic("not a pointer: %s", types$typeString(t));
         return NULL;
     }
 }
 
-static bool types_areAssignable(ast$Expr *a, ast$Expr *b) {
-    if (types_areIdentical(a, b)) {
+static bool types$areAssignable(ast$Expr *a, ast$Expr *b) {
+    if (types$areIdentical(a, b)) {
         return true;
     }
     if (ast$isVoidPtr(a) || ast$isVoidPtr(b)) {
         return true;
     }
-    if (types_isPointer(a) && types_isPointer(b)) {
-        return types_areAssignable(types_pointerBase(a), types_pointerBase(b));
+    if (types$isPointer(a) && types$isPointer(b)) {
+        return types$areAssignable(types$pointerBase(a), types$pointerBase(b));
     }
     while (a->type == ast$EXPR_IDENT) {
         a = lookup_typedef(a);
@@ -229,29 +229,29 @@ static bool types_areAssignable(ast$Expr *a, ast$Expr *b) {
     while (b->type == ast$EXPR_IDENT) {
         b = lookup_typedef(b);
     }
-    if (types_isNative(a, "bool") && types_isArithmetic(b)) {
+    if (types$isNative(a, "bool") && types$isArithmetic(b)) {
         return true;
     }
-    if (b->type == ast$TYPE_ENUM && types_isArithmetic(a)) {
+    if (b->type == ast$TYPE_ENUM && types$isArithmetic(a)) {
         return true;
     }
-    if (a->type == ast$TYPE_ENUM && types_isArithmetic(a)) {
+    if (a->type == ast$TYPE_ENUM && types$isArithmetic(a)) {
         return true;
     }
-    return types_areIdentical(a, b);
+    return types$areIdentical(a, b);
 }
 
-static bool types_areComparable(ast$Expr *a, ast$Expr *b) {
-    if (types_areIdentical(a, b)) {
+static bool types$areComparable(ast$Expr *a, ast$Expr *b) {
+    if (types$areIdentical(a, b)) {
         return true;
     }
-    if (types_isArithmetic(a) && types_isArithmetic(b)) {
+    if (types$isArithmetic(a) && types$isArithmetic(b)) {
         return true;
     }
-    if (a->type == ast$EXPR_STAR && types_isNative(b, "int")) {
+    if (a->type == ast$EXPR_STAR && types$isNative(b, "int")) {
         return true;
     }
-    return types_areIdentical(a, b);
+    return types$areIdentical(a, b);
 }
 
 static void ast$Scope_declare(ast$Scope *s, ast$Decl *decl) {
@@ -294,15 +294,15 @@ static void ast$Scope_declare(ast$Scope *s, ast$Decl *decl) {
     if (alt != NULL) {
         if (alt->kind != kind) {
             panic("incompatible redefinition of `%s`: %s",
-                    types_declString(obj->decl),
-                    types_declString(decl));
+                    types$declString(obj->decl),
+                    types$declString(decl));
         }
         bool redecl = false;
         switch (kind) {
         case ast$ObjKind_FUNC:
             redecl =
                 (alt->decl->func.body == NULL || decl->func.body == NULL) &&
-                types_areIdentical(alt->decl->func.type, decl->func.type);
+                types$areIdentical(alt->decl->func.type, decl->func.type);
             break;
         case ast$ObjKind_PKG:
             redecl = true;
@@ -314,7 +314,7 @@ static void ast$Scope_declare(ast$Scope *s, ast$Decl *decl) {
             break;
         case ast$ObjKind_VALUE:
             redecl = alt->decl->value.value == NULL &&
-                !types_areIdentical(alt->decl->value.type, decl->value.value);
+                !types$areIdentical(alt->decl->value.type, decl->value.value);
             break;
         default:
             panic("unknown kind: %d", kind);
@@ -355,14 +355,14 @@ static void declare_builtins(ast$Scope *s) {
 
 ast$Scope *_universe = NULL;
 
-extern ast$Scope *types_universe() {
+extern ast$Scope *types$universe() {
     if (_universe == NULL) {
         _universe = ast$Scope_new(NULL);
         declare_builtins(_universe);
-        ast$File *file = parser_parse_file("builtin/builtin.bling");
+        ast$File *file = parser$parse_file("builtin/builtin.bling");
         file->scope = _universe;
-        config_t conf = {.strict = true};
-        types_checkFile(&conf, file);
+        types$Config conf = {.strict = true};
+        types$checkFile(&conf, file);
         free(file->decls);
         free(file);
     }
@@ -370,7 +370,7 @@ extern ast$Scope *types_universe() {
 }
 
 typedef struct {
-    config_t *conf;
+    types$Config *conf;
     ast$Package pkg;
     ast$Expr *result;
     slice$Slice files;
@@ -448,24 +448,24 @@ static void check_type(checker_t *w, ast$Expr *expr) {
         break;
 
     default:
-        panic("check_type: unknown type: %s", types_typeString(expr));
+        panic("check_type: unknown type: %s", types$typeString(expr));
         break;
     }
 }
 
-static bool types_isLhs(ast$Expr *expr) {
+static bool types$isLhs(ast$Expr *expr) {
     switch (expr->type) {
     case ast$EXPR_IDENT:
     case ast$EXPR_SELECTOR:
         return true;
     case ast$EXPR_CAST:
-        return types_isLhs(expr->cast.expr);
+        return types$isLhs(expr->cast.expr);
     case ast$EXPR_INDEX:
-        return types_isLhs(expr->index.x);
+        return types$isLhs(expr->index.x);
     case ast$EXPR_PAREN:
-        return types_isLhs(expr->paren.x);
+        return types$isLhs(expr->paren.x);
     case ast$EXPR_STAR:
-        return types_isLhs(expr->star.x);
+        return types$isLhs(expr->star.x);
     default:
         return false;
     }
@@ -514,10 +514,10 @@ static ast$Decl *find_field(ast$Expr *type, ast$Expr *sel) {
     return NULL;
 }
 
-static bool types_isInteger(ast$Expr *x) {
+static bool types$isInteger(ast$Expr *x) {
     switch (x->type) {
     case ast$EXPR_IDENT:
-        return types_isInteger(x->ident.obj->decl->typedef_.type);
+        return types$isInteger(x->ident.obj->decl->typedef_.type);
     case ast$TYPE_ENUM:
     case ast$TYPE_NATIVE:
         return true;
@@ -527,16 +527,16 @@ static bool types_isInteger(ast$Expr *x) {
 }
 
 static void check_array(checker_t *w, ast$Expr *x) {
-    ast$Expr *baseT = types_getBaseType(x->compound.type);
+    ast$Expr *baseT = types$getBaseType(x->compound.type);
     for (int i = 0; x->compound.list[i]; i++) {
         ast$Expr *elt = x->compound.list[i];
         if (elt->type == ast$EXPR_KEY_VALUE) {
             elt->key_value.isArray = true;
             ast$Expr *indexT = check_expr(w, elt->key_value.key);
-            if (!types_isInteger(indexT)) {
+            if (!types$isInteger(indexT)) {
                 panic("not a valid index: %s: %s",
-                        types_exprString(elt->key_value.key),
-                        types_exprString(elt));
+                        types$exprString(elt->key_value.key),
+                        types$exprString(elt));
             }
             elt = elt->key_value.value;
         }
@@ -553,7 +553,7 @@ static void check_array(checker_t *w, ast$Expr *x) {
 static ast$Decl *getStructField(ast$Expr *type, int index) {
     assert(type->type == ast$TYPE_STRUCT);
     if (type->struct_.fields == NULL) {
-        panic("incomplete field defn: %s", types_typeString(type));
+        panic("incomplete field defn: %s", types$typeString(type));
     }
     for (int i = 0; type->struct_.fields[i]; i++) {
         if (i == index) {
@@ -565,7 +565,7 @@ static ast$Decl *getStructField(ast$Expr *type, int index) {
 
 static void check_struct(checker_t *w, ast$Expr *x) {
     assert(x->compound.type);
-    ast$Expr *baseT = types_getBaseType(x->compound.type);
+    ast$Expr *baseT = types$getBaseType(x->compound.type);
     bool expectKV = false;
     for (int i = 0; x->compound.list[i]; i++) {
         ast$Expr *elt = x->compound.list[i];
@@ -576,20 +576,20 @@ static void check_struct(checker_t *w, ast$Expr *x) {
             ast$Expr *key = elt->key_value.key;
             if (!ast$isIdent(key)) {
                 panic("key must be an identifier: %s",
-                        types_typeString(x->compound.type));
+                        types$typeString(x->compound.type));
             }
             ast$Decl *field = find_field(baseT, key);
             if (field == NULL) {
                 panic("struct `%s` has no field `%s`",
-                        types_typeString(x->compound.type),
-                        types_exprString(key));
+                        types$typeString(x->compound.type),
+                        types$exprString(key));
             }
             key->ident.obj = field->field.name->ident.obj;
             fieldT = field->field.type;
             elt = elt->key_value.value;
         } else {
             if (expectKV) {
-                panic("expected a key/value expr: %s", types_exprString(x));
+                panic("expected a key/value expr: %s", types$exprString(x));
             }
             ast$Decl *field = getStructField(baseT, i);
             fieldT = field->field.type;
@@ -600,11 +600,11 @@ static void check_struct(checker_t *w, ast$Expr *x) {
             }
         }
         ast$Expr *eltT = check_expr(w, elt);
-        if (!types_areAssignable(fieldT, eltT)) {
+        if (!types$areAssignable(fieldT, eltT)) {
             panic("cannot init field of type `%s` with value of type `%s`: %s",
-                    types_typeString(fieldT),
-                    types_typeString(eltT),
-                    types_exprString(elt));
+                    types$typeString(fieldT),
+                    types$typeString(eltT),
+                    types$exprString(elt));
         }
     }
 }
@@ -612,7 +612,7 @@ static void check_struct(checker_t *w, ast$Expr *x) {
 static void check_compositeLit(checker_t *w, ast$Expr *x) {
     ast$Expr *t = x->compound.type;
     assert(t);
-    ast$Expr *baseT = types_getBaseType(t);
+    ast$Expr *baseT = types$getBaseType(t);
     switch (baseT->type) {
     case ast$TYPE_ARRAY:
         check_array(w, x);
@@ -622,7 +622,7 @@ static void check_compositeLit(checker_t *w, ast$Expr *x) {
         break;
     default:
         panic("composite type must be an array or a struct: %s",
-                types_typeString(t));
+                types$typeString(t));
     }
 }
 
@@ -634,11 +634,11 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
         {
             ast$Expr *typ1 = check_expr(w, expr->binary.x);
             ast$Expr *typ2 = check_expr(w, expr->binary.y);
-            if (!types_areComparable(typ1, typ2)) {
+            if (!types$areComparable(typ1, typ2)) {
                 panic("not compariable: %s and %s: %s",
-                        types_typeString(typ1),
-                        types_typeString(typ2),
-                        types_exprString(expr));
+                        types$typeString(typ1),
+                        types$typeString(typ2),
+                        types$exprString(expr));
             }
             switch (expr->binary.op) {
             case token$EQUAL:
@@ -649,7 +649,7 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
             case token$LT:
             case token$LT_EQUAL:
             case token$NOT_EQUAL:
-                typ1 = types_makeIdent("bool");
+                typ1 = types$makeIdent("bool");
                 check_type(w, typ1);
             default:
                 return typ1;
@@ -662,16 +662,16 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
             ast$Expr *type = NULL;
             switch (kind) {
             case token$CHAR:
-                type = types_makeIdent("char");
+                type = types$makeIdent("char");
                 break;
             case token$FLOAT:
-                type = types_makeIdent("float");
+                type = types$makeIdent("float");
                 break;
             case token$INT:
-                type = types_makeIdent("int");
+                type = types$makeIdent("int");
                 break;
             case token$STRING:
-                type = types_makePtr(types_makeIdent("char"));
+                type = types$makePtr(types$makeIdent("char"));
                 break;
             default:
                 panic("check_expr: not implmented: %s", token$string(kind));
@@ -689,7 +689,7 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
                 if (streq(func->ident.name, "esc")) {
                     assert(expr->call.args[0] && !expr->call.args[1]);
                     ast$Expr *type = check_expr(w, expr->call.args[0]);
-                    return types_makePtr(type);
+                    return types$makePtr(type);
                 }
             }
             if (type->type == ast$EXPR_STAR) {
@@ -697,8 +697,8 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
             }
             if (type->type != ast$TYPE_FUNC) {
                 panic("check_expr: `%s` is not a func: %s",
-                        types_exprString(expr->call.func),
-                        types_exprString(expr));
+                        types$exprString(expr->call.func),
+                        types$exprString(expr));
             }
             int j = 0;
             for (int i = 0; expr->call.args[i]; i++) {
@@ -706,11 +706,11 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
                 assert(param->type == ast$DECL_FIELD);
                 ast$Expr *type = check_expr(w, expr->call.args[i]);
                 if (param->field.type) {
-                    if (!types_areAssignable(param->field.type, type)) {
+                    if (!types$areAssignable(param->field.type, type)) {
                         panic("not assignable: %s and %s: %s",
-                                types_typeString(param->field.type),
-                                types_typeString(type),
-                                types_exprString(expr));
+                                types$typeString(param->field.type),
+                                types$typeString(type),
+                                types$exprString(expr));
                     }
                     j++;
                 }
@@ -721,7 +721,7 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
 
     case ast$EXPR_COMPOUND:
         if (expr->compound.type == NULL) {
-            panic("untyped compound expr: %s", types_exprString(expr));
+            panic("untyped compound expr: %s", types$exprString(expr));
         }
         check_compositeLit(w, expr);
         return expr->compound.type;
@@ -754,8 +754,8 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
                 break;
             default:
                 panic("indexing a non-array or pointer `%s`: %s",
-                        types_typeString(type),
-                        types_exprString(expr));
+                        types$typeString(type),
+                        types$exprString(expr));
                 break;
             }
             ast$Expr *typ2 = check_expr(w, expr->index.index);
@@ -775,12 +775,12 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
             } else {
                 assert(expr->selector.tok != token$ARROW);
             }
-            type = types_getBaseType(type);
+            type = types$getBaseType(type);
             ast$Decl *field = find_field(type, expr->selector.sel);
             if (field == NULL) {
                 panic("struct `%s` (`%s`) has no field `%s`",
-                        types_exprString(expr->selector.x),
-                        types_typeString(type),
+                        types$exprString(expr->selector.x),
+                        types$typeString(type),
                         expr->selector.sel->ident.name);
             }
             expr->selector.sel->ident.obj = field->field.name->ident.obj;
@@ -790,7 +790,7 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
     case ast$EXPR_SIZEOF:
         {
             check_type(w, expr->sizeof_.x);
-            ast$Expr *ident = types_makeIdent("size_t");
+            ast$Expr *ident = types$makeIdent("size_t");
             ast$Scope_resolve(w->pkg.scope, ident);
             return ident;
         }
@@ -805,8 +805,8 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
                 return type->array.elt;
             default:
                 panic("check_expr: derefencing a non-pointer `%s`: %s",
-                        types_typeString(type),
-                        types_exprString(expr));
+                        types$typeString(type),
+                        types$exprString(expr));
                 return NULL;
             }
         }
@@ -815,18 +815,18 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
         {
             ast$Expr *type = check_expr(w, expr->unary.x);
             if (expr->unary.op == token$AND) {
-                if (!types_isLhs(expr->unary.x)) {
+                if (!types$isLhs(expr->unary.x)) {
                     panic("check_expr: invalid lvalue `%s`: %s",
-                            types_exprString(expr->unary.x),
-                            types_exprString(expr));
+                            types$exprString(expr->unary.x),
+                            types$exprString(expr));
                 }
-                return types_makePtr(type);
+                return types$makePtr(type);
             }
             return type;
         }
 
     default:
-        panic("check_expr: unknown expr: %s", types_exprString(expr));
+        panic("check_expr: unknown expr: %s", types$exprString(expr));
     }
     return NULL;
 }
@@ -837,21 +837,21 @@ static void check_stmt(checker_t *w, ast$Stmt *stmt) {
     switch (stmt->type) {
     case ast$STMT_ASSIGN:
         {
-            if (!types_isLhs(stmt->assign.x)) {
+            if (!types$isLhs(stmt->assign.x)) {
                 panic("check_stmt: invalid lvalue `%s`: %s",
-                        types_exprString(stmt->assign.x),
-                        types_stmtString(stmt));
+                        types$exprString(stmt->assign.x),
+                        types$stmtString(stmt));
             }
             ast$Expr *a = check_expr(w, stmt->assign.x);
             if (a->is_const) {
-                panic("cannot assign to const var: %s", types_stmtString(stmt));
+                panic("cannot assign to const var: %s", types$stmtString(stmt));
             }
             ast$Expr *b = check_expr(w, stmt->assign.y);
-            if (!types_areAssignable(a, b)) {
+            if (!types$areAssignable(a, b)) {
                 panic("check_stmt: not assignment `%s` and `%s`: %s",
-                        types_exprString(stmt->assign.x),
-                        types_exprString(stmt->assign.y),
-                        types_stmtString(stmt));
+                        types$exprString(stmt->assign.x),
+                        types$exprString(stmt->assign.y),
+                        types$stmtString(stmt));
             }
         }
         break;
@@ -920,11 +920,11 @@ static void check_stmt(checker_t *w, ast$Stmt *stmt) {
             ast$Expr *a = w->result;
             assert(a);
             ast$Expr *b = check_expr(w, stmt->return_.x);
-            if (!types_areAssignable(a, b)) {
+            if (!types$areAssignable(a, b)) {
                 panic("check_stmt: not returnable: %s and %s: %s",
-                        types_typeString(a),
-                        types_typeString(b),
-                        types_stmtString(stmt));
+                        types$typeString(a),
+                        types$typeString(b),
+                        types$stmtString(stmt));
             }
         }
         break;
@@ -937,11 +937,11 @@ static void check_stmt(checker_t *w, ast$Stmt *stmt) {
                 assert(clause->type == ast$STMT_CASE);
                 for (int j = 0; clause->case_.exprs && clause->case_.exprs[j]; j++) {
                     ast$Expr *type2 = check_expr(w, clause->case_.exprs[j]);
-                    if (!types_areComparable(type1, type2)) {
+                    if (!types$areComparable(type1, type2)) {
                         panic("check_stmt: not comparable: %s and %s: %s",
-                                types_typeString(type1),
-                                types_typeString(type2),
-                                types_stmtString(stmt));
+                                types$typeString(type1),
+                                types$typeString(type2),
+                                types$stmtString(stmt));
                     }
                 }
                 for (int j = 0; clause->case_.stmts[j]; j++) {
@@ -952,7 +952,7 @@ static void check_stmt(checker_t *w, ast$Stmt *stmt) {
         break;
 
     default:
-        panic("check_stmt: unknown stmt: %s", types_stmtString(stmt));
+        panic("check_stmt: unknown stmt: %s", types$stmtString(stmt));
     }
 }
 
@@ -974,7 +974,7 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     char *path = constant_stringVal(imp->imp.path);
     if (imp->imp.name == NULL) {
         char *base = path$base(path);
-        imp->imp.name = types_makeIdent(base);
+        imp->imp.name = types$makeIdent(base);
     }
     ast$Scope *scope = NULL;
     map$get(&w->scopes, path, &scope);
@@ -986,7 +986,7 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     scope = w->pkg.scope;
     map$set(&w->scopes, path, &scope);
     error$Error *err = NULL;
-    ast$File **files = parser_parseDir(path, &err);
+    ast$File **files = parser$parseDir(path, &err);
     if (err) {
         panic("%s: %s", path, err->error);
     }
@@ -1030,18 +1030,18 @@ static void check_decl(checker_t *w, ast$Decl *decl) {
             }
             if (valType != NULL) {
                 ast$Expr *varType = decl->value.type;
-                if (!types_areAssignable(varType, valType)) {
+                if (!types$areAssignable(varType, valType)) {
                     panic("check_decl: not assignable %s and %s: %s",
-                            types_typeString(varType),
-                            types_typeString(valType),
-                            types_declString(decl));
+                            types$typeString(varType),
+                            types$typeString(valType),
+                            types$declString(decl));
                 }
             }
             ast$Scope_declare(w->pkg.scope, decl);
             break;
         }
     default:
-        panic("check_decl: not implemented: %s", types_declString(decl));
+        panic("check_decl: not implemented: %s", types$declString(decl));
     }
 }
 
@@ -1088,9 +1088,9 @@ static void check_file(checker_t *w, ast$File *file) {
     }
 }
 
-extern ast$Package types_checkFile(config_t *conf, ast$File *file) {
+extern ast$Package types$checkFile(types$Config *conf, ast$File *file) {
     if (file->scope == NULL) {
-        file->scope = ast$Scope_new(types_universe());
+        file->scope = ast$Scope_new(types$universe());
     }
     checker_t w = {
         .conf = conf,

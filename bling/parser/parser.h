@@ -4,6 +4,8 @@
 #include "bling/scanner/scanner.h"
 #include "bling/token/token.h"
 
+package(parser);
+
 import("bling/ast");
 import("bling/scanner");
 import("bling/token");
@@ -12,8 +14,8 @@ import("fmt");
 import("io/ioutil");
 import("path");
 
-extern ast$File *parser_parse_file(const char *filename);
-extern ast$File **parser_parseDir(const char *path, error$Error **first);
+extern ast$File *parser$parse_file(const char *filename);
+extern ast$File **parser$parseDir(const char *path, error$Error **first);
 
 typedef struct {
     token$File *file;
@@ -26,16 +28,17 @@ typedef struct {
     bool c_mode;
 
     char *pkgName;
-} parser_t;
+} parser$t;
 
-extern void parser_declare(parser_t *p, ast$Scope *s, ast$Decl *decl, ast$ObjKind kind, ast$Expr *name);
-extern void parser_next(parser_t *p);
-extern void parser_init(parser_t *p, const char *filename, char *src);
-extern void parser_error(parser_t *p, token$Pos pos, char *msg);
-extern void parser_errorExpected(parser_t *p, token$Pos pos, char *msg);
-extern bool accept(parser_t *p, token$Token tok);
-extern token$Pos expect(parser_t *p, token$Token tok);
-extern ast$Expr *basic_lit(parser_t *p, token$Token kind);
-extern ast$Expr *identifier(parser_t *p);
-extern ast$Expr *primary_expression(parser_t *p);
-extern ast$Decl *parse_pragma(parser_t *p);
+extern void parser$declare(parser$t *p, ast$Scope *s, ast$Decl *decl,
+        ast$ObjKind kind, ast$Expr *name);
+extern void parser$next(parser$t *p);
+extern void parser$init(parser$t *p, const char *filename, char *src);
+extern void parser$error(parser$t *p, token$Pos pos, char *msg);
+extern void parser$errorExpected(parser$t *p, token$Pos pos, char *msg);
+extern bool parser$accept(parser$t *p, token$Token tok);
+extern token$Pos parser$expect(parser$t *p, token$Token tok);
+extern ast$Expr *parser$parseBasicLit(parser$t *p, token$Token kind);
+extern ast$Expr *parser$parseIdent(parser$t *p);
+extern ast$Expr *parser$parsePrimaryExpr(parser$t *p);
+extern ast$Decl *parser$parsePragma(parser$t *p);

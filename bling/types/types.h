@@ -1,22 +1,24 @@
 #pragma once
 #include "bling/ast/ast.h"
 
+package(types);
+
 import("bling/ast");
 import("bling/emitter");
 import("bling/parser");
 
-extern ast$Scope *types_universe();
+extern ast$Scope *types$universe();
 
-extern bool types_isIdent(ast$Expr *expr);
-extern bool types_isVoid(ast$Expr *type);
-extern bool types_isVoidPtr(ast$Expr *type);
+extern bool types$isIdent(ast$Expr *expr);
+extern bool types$isVoid(ast$Expr *type);
+extern bool types$isVoidPtr(ast$Expr *type);
 
-extern char *types_exprString(ast$Expr *expr);
-extern char *types_stmtString(ast$Stmt *stmt);
-extern char *types_typeString(ast$Expr *expr);
+extern char *types$exprString(ast$Expr *expr);
+extern char *types$stmtString(ast$Stmt *stmt);
+extern char *types$typeString(ast$Expr *expr);
 
 typedef struct {
     bool strict;
-} config_t;
+} types$Config;
 
-extern ast$Package types_checkFile(config_t *conf, ast$File *file);
+extern ast$Package types$checkFile(types$Config *conf, ast$File *file);

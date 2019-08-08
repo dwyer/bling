@@ -42,7 +42,7 @@ void compile_c(char *argv[]) {
     emitter_t emitter = {};
     while (*argv) {
         char *filename = *argv;
-        ast$File *file = parser_parse_cfile(filename, types_universe());
+        ast$File *file = parser$parse_cfile(filename, types$universe());
         printer_print_file(&emitter, file);
         argv++;
     }
@@ -69,7 +69,7 @@ void compile_c(char *argv[]) {
 
 void compile_bling(char *argv[]) {
     bool emit_as_bling = false;
-    config_t conf = {.strict = true};
+    types$Config conf = {.strict = true};
     char *dst = NULL;
     while (**argv == '-') {
         if (streq(*argv, "-o")) {
@@ -92,13 +92,13 @@ void compile_bling(char *argv[]) {
         char *filename = *argv;
         ast$File *file = NULL;
         if (bytes$hasSuffix(filename, ".bling")) {
-            file = parser_parse_file(filename);
+            file = parser$parse_file(filename);
         } else if (bytes$hasSuffix(filename, ".c")) {
-            file = parser_parse_cfile(filename, types_universe());
+            file = parser$parse_cfile(filename, types$universe());
         } else {
             panic("unknown file type: %s", filename);
         }
-        ast$Package pkg = types_checkFile(&conf, file);
+        ast$Package pkg = types$checkFile(&conf, file);
         for (int i = 0; pkg.files[i]; i++) {
             ast$File *file = pkg.files[i];
             if (emit_as_bling) {
