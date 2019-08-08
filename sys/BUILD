@@ -1,10 +1,10 @@
 cc_library(
-    name = "fmt",
+    name = "sys",
     srcs = [
         "fmt.c",
     ],
     hdrs = [
-        "fmt.h",
+        "sys.h",
     ],
     deps = [
         "//bootstrap",

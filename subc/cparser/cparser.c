@@ -1,6 +1,6 @@
 #include "subc/cparser/cparser.h"
 
-#include "fmt/fmt.h"
+#include "sys/sys.h"
 
 static ast$Expr *cast_expression(parser$Parser *p);
 static ast$Expr *expression(parser$Parser *p);
@@ -192,7 +192,7 @@ static ast$Expr *unary_expression(parser$Parser *p) {
         }
     case token$DEC:
     case token$INC:
-        parser$error(p, p->pos, fmt$sprintf("unary `%s` not supported in subc", token$string(p->tok)));
+        parser$error(p, p->pos, sys$sprintf("unary `%s` not supported in subc", token$string(p->tok)));
         return NULL;
     default:
         return postfix_expression(p, NULL);
@@ -1012,7 +1012,7 @@ static ast$Expr *type_specifier(parser$Parser *p) {
     switch (p->tok) {
     case token$SIGNED:
     case token$UNSIGNED:
-        parser$error(p, p->pos, fmt$sprintf("`%s` is not supported in subc", token$string(p->tok)));
+        parser$error(p, p->pos, sys$sprintf("`%s` is not supported in subc", token$string(p->tok)));
         break;
     case token$STRUCT:
     case token$UNION:

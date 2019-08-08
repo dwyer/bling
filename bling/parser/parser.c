@@ -1,8 +1,8 @@
 #include "bling/parser/parser.h"
 
 #include "bytes/bytes.h"
-#include "fmt/fmt.h"
 #include "paths/paths.h"
+#include "sys/sys.h"
 
 extern ast$Decl *parser$parsePragma(parser$Parser *p) {
     token$Pos pos = p->pos;
@@ -63,7 +63,7 @@ extern void parser$error(parser$Parser *p, token$Pos pos, char *msg) {
         i++;
         ch = p->scanner.src[i];
     }
-    panic(fmt$sprintf("%s: %s\n%s",
+    panic(sys$sprintf("%s: %s\n%s",
                 token$Position_string(&position),
                 msg,
                 bytes$Buffer_string(&buf)));
@@ -183,7 +183,7 @@ extern ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
             return esc(x);
         }
     default:
-        parser$error(p, p->pos, fmt$sprintf("bad expr: %s: %s", token$string(p->tok), p->lit));
+        parser$error(p, p->pos, sys$sprintf("bad expr: %s: %s", token$string(p->tok), p->lit));
         return NULL;
     }
 }
@@ -1130,7 +1130,7 @@ static ast$Decl *parse_decl(parser$Parser *p, bool is_external) {
             return esc(decl);
         }
     default:
-        parser$error(p, p->pos, fmt$sprintf("cant handle it: %s", token$string(p->tok)));
+        parser$error(p, p->pos, sys$sprintf("cant handle it: %s", token$string(p->tok)));
         return NULL;
     }
 }

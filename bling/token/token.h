@@ -3,9 +3,9 @@
 
 package(token);
 
-import("fmt");
 import("map");
 import("slice");
+import("sys");
 
 typedef enum {
     token$ILLEGAL = 0,

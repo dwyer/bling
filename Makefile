@@ -5,7 +5,7 @@ BLINGC=bazel-bin/cmd/blingc/blingc
 .PHONY: test $(BLINGC) all.bling
 
 HRDS=bootstrap/bootstrap.h \
-     fmt/fmt.h \
+     sys/sys.h \
      errors/errors.h \
      slice/slice.h \
      map/map.h \
@@ -40,7 +40,7 @@ SRCS=errors/errors.c \
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
-	cc all.c bazel-bin/bootstrap/libbootstrap.a bazel-bin/fmt/libfmt.a bazel-bin/os/libos.a
+	cc all.c bazel-bin/bootstrap/libbootstrap.a bazel-bin/os/libos.a bazel-bin/sys/libsys.a
 
 hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/null -w cmd/blingc/blingc.bling

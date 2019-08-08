@@ -1,7 +1,7 @@
 #include "bling/token/token.h"
 
-#include "fmt/fmt.h"
 #include "map/map.h"
+#include "sys/sys.h"
 
 static char *tokens[] = {
     [token$ILLEGAL] = "ILLEGAL",
@@ -145,7 +145,7 @@ extern int token$precedence(token$Token op) {
 }
 
 extern char *token$Position_string(token$Position *p) {
-    return fmt$sprintf("%s:%d:%d", p->filename, p->line, p->column);
+    return sys$sprintf("%s:%d:%d", p->filename, p->line, p->column);
 }
 
 extern token$File *token$File_new(const char *filename) {

@@ -1,16 +1,16 @@
-#include "fmt/fmt.h"
+#include "sys/sys.h"
 
 #include <stdarg.h>
 #include <stdio.h>
 
-extern void fmt$printf(const char *s, ...) {
+extern void sys$printf(const char *s, ...) {
     va_list ap;
     va_start(ap, s);
     vprintf(s, ap);
     va_end(ap);
 }
 
-extern char *fmt$sprintf(const char *s, ...) {
+extern char *sys$sprintf(const char *s, ...) {
     char *res = NULL;
     va_list ap;
     va_start(ap, s);
