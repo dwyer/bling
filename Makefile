@@ -39,9 +39,8 @@ SRCS=error/error.c \
      cmd/blingc/main.c
 
 a.out: $(BLINGC) all.bling
-	$(BLINGC) -o a.out cmd/blingc/blingc.bling
-	# $(BLINGC) -o all.c cmd/blingc/blingc.bling
-	# cc all.c bazel-bin/bootstrap/libbootstrap.a bazel-bin/fmt/libfmt.a bazel-bin/os/libos.a
+	$(BLINGC) -o all.c cmd/blingc/blingc.bling
+	cc all.c bazel-bin/bootstrap/libbootstrap.a bazel-bin/fmt/libfmt.a bazel-bin/os/libos.a
 
 hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/null -w cmd/blingc/blingc.bling
