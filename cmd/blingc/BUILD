@@ -10,5 +10,6 @@ cc_binary(
         "//os",
         "//subc/cparser",
         "//subc/cemitter",
+        "//sys",
     ],
 )

@@ -4,6 +4,7 @@
 #include "paths/paths.h"
 #include "subc/cemitter/cemitter.h"
 #include "subc/cparser/cparser.h"
+#include "sys/sys.h"
 
 import("bling/ast");
 import("bling/emitter");
@@ -16,8 +17,7 @@ import("os");
 import("paths");
 import("subc/cparser");
 import("subc/cemitter");
-
-int execve(const char *path, char *const argv[], char *envp[]);
+import("sys");
 
 void usage(const char *progname) {
     panic("usage: %s -o DST SRCS", progname);
@@ -130,7 +130,7 @@ void compile_bling(char *argv[]) {
                 "bazel-bin/os/libos.a",
                 NULL,
             };
-            int code = execve(args[0], args, NULL);
+            int code = sys$execve(args[0], args, NULL);
             if (code) {
                 print("%s exited with code: %d", argv[0], code);
             }
