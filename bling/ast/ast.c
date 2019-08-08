@@ -5,7 +5,7 @@ extern bool ast$isExprType(ast$Expr *x) {
     return ast$_TYPE_START < x->type && x->type < ast$_DECL_END;
 }
 
-extern ast$Object *object_new(ast$ObjKind kind, char *name) {
+extern ast$Object *ast$newObject(ast$ObjKind kind, char *name) {
     ast$Object obj = {
         .kind = kind,
         .name = name,

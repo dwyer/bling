@@ -6,6 +6,11 @@ package(types);
 import("bling/ast");
 import("bling/emitter");
 import("bling/parser");
+import("bling/token");
+import("errors");
+import("map");
+import("paths");
+import("slice");
 
 extern ast$Scope *types$universe();
 

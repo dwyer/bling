@@ -300,7 +300,7 @@ typedef struct ast$Stmt {
     };
 } ast$Stmt;
 
-extern ast$Object *object_new(ast$ObjKind kind, char *name);
+extern ast$Object *ast$newObject(ast$ObjKind kind, char *name);
 
 typedef struct ast$Scope {
     ast$Scope *outer;

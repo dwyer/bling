@@ -5,6 +5,7 @@
 package(emitter);
 
 import("bling/ast");
+import("bling/token");
 import("bytes");
 
 typedef struct {

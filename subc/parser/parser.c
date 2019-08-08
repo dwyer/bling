@@ -314,7 +314,7 @@ static ast$Expr *struct_or_union_specifier(parser$Parser *p) {
         // struct_declaration
         //         : specifier_qualifier_list struct_declarator_list ';'
         //         ;
-        slice$Slice slice = {.size = sizeof(ast$Decl *)};
+        slice$Slice fieldSlice = {.size = sizeof(ast$Decl *)};
         for (;;) {
             // struct_declarator_list
             //         : struct_declarator
@@ -336,13 +336,13 @@ static ast$Expr *struct_or_union_specifier(parser$Parser *p) {
             };
             parser$expect(p, token$SEMICOLON);
             ast$Decl *field = esc(f);
-            slice$append(&slice, &field);
+            slice$append(&fieldSlice, &field);
             if (p->tok == token$RBRACE) {
                 break;
             }
         }
         parser$expect(p, token$RBRACE);
-        fields = slice$to_nil_array(slice);
+        fields = slice$to_nil_array(fieldSlice);
     }
     // TODO assert name or fields
     ast$Expr x = {

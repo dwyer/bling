@@ -296,7 +296,7 @@ static void types$Scope_declare(ast$Scope *s, ast$Decl *decl) {
         s = decl->imp.scope;
         // panic("get pkg scope: %s $ %s", pkg->ident.name, ident->ident.name);
     }
-    ast$Object *obj = object_new(kind, ident->ident.name);
+    ast$Object *obj = ast$newObject(kind, ident->ident.name);
     obj->decl = decl;
     obj->pkg = s->pkg;
     ident->ident.obj = obj;

@@ -30,12 +30,12 @@ extern void parser$init(parser$Parser *p, const char *filename, char *src) {
 extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,
         ast$ObjKind kind, ast$Expr *name) {
     assert(name->type == ast$EXPR_IDENT);
-    ast$Object *obj = object_new(kind, name->ident.name);
+    ast$Object *obj = ast$newObject(kind, name->ident.name);
     obj->decl = decl;
     ast$Scope_insert(s, obj);
 }
 
-static ast$Expr *parse_cast$expr(parser$Parser *p);
+static ast$Expr *parse_cast_expr(parser$Parser *p);
 static ast$Expr *parse_expr(parser$Parser *p);
 static ast$Expr *parse_const_expr(parser$Parser *p);
 static ast$Expr *parse_init_expr(parser$Parser *p);
@@ -296,7 +296,7 @@ static ast$Expr *parse_unary_expr(parser$Parser *p) {
                 .pos = pos,
                 .unary = {
                     .op = op,
-                    .x = parse_cast$expr(p),
+                    .x = parse_cast_expr(p),
                 },
             };
             return esc(x);
@@ -309,7 +309,7 @@ static ast$Expr *parse_unary_expr(parser$Parser *p) {
                 .type = ast$EXPR_STAR,
                 .pos = pos,
                 .star = {
-                    .x = parse_cast$expr(p),
+                    .x = parse_cast_expr(p),
                 },
             };
             return esc(x);
@@ -334,7 +334,7 @@ static ast$Expr *parse_unary_expr(parser$Parser *p) {
     }
 }
 
-static ast$Expr *parse_cast$expr(parser$Parser *p) {
+static ast$Expr *parse_cast_expr(parser$Parser *p) {
     // cast$expression
     //         : unary_expression
     //         | '<' type_name '>' cast$expression
@@ -348,7 +348,7 @@ static ast$Expr *parse_cast$expr(parser$Parser *p) {
         if (p->tok == token$LBRACE) {
             expr = parse_init_expr(p);
         } else {
-            expr = parse_cast$expr(p);
+            expr = parse_cast_expr(p);
         }
         ast$Expr y = {
             .type = ast$EXPR_CAST,
@@ -364,7 +364,7 @@ static ast$Expr *parse_cast$expr(parser$Parser *p) {
 }
 
 static ast$Expr *parse_binary_expr(parser$Parser *p, int prec1) {
-    ast$Expr *x = parse_cast$expr(p);
+    ast$Expr *x = parse_cast_expr(p);
     for (;;) {
         token$Token op = p->tok;
         int oprec = token$precedence(op);
@@ -443,7 +443,7 @@ static ast$Expr *parse_struct_or_union_spec(parser$Parser *p) {
         // struct_declaration
         //         : specifier_qualifier_list struct_declarator_list ';'
         //         ;
-        slice$Slice slice = {.size = sizeof(ast$Decl *)};
+        slice$Slice fieldSlice = {.size = sizeof(ast$Decl *)};
         for (;;) {
             ast$Decl decl = {
                 .type = ast$DECL_FIELD,
@@ -458,13 +458,13 @@ static ast$Expr *parse_struct_or_union_spec(parser$Parser *p) {
             }
             parser$expect(p, token$SEMICOLON);
             ast$Decl *field = esc(decl);
-            slice$append(&slice, &field);
+            slice$append(&fieldSlice, &field);
             if (p->tok == token$RBRACE) {
                 break;
             }
         }
         parser$expect(p, token$RBRACE);
-        fields = slice$to_nil_array(slice);
+        fields = slice$to_nil_array(fieldSlice);
     }
     // TODO assert(name || fields)
     ast$Expr x = {
@@ -1162,7 +1162,7 @@ extern ast$File **parser$parseDir(const char *path, errors$Error **first) {
     return slice$to_nil_array(files);
 }
 
-static ast$File *parse_file(parser$Parser *p) {
+static ast$File *_parse_file(parser$Parser *p) {
     ast$Expr *name = NULL;
     slice$Slice imports = slice$init(sizeof(uintptr_t));
     slice$Slice decls = slice$init(sizeof(ast$Decl *));
@@ -1209,7 +1209,7 @@ extern ast$File *parser$parse_file(const char *filename) {
     }
     parser$Parser p = {};
     parser$init(&p, filename, src);
-    ast$File *file = parse_file(&p);
+    ast$File *file = _parse_file(&p);
     free(src);
     return file;
 }
