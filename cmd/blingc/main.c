@@ -18,13 +18,13 @@ void usage(const char *progname) {
     panic("usage: %s -o DST SRCS", progname);
 }
 
-void emit_rawfile(emitter_t *e, const char *filename) {
+void emitter$emit_rawfile(emitter$Emitter *e, const char *filename) {
     error$Error *err = NULL;
     char *src = ioutil$readFile(filename, &err);
     if (err) {
         panic(err->error);
     }
-    emit_string(e, src);
+    emitter$emitString(e, src);
     free(src);
 }
 
@@ -39,14 +39,14 @@ void compile_c(char *argv[]) {
         }
         argv++;
     }
-    emitter_t emitter = {};
+    emitter$Emitter emitter = {};
     while (*argv) {
         char *filename = *argv;
         ast$File *file = parser$parse_cfile(filename, types$universe());
-        printer_print_file(&emitter, file);
+        emitter$emitFile(&emitter, file);
         argv++;
     }
-    char *out = emitter_string(&emitter);
+    char *out = emitter$Emitter_string(&emitter);
     os$File *file = os$stdout;
     error$Error *err = NULL;
     if (dst) {
@@ -68,7 +68,7 @@ void compile_c(char *argv[]) {
 }
 
 void compile_bling(char *argv[]) {
-    bool emit_as_bling = false;
+    bool emitter$emit_as_bling = false;
     types$Config conf = {.strict = true};
     char *dst = NULL;
     while (**argv == '-') {
@@ -81,12 +81,12 @@ void compile_bling(char *argv[]) {
         argv++;
     }
     if (dst) {
-        emit_as_bling = bytes$hasSuffix(dst, ".bling");
+        emitter$emit_as_bling = bytes$hasSuffix(dst, ".bling");
     }
-    emitter_t emitter = {};
+    emitter$Emitter emitter = {};
     error$Error *err = NULL;
-    if (!emit_as_bling) {
-        emit_rawfile(&emitter, "bootstrap/bootstrap.h");
+    if (!emitter$emit_as_bling) {
+        emitter$emit_rawfile(&emitter, "bootstrap/bootstrap.h");
     }
     while (*argv) {
         char *filename = *argv;
@@ -101,17 +101,17 @@ void compile_bling(char *argv[]) {
         ast$Package pkg = types$checkFile(&conf, file);
         for (int i = 0; pkg.files[i]; i++) {
             ast$File *file = pkg.files[i];
-            if (emit_as_bling) {
-                printer_print_file(&emitter, file);
+            if (emitter$emit_as_bling) {
+                emitter$emitFile(&emitter, file);
             } else {
-                emitter_emit_file(&emitter, file);
+                emitter_emitter$emitFile(&emitter, file);
             }
             free(file->decls);
             free(file);
         }
         argv++;
     }
-    char *out = emitter_string(&emitter);
+    char *out = emitter$Emitter_string(&emitter);
     if (dst) {
         if (bytes$hasSuffix(dst, ".out")) {
             char *tmp = path$join2(os$tempDir(), "tmp.c");

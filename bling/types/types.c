@@ -31,27 +31,27 @@ static struct {
 };
 
 extern char *types$declString(ast$Decl *decl) {
-    emitter_t e = {};
-    print_decl(&e, decl);
-    return emitter_string(&e);
+    emitter$Emitter e = {};
+    emitter$emitDecl(&e, decl);
+    return emitter$Emitter_string(&e);
 }
 
 extern char *types$exprString(ast$Expr *expr) {
-    emitter_t e = {};
-    print_expr(&e, expr);
-    return emitter_string(&e);
+    emitter$Emitter e = {};
+    emitter$emitExpr(&e, expr);
+    return emitter$Emitter_string(&e);
 }
 
 extern char *types$stmtString(ast$Stmt *stmt) {
-    emitter_t e = {};
-    print_stmt(&e, stmt);
-    return emitter_string(&e);
+    emitter$Emitter e = {};
+    emitter$emitStmt(&e, stmt);
+    return emitter$Emitter_string(&e);
 }
 
 extern char *types$typeString(ast$Expr *expr) {
-    emitter_t e = {};
-    print_type(&e, expr);
-    return emitter_string(&e);
+    emitter$Emitter e = {};
+    emitter$emitType(&e, expr);
+    return emitter$Emitter_string(&e);
 }
 
 extern bool types$isType(ast$Expr *expr) {

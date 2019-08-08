@@ -2,6 +2,8 @@
 #include "bling/ast/ast.h"
 #include "bytes/bytes.h"
 
+package(emitter);
+
 import("bling/ast");
 import("bytes");
 
@@ -9,18 +11,18 @@ typedef struct {
     bytes$Buffer buf;
     int indent;
     bool skipSemi;
-} emitter_t;
+} emitter$Emitter;
 
-extern char *emitter_string(emitter_t *e);
+extern char *emitter$Emitter_string(emitter$Emitter *e);
 
-extern void emit_string(emitter_t *p, const char *s);
-extern void emit_space(emitter_t *e);
-extern void emit_newline(emitter_t *e);
-extern void emit_tabs(emitter_t *e);
-extern void emit_token(emitter_t *e, token$Token tok);
+extern void emitter$emitString(emitter$Emitter *e, const char *s);
+extern void emitter$emitSpace(emitter$Emitter *e);
+extern void emitter$emitNewline(emitter$Emitter *e);
+extern void emitter$emitTabs(emitter$Emitter *e);
+extern void emitter$emitToken(emitter$Emitter *e, token$Token tok);
 
-extern void print_decl(emitter_t *p, ast$Decl *decl);
-extern void print_expr(emitter_t *p, ast$Expr *expr);
-extern void print_stmt(emitter_t *p, ast$Stmt *stmt);
-extern void print_type(emitter_t *p, ast$Expr *type);
-extern void printer_print_file(emitter_t *e, ast$File *file);
+extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl);
+extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr);
+extern void emitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt);
+extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type);
+extern void emitter$emitFile(emitter$Emitter *e, ast$File *file);
