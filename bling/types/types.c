@@ -373,7 +373,7 @@ typedef struct {
     config_t *conf;
     package_t pkg;
     expr_t *result;
-    slice_t files;
+    slice$Slice files;
     expr_t *typedefName;
     map_t scopes;
 } checker_t;
@@ -1074,7 +1074,7 @@ static void check_file(checker_t *w, ast_File *file) {
     for (int i = 0; file->imports[i] != NULL; i++) {
         check_import(w, file->imports[i]);
     }
-    slice_append(&w->files, &file);
+    slice$append(&w->files, &file);
     if (w->conf->strict) {
         for (int i = 0; file->decls[i] != NULL; i++) {
             check_decl(w, file->decls[i]);
@@ -1097,10 +1097,10 @@ extern package_t types_checkFile(config_t *conf, ast_File *file) {
         .pkg = {
             .scope = file->scope,
         },
-        .files = slice_init(sizeof(ast_File *)),
+        .files = slice$init(sizeof(ast_File *)),
         .scopes = map_init(sizeof(ast_Scope *)),
     };
     check_file(&w, file);
-    w.pkg.files = slice_to_nil_array(w.files);
+    w.pkg.files = slice$to_nil_array(w.files);
     return w.pkg;
 }

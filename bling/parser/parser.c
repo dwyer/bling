@@ -56,7 +56,7 @@ extern void parser_error(parser_t *p, pos_t pos, char *msg) {
     token_Position position = token_File_position(p->file, pos);
     buffer_t buf = {};
     int i = 0;
-    slice_get(&p->file->lines, position.line-1, &i);
+    slice$get(&p->file->lines, position.line-1, &i);
     int ch = p->scanner.src[i];
     while (ch > 0 && ch != '\n') {
         buffer_writeByte(&buf, ch, NULL);
@@ -206,7 +206,7 @@ static expr_t *parse_postfix_expr(parser_t *p) {
             break;
         case token_LPAREN:
             {
-                slice_t args = {.size = sizeof(expr_t *)};
+                slice$Slice args = {.size = sizeof(expr_t *)};
                 expect(p, token_LPAREN);
                 // argument_expression_list
                 //         : expression
@@ -214,7 +214,7 @@ static expr_t *parse_postfix_expr(parser_t *p) {
                 //         ;
                 while (p->tok != token_RPAREN) {
                     expr_t *x = parse_expr(p);
-                    slice_append(&args, &x);
+                    slice$append(&args, &x);
                     if (!accept(p, token_COMMA)) {
                         break;
                     }
@@ -225,7 +225,7 @@ static expr_t *parse_postfix_expr(parser_t *p) {
                     .pos = x->pos,
                     .call = {
                         .func = x,
-                        .args = slice_to_nil_array(args),
+                        .args = slice$to_nil_array(args),
                     },
                 };
                 x = esc(call);
@@ -433,7 +433,7 @@ static expr_t *parse_struct_or_union_spec(parser_t *p) {
         // struct_declaration
         //         : specifier_qualifier_list struct_declarator_list ';'
         //         ;
-        slice_t slice = {.size = sizeof(decl_t *)};
+        slice$Slice slice = {.size = sizeof(decl_t *)};
         for (;;) {
             decl_t decl = {
                 .type = ast_DECL_FIELD,
@@ -448,13 +448,13 @@ static expr_t *parse_struct_or_union_spec(parser_t *p) {
             }
             expect(p, token_SEMICOLON);
             decl_t *field = esc(decl);
-            slice_append(&slice, &field);
+            slice$append(&slice, &field);
             if (p->tok == token_RBRACE) {
                 break;
             }
         }
         expect(p, token_RBRACE);
-        fields = slice_to_nil_array(slice);
+        fields = slice$to_nil_array(slice);
     }
     // TODO assert(name || fields)
     expr_t x = {
@@ -484,7 +484,7 @@ static expr_t *parse_enum_spec(parser_t *p) {
     decl_t **enums = NULL;
     if (accept(p, token_LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
-        slice_t list = {.size = sizeof(decl_t *)};
+        slice$Slice list = {.size = sizeof(decl_t *)};
         for (;;) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             decl_t decl = {
@@ -498,12 +498,12 @@ static expr_t *parse_enum_spec(parser_t *p) {
                 decl.value.value = parse_const_expr(p);
             }
             decl_t *enumerator = esc(decl);
-            slice_append(&list, &enumerator);
+            slice$append(&list, &enumerator);
             if (!accept(p, token_COMMA) || p->tok == token_RBRACE) {
                 break;
             }
         }
-        enums = slice_to_nil_array(list);
+        enums = slice$to_nil_array(list);
         expect(p, token_RBRACE);
     }
     expr_t x = {
@@ -531,10 +531,10 @@ static expr_t *parse_pointer(parser_t *p) {
 }
 
 static decl_t **parse_param_type_list(parser_t *p, bool anon) {
-    slice_t params = {.size = sizeof(decl_t *)};
+    slice$Slice params = {.size = sizeof(decl_t *)};
     while (p->tok != token_RPAREN) {
         decl_t *param = parse_field(p, anon);
-        slice_append(&params, &param);
+        slice$append(&params, &param);
         if (!accept(p, token_COMMA)) {
             break;
         }
@@ -546,11 +546,11 @@ static decl_t **parse_param_type_list(parser_t *p, bool anon) {
                 .pos = pos,
             };
             decl_t *param = esc(decl);
-            slice_append(&params, &param);
+            slice$append(&params, &param);
             break;
         }
     }
-    return slice_to_nil_array(params);
+    return slice$to_nil_array(params);
 }
 
 static expr_t *parse_init_expr(parser_t *p) {
@@ -565,7 +565,7 @@ static expr_t *parse_init_expr(parser_t *p) {
         //         ;
         pos_t pos = p->pos;
         expect(p, token_LBRACE);
-        slice_t list = {.size = sizeof(expr_t *)};
+        slice$Slice list = {.size = sizeof(expr_t *)};
         while (p->tok != token_RBRACE && p->tok != token_EOF) {
             expr_t *value = parse_init_expr(p);
             if (value->type == ast_EXPR_IDENT && accept(p, token_COLON)) {
@@ -580,7 +580,7 @@ static expr_t *parse_init_expr(parser_t *p) {
                 };
                 value = esc(x);
             }
-            slice_append(&list, &value);
+            slice$append(&list, &value);
             if (!accept(p, token_COMMA)) {
                 break;
             }
@@ -590,7 +590,7 @@ static expr_t *parse_init_expr(parser_t *p) {
             .type = ast_EXPR_COMPOUND,
             .pos = pos,
             .compound = {
-                .list = slice_to_nil_array(list),
+                .list = slice$to_nil_array(list),
             },
         };
         return esc(expr);
@@ -771,18 +771,18 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
     pos_t pos = expect(p, token_SWITCH);
     expr_t *tag = parse_expr(p);
     expect(p, token_LBRACE);
-    slice_t clauses = {.size = sizeof(stmt_t *)};
+    slice$Slice clauses = {.size = sizeof(stmt_t *)};
     while (p->tok == token_CASE || p->tok == token_DEFAULT) {
         // case_statement
         //         | CASE constant_expression ':' statement+
         //         | DEFAULT ':' statement+
         //         ;
-        slice_t exprs = {.size=sizeof(expr_t *)};
+        slice$Slice exprs = {.size=sizeof(expr_t *)};
         pos_t pos = p->pos;
         if (accept(p, token_CASE)) {
             for (;;) {
                 expr_t *expr = parse_const_expr(p);
-                slice_append(&exprs, &expr);
+                slice$append(&exprs, &expr);
                 if (!accept(p, token_COMMA)) {
                     break;
                 }
@@ -791,7 +791,7 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
             expect(p, token_DEFAULT);
         }
         expect(p, token_COLON);
-        slice_t stmts = {.size = sizeof(stmt_t *)};
+        slice$Slice stmts = {.size = sizeof(stmt_t *)};
         bool loop = true;
         while (loop) {
             switch (p->tok) {
@@ -805,19 +805,19 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
             }
             if (loop) {
                 stmt_t *stmt = parse_stmt(p);
-                slice_append(&stmts, &stmt);
+                slice$append(&stmts, &stmt);
             }
         }
         stmt_t stmt = {
             .type = ast_STMT_CASE,
             .pos = pos,
             .case_ = {
-                .exprs = slice_to_nil_array(exprs),
-                .stmts = slice_to_nil_array(stmts),
+                .exprs = slice$to_nil_array(exprs),
+                .stmts = slice$to_nil_array(stmts),
             },
         };
         stmt_t *clause = esc(stmt);
-        slice_append(&clauses, &clause);
+        slice$append(&clauses, &clause);
     }
     expect(p, token_RBRACE);
     accept(p, token_SEMICOLON);
@@ -826,7 +826,7 @@ static stmt_t *parse_switch_stmt(parser_t *p) {
         .pos = pos,
         .switch_ = {
             .tag = tag,
-            .stmts = slice_to_nil_array(clauses),
+            .stmts = slice$to_nil_array(clauses),
         },
     };
     return esc(stmt);
@@ -923,12 +923,12 @@ static stmt_t *parse_stmt(parser_t *p) {
 
 static stmt_t *parse_block_stmt(parser_t *p) {
     // compound_statement : '{' statement_list? '}' ;
-    slice_t stmts = {.size = sizeof(stmt_t *)};
+    slice$Slice stmts = {.size = sizeof(stmt_t *)};
     pos_t pos = expect(p, token_LBRACE);
     // statement_list : statement+ ;
     while (p->tok != token_RBRACE) {
         stmt_t *stmt = parse_stmt(p);
-        slice_append(&stmts, &stmt);
+        slice$append(&stmts, &stmt);
     }
     expect(p, token_RBRACE);
     accept(p, token_SEMICOLON);
@@ -936,7 +936,7 @@ static stmt_t *parse_block_stmt(parser_t *p) {
         .type = ast_STMT_BLOCK,
         .pos = pos,
         .block = {
-            .stmts = slice_to_nil_array(stmts),
+            .stmts = slice$to_nil_array(stmts),
         }
     };
     return esc(stmt);
@@ -1140,25 +1140,25 @@ extern ast_File **parser_parseDir(const char *path, error_t **first) {
         error_move(err, first);
         return NULL;
     }
-    slice_t files = slice_init(sizeof(uintptr_t));
+    slice$Slice files = slice$init(sizeof(uintptr_t));
     while (*infos != NULL) {
         char *name = os_FileInfo_name(**infos);
         if (isBlingFile(name) && !isTestFile(name)) {
             ast_File *file = parser_parse_file(name);
-            slice_append(&files, &file);
+            slice$append(&files, &file);
         }
         infos++;
     }
-    return slice_to_nil_array(files);
+    return slice$to_nil_array(files);
 }
 
 static ast_File *parse_file(parser_t *p) {
     expr_t *name = NULL;
-    slice_t imports = slice_init(sizeof(uintptr_t));
-    slice_t decls = slice_init(sizeof(decl_t *));
+    slice$Slice imports = slice$init(sizeof(uintptr_t));
+    slice$Slice decls = slice$init(sizeof(decl_t *));
     while (p->tok == token_HASH) {
         decl_t *lit = parse_pragma(p);
-        slice_append(&decls, &lit);
+        slice$append(&decls, &lit);
     }
     if (accept(p, token_PACKAGE)) {
         name = identifier(p);
@@ -1176,17 +1176,17 @@ static ast_File *parse_file(parser_t *p) {
             },
         };
         decl_t *declp = esc(decl);
-        slice_append(&imports, &declp);
+        slice$append(&imports, &declp);
     }
     while (p->tok != token_EOF) {
         decl_t *decl = parse_decl(p, true);
-        slice_append(&decls, &decl);
+        slice$append(&decls, &decl);
     }
     ast_File file = {
         .filename = p->file->name,
         .name = name,
-        .imports = slice_to_nil_array(imports),
-        .decls = slice_to_nil_array(decls),
+        .imports = slice$to_nil_array(imports),
+        .decls = slice$to_nil_array(decls),
     };
     return esc(file);
 }

@@ -8,7 +8,7 @@ typedef struct {
     int len;
     int key_size;
     int val_size;
-    slice_t pairs;
+    slice$Slice pairs;
 } map_t;
 
 typedef enum {

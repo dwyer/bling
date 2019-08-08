@@ -1,22 +1,24 @@
 #pragma once
 #include "bootstrap/bootstrap.h"
 
+package(slice);
+
 typedef struct {
     int size;
     int len;
     int cap;
     void *array;
-} slice_t;
+} slice$Slice;
 
-extern slice_t slice_init(int size);
-extern void slice_deinit(slice_t *s);
+extern slice$Slice slice$init(int size);
+extern void slice$deinit(slice$Slice *s);
 
-extern int slice_len(const slice_t *s);
-extern int slice_cap(const slice_t *s);
-extern void *slice_ref(const slice_t *s, int i);
-extern void slice_get(const slice_t *s, int i, void *dst);
+extern int slice$len(const slice$Slice *s);
+extern int slice$cap(const slice$Slice *s);
+extern void *slice$ref(const slice$Slice *s, int i);
+extern void slice$get(const slice$Slice *s, int i, void *dst);
 
-extern void slice_set_len(slice_t *s, int len);
-extern void slice_set(slice_t *s, int i, const void *x);
-extern void slice_append(slice_t *s, const void *x);
-extern void *slice_to_nil_array(slice_t s);
+extern void slice$set_len(slice$Slice *s, int len);
+extern void slice$set(slice$Slice *s, int i, const void *x);
+extern void slice$append(slice$Slice *s, const void *x);
+extern void *slice$to_nil_array(slice$Slice s);

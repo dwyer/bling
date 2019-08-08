@@ -33,7 +33,7 @@ static void buffer_init(buffer_t *b) {
 }
 
 extern int buffer_len(buffer_t *b) {
-    return slice_len(b);
+    return slice$len(b);
 }
 
 extern char *buffer_bytes(buffer_t *b) {
@@ -55,12 +55,12 @@ extern int buffer_write(buffer_t *b, const char *p, int size, error_t **error) {
         size = strlen(p);
     }
     for (int i = 0; i < size; i++) {
-        slice_append(b, &p[i]);
+        slice$append(b, &p[i]);
     }
     return size;
 }
 
 extern void buffer_writeByte(buffer_t *b, char p, error_t **error) {
     buffer_init(b);
-    slice_append(b, &p);
+    slice$append(b, &p);
 }

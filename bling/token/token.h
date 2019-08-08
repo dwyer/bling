@@ -110,7 +110,7 @@ extern int token_precedence(token_t op);
 
 typedef struct {
     char *name;
-    slice_t lines;
+    slice$Slice lines;
 } token_File;
 
 typedef struct {

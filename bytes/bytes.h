@@ -9,7 +9,7 @@ import("slice");
 extern bool bytes_hasSuffix(const char *s, const char *suffix);
 extern char *bytes_join(const char *a[], int size, const char *sep);
 
-typedef slice_t buffer_t;
+typedef slice$Slice buffer_t;
 
 extern char *buffer_bytes(buffer_t *b);
 extern int buffer_len(buffer_t *b);

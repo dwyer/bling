@@ -32,19 +32,19 @@ typedef struct {
 extern map_t map_init(int val_size) {
     map_t m = {
         .len = 0,
-        .pairs = slice_init(sizeof(pair_t)),
+        .pairs = slice$init(sizeof(pair_t)),
         .key_size = sizeof(uintptr_t),
         .val_size = val_size,
     };
-    slice_set_len(&m.pairs, default_cap);
+    slice$set_len(&m.pairs, default_cap);
     return m;
 }
 
 extern void map_deinit(map_t *m) {
-    // for (int i = 0; i < slice_len(&m->pairs); i++) {
-    //     pair_t *p = (pair_t *)slice_ref(&m->pairs, i);
+    // for (int i = 0; i < slice$len(&m->pairs); i++) {
+    //     pair_t *p = (pair_t *)slice$ref(&m->pairs, i);
     // }
-    slice_deinit(&m->pairs);
+    slice$deinit(&m->pairs);
 }
 
 extern int map_len(const map_t *m) {
@@ -52,16 +52,16 @@ extern int map_len(const map_t *m) {
 }
 
 extern int map_cap(const map_t *m) {
-    return slice_len(&m->pairs);
+    return slice$len(&m->pairs);
 }
 
 static pair_t *pair_ref(const map_t *m, const void *key) {
     uintptr_t hash = djb2(key) % map_cap(m);
     map_lookups++;
-    for (int i = 0; i < slice_len(&m->pairs); i++) {
+    for (int i = 0; i < slice$len(&m->pairs); i++) {
         map_iters++;
         int idx = (hash + i) % map_cap(m);
-        pair_t *p = (pair_t *)slice_ref(&m->pairs, idx);
+        pair_t *p = (pair_t *)slice$ref(&m->pairs, idx);
         if (!p->key || streq(key, p->key)) {
             if (!i) {
                 map_hits++;
@@ -104,17 +104,17 @@ extern void map_set(map_t *m, const char *key, const void *val) {
     float load_factor = (float)map_len(m) / map_cap(m);
     if (load_factor >= max_load_factor) {
         int new_cap = map_cap(m) * 2;
-        slice_t pairs = m->pairs;
-        m->pairs = slice_init(m->pairs.size);
-        slice_set_len(&m->pairs, new_cap);
+        slice$Slice pairs = m->pairs;
+        m->pairs = slice$init(m->pairs.size);
+        slice$set_len(&m->pairs, new_cap);
         m->len = 0;
-        for (int i = 0; i < slice_len(&pairs); i++) {
-            pair_t *p = (pair_t *)slice_ref(&pairs, i);
+        for (int i = 0; i < slice$len(&pairs); i++) {
+            pair_t *p = (pair_t *)slice$ref(&pairs, i);
             if (p->key) {
                 set_unsafe(m, p->key, p->val);
             }
         }
-        slice_deinit(&pairs);
+        slice$deinit(&pairs);
     }
 }
 
@@ -124,8 +124,8 @@ extern map_iter_t map_iter(const map_t *m) {
 }
 
 extern int map_iter_next(map_iter_t *m, char **key, void *val) {
-    while (m->_idx < slice_len(&m->_map->pairs)) {
-        pair_t *p = (pair_t *)slice_ref(&m->_map->pairs, m->_idx);
+    while (m->_idx < slice$len(&m->_map->pairs)) {
+        pair_t *p = (pair_t *)slice$ref(&m->_map->pairs, m->_idx);
         m->_idx++;
         if (p->key) {
             if (key) {

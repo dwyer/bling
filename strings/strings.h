@@ -9,7 +9,7 @@ import("error");
 extern char *strings_join(const char *a[], int size, const char *sep);
 
 typedef struct {
-    slice_t _buf;
+    slice$Slice _buf;
 } strings_Builder;
 
 extern int strings_Builder_len(strings_Builder *b);
