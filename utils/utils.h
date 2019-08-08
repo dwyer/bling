@@ -43,8 +43,8 @@ typedef struct {
 } utils$Map;
 
 typedef enum {
-    utils$Map_status_ok = 1,
-} utils$Map_status_t;
+    utils$MapStatus_ok = 1,
+} utils$MapStatus;
 
 extern utils$Map utils$Map_init(int val_size);
 extern void utils$Map_deinit(utils$Map *m);
@@ -62,7 +62,7 @@ extern int utils$Map_iters;
 typedef struct {
     const utils$Map *_map;
     int _idx;
-} utils$Map_iter_t;
+} utils$MapIter;
 
-extern utils$Map_iter_t utils$Map_iter(const utils$Map *m);
-extern int utils$Map_iter_next(utils$Map_iter_t *m, char **key, void *val);
+extern utils$MapIter utils$NewMapIter(const utils$Map *m);
+extern int utils$MapIter_next(utils$MapIter *m, char **key, void *val);

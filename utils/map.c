@@ -118,12 +118,12 @@ extern void utils$Map_set(utils$Map *m, const char *key, const void *val) {
     }
 }
 
-extern utils$Map_iter_t utils$Map_iter(const utils$Map *m) {
-    utils$Map_iter_t iter = {._map = m};
+extern utils$MapIter utils$NewMapIter(const utils$Map *m) {
+    utils$MapIter iter = {._map = m};
     return iter;
 }
 
-extern int utils$Map_iter_next(utils$Map_iter_t *m, char **key, void *val) {
+extern int utils$MapIter_next(utils$MapIter *m, char **key, void *val) {
     while (m->_idx < utils$Slice_len(&m->_map->pairs)) {
         pair_t *p = (pair_t *)utils$Slice_ref(&m->_map->pairs, m->_idx);
         m->_idx++;

@@ -43,9 +43,9 @@ extern ast$Object *ast$Scope_lookup(ast$Scope *s, char *name) {
 extern void ast$Scope_print(ast$Scope *s) {
     bytes$Buffer buf = {};
     while (s) {
-        utils$Map_iter_t iter = utils$Map_iter(&s->objects);
+        utils$MapIter iter = utils$NewMapIter(&s->objects);
         char *key = NULL;
-        while (utils$Map_iter_next(&iter, &key, NULL)) {
+        while (utils$MapIter_next(&iter, &key, NULL)) {
             print("%s- %s", bytes$Buffer_string(&buf), key);
         }
         s = s->outer;
