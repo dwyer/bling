@@ -28,17 +28,17 @@ typedef struct {
     bool c_mode;
 
     char *pkgName;
-} parser$t;
+} parser$Parser;
 
-extern void parser$declare(parser$t *p, ast$Scope *s, ast$Decl *decl,
+extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,
         ast$ObjKind kind, ast$Expr *name);
-extern void parser$next(parser$t *p);
-extern void parser$init(parser$t *p, const char *filename, char *src);
-extern void parser$error(parser$t *p, token$Pos pos, char *msg);
-extern void parser$errorExpected(parser$t *p, token$Pos pos, char *msg);
-extern bool parser$accept(parser$t *p, token$Token tok);
-extern token$Pos parser$expect(parser$t *p, token$Token tok);
-extern ast$Expr *parser$parseBasicLit(parser$t *p, token$Token kind);
-extern ast$Expr *parser$parseIdent(parser$t *p);
-extern ast$Expr *parser$parsePrimaryExpr(parser$t *p);
-extern ast$Decl *parser$parsePragma(parser$t *p);
+extern void parser$next(parser$Parser *p);
+extern void parser$init(parser$Parser *p, const char *filename, char *src);
+extern void parser$error(parser$Parser *p, token$Pos pos, char *msg);
+extern void parser$errorExpected(parser$Parser *p, token$Pos pos, char *msg);
+extern bool parser$accept(parser$Parser *p, token$Token tok);
+extern token$Pos parser$expect(parser$Parser *p, token$Token tok);
+extern ast$Expr *parser$parseBasicLit(parser$Parser *p, token$Token kind);
+extern ast$Expr *parser$parseIdent(parser$Parser *p);
+extern ast$Expr *parser$parsePrimaryExpr(parser$Parser *p);
+extern ast$Decl *parser$parsePragma(parser$Parser *p);

@@ -2,31 +2,31 @@
 
 #include "fmt/fmt.h"
 
-static ast$Expr *cast$expression(parser$t *p);
-static ast$Expr *expression(parser$t *p);
-static ast$Expr *constant_expression(parser$t *p);
-static ast$Expr *initializer(parser$t *p);
+static ast$Expr *cast$expression(parser$Parser *p);
+static ast$Expr *expression(parser$Parser *p);
+static ast$Expr *constant_expression(parser$Parser *p);
+static ast$Expr *initializer(parser$Parser *p);
 
-static ast$Expr *type_specifier(parser$t *p);
-static ast$Expr *struct_or_union_specifier(parser$t *p);
-static ast$Expr *enum_specifier(parser$t *p);
-static ast$Expr *pointer(parser$t *p, ast$Expr *type);
-static ast$Decl **parameter_type_list(parser$t *p);
-static ast$Expr *type_name(parser$t *p);
+static ast$Expr *type_specifier(parser$Parser *p);
+static ast$Expr *struct_or_union_specifier(parser$Parser *p);
+static ast$Expr *enum_specifier(parser$Parser *p);
+static ast$Expr *pointer(parser$Parser *p, ast$Expr *type);
+static ast$Decl **parameter_type_list(parser$Parser *p);
+static ast$Expr *type_name(parser$Parser *p);
 
-static ast$Expr *declarator(parser$t *p, ast$Expr **type_ptr);
-static ast$Decl *abstract_declarator(parser$t *p, ast$Expr *type);
+static ast$Expr *declarator(parser$Parser *p, ast$Expr **type_ptr);
+static ast$Decl *abstract_declarator(parser$Parser *p, ast$Expr *type);
 
-static ast$Stmt *statement(parser$t *p);
-static ast$Stmt *compound_statement(parser$t *p, bool allow_single);
+static ast$Stmt *statement(parser$Parser *p);
+static ast$Stmt *compound_statement(parser$Parser *p, bool allow_single);
 
-static ast$Expr *specifier_qualifier_list(parser$t *p);
-static ast$Expr *declaration_specifiers(parser$t *p, bool is_top);
-static ast$Decl *declaration(parser$t *p, bool is_external);
+static ast$Expr *specifier_qualifier_list(parser$Parser *p);
+static ast$Expr *declaration_specifiers(parser$Parser *p, bool is_top);
+static ast$Decl *declaration(parser$Parser *p, bool is_external);
 
-static ast$Decl *parameter_declaration(parser$t *p);
+static ast$Decl *parameter_declaration(parser$Parser *p);
 
-static bool is_type(parser$t *p) {
+static bool is_type(parser$Parser *p) {
     switch (p->tok) {
     case token$CONST:
     case token$ENUM:
@@ -47,7 +47,7 @@ static bool is_type(parser$t *p) {
     }
 }
 
-static ast$Expr *postfix_expression(parser$t *p, ast$Expr *x) {
+static ast$Expr *postfix_expression(parser$Parser *p, ast$Expr *x) {
     // postfix_expression
     //         : primary_expression
     //         | postfix_expression '[' expression ']'
@@ -124,7 +124,7 @@ done:
     return x;
 }
 
-static ast$Expr *unary_expression(parser$t *p) {
+static ast$Expr *unary_expression(parser$Parser *p) {
     // unary_expression
     //         : postfix_expression
     //         | unary_operator cast$expression
@@ -199,7 +199,7 @@ static ast$Expr *unary_expression(parser$t *p) {
     }
 }
 
-static ast$Expr *cast$expression(parser$t *p) {
+static ast$Expr *cast$expression(parser$Parser *p) {
     // cast$expression
     //         : unary_expression
     //         | '(' type_name ')' cast$expression
@@ -237,7 +237,7 @@ static ast$Expr *cast$expression(parser$t *p) {
     return unary_expression(p);
 }
 
-static ast$Expr *binary_expression(parser$t *p, int prec1) {
+static ast$Expr *binary_expression(parser$Parser *p, int prec1) {
     ast$Expr *x = cast$expression(p);
     for (;;) {
         token$Token op = p->tok;
@@ -259,7 +259,7 @@ static ast$Expr *binary_expression(parser$t *p, int prec1) {
     }
 }
 
-static ast$Expr *ternary_expression(parser$t *p) {
+static ast$Expr *ternary_expression(parser$Parser *p) {
     // ternary_expression
     //         : binary_expression
     //         | binary_expression '?' expression ':' ternary_expression
@@ -282,17 +282,17 @@ static ast$Expr *ternary_expression(parser$t *p) {
     return x;
 }
 
-static ast$Expr *expression(parser$t *p) {
+static ast$Expr *expression(parser$Parser *p) {
     // expression : ternary_expression ;
     return ternary_expression(p);
 }
 
-static ast$Expr *constant_expression(parser$t *p) {
+static ast$Expr *constant_expression(parser$Parser *p) {
     // constant_expression : ternary_expression ;
     return ternary_expression(p);
 }
 
-static ast$Expr *struct_or_union_specifier(parser$t *p) {
+static ast$Expr *struct_or_union_specifier(parser$Parser *p) {
     // struct_or_union_specifier
     //         : struct_or_union IDENTIFIER
     //         | struct_or_union IDENTIFIER '{' struct_declaration_list '}'
@@ -356,7 +356,7 @@ static ast$Expr *struct_or_union_specifier(parser$t *p) {
     return esc(x);
 }
 
-static ast$Expr *enum_specifier(parser$t *p) {
+static ast$Expr *enum_specifier(parser$Parser *p) {
     // enum_specifier
     //         : ENUM '{' enumerator_list '}'
     //         | ENUM IDENTIFIER '{' enumerator_list '}'
@@ -402,7 +402,7 @@ static ast$Expr *enum_specifier(parser$t *p) {
     return esc(x);
 }
 
-static ast$Expr *declarator(parser$t *p, ast$Expr **type_ptr) {
+static ast$Expr *declarator(parser$Parser *p, ast$Expr **type_ptr) {
     // declarator : pointer? direct_declarator ;
     if (p->tok == token$MUL) {
         *type_ptr = pointer(p, *type_ptr);
@@ -471,7 +471,7 @@ static ast$Expr *declarator(parser$t *p, ast$Expr **type_ptr) {
     return name;
 }
 
-static ast$Expr *type_qualifier(parser$t *p, ast$Expr *type) {
+static ast$Expr *type_qualifier(parser$Parser *p, ast$Expr *type) {
     // type_qualifier_list : type_qualifier+ ;
     if (parser$accept(p, token$CONST)) {
         type->is_const = true;
@@ -479,7 +479,7 @@ static ast$Expr *type_qualifier(parser$t *p, ast$Expr *type) {
     return type;
 }
 
-static ast$Expr *pointer(parser$t *p, ast$Expr *type) {
+static ast$Expr *pointer(parser$Parser *p, ast$Expr *type) {
     // pointer : '*' type_qualifier_list? pointer? ;
     while (parser$accept(p, token$MUL)) {
         ast$Expr x = {
@@ -494,7 +494,7 @@ static ast$Expr *pointer(parser$t *p, ast$Expr *type) {
     return type;
 }
 
-static ast$Decl **parameter_type_list(parser$t *p) {
+static ast$Decl **parameter_type_list(parser$Parser *p) {
     // parameter_type_list
     //         : parameter_list
     //         | parameter_list ',' '...'
@@ -525,7 +525,7 @@ static ast$Decl **parameter_type_list(parser$t *p) {
     return slice$to_nil_array(params);
 }
 
-static ast$Expr *type_name(parser$t *p) {
+static ast$Expr *type_name(parser$Parser *p) {
     // type_name
     //         : specifier_qualifier_list
     //         | specifier_qualifier_list abstract_declarator
@@ -535,7 +535,7 @@ static ast$Expr *type_name(parser$t *p) {
     return decl->field.type;
 }
 
-static ast$Decl *abstract_declarator(parser$t *p, ast$Expr *type) {
+static ast$Decl *abstract_declarator(parser$Parser *p, ast$Expr *type) {
     // abstract_declarator
     //         : pointer? direct_abstract_declarator?
     //         ;
@@ -604,7 +604,7 @@ static ast$Decl *abstract_declarator(parser$t *p, ast$Expr *type) {
     return esc(declarator);
 }
 
-static ast$Expr *initializer(parser$t *p) {
+static ast$Expr *initializer(parser$Parser *p) {
     // initializer
     //         : expression
     //         | '{' initializer_list ','? '}'
@@ -659,7 +659,7 @@ static ast$Expr *initializer(parser$t *p) {
     return esc(expr);
 }
 
-static ast$Stmt *simple_statement(parser$t *p, bool labelOk) {
+static ast$Stmt *simple_statement(parser$Parser *p, bool labelOk) {
     // simple_statement
     //         : labeled_statement
     //         | expression_statement
@@ -736,7 +736,7 @@ static ast$Stmt *simple_statement(parser$t *p, bool labelOk) {
     return esc(stmt);
 }
 
-static ast$Stmt *statement(parser$t *p) {
+static ast$Stmt *statement(parser$Parser *p) {
     // statement
     //         : declaration
     //         | compound_statement
@@ -959,7 +959,7 @@ static ast$Stmt *statement(parser$t *p) {
     return stmt;
 }
 
-static ast$Stmt *compound_statement(parser$t *p, bool allow_single) {
+static ast$Stmt *compound_statement(parser$Parser *p, bool allow_single) {
     // compound_statement : '{' statement_list? '}' ;
     // statement_list : statement+ ;
     slice$Slice stmts = {.size = sizeof(ast$Stmt *)};
@@ -984,7 +984,7 @@ static ast$Stmt *compound_statement(parser$t *p, bool allow_single) {
     return esc(stmt);
 }
 
-static ast$Decl *parameter_declaration(parser$t *p) {
+static ast$Decl *parameter_declaration(parser$Parser *p) {
     ast$Decl decl = {
         .type = ast$DECL_FIELD,
     };
@@ -993,7 +993,7 @@ static ast$Decl *parameter_declaration(parser$t *p) {
     return esc(decl);
 }
 
-static ast$Expr *type_specifier(parser$t *p) {
+static ast$Expr *type_specifier(parser$Parser *p) {
     // type_specifier
     //         : VOID
     //         | CHAR
@@ -1032,7 +1032,7 @@ static ast$Expr *type_specifier(parser$t *p) {
     return x;
 }
 
-static ast$Expr *declaration_specifiers(parser$t *p, bool is_top) {
+static ast$Expr *declaration_specifiers(parser$Parser *p, bool is_top) {
     // declaration_specifiers
     //         : storage_class_specifier? type_qualifier? type_specifier
     //         ;
@@ -1056,14 +1056,14 @@ static ast$Expr *declaration_specifiers(parser$t *p, bool is_top) {
     return type;
 }
 
-static ast$Expr *specifier_qualifier_list(parser$t *p) {
+static ast$Expr *specifier_qualifier_list(parser$Parser *p) {
     // specifier_qualifier_list
     //         : type_qualifier? type_specifier
     //         ;
     return declaration_specifiers(p, false);
 }
 
-static ast$Decl *declaration(parser$t *p, bool is_external) {
+static ast$Decl *declaration(parser$Parser *p, bool is_external) {
     // declaration : declaration_specifiers init_declarator_list ';' ;
     if (p->tok == token$HASH) {
         return parser$parsePragma(p);
@@ -1148,7 +1148,7 @@ static ast$Decl *declaration(parser$t *p, bool is_external) {
     }
 }
 
-static ast$File *parse_cfile(parser$t *p) {
+static ast$File *parse_cfile(parser$Parser *p) {
     slice$Slice decls = {.size = sizeof(ast$Decl *)};
     slice$Slice imports = {.size = sizeof(ast$Decl *)};
     ast$Expr *name = NULL;
@@ -1195,7 +1195,7 @@ static ast$File *parse_cfile(parser$t *p) {
 
 extern ast$File *cparser$parseFile(const char *filename, ast$Scope *pkg_scope) {
     char *src = ioutil$readFile(filename, NULL);
-    parser$t p = {};
+    parser$Parser p = {};
     parser$init(&p, filename, src);
     p.pkg_scope = pkg_scope;
     p.c_mode = true;
