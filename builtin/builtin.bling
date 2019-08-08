@@ -1,35 +1,35 @@
-typedef bool char;
+typedef bool char
 
-const false = <bool> 0;
+const false = <bool> 0
 
-const true = !false;
+const true = !false
 
-const NULL = <*void> 0;
+const NULL = <*void> 0
 
-fun esc(*void) *void;
+fun esc(*void) *void
 
-fun print(fmt *const char, ...);
+fun print(fmt *const char, ...)
 
-fun panic(fmt *const char, ...);
+fun panic(fmt *const char, ...)
 
-fun streq(a *const char, b *const char) bool;
+fun streq(a *const char, b *const char) bool
 
-fun assert(bool);
+fun assert(bool)
 
-fun memcmp(*const void, *const void, size_t) int;
+fun memcmp(*const void, *const void, size_t) int
 
-fun memcpy(*void, *const void, size_t) *void;
+fun memcpy(*void, *const void, size_t) *void
 
-fun memset(*void, int, size_t) *void;
+fun memset(*void, int, size_t) *void
 
-fun strdup(*const char) *char;
+fun strdup(*const char) *char
 
-fun strlcpy(*char, *const char, size_t) size_t;
+fun strlcpy(*char, *const char, size_t) size_t
 
-fun strlen(*const char) size_t;
+fun strlen(*const char) size_t
 
-fun malloc(size_t) *void;
+fun malloc(size_t) *void
 
-fun free(*void);
+fun free(*void)
 
-fun realloc(*void, size_t) *void;
+fun realloc(*void, size_t) *void
