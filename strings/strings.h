@@ -11,7 +11,7 @@ import("errors");
 extern char *strings$join(const char *a[], int size, const char *sep);
 
 typedef struct {
-    utils$Slice _buf;
+    utils$Slice_Slice _buf;
 } strings$Builder;
 
 extern int strings$Builder_len(strings$Builder *b);

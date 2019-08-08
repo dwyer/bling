@@ -96,7 +96,7 @@ extern os$File *os$openDir(const char *name, errors$Error **error) {
 }
 
 extern char **os$readdirnames(os$File *file, errors$Error **error) {
-    utils$Slice arr = {.size = sizeof(char *)};
+    utils$Slice_Slice arr = {.size = sizeof(char *)};
     DIR *dp = (DIR *)file->fd;
     for (;;) {
         struct dirent *dirent = readdir(dp);
@@ -107,10 +107,10 @@ extern char **os$readdirnames(os$File *file, errors$Error **error) {
             continue;
         }
         char *name = strdup(dirent->d_name);
-        utils$append(&arr, &name);
+        utils$Slice_append(&arr, &name);
     }
     char *nil = NULL;
-    utils$append(&arr, &nil);
+    utils$Slice_append(&arr, &nil);
     return arr.array;
 }
 
@@ -122,7 +122,7 @@ extern os$FileInfo **os$readdir(os$File *file, errors$Error **error) {
         errors$move(err, error);
         return NULL;
     }
-    utils$Slice arr = {.size = sizeof(uintptr_t)};
+    utils$Slice_Slice arr = {.size = sizeof(uintptr_t)};
     for (int i = 0; names[i] != NULL; i++) {
         char *path = paths$join2(file->name, names[i]);
         free(names[i]);
@@ -133,11 +133,11 @@ extern os$FileInfo **os$readdir(os$File *file, errors$Error **error) {
             return NULL;
         }
         os$FileInfo *ptr = esc(info);
-        utils$append(&arr, &ptr);
+        utils$Slice_append(&arr, &ptr);
     }
     free(names);
     const void *nil = NULL;
-    utils$append(&arr, &nil);
+    utils$Slice_append(&arr, &nil);
     return arr.array;
 }
 

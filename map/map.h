@@ -10,7 +10,7 @@ typedef struct {
     int len;
     int key_size;
     int val_size;
-    utils$Slice pairs;
+    utils$Slice_Slice pairs;
 } map$Map;
 
 typedef enum {
