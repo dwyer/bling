@@ -1,127 +1,129 @@
 #pragma once
 #include "slice/slice.h"
 
+package(token);
+
 import("fmt");
 import("map");
 import("slice");
 
 typedef enum {
-    token_ILLEGAL = 0,
+    token$ILLEGAL = 0,
 
-    token_CHAR,
-    token_FLOAT,
-    token_IDENT,
-    token_INT,
-    token_STRING,
+    token$CHAR,
+    token$FLOAT,
+    token$IDENT,
+    token$INT,
+    token$STRING,
 
-    _token_keyword_beg,
-    token_BREAK,
-    token_CASE,
-    token_CONST,
-    token_CONTINUE,
-    token_DEFAULT,
-    token_ELSE,
-    token_ENUM,
-    token_EXTERN,
-    token_FOR,
-    token_FUNC,
-    token_GOTO,
-    token_IF,
-    token_IMPORT,
-    token_PACKAGE,
-    token_RETURN,
-    token_SIGNED,
-    token_SIZEOF,
-    token_STATIC,
-    token_STRUCT,
-    token_SWITCH,
-    token_TYPEDEF,
-    token_UNION,
-    token_UNSIGNED,
-    token_VAR,
-    token_WHILE,
-    _token_keyword_end,
+    token$_keywordBeg,
+    token$BREAK,
+    token$CASE,
+    token$CONST,
+    token$CONTINUE,
+    token$DEFAULT,
+    token$ELSE,
+    token$ENUM,
+    token$EXTERN,
+    token$FOR,
+    token$FUNC,
+    token$GOTO,
+    token$IF,
+    token$IMPORT,
+    token$PACKAGE,
+    token$RETURN,
+    token$SIGNED,
+    token$SIZEOF,
+    token$STATIC,
+    token$STRUCT,
+    token$SWITCH,
+    token$TYPEDEF,
+    token$UNION,
+    token$UNSIGNED,
+    token$VAR,
+    token$WHILE,
+    token$_keywordEnd,
 
-    token_ARROW,
-    token_COLON,
-    token_COMMA,
-    token_ELLIPSIS,
-    token_EOF,
-    token_HASH,
-    token_LBRACE,
-    token_LBRACK,
-    token_LPAREN,
-    token_PERIOD,
-    token_QUESTION_MARK,
-    token_RBRACE,
-    token_RBRACK,
-    token_RPAREN,
-    token_SEMICOLON,
+    token$ARROW,
+    token$COLON,
+    token$COMMA,
+    token$ELLIPSIS,
+    token$EOF,
+    token$HASH,
+    token$LBRACE,
+    token$LBRACK,
+    token$LPAREN,
+    token$PERIOD,
+    token$QUESTION_MARK,
+    token$RBRACE,
+    token$RBRACK,
+    token$RPAREN,
+    token$SEMICOLON,
 
     // operators
-    token_ADD,
-    token_ADD_ASSIGN,
-    token_AND,
-    token_AND_ASSIGN,
-    token_ASSIGN,
-    token_BITWISE_NOT,
-    token_DEC,
-    token_DIV,
-    token_DIV_ASSIGN,
-    token_DOLLAR,
-    token_EQUAL,
-    token_GT,
-    token_GT_EQUAL,
-    token_INC,
-    token_LAND,
-    token_LOR,
-    token_LT,
-    token_LT_EQUAL,
-    token_MOD,
-    token_MOD_ASSIGN,
-    token_MUL,
-    token_MUL_ASSIGN,
-    token_NOT,
-    token_NOT_EQUAL,
-    token_OR,
-    token_OR_ASSIGN,
-    token_SHL,
-    token_SHL_ASSIGN,
-    token_SHR,
-    token_SHR_ASSIGN,
-    token_SUB,
-    token_SUB_ASSIGN,
-    token_XOR,
-    token_XOR_ASSIGN,
-} token_t;
+    token$ADD,
+    token$ADD_ASSIGN,
+    token$AND,
+    token$AND_ASSIGN,
+    token$ASSIGN,
+    token$BITWISE_NOT,
+    token$DEC,
+    token$DIV,
+    token$DIV_ASSIGN,
+    token$DOLLAR,
+    token$EQUAL,
+    token$GT,
+    token$GT_EQUAL,
+    token$INC,
+    token$LAND,
+    token$LOR,
+    token$LT,
+    token$LT_EQUAL,
+    token$MOD,
+    token$MOD_ASSIGN,
+    token$MUL,
+    token$MUL_ASSIGN,
+    token$NOT,
+    token$NOT_EQUAL,
+    token$OR,
+    token$OR_ASSIGN,
+    token$SHL,
+    token$SHL_ASSIGN,
+    token$SHR,
+    token$SHR_ASSIGN,
+    token$SUB,
+    token$SUB_ASSIGN,
+    token$XOR,
+    token$XOR_ASSIGN,
+} token$Token;
 
-typedef int pos_t;
+typedef int token$Pos;
 
-extern char *token_string(token_t tok);
-extern token_t token_lookup(char *ident);
+extern char *token$string(token$Token tok);
+extern token$Token token$lookup(char *ident);
 
 typedef enum {
-    token_lowest_prec = 0,
-    token_unary_prec = 11,
-    token_highest_prec = 12,
-} prec_t;
+    token$lowest_prec = 0,
+    token$unary_prec = 11,
+    token$highest_prec = 12,
+} token$Prec;
 
-extern int token_precedence(token_t op);
+extern int token$precedence(token$Token op);
 
 typedef struct {
     char *name;
     slice$Slice lines;
-} token_File;
+} token$File;
 
 typedef struct {
     char *filename;
     int offset;
     int line;
     int column;
-} token_Position;
+} token$Position;
 
-extern char *token_Position_string(token_Position *p);
+extern char *token$Position_string(token$Position *p);
 
-extern token_File      *token_File_new(const char *filename);
-extern void             token_File_addLine(token_File *f, int offset);
-extern token_Position   token_File_position(token_File *f, pos_t p);
+extern token$File      *token$File_new(const char *filename);
+extern void             token$File_addLine(token$File *f, int offset);
+extern token$Position   token$File_position(token$File *f, token$Pos p);

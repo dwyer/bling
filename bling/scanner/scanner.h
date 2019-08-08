@@ -4,7 +4,7 @@
 import("bling/token");
 
 typedef struct {
-    token_File *file;
+    token$File *file;
     char *src;
     int rd_offset;
     int offset;
@@ -13,5 +13,5 @@ typedef struct {
     bool dontInsertSemis;
 } scanner_t;
 
-extern token_t scanner_scan(scanner_t *s, pos_t *pos, char **lit);
-extern void scanner_init(scanner_t *s, token_File *file, char *src);
+extern token$Token scanner_scan(scanner_t *s, token$Pos *pos, char **lit);
+extern void scanner_init(scanner_t *s, token$File *file, char *src);

@@ -641,14 +641,14 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
                         types_exprString(expr));
             }
             switch (expr->binary.op) {
-            case token_EQUAL:
-            case token_GT:
-            case token_GT_EQUAL:
-            case token_LAND:
-            case token_LOR:
-            case token_LT:
-            case token_LT_EQUAL:
-            case token_NOT_EQUAL:
+            case token$EQUAL:
+            case token$GT:
+            case token$GT_EQUAL:
+            case token$LAND:
+            case token$LOR:
+            case token$LT:
+            case token$LT_EQUAL:
+            case token$NOT_EQUAL:
                 typ1 = types_makeIdent("bool");
                 check_type(w, typ1);
             default:
@@ -658,23 +658,23 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
 
     case ast_EXPR_BASIC_LIT:
         {
-            token_t kind = expr->basic_lit.kind;
+            token$Token kind = expr->basic_lit.kind;
             expr_t *type = NULL;
             switch (kind) {
-            case token_CHAR:
+            case token$CHAR:
                 type = types_makeIdent("char");
                 break;
-            case token_FLOAT:
+            case token$FLOAT:
                 type = types_makeIdent("float");
                 break;
-            case token_INT:
+            case token$INT:
                 type = types_makeIdent("int");
                 break;
-            case token_STRING:
+            case token$STRING:
                 type = types_makePtr(types_makeIdent("char"));
                 break;
             default:
-                panic("check_expr: not implmented: %s", token_string(kind));
+                panic("check_expr: not implmented: %s", token$string(kind));
                 break;
             }
             check_type(w, type);
@@ -770,10 +770,10 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
         {
             expr_t *type = check_expr(w, expr->selector.x);
             if (type->type == ast_EXPR_STAR) {
-                expr->selector.tok = token_ARROW;
+                expr->selector.tok = token$ARROW;
                 type = type->star.x;
             } else {
-                assert(expr->selector.tok != token_ARROW);
+                assert(expr->selector.tok != token$ARROW);
             }
             type = types_getBaseType(type);
             decl_t *field = find_field(type, expr->selector.sel);
@@ -814,7 +814,7 @@ static expr_t *check_expr(checker_t *w, expr_t *expr) {
     case ast_EXPR_UNARY:
         {
             expr_t *type = check_expr(w, expr->unary.x);
-            if (expr->unary.op == token_AND) {
+            if (expr->unary.op == token$AND) {
                 if (!types_isLhs(expr->unary.x)) {
                     panic("check_expr: invalid lvalue `%s`: %s",
                             types_exprString(expr->unary.x),

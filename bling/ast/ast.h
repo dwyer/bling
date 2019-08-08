@@ -82,7 +82,7 @@ typedef struct {
 
 typedef struct decl_t {
     ast_node_type_t type;
-    pos_t pos;
+    token$Pos pos;
     union {
 
         struct {
@@ -103,7 +103,7 @@ typedef struct decl_t {
             expr_t *name;
             expr_t *type;
             expr_t *value;
-            token_t kind;
+            token$Token kind;
         } value;
 
         struct {
@@ -122,7 +122,7 @@ typedef struct decl_t {
 
 typedef struct expr_t {
     ast_node_type_t type;
-    pos_t pos;
+    token$Pos pos;
     bool is_const;
 
     union {
@@ -133,12 +133,12 @@ typedef struct expr_t {
         } array;
 
         struct {
-            token_t kind;
+            token$Token kind;
             char *value;
         } basic_lit;
 
         struct {
-            token_t op;
+            token$Token op;
             expr_t *x;
             expr_t *y;
         } binary;
@@ -201,7 +201,7 @@ typedef struct expr_t {
 
         struct {
             expr_t *x;
-            token_t tok;
+            token$Token tok;
             expr_t *sel;
         } selector;
 
@@ -214,13 +214,13 @@ typedef struct expr_t {
         } star;
 
         struct {
-            token_t tok;
+            token$Token tok;
             expr_t *name;
             decl_t **fields;
         } struct_;
 
         struct {
-            token_t op;
+            token$Token op;
             expr_t *x;
         } unary;
 
@@ -229,12 +229,12 @@ typedef struct expr_t {
 
 typedef struct stmt_t {
     ast_node_type_t type;
-    pos_t pos;
+    token$Pos pos;
     union {
 
         struct {
             expr_t *x;
-            token_t op;
+            token$Token op;
             expr_t *y;
         } assign;
 
@@ -254,7 +254,7 @@ typedef struct stmt_t {
         } expr;
 
         struct {
-            token_t kind;
+            token$Token kind;
             stmt_t *init;
             expr_t *cond;
             stmt_t *post;
@@ -268,7 +268,7 @@ typedef struct stmt_t {
         } if_;
 
         struct {
-            token_t keyword;
+            token$Token keyword;
             expr_t *label;
         } jump;
 
@@ -279,7 +279,7 @@ typedef struct stmt_t {
 
         struct {
             expr_t *x;
-            token_t op;
+            token$Token op;
         } postfix;
 
         struct {

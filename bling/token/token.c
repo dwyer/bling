@@ -4,152 +4,152 @@
 #include "map/map.h"
 
 static char *tokens[] = {
-    [token_ILLEGAL] = "ILLEGAL",
+    [token$ILLEGAL] = "ILLEGAL",
 
-    [token_CHAR] = "CHAR",
-    [token_FLOAT] = "FLOAT",
-    [token_IDENT] = "IDENT",
-    [token_INT] = "INT",
-    [token_STRING] = "STRING",
+    [token$CHAR] = "CHAR",
+    [token$FLOAT] = "FLOAT",
+    [token$IDENT] = "IDENT",
+    [token$INT] = "INT",
+    [token$STRING] = "STRING",
 
-    [token_BREAK] = "break",
-    [token_CASE] = "case",
-    [token_CONST] = "const",
-    [token_CONTINUE] = "continue",
-    [token_DEFAULT] = "default",
-    [token_ELSE] = "else",
-    [token_ENUM] = "enum",
-    [token_EXTERN] = "extern",
-    [token_FOR] = "for",
-    [token_FUNC] = "fun",
-    [token_GOTO] = "goto",
-    [token_IF] = "if",
-    [token_IMPORT] = "import",
-    [token_PACKAGE] = "package",
-    [token_RETURN] = "return",
-    [token_SIGNED] = "signed",
-    [token_SIZEOF] = "sizeof",
-    [token_STATIC] = "static",
-    [token_STRUCT] = "struct",
-    [token_SWITCH] = "switch",
-    [token_TYPEDEF] = "typedef",
-    [token_UNION] = "union",
-    [token_UNSIGNED] = "unsigned",
-    [token_VAR] = "var",
-    [token_WHILE] = "while",
+    [token$BREAK] = "break",
+    [token$CASE] = "case",
+    [token$CONST] = "const",
+    [token$CONTINUE] = "continue",
+    [token$DEFAULT] = "default",
+    [token$ELSE] = "else",
+    [token$ENUM] = "enum",
+    [token$EXTERN] = "extern",
+    [token$FOR] = "for",
+    [token$FUNC] = "fun",
+    [token$GOTO] = "goto",
+    [token$IF] = "if",
+    [token$IMPORT] = "import",
+    [token$PACKAGE] = "package",
+    [token$RETURN] = "return",
+    [token$SIGNED] = "signed",
+    [token$SIZEOF] = "sizeof",
+    [token$STATIC] = "static",
+    [token$STRUCT] = "struct",
+    [token$SWITCH] = "switch",
+    [token$TYPEDEF] = "typedef",
+    [token$UNION] = "union",
+    [token$UNSIGNED] = "unsigned",
+    [token$VAR] = "var",
+    [token$WHILE] = "while",
 
-    [token_ARROW] = "->",
-    [token_COLON] = ":",
-    [token_COMMA] = ",",
-    [token_ELLIPSIS] = "...",
-    [token_EOF] = "EOF",
-    [token_HASH] = "#",
-    [token_LBRACE] = "{",
-    [token_LBRACK] = "[",
-    [token_LPAREN] = "(",
-    [token_PERIOD] = ".",
-    [token_QUESTION_MARK] = "?",
-    [token_RBRACE] = "}",
-    [token_RBRACK] = "]",
-    [token_RPAREN] = ")",
-    [token_SEMICOLON] = ";",
+    [token$ARROW] = "->",
+    [token$COLON] = ":",
+    [token$COMMA] = ",",
+    [token$ELLIPSIS] = "...",
+    [token$EOF] = "EOF",
+    [token$HASH] = "#",
+    [token$LBRACE] = "{",
+    [token$LBRACK] = "[",
+    [token$LPAREN] = "(",
+    [token$PERIOD] = ".",
+    [token$QUESTION_MARK] = "?",
+    [token$RBRACE] = "}",
+    [token$RBRACK] = "]",
+    [token$RPAREN] = ")",
+    [token$SEMICOLON] = ";",
 
-    [token_ADD] = "+",
-    [token_ADD_ASSIGN] = "+=",
-    [token_AND] = "&",
-    [token_AND_ASSIGN] = "&=",
-    [token_ASSIGN] = "=",
-    [token_BITWISE_NOT] = "~",
-    [token_DEC] = "--",
-    [token_DIV] = "/",
-    [token_DIV_ASSIGN] = "/=",
-    [token_DOLLAR] = "$",
-    [token_EQUAL] = "==",
-    [token_GT] = ">",
-    [token_GT_EQUAL] = ">=",
-    [token_INC] = "++",
-    [token_LAND] = "&&",
-    [token_LOR] = "||",
-    [token_LT] = "<",
-    [token_LT_EQUAL] = "<=",
-    [token_MOD] = "%",
-    [token_MOD_ASSIGN] = "%=",
-    [token_MUL] = "*",
-    [token_MUL_ASSIGN] = "*=",
-    [token_NOT] = "!",
-    [token_NOT_EQUAL] = "!=",
-    [token_OR] = "|",
-    [token_OR_ASSIGN] = "|=",
-    [token_SHL] = "<<",
-    [token_SHL_ASSIGN] = "<<=",
-    [token_SHR] = ">>",
-    [token_SHR_ASSIGN] = ">>=",
-    [token_SUB] = "-",
-    [token_SUB_ASSIGN] = "-=",
-    [token_XOR] = "^",
-    [token_XOR_ASSIGN] = "^=",
+    [token$ADD] = "+",
+    [token$ADD_ASSIGN] = "+=",
+    [token$AND] = "&",
+    [token$AND_ASSIGN] = "&=",
+    [token$ASSIGN] = "=",
+    [token$BITWISE_NOT] = "~",
+    [token$DEC] = "--",
+    [token$DIV] = "/",
+    [token$DIV_ASSIGN] = "/=",
+    [token$DOLLAR] = "$",
+    [token$EQUAL] = "==",
+    [token$GT] = ">",
+    [token$GT_EQUAL] = ">=",
+    [token$INC] = "++",
+    [token$LAND] = "&&",
+    [token$LOR] = "||",
+    [token$LT] = "<",
+    [token$LT_EQUAL] = "<=",
+    [token$MOD] = "%",
+    [token$MOD_ASSIGN] = "%=",
+    [token$MUL] = "*",
+    [token$MUL_ASSIGN] = "*=",
+    [token$NOT] = "!",
+    [token$NOT_EQUAL] = "!=",
+    [token$OR] = "|",
+    [token$OR_ASSIGN] = "|=",
+    [token$SHL] = "<<",
+    [token$SHL_ASSIGN] = "<<=",
+    [token$SHR] = ">>",
+    [token$SHR_ASSIGN] = ">>=",
+    [token$SUB] = "-",
+    [token$SUB_ASSIGN] = "-=",
+    [token$XOR] = "^",
+    [token$XOR_ASSIGN] = "^=",
 };
 
-extern char *token_string(token_t tok) {
+extern char *token$string(token$Token tok) {
     return tokens[tok];
 }
 
 static map$Map keywords = {};
 
-extern token_t token_lookup(char *ident) {
+extern token$Token token$lookup(char *ident) {
     if (keywords.val_size == 0) {
-        keywords = map$init(sizeof(token_t));
-        for (int i = _token_keyword_beg + 1; i < _token_keyword_end; i++) {
-            char *s = token_string(i);
+        keywords = map$init(sizeof(token$Token));
+        for (int i = token$_keywordBeg + 1; i < token$_keywordEnd; i++) {
+            char *s = token$string(i);
             map$set(&keywords, s, &i);
         }
     }
-    token_t tok = token_IDENT;
+    token$Token tok = token$IDENT;
     map$get(&keywords, ident, &tok);
     return tok;
 }
 
-extern int token_precedence(token_t op) {
+extern int token$precedence(token$Token op) {
     switch (op) {
-    case token_MUL:
-    case token_DIV:
-    case token_MOD:
+    case token$MUL:
+    case token$DIV:
+    case token$MOD:
         return 10;
-    case token_ADD:
-    case token_SUB:
+    case token$ADD:
+    case token$SUB:
         return 9;
-    case token_SHL:
-    case token_SHR:
+    case token$SHL:
+    case token$SHR:
         return 8;
-    case token_GT:
-    case token_GT_EQUAL:
-    case token_LT:
-    case token_LT_EQUAL:
+    case token$GT:
+    case token$GT_EQUAL:
+    case token$LT:
+    case token$LT_EQUAL:
         return 7;
-    case token_EQUAL:
-    case token_NOT_EQUAL:
+    case token$EQUAL:
+    case token$NOT_EQUAL:
         return 6;
-    case token_AND:
+    case token$AND:
         return 5;
-    case token_XOR:
+    case token$XOR:
         return 4;
-    case token_OR:
+    case token$OR:
         return 3;
-    case token_LAND:
+    case token$LAND:
         return 2;
-    case token_LOR:
+    case token$LOR:
         return 1;
     default:
-        return token_lowest_prec;
+        return token$lowest_prec;
     }
 }
 
-extern char *token_Position_string(token_Position *p) {
+extern char *token$Position_string(token$Position *p) {
     return fmt$sprintf("%s:%d:%d", p->filename, p->line, p->column);
 }
 
-extern token_File *token_File_new(const char *filename) {
-    token_File file = {
+extern token$File *token$File_new(const char *filename) {
+    token$File file = {
         .name = strdup(filename),
         .lines = slice$init(sizeof(int)),
     };
@@ -158,7 +158,7 @@ extern token_File *token_File_new(const char *filename) {
     return esc(file);
 }
 
-extern void token_File_addLine(token_File *f, int offset) {
+extern void token$File_addLine(token$File *f, int offset) {
     slice$append(&f->lines, &offset);
 }
 
@@ -182,10 +182,10 @@ static int searchInts(slice$Slice *a, int x) {
     return i - 1;
 }
 
-extern token_Position token_File_position(token_File *f, pos_t p) {
+extern token$Position token$File_position(token$File *f, token$Pos p) {
     int offset = p;
     int i = searchInts(&f->lines, offset);
-    token_Position epos = {
+    token$Position epos = {
         .filename = f->name,
         .offset = offset,
         .line = i + 1,

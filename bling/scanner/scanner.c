@@ -3,7 +3,7 @@
 static void next0(scanner_t *s) {
     s->offset = s->rd_offset;
     if (s->ch == '\n') {
-        token_File_addLine(s->file, s->offset);
+        token$File_addLine(s->file, s->offset);
     }
     s->ch = s->src[s->rd_offset];
     s->rd_offset++;
@@ -30,8 +30,8 @@ static bool is_digit(int ch) {
     return '0' <= ch && ch <= '9';
 }
 
-static token_t switch4(scanner_t *s, token_t tok0, token_t tok1, int ch2,
-        token_t tok2, token_t tok3) {
+static token$Token switch4(scanner_t *s, token$Token tok0, token$Token tok1, int ch2,
+        token$Token tok2, token$Token tok3) {
     if (s->ch == '=') {
         next0(s);
         return tok1;
@@ -47,13 +47,13 @@ static token_t switch4(scanner_t *s, token_t tok0, token_t tok1, int ch2,
     return tok0;
 }
 
-static token_t switch3(scanner_t *s, token_t tok0, token_t tok1, int ch2,
-        token_t tok2) {
-    return switch4(s, tok0, tok1, ch2, tok2, token_ILLEGAL);
+static token$Token switch3(scanner_t *s, token$Token tok0, token$Token tok1, int ch2,
+        token$Token tok2) {
+    return switch4(s, tok0, tok1, ch2, tok2, token$ILLEGAL);
 }
 
-static token_t switch2(scanner_t *s, token_t tok0, token_t tok1) {
-    return switch4(s, tok0, tok1, '\0', token_ILLEGAL, token_ILLEGAL);
+static token$Token switch2(scanner_t *s, token$Token tok0, token$Token tok1) {
+    return switch4(s, tok0, tok1, '\0', token$ILLEGAL, token$ILLEGAL);
 }
 
 static char *make_string_slice(scanner_t *s, int start, int end) {
@@ -79,7 +79,7 @@ static char *scan_pragma(scanner_t *s) {
     return make_string_slice(s, offs, s->offset);
 }
 
-static char *scan_number(scanner_t *s, token_t *tokp) {
+static char *scan_number(scanner_t *s, token$Token *tokp) {
     int offs = s->offset;
     bool is_float = false;
     while (is_digit(s->ch) || s->ch == '.') {
@@ -93,9 +93,9 @@ static char *scan_number(scanner_t *s, token_t *tokp) {
         next0(s);
     }
     if (is_float) {
-        *tokp = token_FLOAT;
+        *tokp = token$FLOAT;
     } else {
-        *tokp = token_INT;
+        *tokp = token$INT;
     }
     return make_string_slice(s, offs, s->offset);
 }
@@ -160,10 +160,10 @@ static void scan_comment(scanner_t *s) {
     }
 }
 
-extern token_t scanner_scan(scanner_t *s, pos_t *pos, char **lit) {
-    token_t tok;
+extern token$Token scanner_scan(scanner_t *s, token$Pos *pos, char **lit) {
+    token$Token tok;
 scan_again:
-    tok = token_ILLEGAL;
+    tok = token$ILLEGAL;
     skip_whitespace(s);
     *pos = s->offset;
     bool insertSemi = false;
@@ -171,23 +171,23 @@ scan_again:
     if (is_letter(s->ch)) {
         *lit = scan_ident(s);
         if (strlen(*lit) > 1) {
-            tok = token_lookup(*lit);
-            if (tok != token_IDENT) {
+            tok = token$lookup(*lit);
+            if (tok != token$IDENT) {
                 free(*lit);
                 *lit = NULL;
             }
             switch (tok) {
-            case token_IDENT:
-            case token_BREAK:
-            case token_CONTINUE:
-            case token_RETURN:
+            case token$IDENT:
+            case token$BREAK:
+            case token$CONTINUE:
+            case token$RETURN:
                 insertSemi = true;
             default:
                 break;
             }
         } else {
             insertSemi = true;
-            tok = token_IDENT;
+            tok = token$IDENT;
         }
     } else if (is_digit(s->ch)) {
         insertSemi = true;
@@ -195,11 +195,11 @@ scan_again:
     } else if (s->ch == '\'') {
         insertSemi = true;
         *lit = scan_rune(s);
-        tok = token_CHAR;
+        tok = token$CHAR;
     } else if (s->ch == '"') {
         insertSemi = true;
         *lit = scan_string(s);
-        tok = token_STRING;
+        tok = token$STRING;
     } else {
         int ch = s->ch;
         next0(s);
@@ -207,82 +207,82 @@ scan_again:
             // structure
         case '\0':
             insertSemi = true;
-            tok = token_EOF;
+            tok = token$EOF;
             break;
         case '\n':
             assert(s->insertSemi);
             s->insertSemi = false;
-            return token_SEMICOLON;
+            return token$SEMICOLON;
         case '#':
-            tok = token_HASH;
+            tok = token$HASH;
             *lit = scan_pragma(s);
             break;
         case '(':
-            tok = token_LPAREN;
+            tok = token$LPAREN;
             break;
         case ')':
             insertSemi = true;
-            tok = token_RPAREN;
+            tok = token$RPAREN;
             break;
         case ',':
-            tok = token_COMMA;
+            tok = token$COMMA;
             break;
         case ':':
-            tok = token_COLON;
+            tok = token$COLON;
             break;
         case ';':
-            tok = token_SEMICOLON;
+            tok = token$SEMICOLON;
             break;
         case '?':
-            tok = token_QUESTION_MARK;
+            tok = token$QUESTION_MARK;
             break;
         case '[':
-            tok = token_LBRACK;
+            tok = token$LBRACK;
             break;
         case ']':
             insertSemi = true;
-            tok = token_RBRACK;
+            tok = token$RBRACK;
             break;
         case '{':
-            tok = token_LBRACE;
+            tok = token$LBRACE;
             break;
         case '}':
             insertSemi = true;
-            tok = token_RBRACE;
+            tok = token$RBRACE;
             break;
 
             // operators
         case '~':
-            tok = token_BITWISE_NOT;
+            tok = token$BITWISE_NOT;
             break;
         case '!':
-            tok = switch2(s, token_NOT, token_NOT_EQUAL);
+            tok = switch2(s, token$NOT, token$NOT_EQUAL);
             break;
         case '$':
-            tok = token_DOLLAR;
+            tok = token$DOLLAR;
             break;
         case '%':
-            tok = switch2(s, token_MOD, token_MOD_ASSIGN);
+            tok = switch2(s, token$MOD, token$MOD_ASSIGN);
             break;
         case '&':
-            tok = switch3(s, token_AND, token_AND_ASSIGN, '&', token_LAND);
+            tok = switch3(s, token$AND, token$AND_ASSIGN, '&', token$LAND);
             break;
         case '*':
-            tok = switch2(s, token_MUL, token_MUL_ASSIGN);
+            tok = switch2(s, token$MUL, token$MUL_ASSIGN);
             break;
         case '+':
-            tok = switch3(s, token_ADD, token_ADD_ASSIGN, '+', token_INC);
-            if (tok == token_INC) {
+            tok = switch3(s, token$ADD, token$ADD_ASSIGN, '+', token$INC);
+            if (tok == token$INC) {
                 insertSemi = true;
             }
             break;
         case '-':
             if (s->ch == '>') {
                 next0(s);
-                tok = token_ARROW;
+                tok = token$ARROW;
             } else {
-                tok = switch3(s, token_SUB, token_SUB_ASSIGN, '-', token_DEC);
-                if (tok == token_DEC) {
+                tok = switch3(s, token$SUB, token$SUB_ASSIGN, '-', token$DEC);
+                if (tok == token$DEC) {
                     insertSemi = true;
                 }
             }
@@ -292,10 +292,10 @@ scan_again:
                 next0(s);
                 if (s->ch == '.') {
                     next0(s);
-                    tok = token_ELLIPSIS;
+                    tok = token$ELLIPSIS;
                 }
             } else {
-                tok = token_PERIOD;
+                tok = token$PERIOD;
             }
             break;
         case '/':
@@ -303,22 +303,22 @@ scan_again:
                 scan_comment(s);
                 goto scan_again;
             } else {
-                tok = switch2(s, token_DIV, token_DIV_ASSIGN);
+                tok = switch2(s, token$DIV, token$DIV_ASSIGN);
             }
             break;
         case '<':
-            tok = switch4(s, token_LT, token_LT_EQUAL, '<', token_SHL,
-                    token_SHL_ASSIGN);
+            tok = switch4(s, token$LT, token$LT_EQUAL, '<', token$SHL,
+                    token$SHL_ASSIGN);
             break;
         case '=':
-            tok = switch2(s, token_ASSIGN, token_EQUAL);
+            tok = switch2(s, token$ASSIGN, token$EQUAL);
             break;
         case '>':
-            tok = switch4(s, token_GT, token_GT_EQUAL, '>', token_SHR,
-                    token_SHR_ASSIGN);
+            tok = switch4(s, token$GT, token$GT_EQUAL, '>', token$SHR,
+                    token$SHR_ASSIGN);
             break;
         case '|':
-            tok = switch3(s, token_OR, token_OR_ASSIGN, '|', token_LOR);
+            tok = switch3(s, token$OR, token$OR_ASSIGN, '|', token$LOR);
             break;
         }
     }
@@ -328,7 +328,7 @@ scan_again:
     return tok;
 }
 
-extern void scanner_init(scanner_t *s, token_File *file, char *src) {
+extern void scanner_init(scanner_t *s, token$File *file, char *src) {
     s->file = file;
     s->src = src;
     s->rd_offset = 0;
