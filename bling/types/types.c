@@ -2,7 +2,7 @@
 #include "bling/emitter/emitter.h"
 #include "bling/parser/parser.h"
 #include "bling/types/types.h"
-#include "path/path.h"
+#include "paths/paths.h"
 
 static struct {
     char *name;
@@ -973,7 +973,7 @@ static void check_file(checker_t *w, ast$File *file);
 static void check_import(checker_t *w, ast$Decl *imp) {
     char *path = constant_stringVal(imp->imp.path);
     if (imp->imp.name == NULL) {
-        char *base = path$base(path);
+        char *base = paths$base(path);
         imp->imp.name = types$makeIdent(base);
     }
     ast$Scope *scope = NULL;

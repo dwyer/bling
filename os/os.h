@@ -5,7 +5,7 @@
 package(os);
 
 import("error");
-import("path");
+import("paths");
 import("slice");
 
 typedef uint64_t os$Time;

@@ -2,7 +2,7 @@
 
 #include "bytes/bytes.h"
 #include "fmt/fmt.h"
-#include "path/path.h"
+#include "paths/paths.h"
 
 extern ast$Decl *parser$parsePragma(parser$Parser *p) {
     token$Pos pos = p->pos;
@@ -1140,7 +1140,7 @@ static bool isBlingFile(const char *name) {
 }
 
 static bool isTestFile(const char *name) {
-    return path$match("*_test.bling", name);
+    return paths$match("*_test.bling", name);
 }
 
 extern ast$File **parser$parseDir(const char *path, error$Error **first) {

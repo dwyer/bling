@@ -1,6 +1,6 @@
 #include "os/os.h"
 
-#include "path/path.h"
+#include "paths/paths.h"
 #include "slice/slice.h"
 
 #include <dirent.h> // DIR, dirent, opendir, readdir, closedir
@@ -124,7 +124,7 @@ extern os$FileInfo **os$readdir(os$File *file, error$Error **error) {
     }
     slice$Slice arr = {.size = sizeof(uintptr_t)};
     for (int i = 0; names[i] != NULL; i++) {
-        char *path = path$join2(file->name, names[i]);
+        char *path = paths$join2(file->name, names[i]);
         free(names[i]);
         os$FileInfo info = os$stat(path, &err);
         if (err != NULL) {

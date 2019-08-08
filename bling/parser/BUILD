@@ -14,7 +14,7 @@ cc_library(
         "//bytes",
         "//fmt",
         "//io/ioutil",
-        "//path",
+        "//paths",
     ],
     visibility = ["//visibility:public"],
 )

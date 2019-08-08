@@ -1,10 +1,10 @@
 cc_library(
-    name = "path",
+    name = "paths",
     srcs = [
-        "path.c",
+        "paths.c",
     ],
     hdrs = [
-        "path.h",
+        "paths.h",
     ],
     deps = [
         "//bytes",

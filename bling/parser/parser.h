@@ -12,7 +12,7 @@ import("bling/token");
 import("bytes");
 import("fmt");
 import("io/ioutil");
-import("path");
+import("paths");
 
 extern ast$File *parser$parse_file(const char *filename);
 extern ast$File **parser$parseDir(const char *path, error$Error **first);
