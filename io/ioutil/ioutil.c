@@ -1,6 +1,6 @@
 #include "io/ioutil/ioutil.h"
 
-extern char *ioutil_readAll(os_File *file, error_t **error) {
+extern char *ioutil_readAll(os$File *file, error_t **error) {
     const int bufsiz = 1024;
     char *ret = NULL;
     error_t *err = NULL;
@@ -10,7 +10,7 @@ extern char *ioutil_readAll(os_File *file, error_t **error) {
     buffer_t b = {};
     for (;;) {
         char buf[bufsiz];
-        int n = os_read(file, buf, bufsiz, &err);
+        int n = os$read(file, buf, bufsiz, &err);
         if (err != NULL) {
             goto end;
         }
@@ -27,20 +27,20 @@ end:
     return ret;
 }
 
-extern os_FileInfo **ioutil_readDir(const char *name, error_t **error) {
-    os_FileInfo **info = NULL;
+extern os$FileInfo **ioutil_readDir(const char *name, error_t **error) {
+    os$FileInfo **info = NULL;
     error_t *err = NULL;
-    os_File *file = os_openDir(name, &err);
+    os$File *file = os$openDir(name, &err);
     if (err != NULL) {
         goto end;
     }
-    info = os_readdir(file, &err);
+    info = os$readdir(file, &err);
     if (err != NULL) {
         goto end;
     }
 end:
     if (file != NULL) {
-        os_close(file, NULL);
+        os$close(file, NULL);
     }
     if (err != NULL) {
         error_move(err, error);
@@ -50,14 +50,14 @@ end:
 
 extern char *ioutil_readFile(const char *name, error_t **error) {
     error_t *err = NULL;
-    os_File *file = os_open(name, &err);
+    os$File *file = os$open(name, &err);
     char *ret = ioutil_readAll(file, &err);
     if (err != NULL) {
         goto end;
     }
 end:
     if (file != NULL) {
-        os_close(file, &err);
+        os$close(file, &err);
     }
     if (err != NULL) {
         error_move(err, error);
@@ -69,18 +69,18 @@ extern void ioutil_writeFile(const char *filename, const char *data, int perm,
         error_t **error) {
     (void)perm; // TODO use this when we have meaningful consts in os.
     error_t *err = NULL;
-    os_File *file = os_create(filename, &err);
+    os$File *file = os$create(filename, &err);
     if (err) {
         error_move(err, error);
         goto end;
     }
-    os_write(file, data, &err);
+    os$write(file, data, &err);
     if (err) {
         error_move(err, error);
         goto end;
     }
 end:
     if (file) {
-        os_close(file, NULL);
+        os$close(file, NULL);
     }
 }

@@ -1135,14 +1135,14 @@ static bool isTestFile(const char *name) {
 
 extern ast_File **parser_parseDir(const char *path, error_t **first) {
     error_t *err = NULL;
-    os_FileInfo **infos = ioutil_readDir(path, &err);
+    os$FileInfo **infos = ioutil_readDir(path, &err);
     if (err) {
         error_move(err, first);
         return NULL;
     }
     slice$Slice files = slice$init(sizeof(uintptr_t));
     while (*infos != NULL) {
-        char *name = os_FileInfo_name(**infos);
+        char *name = os$FileInfo_name(**infos);
         if (isBlingFile(name) && !isTestFile(name)) {
             ast_File *file = parser_parse_file(name);
             slice$append(&files, &file);

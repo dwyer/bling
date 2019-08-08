@@ -47,20 +47,20 @@ void compile_c(char *argv[]) {
         argv++;
     }
     char *out = emitter_string(&emitter);
-    os_File *file = os_stdout;
+    os$File *file = os$stdout;
     error_t *err = NULL;
     if (dst) {
-        file = os_create(dst, &err);
+        file = os$create(dst, &err);
         if (err) {
             panic(err->error);
         }
     }
-    os_write(file, out, &err);
+    os$write(file, out, &err);
     if (err) {
         panic(err->error);
     }
     if (dst) {
-        os_close(file, &err);
+        os$close(file, &err);
         if (err) {
             panic(err->error);
         }
@@ -114,7 +114,7 @@ void compile_bling(char *argv[]) {
     char *out = emitter_string(&emitter);
     if (dst) {
         if (bytes_hasSuffix(dst, ".out")) {
-            char *tmp = path_join2(os_tempDir(), "tmp.c");
+            char *tmp = path_join2(os$tempDir(), "tmp.c");
             ioutil_writeFile(tmp, out, 0644, NULL);
             char *args[] = {
                 "/usr/bin/cc",
@@ -133,7 +133,7 @@ void compile_bling(char *argv[]) {
             ioutil_writeFile(dst, out, 0644, NULL);
         }
     } else {
-        os_write(os_stdout, out, &err);
+        os$write(os$stdout, out, &err);
     }
 }
 
