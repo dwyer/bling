@@ -1,6 +1,6 @@
 #include "io/ioutil/ioutil.h"
 
-extern char *ioutil_readAll(os$File *file, error$Error **error) {
+extern char *ioutil$readAll(os$File *file, error$Error **error) {
     const int bufsiz = 1024;
     char *ret = NULL;
     error$Error *err = NULL;
@@ -27,7 +27,7 @@ end:
     return ret;
 }
 
-extern os$FileInfo **ioutil_readDir(const char *name, error$Error **error) {
+extern os$FileInfo **ioutil$readDir(const char *name, error$Error **error) {
     os$FileInfo **info = NULL;
     error$Error *err = NULL;
     os$File *file = os$openDir(name, &err);
@@ -48,10 +48,10 @@ end:
     return info;
 }
 
-extern char *ioutil_readFile(const char *name, error$Error **error) {
+extern char *ioutil$readFile(const char *name, error$Error **error) {
     error$Error *err = NULL;
     os$File *file = os$open(name, &err);
-    char *ret = ioutil_readAll(file, &err);
+    char *ret = ioutil$readAll(file, &err);
     if (err != NULL) {
         goto end;
     }
@@ -65,7 +65,7 @@ end:
     return ret;
 }
 
-extern void ioutil_writeFile(const char *filename, const char *data, int perm,
+extern void ioutil$writeFile(const char *filename, const char *data, int perm,
         error$Error **error) {
     (void)perm; // TODO use this when we have meaningful consts in os.
     error$Error *err = NULL;

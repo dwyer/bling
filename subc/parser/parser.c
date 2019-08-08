@@ -1194,7 +1194,7 @@ static ast_File *parse_cfile(parser_t *p) {
 }
 
 extern ast_File *parser_parse_cfile(const char *filename, ast_Scope *pkg_scope) {
-    char *src = ioutil_readFile(filename, NULL);
+    char *src = ioutil$readFile(filename, NULL);
     parser_t p = {};
     parser_init(&p, filename, src);
     p.pkg_scope = pkg_scope;

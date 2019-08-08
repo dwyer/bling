@@ -973,7 +973,7 @@ static void check_file(checker_t *w, ast_File *file);
 static void check_import(checker_t *w, decl_t *imp) {
     char *path = constant_stringVal(imp->imp.path);
     if (imp->imp.name == NULL) {
-        char *base = path_base(path);
+        char *base = path$base(path);
         imp->imp.name = types_makeIdent(base);
     }
     ast_Scope *scope = NULL;

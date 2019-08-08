@@ -124,7 +124,7 @@ extern os$FileInfo **os$readdir(os$File *file, error$Error **error) {
     }
     slice$Slice arr = {.size = sizeof(uintptr_t)};
     for (int i = 0; names[i] != NULL; i++) {
-        char *path = path_join2(file->name, names[i]);
+        char *path = path$join2(file->name, names[i]);
         free(names[i]);
         os$FileInfo info = os$stat(path, &err);
         if (err != NULL) {

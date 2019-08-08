@@ -20,7 +20,7 @@ void usage(const char *progname) {
 
 void emit_rawfile(emitter_t *e, const char *filename) {
     error$Error *err = NULL;
-    char *src = ioutil_readFile(filename, &err);
+    char *src = ioutil$readFile(filename, &err);
     if (err) {
         panic(err->error);
     }
@@ -114,8 +114,8 @@ void compile_bling(char *argv[]) {
     char *out = emitter_string(&emitter);
     if (dst) {
         if (bytes$hasSuffix(dst, ".out")) {
-            char *tmp = path_join2(os$tempDir(), "tmp.c");
-            ioutil_writeFile(tmp, out, 0644, NULL);
+            char *tmp = path$join2(os$tempDir(), "tmp.c");
+            ioutil$writeFile(tmp, out, 0644, NULL);
             char *args[] = {
                 "/usr/bin/cc",
                 "-o", dst,
@@ -130,7 +130,7 @@ void compile_bling(char *argv[]) {
                 print("%s exited with code: %d", argv[0], code);
             }
         } else {
-            ioutil_writeFile(dst, out, 0644, NULL);
+            ioutil$writeFile(dst, out, 0644, NULL);
         }
     } else {
         os$write(os$stdout, out, &err);
