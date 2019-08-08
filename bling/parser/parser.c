@@ -216,7 +216,7 @@ static ast$Expr *parse_postfix_expr(parser$Parser *p) {
             break;
         case token$LPAREN:
             {
-                utils$Slice_Slice args = {.size = sizeof(ast$Expr *)};
+                utils$Slice args = {.size = sizeof(ast$Expr *)};
                 parser$expect(p, token$LPAREN);
                 // argument_expression_list
                 //         : expression
@@ -443,7 +443,7 @@ static ast$Expr *parse_struct_or_union_spec(parser$Parser *p) {
         // struct_declaration
         //         : specifier_qualifier_list struct_declarator_list ';'
         //         ;
-        utils$Slice_Slice fieldSlice = {.size = sizeof(ast$Decl *)};
+        utils$Slice fieldSlice = {.size = sizeof(ast$Decl *)};
         for (;;) {
             ast$Decl decl = {
                 .type = ast$DECL_FIELD,
@@ -494,7 +494,7 @@ static ast$Expr *parse_enum_spec(parser$Parser *p) {
     ast$Decl **enums = NULL;
     if (parser$accept(p, token$LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
-        utils$Slice_Slice list = {.size = sizeof(ast$Decl *)};
+        utils$Slice list = {.size = sizeof(ast$Decl *)};
         for (;;) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             ast$Decl decl = {
@@ -541,7 +541,7 @@ static ast$Expr *parse_pointer(parser$Parser *p) {
 }
 
 static ast$Decl **parse_param_type_list(parser$Parser *p, bool anon) {
-    utils$Slice_Slice params = {.size = sizeof(ast$Decl *)};
+    utils$Slice params = {.size = sizeof(ast$Decl *)};
     while (p->tok != token$RPAREN) {
         ast$Decl *param = parse_field(p, anon);
         utils$Slice_append(&params, &param);
@@ -575,7 +575,7 @@ static ast$Expr *parse_init_expr(parser$Parser *p) {
         //         ;
         token$Pos pos = p->pos;
         parser$expect(p, token$LBRACE);
-        utils$Slice_Slice list = {.size = sizeof(ast$Expr *)};
+        utils$Slice list = {.size = sizeof(ast$Expr *)};
         while (p->tok != token$RBRACE && p->tok != token$EOF) {
             ast$Expr *value = parse_init_expr(p);
             if (value->type == ast$EXPR_IDENT && parser$accept(p, token$COLON)) {
@@ -781,13 +781,13 @@ static ast$Stmt *parse_switch_stmt(parser$Parser *p) {
     token$Pos pos = parser$expect(p, token$SWITCH);
     ast$Expr *tag = parse_expr(p);
     parser$expect(p, token$LBRACE);
-    utils$Slice_Slice clauses = {.size = sizeof(ast$Stmt *)};
+    utils$Slice clauses = {.size = sizeof(ast$Stmt *)};
     while (p->tok == token$CASE || p->tok == token$DEFAULT) {
         // case_statement
         //         | CASE constant_expression ':' statement+
         //         | DEFAULT ':' statement+
         //         ;
-        utils$Slice_Slice exprs = {.size=sizeof(ast$Expr *)};
+        utils$Slice exprs = {.size=sizeof(ast$Expr *)};
         token$Pos pos = p->pos;
         if (parser$accept(p, token$CASE)) {
             for (;;) {
@@ -801,7 +801,7 @@ static ast$Stmt *parse_switch_stmt(parser$Parser *p) {
             parser$expect(p, token$DEFAULT);
         }
         parser$expect(p, token$COLON);
-        utils$Slice_Slice stmts = {.size = sizeof(ast$Stmt *)};
+        utils$Slice stmts = {.size = sizeof(ast$Stmt *)};
         bool loop = true;
         while (loop) {
             switch (p->tok) {
@@ -933,7 +933,7 @@ static ast$Stmt *parse_stmt(parser$Parser *p) {
 
 static ast$Stmt *parse_block_stmt(parser$Parser *p) {
     // compound_statement : '{' statement_list? '}' ;
-    utils$Slice_Slice stmts = {.size = sizeof(ast$Stmt *)};
+    utils$Slice stmts = {.size = sizeof(ast$Stmt *)};
     token$Pos pos = parser$expect(p, token$LBRACE);
     // statement_list : statement+ ;
     while (p->tok != token$RBRACE) {
@@ -1150,7 +1150,7 @@ extern ast$File **parser$parseDir(const char *path, errors$Error **first) {
         errors$move(err, first);
         return NULL;
     }
-    utils$Slice_Slice files = utils$Slice_init(sizeof(uintptr_t));
+    utils$Slice files = utils$Slice_init(sizeof(uintptr_t));
     while (*infos != NULL) {
         char *name = os$FileInfo_name(**infos);
         if (isBlingFile(name) && !isTestFile(name)) {
@@ -1164,8 +1164,8 @@ extern ast$File **parser$parseDir(const char *path, errors$Error **first) {
 
 static ast$File *_parse_file(parser$Parser *p) {
     ast$Expr *name = NULL;
-    utils$Slice_Slice imports = utils$Slice_init(sizeof(uintptr_t));
-    utils$Slice_Slice decls = utils$Slice_init(sizeof(ast$Decl *));
+    utils$Slice imports = utils$Slice_init(sizeof(uintptr_t));
+    utils$Slice decls = utils$Slice_init(sizeof(ast$Decl *));
     while (p->tok == token$HASH) {
         ast$Decl *lit = parser$parsePragma(p);
         utils$Slice_append(&decls, &lit);

@@ -10,30 +10,30 @@ typedef struct {
     int len;
     int key_size;
     int val_size;
-    utils$Slice_Slice pairs;
+    utils$Slice pairs;
 } map$Map;
 
 typedef enum {
-    map$status_ok = 1,
-} map$status_t;
+    map$Map_status_ok = 1,
+} map$Map_status_t;
 
-extern map$Map map$init(int val_size);
-extern void map$deinit(map$Map *m);
-extern int map$len(const map$Map *m);
-extern int map$cap(const map$Map *m);
-extern int map$get(const map$Map *m, const char *key, void *val);
-extern bool map$has_key(map$Map *m, const char *key);
-extern void map$set(map$Map *m, const char *key, const void *val);
+extern map$Map map$Map_init(int val_size);
+extern void map$Map_deinit(map$Map *m);
+extern int map$Map_len(const map$Map *m);
+extern int map$Map_cap(const map$Map *m);
+extern int map$Map_get(const map$Map *m, const char *key, void *val);
+extern bool map$Map_has_key(map$Map *m, const char *key);
+extern void map$Map_set(map$Map *m, const char *key, const void *val);
 
-extern int map$hits;
-extern int map$misses;
-extern int map$lookups;
-extern int map$iters;
+extern int map$Map_hits;
+extern int map$Map_misses;
+extern int map$Map_lookups;
+extern int map$Map_iters;
 
 typedef struct {
     const map$Map *_map;
     int _idx;
-} map$iter_t;
+} map$Map_iter_t;
 
-extern map$iter_t map$iter(const map$Map *m);
-extern int map$iter_next(map$iter_t *m, char **key, void *val);
+extern map$Map_iter_t map$Map_iter(const map$Map *m);
+extern int map$Map_iter_next(map$Map_iter_t *m, char **key, void *val);

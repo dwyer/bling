@@ -76,7 +76,7 @@ static ast$Expr *postfix_expression(parser$Parser *p, ast$Expr *x) {
             break;
         case token$LPAREN:
             {
-                utils$Slice_Slice args = {.size = sizeof(ast$Expr *)};
+                utils$Slice args = {.size = sizeof(ast$Expr *)};
                 parser$expect(p, token$LPAREN);
                 // argument_expression_list
                 //         : expression
@@ -314,7 +314,7 @@ static ast$Expr *struct_or_union_specifier(parser$Parser *p) {
         // struct_declaration
         //         : specifier_qualifier_list struct_declarator_list ';'
         //         ;
-        utils$Slice_Slice fieldSlice = {.size = sizeof(ast$Decl *)};
+        utils$Slice fieldSlice = {.size = sizeof(ast$Decl *)};
         for (;;) {
             // struct_declarator_list
             //         : struct_declarator
@@ -370,7 +370,7 @@ static ast$Expr *enum_specifier(parser$Parser *p) {
     ast$Decl **enums = NULL;
     if (parser$accept(p, token$LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
-        utils$Slice_Slice list = {.size = sizeof(ast$Decl *)};
+        utils$Slice list = {.size = sizeof(ast$Decl *)};
         for (;;) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             ast$Decl decl = {
@@ -503,7 +503,7 @@ static ast$Decl **parameter_type_list(parser$Parser *p) {
     //         : parameter_declaration
     //         | parameter_list ',' parameter_declaration
     //         ;
-    utils$Slice_Slice params = {.size = sizeof(ast$Decl *)};
+    utils$Slice params = {.size = sizeof(ast$Decl *)};
     while (p->tok != token$RPAREN) {
         // parameter_declaration
         //         : declaration_specifiers (declarator | abstract_declarator)?
@@ -616,7 +616,7 @@ static ast$Expr *initializer(parser$Parser *p) {
     //         : designation? initializer
     //         | initializer_list ',' designation? initializer
     //         ;
-    utils$Slice_Slice list = {.size = sizeof(ast$Expr *)};
+    utils$Slice list = {.size = sizeof(ast$Expr *)};
     while (p->tok != token$RBRACE && p->tok != token$EOF) {
         ast$Expr *key = NULL;
         bool isArray = false;
@@ -842,13 +842,13 @@ static ast$Stmt *statement(parser$Parser *p) {
         ast$Expr *tag = expression(p);
         parser$expect(p, token$RPAREN);
         parser$expect(p, token$LBRACE);
-        utils$Slice_Slice clauses = {.size = sizeof(ast$Stmt *)};
+        utils$Slice clauses = {.size = sizeof(ast$Stmt *)};
         while (p->tok == token$CASE || p->tok == token$DEFAULT) {
             // case_statement
             //         : CASE constant_expression ':' statement+
             //         | DEFAULT ':' statement+
             //         ;
-            utils$Slice_Slice exprs = {.size=sizeof(ast$Expr *)};
+            utils$Slice exprs = {.size=sizeof(ast$Expr *)};
             while (parser$accept(p, token$CASE)) {
                 ast$Expr *expr = constant_expression(p);
                 parser$expect(p, token$COLON);
@@ -858,7 +858,7 @@ static ast$Stmt *statement(parser$Parser *p) {
                 parser$expect(p, token$DEFAULT);
                 parser$expect(p, token$COLON);
             }
-            utils$Slice_Slice stmts = {.size = sizeof(ast$Stmt *)};
+            utils$Slice stmts = {.size = sizeof(ast$Stmt *)};
             bool loop = true;
             while (loop) {
                 switch (p->tok) {
@@ -962,7 +962,7 @@ static ast$Stmt *statement(parser$Parser *p) {
 static ast$Stmt *compound_statement(parser$Parser *p, bool allow_single) {
     // compound_statement : '{' statement_list? '}' ;
     // statement_list : statement+ ;
-    utils$Slice_Slice stmts = {.size = sizeof(ast$Stmt *)};
+    utils$Slice stmts = {.size = sizeof(ast$Stmt *)};
     if (allow_single && p->tok != token$LBRACE) {
         ast$Stmt *stmt = statement(p);
         assert(stmt->type != ast$STMT_DECL);
@@ -1149,8 +1149,8 @@ static ast$Decl *declaration(parser$Parser *p, bool is_external) {
 }
 
 static ast$File *parse_cfile(parser$Parser *p) {
-    utils$Slice_Slice decls = {.size = sizeof(ast$Decl *)};
-    utils$Slice_Slice imports = {.size = sizeof(ast$Decl *)};
+    utils$Slice decls = {.size = sizeof(ast$Decl *)};
+    utils$Slice imports = {.size = sizeof(ast$Decl *)};
     ast$Expr *name = NULL;
     while (p->tok == token$HASH) {
         ast$Decl *lit = parser$parsePragma(p);

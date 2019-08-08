@@ -96,7 +96,7 @@ extern os$File *os$openDir(const char *name, errors$Error **error) {
 }
 
 extern char **os$readdirnames(os$File *file, errors$Error **error) {
-    utils$Slice_Slice arr = {.size = sizeof(char *)};
+    utils$Slice arr = {.size = sizeof(char *)};
     DIR *dp = (DIR *)file->fd;
     for (;;) {
         struct dirent *dirent = readdir(dp);
@@ -122,7 +122,7 @@ extern os$FileInfo **os$readdir(os$File *file, errors$Error **error) {
         errors$move(err, error);
         return NULL;
     }
-    utils$Slice_Slice arr = {.size = sizeof(uintptr_t)};
+    utils$Slice arr = {.size = sizeof(uintptr_t)};
     for (int i = 0; names[i] != NULL; i++) {
         char *path = paths$join2(file->name, names[i]);
         free(names[i]);

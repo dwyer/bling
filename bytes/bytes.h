@@ -11,7 +11,7 @@ import("utils");
 extern bool bytes$hasSuffix(const char *s, const char *suffix);
 extern char *bytes$join(const char *a[], int size, const char *sep);
 
-typedef utils$Slice_Slice bytes$Buffer;
+typedef utils$Slice bytes$Buffer;
 
 extern char *bytes$Buffer_bytes(bytes$Buffer *b);
 extern int bytes$Buffer_len(bytes$Buffer *b);

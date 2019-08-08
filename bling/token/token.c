@@ -98,14 +98,14 @@ static map$Map keywords = {};
 
 extern token$Token token$lookup(char *ident) {
     if (keywords.val_size == 0) {
-        keywords = map$init(sizeof(token$Token));
+        keywords = map$Map_init(sizeof(token$Token));
         for (int i = token$_keywordBeg + 1; i < token$_keywordEnd; i++) {
             char *s = token$string(i);
-            map$set(&keywords, s, &i);
+            map$Map_set(&keywords, s, &i);
         }
     }
     token$Token tok = token$IDENT;
-    map$get(&keywords, ident, &tok);
+    map$Map_get(&keywords, ident, &tok);
     return tok;
 }
 
@@ -162,13 +162,13 @@ extern void token$File_addLine(token$File *f, int offset) {
     utils$Slice_append(&f->lines, &offset);
 }
 
-static int getInt(utils$Slice_Slice *a, int i) {
+static int getInt(utils$Slice *a, int i) {
     int x;
     utils$Slice_get(a, i, &x);
     return x;
 }
 
-static int searchInts(utils$Slice_Slice *a, int x) {
+static int searchInts(utils$Slice *a, int x) {
     int i = 0;
     int j = utils$Slice_len(a);
     while (i < j) {
