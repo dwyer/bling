@@ -104,7 +104,7 @@ void compile_bling(char *argv[]) {
             if (emitter$emit_as_bling) {
                 emitter$emitFile(&emitter, file);
             } else {
-                emitter_emitter$emitFile(&emitter, file);
+                cemitter$emitFile(&emitter, file);
             }
             free(file->decls);
             free(file);

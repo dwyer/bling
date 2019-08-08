@@ -499,7 +499,7 @@ static void emitter$emit_c_decl(emitter$Emitter *e, ast$Decl *decl) {
     }
 }
 
-extern void emitter_emitter$emitFile(emitter$Emitter *e, ast$File *file) {
+extern void cemitter$emitFile(emitter$Emitter *e, ast$File *file) {
     emitter$emitString(e, "//");
     emitter$emitString(e, file->filename);
     emitter$emitNewline(e);
