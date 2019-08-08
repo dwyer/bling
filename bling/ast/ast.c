@@ -15,27 +15,27 @@ extern ast_Object *object_new(obj_kind_t kind, char *name) {
 extern ast_Scope *scope_new(ast_Scope *outer) {
     ast_Scope s = {
         .outer = outer,
-        .objects = map_init(sizeof(ast_Object *)),
+        .objects = map$init(sizeof(ast_Object *)),
     };
     return esc(s);
 }
 
 extern void scope_deinit(ast_Scope *s) {
-    map_deinit(&s->objects);
+    map$deinit(&s->objects);
 }
 
 extern ast_Object *scope_insert(ast_Scope *s, ast_Object *obj) {
     ast_Object *alt = NULL;
-    map_get(&s->objects, obj->name, &alt);
+    map$get(&s->objects, obj->name, &alt);
     if (alt == NULL) {
-        map_set(&s->objects, obj->name, &obj);
+        map$set(&s->objects, obj->name, &obj);
     }
     return alt;
 }
 
 extern ast_Object *scope_lookup(ast_Scope *s, char *name) {
     ast_Object *obj = NULL;
-    map_get(&s->objects, name, &obj);
+    map$get(&s->objects, name, &obj);
     return obj;
 }
 
@@ -56,7 +56,7 @@ extern void scope_resolve(ast_Scope *s, expr_t *x) {
 }
 
 extern void scope_free(ast_Scope *s) {
-    map_deinit(&s->objects);
+    map$deinit(&s->objects);
     free(s);
 }
 

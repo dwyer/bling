@@ -300,7 +300,7 @@ typedef struct ast_Scope ast_Scope;
 
 typedef struct ast_Scope {
     ast_Scope *outer;
-    map_t objects;
+    map$Map objects;
     char *pkg;
 } ast_Scope;
 

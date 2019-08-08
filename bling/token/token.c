@@ -94,18 +94,18 @@ extern char *token_string(token_t tok) {
     return tokens[tok];
 }
 
-static map_t keywords = {};
+static map$Map keywords = {};
 
 extern token_t token_lookup(char *ident) {
     if (keywords.val_size == 0) {
-        keywords = map_init(sizeof(token_t));
+        keywords = map$init(sizeof(token_t));
         for (int i = _token_keyword_beg + 1; i < _token_keyword_end; i++) {
             char *s = token_string(i);
-            map_set(&keywords, s, &i);
+            map$set(&keywords, s, &i);
         }
     }
     token_t tok = token_IDENT;
-    map_get(&keywords, ident, &tok);
+    map$get(&keywords, ident, &tok);
     return tok;
 }
 

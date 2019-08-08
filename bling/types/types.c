@@ -375,7 +375,7 @@ typedef struct {
     expr_t *result;
     slice$Slice files;
     expr_t *typedefName;
-    map_t scopes;
+    map$Map scopes;
 } checker_t;
 
 static void checker_openScope(checker_t *w) {
@@ -977,14 +977,14 @@ static void check_import(checker_t *w, decl_t *imp) {
         imp->imp.name = types_makeIdent(base);
     }
     ast_Scope *scope = NULL;
-    map_get(&w->scopes, path, &scope);
+    map$get(&w->scopes, path, &scope);
     if (scope) {
         scope_declare(w->pkg.scope, imp);
         free(path);
         return;
     }
     scope = w->pkg.scope;
-    map_set(&w->scopes, path, &scope);
+    map$set(&w->scopes, path, &scope);
     error_t *err = NULL;
     ast_File **files = parser_parseDir(path, &err);
     if (err) {
@@ -1098,7 +1098,7 @@ extern package_t types_checkFile(config_t *conf, ast_File *file) {
             .scope = file->scope,
         },
         .files = slice$init(sizeof(ast_File *)),
-        .scopes = map_init(sizeof(ast_Scope *)),
+        .scopes = map$init(sizeof(ast_Scope *)),
     };
     check_file(&w, file);
     w.pkg.files = slice$to_nil_array(w.files);
