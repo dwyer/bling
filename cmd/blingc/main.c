@@ -19,7 +19,7 @@ void usage(const char *progname) {
 }
 
 void emit_rawfile(emitter_t *e, const char *filename) {
-    error_t *err = NULL;
+    error$Error *err = NULL;
     char *src = ioutil_readFile(filename, &err);
     if (err) {
         panic(err->error);
@@ -48,7 +48,7 @@ void compile_c(char *argv[]) {
     }
     char *out = emitter_string(&emitter);
     os$File *file = os$stdout;
-    error_t *err = NULL;
+    error$Error *err = NULL;
     if (dst) {
         file = os$create(dst, &err);
         if (err) {
@@ -84,7 +84,7 @@ void compile_bling(char *argv[]) {
         emit_as_bling = bytes$hasSuffix(dst, ".bling");
     }
     emitter_t emitter = {};
-    error_t *err = NULL;
+    error$Error *err = NULL;
     if (!emit_as_bling) {
         emit_rawfile(&emitter, "bootstrap/bootstrap.h");
     }

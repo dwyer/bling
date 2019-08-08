@@ -3,14 +3,14 @@
 extern int errno; // from libc
 extern char *strerror(int); // from libc
 
-extern error_t *error_make(const char *error) {
-    error_t err = {
+extern error$Error *error$make(const char *error) {
+    error$Error err = {
         .error = strdup(error),
     };
     return esc(err);
 }
 
-extern void error_move(error_t *src, error_t **dst) {
+extern void error$move(error$Error *src, error$Error **dst) {
     if (dst != NULL) {
         *dst = src;
     } else {
@@ -18,18 +18,18 @@ extern void error_move(error_t *src, error_t **dst) {
     }
 }
 
-extern void error_check(error_t **e) {
+extern void error$check(error$Error **e) {
     if (errno) {
-        error_t *err = error_make(strerror(errno));
-        error_move(err, e);
+        error$Error *err = error$make(strerror(errno));
+        error$move(err, e);
     }
 }
 
-extern void error_clear() {
+extern void error$clear() {
     errno = 0;
 }
 
-extern void error_free(error_t *e) {
+extern void error$free(error$Error *e) {
     free(e->error);
     free(e);
 }

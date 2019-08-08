@@ -985,7 +985,7 @@ static void check_import(checker_t *w, decl_t *imp) {
     }
     scope = w->pkg.scope;
     map$set(&w->scopes, path, &scope);
-    error_t *err = NULL;
+    error$Error *err = NULL;
     ast_File **files = parser_parseDir(path, &err);
     if (err) {
         panic("%s: %s", path, err->error);

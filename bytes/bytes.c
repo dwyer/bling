@@ -49,7 +49,7 @@ extern char *bytes$Buffer_string(bytes$Buffer *b) {
     return s;
 }
 
-extern int bytes$Buffer_write(bytes$Buffer *b, const char *p, int size, error_t **error) {
+extern int bytes$Buffer_write(bytes$Buffer *b, const char *p, int size, error$Error **error) {
     bytes$Buffer_init(b);
     if (size < 0) {
         size = strlen(p);
@@ -60,7 +60,7 @@ extern int bytes$Buffer_write(bytes$Buffer *b, const char *p, int size, error_t 
     return size;
 }
 
-extern void bytes$Buffer_writeByte(bytes$Buffer *b, char p, error_t **error) {
+extern void bytes$Buffer_writeByte(bytes$Buffer *b, char p, error$Error **error) {
     bytes$Buffer_init(b);
     slice$append(b, &p);
 }

@@ -13,7 +13,7 @@ import("io/ioutil");
 import("path");
 
 extern ast_File *parser_parse_file(const char *filename);
-extern ast_File **parser_parseDir(const char *path, error_t **first);
+extern ast_File **parser_parseDir(const char *path, error$Error **first);
 
 typedef struct {
     token_File *file;
