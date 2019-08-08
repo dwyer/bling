@@ -2,92 +2,94 @@
 #include "bling/token/token.h"
 #include "map/map.h"
 
+package(ast);
+
 import("bling/token");
 import("map");
 
 typedef enum {
 
-    ast_NODE_ILLEGAL = 0,
+    ast$NODE_ILLEGAL = 0,
 
-    _ast_DECL_START,
-    ast_DECL_FIELD,
-    ast_DECL_FUNC,
-    ast_DECL_IMPORT,
-    ast_DECL_PRAGMA,
-    ast_DECL_TYPEDEF,
-    ast_DECL_VALUE,
-    _ast_DECL_END,
+    ast$_DECL_START,
+    ast$DECL_FIELD,
+    ast$DECL_FUNC,
+    ast$DECL_IMPORT,
+    ast$DECL_PRAGMA,
+    ast$DECL_TYPEDEF,
+    ast$DECL_VALUE,
+    ast$_DECL_END,
 
-    _ast_EXPR_START,
-    ast_EXPR_BASIC_LIT,
-    ast_EXPR_BINARY,
-    ast_EXPR_CALL,
-    ast_EXPR_CAST,
-    ast_EXPR_COMPOUND,
-    ast_EXPR_COND,
-    ast_EXPR_IDENT,
-    ast_EXPR_INDEX,
-    ast_EXPR_INIT_DECL,
-    ast_EXPR_KEY_VALUE,
-    ast_EXPR_PAREN,
-    ast_EXPR_SELECTOR,
-    ast_EXPR_SIZEOF,
-    ast_EXPR_STAR,
-    ast_EXPR_UNARY,
-    _ast_EXPR_END,
+    ast$_EXPR_START,
+    ast$EXPR_BASIC_LIT,
+    ast$EXPR_BINARY,
+    ast$EXPR_CALL,
+    ast$EXPR_CAST,
+    ast$EXPR_COMPOUND,
+    ast$EXPR_COND,
+    ast$EXPR_IDENT,
+    ast$EXPR_INDEX,
+    ast$EXPR_INIT_DECL,
+    ast$EXPR_KEY_VALUE,
+    ast$EXPR_PAREN,
+    ast$EXPR_SELECTOR,
+    ast$EXPR_SIZEOF,
+    ast$EXPR_STAR,
+    ast$EXPR_UNARY,
+    ast$_EXPR_END,
 
-    _ast_STMT_START,
-    ast_STMT_ASSIGN,
-    ast_STMT_BLOCK,
-    ast_STMT_CASE,
-    ast_STMT_DECL,
-    ast_STMT_EMPTY,
-    ast_STMT_EXPR,
-    ast_STMT_IF,
-    ast_STMT_ITER,
-    ast_STMT_JUMP,
-    ast_STMT_LABEL,
-    ast_STMT_POSTFIX,
-    ast_STMT_RETURN,
-    ast_STMT_SWITCH,
-    _ast_STMT_END,
+    ast$_STMT_START,
+    ast$STMT_ASSIGN,
+    ast$STMT_BLOCK,
+    ast$STMT_CASE,
+    ast$STMT_DECL,
+    ast$STMT_EMPTY,
+    ast$STMT_EXPR,
+    ast$STMT_IF,
+    ast$STMT_ITER,
+    ast$STMT_JUMP,
+    ast$STMT_LABEL,
+    ast$STMT_POSTFIX,
+    ast$STMT_RETURN,
+    ast$STMT_SWITCH,
+    ast$_STMT_END,
 
-    _ast_TYPE_START,
-    ast_TYPE_ARRAY,
-    ast_TYPE_ENUM,
-    ast_TYPE_NATIVE,
-    ast_TYPE_FUNC,
-    ast_TYPE_STRUCT,
-    _ast_TYPE_END,
+    ast$_TYPE_START,
+    ast$TYPE_ARRAY,
+    ast$TYPE_ENUM,
+    ast$TYPE_NATIVE,
+    ast$TYPE_FUNC,
+    ast$TYPE_STRUCT,
+    ast$_TYPE_END,
 
-} ast_node_type_t;
+} ast$NodeType;
 
-typedef struct decl_t decl_t;
-typedef struct expr_t expr_t;
-typedef struct stmt_t stmt_t;
+typedef struct ast$Decl ast$Decl;
+typedef struct ast$Expr ast$Expr;
+typedef struct ast$Stmt ast$Stmt;
 
 typedef enum {
-    obj_kind_FUNC,
-    obj_kind_PKG,
-    obj_kind_TYPE,
-    obj_kind_VALUE,
-} obj_kind_t;
+    ast$ObjKind_FUNC,
+    ast$ObjKind_PKG,
+    ast$ObjKind_TYPE,
+    ast$ObjKind_VALUE,
+} ast$ObjKind;
 
 typedef struct {
-    obj_kind_t kind;
+    ast$ObjKind kind;
     char *name;
-    decl_t *decl;
+    ast$Decl *decl;
     char *pkg;
-} ast_Object;
+} ast$Object;
 
-typedef struct decl_t {
-    ast_node_type_t type;
+typedef struct ast$Decl {
+    ast$NodeType type;
     token$Pos pos;
     union {
 
         struct {
-            expr_t *name;
-            expr_t *path;
+            ast$Expr *name;
+            ast$Expr *path;
         } imp;
 
         struct {
@@ -95,41 +97,41 @@ typedef struct decl_t {
         } pragma;
 
         struct {
-            expr_t *name;
-            expr_t *type;
+            ast$Expr *name;
+            ast$Expr *type;
         } typedef_;
 
         struct {
-            expr_t *name;
-            expr_t *type;
-            expr_t *value;
+            ast$Expr *name;
+            ast$Expr *type;
+            ast$Expr *value;
             token$Token kind;
         } value;
 
         struct {
-            expr_t *name;
-            expr_t *type;
-            stmt_t *body;
+            ast$Expr *name;
+            ast$Expr *type;
+            ast$Stmt *body;
         } func;
 
         struct {
-            expr_t *name;
-            expr_t *type;
+            ast$Expr *name;
+            ast$Expr *type;
         } field;
 
     };
-} decl_t;
+} ast$Decl;
 
-typedef struct expr_t {
-    ast_node_type_t type;
+typedef struct ast$Expr {
+    ast$NodeType type;
     token$Pos pos;
     bool is_const;
 
     union {
 
         struct {
-            expr_t *len;
-            expr_t *elt;
+            ast$Expr *len;
+            ast$Expr *elt;
         } array;
 
         struct {
@@ -139,54 +141,54 @@ typedef struct expr_t {
 
         struct {
             token$Token op;
-            expr_t *x;
-            expr_t *y;
+            ast$Expr *x;
+            ast$Expr *y;
         } binary;
 
         struct {
-            expr_t *func;
-            expr_t **args;
+            ast$Expr *func;
+            ast$Expr **args;
         } call;
 
         struct {
-            expr_t *type;
-            expr_t *expr;
+            ast$Expr *type;
+            ast$Expr *expr;
         } cast;
 
         struct {
-            expr_t *type;
-            expr_t **list;
+            ast$Expr *type;
+            ast$Expr **list;
         } compound;
 
         struct {
-            expr_t *condition;
-            expr_t *consequence;
-            expr_t *alternative;
+            ast$Expr *condition;
+            ast$Expr *consequence;
+            ast$Expr *alternative;
         } conditional;
 
         struct {
-            expr_t *name;
-            decl_t **enums;
+            ast$Expr *name;
+            ast$Decl **enums;
         } enum_;
 
         struct {
-            expr_t *result;
-            decl_t **params;
+            ast$Expr *result;
+            ast$Decl **params;
         } func;
 
         struct {
             char *name;
-            ast_Object *obj;
+            ast$Object *obj;
         } ident;
 
         struct {
-            expr_t *x;
-            expr_t *index;
+            ast$Expr *x;
+            ast$Expr *index;
         } index;
 
         struct {
-            expr_t *key;
-            expr_t *value;
+            ast$Expr *key;
+            ast$Expr *value;
             bool isArray;
         } key_value;
 
@@ -196,140 +198,140 @@ typedef struct expr_t {
         } native;
 
         struct {
-            expr_t *x;
+            ast$Expr *x;
         } paren;
 
         struct {
-            expr_t *x;
+            ast$Expr *x;
             token$Token tok;
-            expr_t *sel;
+            ast$Expr *sel;
         } selector;
 
         struct {
-            expr_t *x;
+            ast$Expr *x;
         } sizeof_;
 
         struct {
-            expr_t *x;
+            ast$Expr *x;
         } star;
 
         struct {
             token$Token tok;
-            expr_t *name;
-            decl_t **fields;
+            ast$Expr *name;
+            ast$Decl **fields;
         } struct_;
 
         struct {
             token$Token op;
-            expr_t *x;
+            ast$Expr *x;
         } unary;
 
     };
-} expr_t;
+} ast$Expr;
 
-typedef struct stmt_t {
-    ast_node_type_t type;
+typedef struct ast$Stmt {
+    ast$NodeType type;
     token$Pos pos;
     union {
 
         struct {
-            expr_t *x;
+            ast$Expr *x;
             token$Token op;
-            expr_t *y;
+            ast$Expr *y;
         } assign;
 
         struct {
-            stmt_t **stmts;
+            ast$Stmt **stmts;
         } block;
 
         struct {
-            expr_t **exprs;
-            stmt_t **stmts;
+            ast$Expr **exprs;
+            ast$Stmt **stmts;
         } case_;
 
-        decl_t *decl;
+        ast$Decl *decl;
 
         struct {
-            expr_t *x;
+            ast$Expr *x;
         } expr;
 
         struct {
             token$Token kind;
-            stmt_t *init;
-            expr_t *cond;
-            stmt_t *post;
-            stmt_t *body;
+            ast$Stmt *init;
+            ast$Expr *cond;
+            ast$Stmt *post;
+            ast$Stmt *body;
         } iter;
 
         struct {
-            expr_t *cond;
-            stmt_t *body;
-            stmt_t *else_;
+            ast$Expr *cond;
+            ast$Stmt *body;
+            ast$Stmt *else_;
         } if_;
 
         struct {
             token$Token keyword;
-            expr_t *label;
+            ast$Expr *label;
         } jump;
 
         struct {
-            expr_t *label;
-            stmt_t *stmt;
+            ast$Expr *label;
+            ast$Stmt *stmt;
         } label;
 
         struct {
-            expr_t *x;
+            ast$Expr *x;
             token$Token op;
         } postfix;
 
         struct {
-            expr_t *x;
+            ast$Expr *x;
         } return_;
 
         struct {
-            expr_t *tag;
-            stmt_t **stmts;
+            ast$Expr *tag;
+            ast$Stmt **stmts;
         } switch_;
 
     };
-} stmt_t;
+} ast$Stmt;
 
-extern ast_Object *object_new(obj_kind_t kind, char *name);
+extern ast$Object *object_new(ast$ObjKind kind, char *name);
 
-typedef struct ast_Scope ast_Scope;
+typedef struct ast$Scope ast$Scope;
 
-typedef struct ast_Scope {
-    ast_Scope *outer;
+typedef struct ast$Scope {
+    ast$Scope *outer;
     map$Map objects;
     char *pkg;
-} ast_Scope;
+} ast$Scope;
 
-extern bool is_expr_type(expr_t *x);
+extern bool ast$isExprType(ast$Expr *x);
 
-extern ast_Scope *scope_new(ast_Scope *outer);
-extern void scope_deinit(ast_Scope *s);
-extern ast_Object *scope_insert(ast_Scope *s, ast_Object *obj);
-extern ast_Object *scope_lookup(ast_Scope *s, char *name);
+extern ast$Scope *ast$Scope_new(ast$Scope *outer);
+extern void ast$Scope_deinit(ast$Scope *s);
+extern ast$Object *ast$Scope_insert(ast$Scope *s, ast$Object *obj);
+extern ast$Object *ast$Scope_lookup(ast$Scope *s, char *name);
 
 typedef struct {
     const char *filename;
-    expr_t *name;
-    decl_t **imports;
-    decl_t **decls;
-    ast_Scope *scope;
-} ast_File;
+    ast$Expr *name;
+    ast$Decl **imports;
+    ast$Decl **decls;
+    ast$Scope *scope;
+} ast$File;
 
 typedef struct {
     char *name;
-    ast_Scope *scope;
-    ast_File **files;
-} package_t;
+    ast$Scope *scope;
+    ast$File **files;
+} ast$Package;
 
-extern void scope_resolve(ast_Scope *s, expr_t *x);
-extern void scope_free(ast_Scope *s);
+extern void ast$Scope_resolve(ast$Scope *s, ast$Expr *x);
+extern void ast$Scope_free(ast$Scope *s);
 
-extern bool ast_isIdent(expr_t *x);
-extern bool ast_isIdentNamed(expr_t *x, const char *name);
-extern bool ast_isNil(expr_t *x);
-extern bool ast_isVoid(expr_t *x);
-extern bool ast_isVoidPtr(expr_t *x);
+extern bool ast$isIdent(ast$Expr *x);
+extern bool ast$isIdentNamed(ast$Expr *x, const char *name);
+extern bool ast$isNil(ast$Expr *x);
+extern bool ast$isVoid(ast$Expr *x);
+extern bool ast$isVoidPtr(ast$Expr *x);

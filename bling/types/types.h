@@ -5,18 +5,18 @@ import("bling/ast");
 import("bling/emitter");
 import("bling/parser");
 
-extern ast_Scope *types_universe();
+extern ast$Scope *types_universe();
 
-extern bool types_isIdent(expr_t *expr);
-extern bool types_isVoid(expr_t *type);
-extern bool types_isVoidPtr(expr_t *type);
+extern bool types_isIdent(ast$Expr *expr);
+extern bool types_isVoid(ast$Expr *type);
+extern bool types_isVoidPtr(ast$Expr *type);
 
-extern char *types_exprString(expr_t *expr);
-extern char *types_stmtString(stmt_t *stmt);
-extern char *types_typeString(expr_t *expr);
+extern char *types_exprString(ast$Expr *expr);
+extern char *types_stmtString(ast$Stmt *stmt);
+extern char *types_typeString(ast$Expr *expr);
 
 typedef struct {
     bool strict;
 } config_t;
 
-extern package_t types_checkFile(config_t *conf, ast_File *file);
+extern ast$Package types_checkFile(config_t *conf, ast$File *file);
