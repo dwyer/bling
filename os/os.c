@@ -107,10 +107,10 @@ extern char **os_readdirnames(os_File *file, error_t **error) {
             continue;
         }
         char *name = strdup(dirent->d_name);
-        arr = append(arr, &name);
+        slice_append(&arr, &name);
     }
     char *nil = NULL;
-    arr = append(arr, &nil);
+    slice_append(&arr, &nil);
     return arr.array;
 }
 
@@ -133,11 +133,11 @@ extern os_FileInfo **os_readdir(os_File *file, error_t **error) {
             return NULL;
         }
         os_FileInfo *ptr = esc(info);
-        arr = append(arr, &ptr);
+        slice_append(&arr, &ptr);
     }
     free(names);
     const void *nil = NULL;
-    arr = append(arr, &nil);
+    slice_append(&arr, &nil);
     return arr.array;
 }
 

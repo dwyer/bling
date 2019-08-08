@@ -84,7 +84,7 @@ static expr_t *postfix_expression(parser_t *p, expr_t *x) {
                 //         ;
                 while (p->tok != token_RPAREN) {
                     expr_t *x = expression(p);
-                    args = append(args, &x);
+                    slice_append(&args, &x);
                     if (!accept(p, token_COMMA)) {
                         break;
                     }
@@ -336,7 +336,7 @@ static expr_t *struct_or_union_specifier(parser_t *p) {
             };
             expect(p, token_SEMICOLON);
             decl_t *field = esc(f);
-            slice = append(slice, &field);
+            slice_append(&slice, &field);
             if (p->tok == token_RBRACE) {
                 break;
             }
@@ -384,7 +384,7 @@ static expr_t *enum_specifier(parser_t *p) {
                 decl.value.value = constant_expression(p);
             }
             decl_t *enumerator = esc(decl);
-            list = append(list, &enumerator);
+            slice_append(&list, &enumerator);
             if (!accept(p, token_COMMA) || p->tok == token_RBRACE) {
                 break;
             }
@@ -509,7 +509,7 @@ static decl_t **parameter_type_list(parser_t *p) {
         //         : declaration_specifiers (declarator | abstract_declarator)?
         //         ;
         decl_t *param = parameter_declaration(p);
-        params = append(params, &param);
+        slice_append(&params, &param);
         if (!accept(p, token_COMMA)) {
             break;
         }
@@ -518,7 +518,7 @@ static decl_t **parameter_type_list(parser_t *p) {
                 .type = ast_DECL_FIELD,
             };
             decl_t *param = esc(decl);
-            params = append(params, &param);
+            slice_append(&params, &param);
             break;
         }
     }
@@ -644,7 +644,7 @@ static expr_t *initializer(parser_t *p) {
             };
             value = esc(x);
         }
-        list = append(list, &value);
+        slice_append(&list, &value);
         if (!accept(p, token_COMMA)) {
             break;
         }
@@ -852,9 +852,9 @@ static stmt_t *statement(parser_t *p) {
             while (accept(p, token_CASE)) {
                 expr_t *expr = constant_expression(p);
                 expect(p, token_COLON);
-                exprs = append(exprs, &expr);
+                slice_append(&exprs, &expr);
             }
-            if (len(exprs) == 0) {
+            if (slice_len(&exprs) == 0) {
                 expect(p, token_DEFAULT);
                 expect(p, token_COLON);
             }
@@ -872,7 +872,7 @@ static stmt_t *statement(parser_t *p) {
                 }
                 if (loop) {
                     stmt_t *stmt = statement(p);
-                    stmts = append(stmts, &stmt);
+                    slice_append(&stmts, &stmt);
                 }
             }
             stmt_t stmt = {
@@ -883,7 +883,7 @@ static stmt_t *statement(parser_t *p) {
                 },
             };
             stmt_t *clause = esc(stmt);
-            clauses = append(clauses, &clause);
+            slice_append(&clauses, &clause);
         }
         expect(p, token_RBRACE);
         stmt_t stmt = {
@@ -966,12 +966,12 @@ static stmt_t *compound_statement(parser_t *p, bool allow_single) {
     if (allow_single && p->tok != token_LBRACE) {
         stmt_t *stmt = statement(p);
         assert(stmt->type != ast_STMT_DECL);
-        stmts = append(stmts, &stmt);
+        slice_append(&stmts, &stmt);
     } else {
         expect(p, token_LBRACE);
         while (p->tok != token_RBRACE) {
             stmt_t *stmt = statement(p);
-            stmts = append(stmts, &stmt);
+            slice_append(&stmts, &stmt);
         }
         expect(p, token_RBRACE);
     }
@@ -1154,7 +1154,7 @@ static ast_File *parse_cfile(parser_t *p) {
     expr_t *name = NULL;
     while (p->tok == token_HASH) {
         decl_t *lit = parse_pragma(p);
-        decls = append(decls, &lit);
+        slice_append(&decls, &lit);
     }
     if (accept(p, token_PACKAGE)) {
         expect(p, token_LPAREN);
@@ -1175,14 +1175,14 @@ static ast_File *parse_cfile(parser_t *p) {
             },
         };
         decl_t *declp = esc(decl);
-        imports = append(imports, &declp);
+        slice_append(&imports, &declp);
     }
     while (p->tok != token_EOF) {
         // translation_unit
         //         : external_declaration+
         //         ;
         decl_t *decl = declaration(p, true);
-        decls = append(decls, &decl);
+        slice_append(&decls, &decl);
     }
     ast_File file = {
         .filename = p->file->name,

@@ -1074,7 +1074,7 @@ static void check_file(checker_t *w, ast_File *file) {
     for (int i = 0; file->imports[i] != NULL; i++) {
         check_import(w, file->imports[i]);
     }
-    w->files = append(w->files, &file);
+    slice_append(&w->files, &file);
     if (w->conf->strict) {
         for (int i = 0; file->decls[i] != NULL; i++) {
             check_decl(w, file->decls[i]);

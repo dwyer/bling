@@ -20,8 +20,3 @@ extern void slice_set_len(slice_t *s, int len);
 extern void slice_set(slice_t *s, int i, const void *x);
 extern void slice_append(slice_t *s, const void *x);
 extern void *slice_to_nil_array(slice_t s);
-
-extern int len(slice_t s);
-extern int cap(slice_t s);
-extern void *get_ptr(slice_t s, int index);
-extern slice_t append(slice_t s, const void *obj);
