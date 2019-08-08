@@ -7,7 +7,6 @@ cc_library(
         "os.h",
     ],
     deps = [
-        "//errors",
         "//paths",
         "//utils",
     ],

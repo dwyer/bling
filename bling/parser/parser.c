@@ -1143,11 +1143,11 @@ static bool isTestFile(const char *name) {
     return paths$match("*_test.bling", name);
 }
 
-extern ast$File **parser$parseDir(const char *path, errors$Error **first) {
-    errors$Error *err = NULL;
+extern ast$File **parser$parseDir(const char *path, utils$Error **first) {
+    utils$Error *err = NULL;
     os$FileInfo **infos = ioutil$readDir(path, &err);
     if (err) {
-        errors$Error_move(err, first);
+        utils$Error_move(err, first);
         return NULL;
     }
     utils$Slice files = utils$Slice_init(sizeof(uintptr_t));
@@ -1202,7 +1202,7 @@ static ast$File *_parse_file(parser$Parser *p) {
 }
 
 extern ast$File *parser$parse_file(const char *filename) {
-    errors$Error *err = NULL;
+    utils$Error *err = NULL;
     char *src = ioutil$readFile(filename, &err);
     if (err) {
         panic("%s: %s", filename, err->error);

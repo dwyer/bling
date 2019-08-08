@@ -1,10 +1,10 @@
 #pragma once
 #include "bootstrap/bootstrap.h"
-#include "errors/errors.h"
+#include "utils/utils.h"
 
 package(os);
 
-import("errors");
+import("utils");
 import("paths");
 import("utils");
 
@@ -26,14 +26,14 @@ extern const char *os$tempDir();
 
 extern os$File *os$newFile(uintptr_t fd, const char *name);
 
-extern os$File *os$openFile(const char *filename, int mode, int perm, errors$Error **error);
-extern void os$close(os$File *file, errors$Error **error);
+extern os$File *os$openFile(const char *filename, int mode, int perm, utils$Error **error);
+extern void os$close(os$File *file, utils$Error **error);
 
-extern os$File *os$open(const char *filename, errors$Error **error);
-extern os$File *os$create(const char *filename, errors$Error **error);
+extern os$File *os$open(const char *filename, utils$Error **error);
+extern os$File *os$create(const char *filename, utils$Error **error);
 
-extern int os$read(os$File *file, char *b, int n, errors$Error **error);
-extern int os$write(os$File *file, const char *b, errors$Error **error);
+extern int os$read(os$File *file, char *b, int n, utils$Error **error);
+extern int os$write(os$File *file, const char *b, utils$Error **error);
 
 typedef struct {
     char *_name;
@@ -49,7 +49,7 @@ extern void *os$FileInfo_sys(os$FileInfo info);
 
 extern void os$FileInfo_free(os$FileInfo info);
 
-extern os$FileInfo os$stat(const char *filename, errors$Error **error);
+extern os$FileInfo os$stat(const char *filename, utils$Error **error);
 
-extern os$File *os$openDir(const char *filename, errors$Error **error);
-extern os$FileInfo **os$readdir(os$File *file, errors$Error **error);
+extern os$File *os$openDir(const char *filename, utils$Error **error);
+extern os$FileInfo **os$readdir(os$File *file, utils$Error **error);

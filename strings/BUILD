@@ -8,7 +8,7 @@ cc_library(
     ],
     deps = [
         "//bytes",
-        "//errors",
+        "//utils",
     ],
     visibility = ["//visibility:public"],
 )

@@ -4,6 +4,18 @@
 package(utils);
 
 typedef struct {
+    char *error;
+} utils$Error;
+
+extern utils$Error *utils$NewError(const char *error);
+extern void utils$Error_move(utils$Error *src, utils$Error **dst);
+extern void utils$Error_free(utils$Error *e);
+
+// clearing and checking errno
+extern void utils$clearError();
+extern void utils$Error_check(utils$Error **e);
+
+typedef struct {
     int size;
     int len;
     int cap;

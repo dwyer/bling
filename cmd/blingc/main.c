@@ -10,7 +10,7 @@ import("bling/emitter");
 import("bling/parser");
 import("bling/types");
 import("bytes");
-import("errors");
+import("utils");
 import("io/ioutil");
 import("os");
 import("paths");
@@ -24,7 +24,7 @@ void usage(const char *progname) {
 }
 
 void emitter$emit_rawfile(emitter$Emitter *e, const char *filename) {
-    errors$Error *err = NULL;
+    utils$Error *err = NULL;
     char *src = ioutil$readFile(filename, &err);
     if (err) {
         panic(err->error);
@@ -53,7 +53,7 @@ void compile_c(char *argv[]) {
     }
     char *out = emitter$Emitter_string(&e);
     os$File *file = os$stdout;
-    errors$Error *err = NULL;
+    utils$Error *err = NULL;
     if (dst) {
         file = os$create(dst, &err);
         if (err) {
@@ -89,7 +89,7 @@ void compile_bling(char *argv[]) {
         emit_as_bling = bytes$hasSuffix(dst, ".bling");
     }
     emitter$Emitter e = {};
-    errors$Error *err = NULL;
+    utils$Error *err = NULL;
     if (!emit_as_bling) {
         emitter$emit_rawfile(&e, "bootstrap/bootstrap.h");
     }

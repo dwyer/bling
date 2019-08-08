@@ -10,7 +10,7 @@ import("bling/ast");
 import("bling/scanner");
 import("bling/token");
 import("bytes");
-import("errors");
+import("utils");
 import("io/ioutil");
 import("os");
 import("paths");
@@ -18,7 +18,7 @@ import("utils");
 import("sys");
 
 extern ast$File *parser$parse_file(const char *filename);
-extern ast$File **parser$parseDir(const char *path, errors$Error **first);
+extern ast$File **parser$parseDir(const char *path, utils$Error **first);
 
 typedef struct {
     token$File *file;

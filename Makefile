@@ -6,7 +6,6 @@ BLINGC=bazel-bin/cmd/blingc/blingc
 
 HRDS=bootstrap/bootstrap.h \
      sys/sys.h \
-     errors/errors.h \
      utils/utils.h \
      bytes/bytes.h \
      paths/paths.h \
@@ -21,7 +20,7 @@ HRDS=bootstrap/bootstrap.h \
      subc/cparser/cparser.h \
      subc/cemitter/cemitter.h
 
-SRCS=errors/errors.c \
+SRCS=utils/error.c \
      utils/slice.c \
      utils/map.c \
      bytes/bytes.c \
