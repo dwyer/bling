@@ -1,10 +1,10 @@
 cc_library(
-    name = "parser",
+    name = "cparser",
     srcs = [
-        "parser.c",
+        "cparser.c",
     ],
     hdrs = [
-        "parser.h",
+        "cparser.h",
     ],
     deps = [
         "//bling/token",

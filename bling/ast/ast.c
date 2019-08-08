@@ -62,6 +62,7 @@ extern void ast$Scope_resolve(ast$Scope *s, ast$Expr *x) {
         ast$Expr *pkg = x->ident.pkg;
         ast$Scope_resolve(s, pkg);
         if (pkg->ident.obj->kind != ast$ObjKind_PKG) {
+            ast$Scope_print(s);
             panic("not a pkg: %s", pkg->ident.name);
         }
         ast$Decl *decl = pkg->ident.obj->decl;

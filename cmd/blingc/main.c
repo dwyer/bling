@@ -2,15 +2,20 @@
 #include "bling/types/types.h"
 #include "os/os.h"
 #include "paths/paths.h"
-#include "subc/emitter/emitter.h"
-#include "subc/parser/parser.h"
+#include "subc/cemitter/cemitter.h"
+#include "subc/cparser/cparser.h"
 
+import("bling/ast");
+import("bling/emitter");
 import("bling/parser");
 import("bling/types");
+import("bytes");
+import("errors");
+import("io/ioutil");
 import("os");
 import("paths");
-import("subc/parser");
-import("subc/emitter");
+import("subc/cparser");
+import("subc/cemitter");
 
 int execve(const char *path, char *const argv[], char *envp[]);
 
@@ -39,14 +44,14 @@ void compile_c(char *argv[]) {
         }
         argv++;
     }
-    emitter$Emitter emitter = {};
+    emitter$Emitter e = {};
     while (*argv) {
         char *filename = *argv;
         ast$File *file = cparser$parseFile(filename, types$universe());
-        emitter$emitFile(&emitter, file);
+        emitter$emitFile(&e, file);
         argv++;
     }
-    char *out = emitter$Emitter_string(&emitter);
+    char *out = emitter$Emitter_string(&e);
     os$File *file = os$stdout;
     errors$Error *err = NULL;
     if (dst) {
@@ -83,10 +88,10 @@ void compile_bling(char *argv[]) {
     if (dst) {
         emit_as_bling = bytes$hasSuffix(dst, ".bling");
     }
-    emitter$Emitter emitter = {};
+    emitter$Emitter e = {};
     errors$Error *err = NULL;
     if (!emit_as_bling) {
-        emitter$emit_rawfile(&emitter, "bootstrap/bootstrap.h");
+        emitter$emit_rawfile(&e, "bootstrap/bootstrap.h");
     }
     while (*argv) {
         char *filename = *argv;
@@ -102,16 +107,16 @@ void compile_bling(char *argv[]) {
         for (int i = 0; pkg.files[i]; i++) {
             ast$File *file = pkg.files[i];
             if (emit_as_bling) {
-                emitter$emitFile(&emitter, file);
+                emitter$emitFile(&e, file);
             } else {
-                cemitter$emitFile(&emitter, file);
+                cemitter$emitFile(&e, file);
             }
             free(file->decls);
             free(file);
         }
         argv++;
     }
-    char *out = emitter$Emitter_string(&emitter);
+    char *out = emitter$Emitter_string(&e);
     if (dst) {
         if (bytes$hasSuffix(dst, ".out")) {
             char *tmp = paths$join2(os$tempDir(), "tmp.c");

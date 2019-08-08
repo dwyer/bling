@@ -1,13 +1,13 @@
-#include "subc/emitter/emitter.h"
+#include "subc/cemitter/cemitter.h"
 #include "bling/token/token.h"
 
-static void emitter$emit_c_decl(emitter$Emitter *e, ast$Decl *decl);
-static void emitter$emit_c_expr(emitter$Emitter *e, ast$Expr *expr);
-static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *name);
+static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl);
+static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr);
+static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name);
 
-static void emitter$emit_c_expr(emitter$Emitter *e, ast$Expr *expr) {
+static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
     if (!expr) {
-        panic("emitter$emit_c_expr: expr is NULL");
+        panic("cemitter$emitExpr: expr is NULL");
     }
     switch (expr->type) {
 
@@ -16,18 +16,18 @@ static void emitter$emit_c_expr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_BINARY:
-        emitter$emit_c_expr(e, expr->binary.x);
+        cemitter$emitExpr(e, expr->binary.x);
         emitter$emitSpace(e);
         emitter$emitToken(e, expr->binary.op);
         emitter$emitSpace(e);
-        emitter$emit_c_expr(e, expr->binary.y);
+        cemitter$emitExpr(e, expr->binary.y);
         break;
 
     case ast$EXPR_CALL:
-        emitter$emit_c_expr(e, expr->call.func);
+        cemitter$emitExpr(e, expr->call.func);
         emitter$emitToken(e, token$LPAREN);
         for (ast$Expr **args = expr->call.args; args && *args; ) {
-            emitter$emit_c_expr(e, *args);
+            cemitter$emitExpr(e, *args);
             args++;
             if (*args) {
                 emitter$emitToken(e, token$COMMA);
@@ -39,21 +39,21 @@ static void emitter$emit_c_expr(emitter$Emitter *e, ast$Expr *expr) {
 
     case ast$EXPR_CAST:
         emitter$emitToken(e, token$LPAREN);
-        emitter$emit_c_type(e, expr->cast.type, NULL);
+        cemitter$emitType(e, expr->cast.type, NULL);
         emitter$emitToken(e, token$RPAREN);
-        emitter$emit_c_expr(e, expr->cast.expr);
+        cemitter$emitExpr(e, expr->cast.expr);
         break;
 
     case ast$EXPR_COND:
-        emitter$emit_c_expr(e, expr->conditional.condition);
+        cemitter$emitExpr(e, expr->conditional.condition);
         emitter$emitSpace(e);
         emitter$emitToken(e, token$QUESTION_MARK);
         emitter$emitSpace(e);
-        emitter$emit_c_expr(e, expr->conditional.consequence);
+        cemitter$emitExpr(e, expr->conditional.consequence);
         emitter$emitSpace(e);
         emitter$emitToken(e, token$COLON);
         emitter$emitSpace(e);
-        emitter$emit_c_expr(e, expr->conditional.alternative);
+        cemitter$emitExpr(e, expr->conditional.alternative);
         break;
 
     case ast$EXPR_COMPOUND:
@@ -62,7 +62,7 @@ static void emitter$emit_c_expr(emitter$Emitter *e, ast$Expr *expr) {
         e->indent++;
         for (ast$Expr **exprs = expr->compound.list; exprs && *exprs; exprs++) {
             emitter$emitTabs(e);
-            emitter$emit_c_expr(e, *exprs);
+            cemitter$emitExpr(e, *exprs);
             emitter$emitToken(e, token$COMMA);
             emitter$emitNewline(e);
         }
@@ -72,62 +72,62 @@ static void emitter$emit_c_expr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_IDENT:
-        if (expr->ident.obj && expr->ident.obj->pkg) {
-            emitter$emitString(e, expr->ident.obj->pkg);
+        if (expr->ident.pkg) {
+            emitter$emitExpr(e, expr->ident.pkg);
             emitter$emitToken(e, token$DOLLAR);
         }
         emitter$emitString(e, expr->ident.name);
         break;
 
     case ast$EXPR_INDEX:
-        emitter$emit_c_expr(e, expr->index.x);
+        cemitter$emitExpr(e, expr->index.x);
         emitter$emitToken(e, token$LBRACK);
-        emitter$emit_c_expr(e, expr->index.index);
+        cemitter$emitExpr(e, expr->index.index);
         emitter$emitToken(e, token$RBRACK);
         break;
 
     case ast$EXPR_KEY_VALUE:
         if (expr->key_value.isArray) {
             emitter$emitToken(e, token$LBRACK);
-            emitter$emit_c_expr(e, expr->key_value.key);
+            cemitter$emitExpr(e, expr->key_value.key);
             emitter$emitToken(e, token$RBRACK);
         } else {
             emitter$emitToken(e, token$PERIOD);
-            emitter$emit_c_expr(e, expr->key_value.key);
+            cemitter$emitExpr(e, expr->key_value.key);
         }
         emitter$emitSpace(e);
         emitter$emitToken(e, token$ASSIGN);
         emitter$emitSpace(e);
-        emitter$emit_c_expr(e, expr->key_value.value);
+        cemitter$emitExpr(e, expr->key_value.value);
         break;
 
     case ast$EXPR_PAREN:
         emitter$emitToken(e, token$LPAREN);
-        emitter$emit_c_expr(e, expr->paren.x);
+        cemitter$emitExpr(e, expr->paren.x);
         emitter$emitToken(e, token$RPAREN);
         break;
 
     case ast$EXPR_SELECTOR:
-        emitter$emit_c_expr(e, expr->selector.x);
+        cemitter$emitExpr(e, expr->selector.x);
         emitter$emitToken(e, expr->selector.tok);
-        emitter$emit_c_expr(e, expr->selector.sel);
+        cemitter$emitExpr(e, expr->selector.sel);
         break;
 
     case ast$EXPR_SIZEOF:
         emitter$emitToken(e, token$SIZEOF);
         emitter$emitToken(e, token$LPAREN);
-        emitter$emit_c_type(e, expr->sizeof_.x, NULL);
+        cemitter$emitType(e, expr->sizeof_.x, NULL);
         emitter$emitToken(e, token$RPAREN);
         break;
 
     case ast$EXPR_STAR:
         emitter$emitToken(e, token$MUL);
-        emitter$emit_c_expr(e, expr->star.x);
+        cemitter$emitExpr(e, expr->star.x);
         break;
 
     case ast$EXPR_UNARY:
         emitter$emitToken(e, expr->unary.op);
-        emitter$emit_c_expr(e, expr->unary.x);
+        cemitter$emitExpr(e, expr->unary.x);
         break;
 
     default:
@@ -136,15 +136,15 @@ static void emitter$emit_c_expr(emitter$Emitter *e, ast$Expr *expr) {
     }
 }
 
-static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
+static void cemitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
     switch (stmt->type) {
 
     case ast$STMT_ASSIGN:
-        emitter$emit_c_expr(e, stmt->assign.x);
+        cemitter$emitExpr(e, stmt->assign.x);
         emitter$emitSpace(e);
         emitter$emitToken(e, stmt->assign.op);
         emitter$emitSpace(e);
-        emitter$emit_c_expr(e, stmt->assign.y);
+        cemitter$emitExpr(e, stmt->assign.y);
         emitter$emitToken(e, token$SEMICOLON);
         break;
 
@@ -160,7 +160,7 @@ static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
                 emitter$emitTabs(e);
                 break;
             }
-            emitter$emit_c_stmt(e, *stmts);
+            cemitter$emitStmt(e, *stmts);
             emitter$emitNewline(e);
         }
         e->indent--;
@@ -178,7 +178,7 @@ static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
                 }
                 emitter$emitToken(e, token$CASE);
                 emitter$emitSpace(e);
-                emitter$emit_c_expr(e, stmt->case_.exprs[i]);
+                cemitter$emitExpr(e, stmt->case_.exprs[i]);
             }
         } else {
             emitter$emitToken(e, token$DEFAULT);
@@ -188,14 +188,14 @@ static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
         e->indent++;
         for (ast$Stmt **stmts = stmt->case_.stmts; stmts && *stmts; stmts++) {
             emitter$emitTabs(e);
-            emitter$emit_c_stmt(e, *stmts);
+            cemitter$emitStmt(e, *stmts);
             emitter$emitNewline(e);
         }
         e->indent--;
         break;
 
     case ast$STMT_DECL:
-        emitter$emit_c_decl(e, stmt->decl);
+        cemitter$emitDecl(e, stmt->decl);
         break;
 
     case ast$STMT_EMPTY:
@@ -203,7 +203,7 @@ static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
         break;
 
     case ast$STMT_EXPR:
-        emitter$emit_c_expr(e, stmt->expr.x);
+        cemitter$emitExpr(e, stmt->expr.x);
         emitter$emitToken(e, token$SEMICOLON);
         break;
 
@@ -211,15 +211,15 @@ static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
         emitter$emitToken(e, token$IF);
         emitter$emitSpace(e);
         emitter$emitToken(e, token$LPAREN);
-        emitter$emit_c_expr(e, stmt->if_.cond);
+        cemitter$emitExpr(e, stmt->if_.cond);
         emitter$emitToken(e, token$RPAREN);
         emitter$emitSpace(e);
-        emitter$emit_c_stmt(e, stmt->if_.body);
+        cemitter$emitStmt(e, stmt->if_.body);
         if (stmt->if_.else_) {
             emitter$emitSpace(e);
             emitter$emitToken(e, token$ELSE);
             emitter$emitSpace(e);
-            emitter$emit_c_stmt(e, stmt->if_.else_);
+            cemitter$emitStmt(e, stmt->if_.else_);
         }
         break;
 
@@ -229,7 +229,7 @@ static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
         emitter$emitToken(e, token$LPAREN);
         if (stmt->iter.kind == token$FOR) {
             if (stmt->iter.init) {
-                emitter$emit_c_stmt(e, stmt->iter.init);
+                cemitter$emitStmt(e, stmt->iter.init);
                 emitter$emitSpace(e);
             } else {
                 emitter$emitToken(e, token$SEMICOLON);
@@ -237,41 +237,41 @@ static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
             }
         }
         if (stmt->iter.cond) {
-            emitter$emit_c_expr(e, stmt->iter.cond);
+            cemitter$emitExpr(e, stmt->iter.cond);
         }
         if (stmt->iter.kind == token$FOR) {
             emitter$emitToken(e, token$SEMICOLON);
             emitter$emitSpace(e);
             if (stmt->iter.post) {
                 e->skipSemi = true;
-                emitter$emit_c_stmt(e, stmt->iter.post);
+                cemitter$emitStmt(e, stmt->iter.post);
                 e->skipSemi = false;
             }
         }
         emitter$emitToken(e, token$RPAREN);
         emitter$emitSpace(e);
-        emitter$emit_c_stmt(e, stmt->iter.body);
+        cemitter$emitStmt(e, stmt->iter.body);
         break;
 
     case ast$STMT_JUMP:
         emitter$emitToken(e, stmt->jump.keyword);
         if (stmt->jump.label) {
             emitter$emitSpace(e);
-            emitter$emit_c_expr(e, stmt->jump.label);
+            cemitter$emitExpr(e, stmt->jump.label);
         }
         emitter$emitToken(e, token$SEMICOLON);
         break;
 
     case ast$STMT_LABEL:
-        emitter$emit_c_expr(e, stmt->label.label);
+        cemitter$emitExpr(e, stmt->label.label);
         emitter$emitToken(e, token$COLON);
         emitter$emitNewline(e);
         emitter$emitTabs(e);
-        emitter$emit_c_stmt(e, stmt->label.stmt);
+        cemitter$emitStmt(e, stmt->label.stmt);
         break;
 
     case ast$STMT_POSTFIX:
-        emitter$emit_c_expr(e, stmt->postfix.x);
+        cemitter$emitExpr(e, stmt->postfix.x);
         emitter$emitToken(e, stmt->postfix.op);
         emitter$emitToken(e, token$SEMICOLON);
         break;
@@ -280,7 +280,7 @@ static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
         emitter$emitToken(e, token$RETURN);
         if (stmt->return_.x) {
             emitter$emitSpace(e);
-            emitter$emit_c_expr(e, stmt->return_.x);
+            cemitter$emitExpr(e, stmt->return_.x);
         }
         emitter$emitToken(e, token$SEMICOLON);
         break;
@@ -289,14 +289,14 @@ static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
         emitter$emitToken(e, token$SWITCH);
         emitter$emitSpace(e);
         emitter$emitToken(e, token$LPAREN);
-        emitter$emit_c_expr(e, stmt->switch_.tag);
+        cemitter$emitExpr(e, stmt->switch_.tag);
         emitter$emitToken(e, token$RPAREN);
         emitter$emitSpace(e);
         emitter$emitToken(e, token$LBRACE);
         emitter$emitNewline(e);
         for (ast$Stmt **stmts = stmt->switch_.stmts; stmts && *stmts; stmts++) {
             emitter$emitTabs(e);
-            emitter$emit_c_stmt(e, *stmts);
+            cemitter$emitStmt(e, *stmts);
         }
         emitter$emitTabs(e);
         emitter$emitToken(e, token$RBRACE);
@@ -308,9 +308,9 @@ static void emitter$emit_c_stmt(emitter$Emitter *e, ast$Stmt *stmt) {
     }
 }
 
-static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *name) {
+static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name) {
     if (type == NULL) {
-        panic("emitter$emit_c_type: type is nil");
+        panic("cemitter$emitType: type is nil");
     }
     if (type->is_const && type->type != ast$EXPR_STAR) {
         emitter$emitToken(e, token$CONST);
@@ -318,10 +318,10 @@ static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *na
     }
     switch (type->type) {
     case ast$TYPE_ARRAY:
-        emitter$emit_c_type(e, type->array.elt, name);
+        cemitter$emitType(e, type->array.elt, name);
         emitter$emitToken(e, token$LBRACK);
         if (type->array.len) {
-            emitter$emit_c_expr(e, type->array.len);
+            cemitter$emitExpr(e, type->array.len);
         }
         emitter$emitToken(e, token$RBRACK);
         name = NULL;
@@ -329,15 +329,15 @@ static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *na
 
     case ast$TYPE_FUNC:
         if (type->func.result != NULL) {
-            emitter$emit_c_type(e, type->func.result, name);
+            cemitter$emitType(e, type->func.result, name);
         } else {
             emitter$emitString(e, "void");
             emitter$emitSpace(e);
-            emitter$emit_c_expr(e, name);
+            cemitter$emitExpr(e, name);
         }
         emitter$emitToken(e, token$LPAREN);
         for (ast$Decl **params = type->func.params; params && *params; ) {
-            emitter$emit_c_decl(e, *params);
+            cemitter$emitDecl(e, *params);
             params++;
             if (*params != NULL) {
                 emitter$emitToken(e, token$COMMA);
@@ -352,7 +352,7 @@ static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *na
         emitter$emitToken(e, token$ENUM);
         if (type->enum_.name) {
             emitter$emitSpace(e);
-            emitter$emit_c_expr(e, type->enum_.name);
+            cemitter$emitExpr(e, type->enum_.name);
         }
         if (type->enum_.enums) {
             emitter$emitSpace(e);
@@ -362,12 +362,12 @@ static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *na
             for (ast$Decl **enums = type->enum_.enums; enums && *enums; enums++) {
                 ast$Decl *decl = *enums;
                 emitter$emitTabs(e);
-                emitter$emit_c_expr(e, decl->value.name);
+                cemitter$emitExpr(e, decl->value.name);
                 if (decl->value.value) {
                     emitter$emitSpace(e);
                     emitter$emitToken(e, token$ASSIGN);
                     emitter$emitSpace(e);
-                    emitter$emit_c_expr(e, decl->value.value);
+                    cemitter$emitExpr(e, decl->value.value);
                 }
                 emitter$emitToken(e, token$COMMA);
                 emitter$emitNewline(e);
@@ -381,16 +381,16 @@ static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *na
     case ast$EXPR_STAR:
         type = type->star.x;
         if (type->type == ast$TYPE_FUNC) {
-            emitter$emit_c_type(e, type->func.result, NULL);
+            cemitter$emitType(e, type->func.result, NULL);
             emitter$emitToken(e, token$LPAREN);
             emitter$emitToken(e, token$MUL);
             if (name != NULL) {
-                emitter$emit_c_expr(e, name);
+                cemitter$emitExpr(e, name);
             }
             emitter$emitToken(e, token$RPAREN);
             emitter$emitToken(e, token$LPAREN);
             for (ast$Decl **params = type->func.params; params && *params; ) {
-                emitter$emit_c_decl(e, *params);
+                cemitter$emitDecl(e, *params);
                 params++;
                 if (*params != NULL) {
                     emitter$emitToken(e, token$COMMA);
@@ -400,7 +400,7 @@ static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *na
             emitter$emitToken(e, token$RPAREN);
             name = NULL;
         } else {
-            emitter$emit_c_type(e, type, NULL);
+            cemitter$emitType(e, type, NULL);
             emitter$emitToken(e, token$MUL);
         }
         break;
@@ -409,7 +409,7 @@ static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *na
         emitter$emitToken(e, type->struct_.tok);
         if (type->struct_.name) {
             emitter$emitSpace(e);
-            emitter$emit_c_expr(e, type->struct_.name);
+            cemitter$emitExpr(e, type->struct_.name);
         }
         if (type->struct_.fields) {
             emitter$emitSpace(e);
@@ -419,7 +419,7 @@ static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *na
             for (ast$Decl **fields = type->struct_.fields; fields && *fields;
                     fields++) {
                 emitter$emitTabs(e);
-                emitter$emit_c_decl(e, *fields);
+                cemitter$emitDecl(e, *fields);
                 emitter$emitToken(e, token$SEMICOLON);
                 emitter$emitNewline(e);
             }
@@ -430,7 +430,7 @@ static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *na
         break;
 
     case ast$EXPR_IDENT:
-        emitter$emit_c_expr(e, type);
+        cemitter$emitExpr(e, type);
         break;
 
     default:
@@ -444,26 +444,26 @@ static void emitter$emit_c_type(emitter$Emitter *e, ast$Expr *type, ast$Expr *na
 
     if (name) {
         emitter$emitSpace(e);
-        emitter$emit_c_expr(e, name);
+        cemitter$emitExpr(e, name);
     }
 }
 
-static void emitter$emit_c_decl(emitter$Emitter *e, ast$Decl *decl) {
+static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
     switch (decl->type) {
 
     case ast$DECL_FIELD:
         if (decl->field.type == NULL && decl->field.name == NULL) {
             emitter$emitString(e, "...");
         } else {
-            emitter$emit_c_type(e, decl->field.type, decl->field.name);
+            cemitter$emitType(e, decl->field.type, decl->field.name);
         }
         break;
 
     case ast$DECL_FUNC:
-        emitter$emit_c_type(e, decl->func.type, decl->func.name);
+        cemitter$emitType(e, decl->func.type, decl->func.name);
         if (decl->func.body) {
             emitter$emitSpace(e);
-            emitter$emit_c_stmt(e, decl->func.body);
+            cemitter$emitStmt(e, decl->func.body);
         } else {
             emitter$emitToken(e, token$SEMICOLON);
         }
@@ -478,17 +478,17 @@ static void emitter$emit_c_decl(emitter$Emitter *e, ast$Decl *decl) {
     case ast$DECL_TYPEDEF:
         emitter$emitToken(e, token$TYPEDEF);
         emitter$emitSpace(e);
-        emitter$emit_c_type(e, decl->typedef_.type, decl->typedef_.name);
+        cemitter$emitType(e, decl->typedef_.type, decl->typedef_.name);
         emitter$emitToken(e, token$SEMICOLON);
         break;
 
     case ast$DECL_VALUE:
-        emitter$emit_c_type(e, decl->value.type, decl->value.name);
+        cemitter$emitType(e, decl->value.type, decl->value.name);
         if (decl->value.value) {
             emitter$emitSpace(e);
             emitter$emitToken(e, token$ASSIGN);
             emitter$emitSpace(e);
-            emitter$emit_c_expr(e, decl->value.value);
+            cemitter$emitExpr(e, decl->value.value);
         }
         emitter$emitToken(e, token$SEMICOLON);
         break;
@@ -507,14 +507,14 @@ extern void cemitter$emitFile(emitter$Emitter *e, ast$File *file) {
     if (file->name != NULL) {
         emitter$emitToken(e, token$PACKAGE);
         emitter$emitToken(e, token$LPAREN);
-        emitter$emit_c_expr(e, file->name);
+        cemitter$emitExpr(e, file->name);
         emitter$emitToken(e, token$RPAREN);
         emitter$emitToken(e, token$SEMICOLON);
         emitter$emitNewline(e);
         emitter$emitNewline(e);
     }
     for (ast$Decl **decls = file->decls; decls && *decls; decls++) {
-        emitter$emit_c_decl(e, *decls);
+        cemitter$emitDecl(e, *decls);
         emitter$emitNewline(e);
         emitter$emitNewline(e);
     }

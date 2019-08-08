@@ -982,7 +982,6 @@ static void check_file(checker_t *w, ast$File *file);
 
 static void check_import(checker_t *w, ast$Decl *imp) {
     char *path = constant_stringVal(imp->imp.path);
-    print("importing %s", path);
     if (imp->imp.name == NULL) {
         char *base = paths$base(path);
         imp->imp.name = types$makeIdent(base);
@@ -1001,9 +1000,10 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     map$set(&w->scopes, path, &imp->imp.scope);
 
     types$Scope_declare(w->pkg.scope, imp);
+    ast$Scope_insert(imp->imp.scope, imp->imp.name->ident.obj); // TODO remove
+
     oldScope = w->pkg.scope;
     w->pkg.scope = imp->imp.scope;
-    ast$Scope_insert(w->pkg.scope, imp->imp.name->ident.obj);
 
     errors$Error *err = NULL;
     ast$File **files = parser$parseDir(path, &err);

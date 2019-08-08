@@ -1,8 +1,8 @@
-#include "subc/parser/parser.h"
+#include "subc/cparser/cparser.h"
 
 #include "fmt/fmt.h"
 
-static ast$Expr *cast$expression(parser$Parser *p);
+static ast$Expr *cast_expression(parser$Parser *p);
 static ast$Expr *expression(parser$Parser *p);
 static ast$Expr *constant_expression(parser$Parser *p);
 static ast$Expr *initializer(parser$Parser *p);
@@ -127,7 +127,7 @@ done:
 static ast$Expr *unary_expression(parser$Parser *p) {
     // unary_expression
     //         : postfix_expression
-    //         | unary_operator cast$expression
+    //         | unary_operator cast_expression
     //         | SIZEOF unary_expression
     //         | SIZEOF '(' type_name ')'
     //         ;
@@ -152,7 +152,7 @@ static ast$Expr *unary_expression(parser$Parser *p) {
                 .type = ast$EXPR_UNARY,
                 .unary = {
                     .op = op,
-                    .x = cast$expression(p),
+                    .x = cast_expression(p),
                 },
             };
             return esc(x);
@@ -163,7 +163,7 @@ static ast$Expr *unary_expression(parser$Parser *p) {
             ast$Expr x = {
                 .type = ast$EXPR_STAR,
                 .star = {
-                    .x = cast$expression(p),
+                    .x = cast_expression(p),
                 },
             };
             return esc(x);
@@ -199,10 +199,10 @@ static ast$Expr *unary_expression(parser$Parser *p) {
     }
 }
 
-static ast$Expr *cast$expression(parser$Parser *p) {
-    // cast$expression
+static ast$Expr *cast_expression(parser$Parser *p) {
+    // cast_expression
     //         : unary_expression
-    //         | '(' type_name ')' cast$expression
+    //         | '(' type_name ')' cast_expression
     //         | '(' type_name ')' initializer
     //         ;
     if (parser$accept(p, token$LPAREN)) {
@@ -213,7 +213,7 @@ static ast$Expr *cast$expression(parser$Parser *p) {
             if (p->tok == token$LBRACE) {
                 x = initializer(p);
             } else {
-                x = cast$expression(p);
+                x = cast_expression(p);
             }
             ast$Expr y = {
                 .type = ast$EXPR_CAST,
@@ -238,7 +238,7 @@ static ast$Expr *cast$expression(parser$Parser *p) {
 }
 
 static ast$Expr *binary_expression(parser$Parser *p, int prec1) {
-    ast$Expr *x = cast$expression(p);
+    ast$Expr *x = cast_expression(p);
     for (;;) {
         token$Token op = p->tok;
         int oprec = token$precedence(op);

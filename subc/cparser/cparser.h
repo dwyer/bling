@@ -12,6 +12,8 @@ import("bling/parser");
 import("bling/scanner");
 import("bling/token");
 import("errors");
+import("fmt");
 import("io/ioutil");
+import("slice");
 
 extern ast$File *cparser$parseFile(const char *filename, ast$Scope *pkg_scope);

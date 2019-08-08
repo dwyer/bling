@@ -8,7 +8,7 @@ cc_binary(
         "//bling/parser",
         "//bling/types",
         "//os",
-        "//subc/parser",
-        "//subc/emitter",
+        "//subc/cparser",
+        "//subc/cemitter",
     ],
 )

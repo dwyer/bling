@@ -19,8 +19,8 @@ HRDS=bootstrap/bootstrap.h \
      bling/parser/parser.h \
      bling/emitter/emitter.h \
      bling/types/types.h \
-     subc/parser/parser.h \
-     subc/emitter/emitter.h
+     subc/cparser/cparser.h \
+     subc/cemitter/cemitter.h
 
 SRCS=errors/errors.c \
      slice/slice.c \
@@ -34,8 +34,8 @@ SRCS=errors/errors.c \
      bling/parser/parser.c \
      bling/emitter/emitter.c \
      bling/types/types.c \
-     subc/parser/parser.c \
-     subc/emitter/emitter.c \
+     subc/cparser/cparser.c \
+     subc/cemitter/cemitter.c \
      cmd/blingc/main.c
 
 a.out: $(BLINGC) all.bling
