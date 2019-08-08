@@ -1,7 +1,6 @@
 #include "utils/utils.h"
 
-extern int errno; // from libc
-extern char *strerror(int); // from libc
+#include "sys/sys.h"
 
 extern utils$Error *utils$NewError(const char *msg) {
     utils$Error err = {
@@ -19,14 +18,14 @@ extern void utils$Error_move(utils$Error *src, utils$Error **dst) {
 }
 
 extern void utils$Error_check(utils$Error **e) {
-    if (errno) {
-        utils$Error *err = utils$NewError(strerror(errno));
+    if (sys$errno()) {
+        utils$Error *err = utils$NewError(sys$errnoString());
         utils$Error_move(err, e);
     }
 }
 
 extern void utils$clearError() {
-    errno = 0;
+    sys$errnoReset();
 }
 
 extern void utils$Error_free(utils$Error *e) {

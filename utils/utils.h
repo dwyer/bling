@@ -3,6 +3,8 @@
 
 package(utils);
 
+import("sys");
+
 typedef struct {
     char *error;
 } utils$Error;

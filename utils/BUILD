@@ -9,7 +9,7 @@ cc_library(
         "utils.h",
     ],
     deps = [
-        "//bootstrap",
+        "//sys",
     ],
     visibility = ["//visibility:public"],
 )
