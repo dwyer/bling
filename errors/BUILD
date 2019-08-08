@@ -1,10 +1,10 @@
 cc_library(
-    name = "error",
+    name = "errors",
     srcs = [
-        "error.c",
+        "errors.c",
     ],
     hdrs = [
-        "error.h",
+        "errors.h",
     ],
     deps = [
         "//bootstrap",

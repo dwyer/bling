@@ -5,11 +5,11 @@
 package(ioutil);
 
 import("bytes");
-import("error");
+import("errors");
 import("os");
 
-extern char *ioutil$readAll(os$File *file, error$Error **error);
-extern os$FileInfo **ioutil$readDir(const char *filename, error$Error **error);
-extern char *ioutil$readFile(const char *filename, error$Error **error);
+extern char *ioutil$readAll(os$File *file, errors$Error **error);
+extern os$FileInfo **ioutil$readDir(const char *filename, errors$Error **error);
+extern char *ioutil$readFile(const char *filename, errors$Error **error);
 extern void ioutil$writeFile(const char *filename, const char *data, int perm,
-        error$Error **error);
+        errors$Error **error);

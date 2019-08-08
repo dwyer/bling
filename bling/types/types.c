@@ -1005,7 +1005,7 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     w->pkg.scope = imp->imp.scope;
     ast$Scope_insert(w->pkg.scope, imp->imp.name->ident.obj);
 
-    error$Error *err = NULL;
+    errors$Error *err = NULL;
     ast$File **files = parser$parseDir(path, &err);
     if (err) {
         panic("%s: %s", path, err->error);

@@ -24,54 +24,54 @@ extern os$File *os$newFile(uintptr_t fd, const char *name) {
     return esc(file);
 }
 
-extern os$File *os$openFile(const char *filename, int mode, int perm, error$Error **error) {
-    error$clear();
+extern os$File *os$openFile(const char *filename, int mode, int perm, errors$Error **error) {
+    errors$clear();
     int fd = open(filename, mode, perm);
     if (fd == -1) {
-        error$check(error);
+        errors$check(error);
         return NULL;
     }
     return os$newFile(fd, filename);
 }
 
-extern os$File *os$open(const char *filename, error$Error **error) {
+extern os$File *os$open(const char *filename, errors$Error **error) {
     return os$openFile(filename, O_RDONLY, 0, error);
 }
 
-extern os$File *os$create(const char *filename, error$Error **error) {
+extern os$File *os$create(const char *filename, errors$Error **error) {
     return os$openFile(filename, O_CREAT | O_TRUNC | O_RDWR, DEFFILEMODE, error);
 }
 
-extern int os$read(os$File *file, char *b, int n, error$Error **error) {
-    error$clear();
+extern int os$read(os$File *file, char *b, int n, errors$Error **error) {
+    errors$clear();
     n = read(file->fd, b, n);
-    error$check(error);
+    errors$check(error);
     return n;
 }
 
-extern int os$write(os$File *file, const char *b, error$Error **error) {
-    error$clear();
+extern int os$write(os$File *file, const char *b, errors$Error **error) {
+    errors$clear();
     int n = write(file->fd, b, strlen(b));
-    error$check(error);
+    errors$check(error);
     return n;
 }
 
-extern void os$close(os$File *file, error$Error **error) {
-    error$clear();
+extern void os$close(os$File *file, errors$Error **error) {
+    errors$clear();
     if (file->is_dir) {
         closedir((DIR *)file->fd);
     } else {
         close(file->fd);
     }
-    error$check(error);
+    errors$check(error);
 }
 
-extern os$FileInfo os$stat(const char *name, error$Error **error) {
+extern os$FileInfo os$stat(const char *name, errors$Error **error) {
     struct stat st;
     os$FileInfo info = {};
-    error$clear();
+    errors$clear();
     if (stat(name, &st) != 0) {
-        error$check(error);
+        errors$check(error);
         return info;
     }
     info._name = strdup(name);
@@ -84,10 +84,10 @@ extern void os$FileInfo_free(os$FileInfo info) {
     free(info._sys);
 }
 
-extern os$File *os$openDir(const char *name, error$Error **error) {
+extern os$File *os$openDir(const char *name, errors$Error **error) {
     DIR *dp = opendir(name);
     if (dp == NULL) {
-        error$check(error);
+        errors$check(error);
         return NULL;
     }
     os$File *file = os$newFile((uintptr_t)dp, name);
@@ -95,7 +95,7 @@ extern os$File *os$openDir(const char *name, error$Error **error) {
     return file;
 }
 
-extern char **os$readdirnames(os$File *file, error$Error **error) {
+extern char **os$readdirnames(os$File *file, errors$Error **error) {
     slice$Slice arr = {.size = sizeof(char *)};
     DIR *dp = (DIR *)file->fd;
     for (;;) {
@@ -114,12 +114,12 @@ extern char **os$readdirnames(os$File *file, error$Error **error) {
     return arr.array;
 }
 
-extern os$FileInfo **os$readdir(os$File *file, error$Error **error) {
-    error$Error *err = NULL;
+extern os$FileInfo **os$readdir(os$File *file, errors$Error **error) {
+    errors$Error *err = NULL;
     char **names = os$readdirnames(file, &err);
     if (err != NULL) {
         os$close(file, NULL);
-        error$move(err, error);
+        errors$move(err, error);
         return NULL;
     }
     slice$Slice arr = {.size = sizeof(uintptr_t)};
@@ -129,7 +129,7 @@ extern os$FileInfo **os$readdir(os$File *file, error$Error **error) {
         os$FileInfo info = os$stat(path, &err);
         if (err != NULL) {
             os$close(file, NULL);
-            error$move(err, error);
+            errors$move(err, error);
             return NULL;
         }
         os$FileInfo *ptr = esc(info);

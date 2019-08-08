@@ -7,7 +7,7 @@ cc_library(
         "bytes.h",
     ],
     deps = [
-        "//error",
+        "//errors",
         "//slice",
     ],
     visibility = ["//visibility:public"],

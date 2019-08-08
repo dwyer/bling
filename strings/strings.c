@@ -13,11 +13,11 @@ extern char *strings$Builder_string(strings$Builder *b) {
 }
 
 extern int strings$Builder_write(strings$Builder *b, const char *p, int size,
-        error$Error **error) {
+        errors$Error **error) {
     return bytes$Buffer_write(&b->_buf, p, size, error);
 }
 
 extern void strings$Builder_writeByte(strings$Builder *b, char p,
-        error$Error **error) {
+        errors$Error **error) {
     bytes$Buffer_writeByte(&b->_buf, p, error);
 }
