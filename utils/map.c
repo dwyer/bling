@@ -1,12 +1,12 @@
-#include "map/map.h"
+#include "utils/utils.h"
 
 static const float max_load_factor = 0.65;
 static const int default_cap = 8;
 
-int map$Map_misses = 0;
-int map$Map_hits = 0;
-int map$Map_lookups = 0;
-int map$Map_iters = 0;
+int utils$Map_misses = 0;
+int utils$Map_hits = 0;
+int utils$Map_lookups = 0;
+int utils$Map_iters = 0;
 
 static uintptr_t djb2(const char *s) {
     // http://www.cse.yorku.ca/~oz/hash.html
@@ -29,8 +29,8 @@ typedef struct {
     void *val;
 } pair_t;
 
-extern map$Map map$Map_init(int val_size) {
-    map$Map m = {
+extern utils$Map utils$Map_init(int val_size) {
+    utils$Map m = {
         .len = 0,
         .pairs = utils$Slice_init(sizeof(pair_t)),
         .key_size = sizeof(uintptr_t),
@@ -40,33 +40,33 @@ extern map$Map map$Map_init(int val_size) {
     return m;
 }
 
-extern void map$Map_deinit(map$Map *m) {
+extern void utils$Map_deinit(utils$Map *m) {
     // for (int i = 0; i < utils$Slice_len(&m->pairs); i++) {
     //     pair_t *p = (pair_t *)utils$Slice_ref(&m->pairs, i);
     // }
     utils$Slice_deinit(&m->pairs);
 }
 
-extern int map$Map_len(const map$Map *m) {
+extern int utils$Map_len(const utils$Map *m) {
     return m->len;
 }
 
-extern int map$Map_cap(const map$Map *m) {
+extern int utils$Map_cap(const utils$Map *m) {
     return utils$Slice_len(&m->pairs);
 }
 
-static pair_t *pair_ref(const map$Map *m, const void *key) {
-    uintptr_t hash = djb2(key) % map$Map_cap(m);
-    map$Map_lookups++;
+static pair_t *pair_ref(const utils$Map *m, const void *key) {
+    uintptr_t hash = djb2(key) % utils$Map_cap(m);
+    utils$Map_lookups++;
     for (int i = 0; i < utils$Slice_len(&m->pairs); i++) {
-        map$Map_iters++;
-        int idx = (hash + i) % map$Map_cap(m);
+        utils$Map_iters++;
+        int idx = (hash + i) % utils$Map_cap(m);
         pair_t *p = (pair_t *)utils$Slice_ref(&m->pairs, idx);
         if (!p->key || streq(key, p->key)) {
             if (!i) {
-                map$Map_hits++;
+                utils$Map_hits++;
             } else {
-                map$Map_misses++;
+                utils$Map_misses++;
             }
             return p;
         }
@@ -74,7 +74,7 @@ static pair_t *pair_ref(const map$Map *m, const void *key) {
     return NULL;
 }
 
-static void set_unsafe(map$Map *m, const char *key, const void *val) {
+static void set_unsafe(utils$Map *m, const char *key, const void *val) {
     pair_t *p = pair_ref(m, key);
     if (p->key == NULL) {
         p->key = strdup(key);
@@ -85,12 +85,12 @@ static void set_unsafe(map$Map *m, const char *key, const void *val) {
     }
 }
 
-extern bool map$Map_has_key(map$Map *m, const char *key) {
+extern bool utils$Map_has_key(utils$Map *m, const char *key) {
     pair_t *p = pair_ref(m, key);
     return p->key != NULL;
 }
 
-extern int map$Map_get(const map$Map *m, const char *key, void *val) {
+extern int utils$Map_get(const utils$Map *m, const char *key, void *val) {
     pair_t *p = pair_ref(m, key);
     if (p->val) {
         memcpy(val, p->val, m->val_size);
@@ -99,11 +99,11 @@ extern int map$Map_get(const map$Map *m, const char *key, void *val) {
     return 0;
 }
 
-extern void map$Map_set(map$Map *m, const char *key, const void *val) {
+extern void utils$Map_set(utils$Map *m, const char *key, const void *val) {
     set_unsafe(m, key, val);
-    float load_factor = (float)map$Map_len(m) / map$Map_cap(m);
+    float load_factor = (float)utils$Map_len(m) / utils$Map_cap(m);
     if (load_factor >= max_load_factor) {
-        int new_cap = map$Map_cap(m) * 2;
+        int new_cap = utils$Map_cap(m) * 2;
         utils$Slice pairs = m->pairs;
         m->pairs = utils$Slice_init(m->pairs.size);
         utils$Slice_set_len(&m->pairs, new_cap);
@@ -118,12 +118,12 @@ extern void map$Map_set(map$Map *m, const char *key, const void *val) {
     }
 }
 
-extern map$Map_iter_t map$Map_iter(const map$Map *m) {
-    map$Map_iter_t iter = {._map = m};
+extern utils$Map_iter_t utils$Map_iter(const utils$Map *m) {
+    utils$Map_iter_t iter = {._map = m};
     return iter;
 }
 
-extern int map$Map_iter_next(map$Map_iter_t *m, char **key, void *val) {
+extern int utils$Map_iter_next(utils$Map_iter_t *m, char **key, void *val) {
     while (m->_idx < utils$Slice_len(&m->_map->pairs)) {
         pair_t *p = (pair_t *)utils$Slice_ref(&m->_map->pairs, m->_idx);
         m->_idx++;

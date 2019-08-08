@@ -1,7 +1,7 @@
 #include "bling/token/token.h"
 
-#include "map/map.h"
 #include "sys/sys.h"
+#include "utils/utils.h"
 
 static char *tokens[] = {
     [token$ILLEGAL] = "ILLEGAL",
@@ -94,18 +94,18 @@ extern char *token$string(token$Token tok) {
     return tokens[tok];
 }
 
-static map$Map keywords = {};
+static utils$Map keywords = {};
 
 extern token$Token token$lookup(char *ident) {
     if (keywords.val_size == 0) {
-        keywords = map$Map_init(sizeof(token$Token));
+        keywords = utils$Map_init(sizeof(token$Token));
         for (int i = token$_keywordBeg + 1; i < token$_keywordEnd; i++) {
             char *s = token$string(i);
-            map$Map_set(&keywords, s, &i);
+            utils$Map_set(&keywords, s, &i);
         }
     }
     token$Token tok = token$IDENT;
-    map$Map_get(&keywords, ident, &tok);
+    utils$Map_get(&keywords, ident, &tok);
     return tok;
 }
 

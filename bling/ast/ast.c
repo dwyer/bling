@@ -16,36 +16,36 @@ extern ast$Object *ast$newObject(ast$ObjKind kind, char *name) {
 extern ast$Scope *ast$Scope_new(ast$Scope *outer) {
     ast$Scope s = {
         .outer = outer,
-        .objects = map$Map_init(sizeof(ast$Object *)),
+        .objects = utils$Map_init(sizeof(ast$Object *)),
     };
     return esc(s);
 }
 
 extern void ast$Scope_deinit(ast$Scope *s) {
-    map$Map_deinit(&s->objects);
+    utils$Map_deinit(&s->objects);
 }
 
 extern ast$Object *ast$Scope_insert(ast$Scope *s, ast$Object *obj) {
     ast$Object *alt = NULL;
-    map$Map_get(&s->objects, obj->name, &alt);
+    utils$Map_get(&s->objects, obj->name, &alt);
     if (alt == NULL) {
-        map$Map_set(&s->objects, obj->name, &obj);
+        utils$Map_set(&s->objects, obj->name, &obj);
     }
     return alt;
 }
 
 extern ast$Object *ast$Scope_lookup(ast$Scope *s, char *name) {
     ast$Object *obj = NULL;
-    map$Map_get(&s->objects, name, &obj);
+    utils$Map_get(&s->objects, name, &obj);
     return obj;
 }
 
 extern void ast$Scope_print(ast$Scope *s) {
     bytes$Buffer buf = {};
     while (s) {
-        map$Map_iter_t iter = map$Map_iter(&s->objects);
+        utils$Map_iter_t iter = utils$Map_iter(&s->objects);
         char *key = NULL;
-        while (map$Map_iter_next(&iter, &key, NULL)) {
+        while (utils$Map_iter_next(&iter, &key, NULL)) {
             print("%s- %s", bytes$Buffer_string(&buf), key);
         }
         s = s->outer;
@@ -87,7 +87,7 @@ extern void ast$Scope_resolve(ast$Scope *s, ast$Expr *x) {
 }
 
 extern void ast$Scope_free(ast$Scope *s) {
-    map$Map_deinit(&s->objects);
+    utils$Map_deinit(&s->objects);
     free(s);
 }
 

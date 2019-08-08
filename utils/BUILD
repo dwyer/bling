@@ -1,6 +1,7 @@
 cc_library(
     name = "utils",
     srcs = [
+        "map.c",
         "slice.c",
     ],
     hdrs = [

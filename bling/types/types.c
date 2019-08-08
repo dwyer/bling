@@ -385,7 +385,7 @@ typedef struct {
     ast$Expr *result;
     utils$Slice files;
     ast$Expr *typedefName;
-    map$Map scopes;
+    utils$Map scopes;
 } checker_t;
 
 static void checker_openScope(checker_t *w) {
@@ -988,7 +988,7 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     }
 
     ast$Scope *oldScope = NULL;
-    map$Map_get(&w->scopes, path, &oldScope);
+    utils$Map_get(&w->scopes, path, &oldScope);
     if (oldScope) {
         imp->imp.scope = oldScope;
         types$Scope_declare(w->pkg.scope, imp);
@@ -997,7 +997,7 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     }
 
     imp->imp.scope = ast$Scope_new(types$universe());
-    map$Map_set(&w->scopes, path, &imp->imp.scope);
+    utils$Map_set(&w->scopes, path, &imp->imp.scope);
 
     types$Scope_declare(w->pkg.scope, imp);
     ast$Scope_insert(imp->imp.scope, imp->imp.name->ident.obj); // TODO remove
@@ -1113,7 +1113,7 @@ extern ast$Package types$checkFile(types$Config *conf, ast$File *file) {
             .scope = file->scope,
         },
         .files = utils$Slice_init(sizeof(ast$File *)),
-        .scopes = map$Map_init(sizeof(ast$Scope *)),
+        .scopes = utils$Map_init(sizeof(ast$Scope *)),
     };
     check_file(&w, file);
     w.pkg.files = utils$Slice_to_nil_array(w.files);

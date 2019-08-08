@@ -8,7 +8,6 @@ import("bling/emitter");
 import("bling/parser");
 import("bling/token");
 import("errors");
-import("map");
 import("paths");
 import("utils");
 

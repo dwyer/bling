@@ -8,7 +8,6 @@ HRDS=bootstrap/bootstrap.h \
      sys/sys.h \
      errors/errors.h \
      utils/utils.h \
-     map/map.h \
      bytes/bytes.h \
      paths/paths.h \
      os/os.h \
@@ -24,7 +23,7 @@ HRDS=bootstrap/bootstrap.h \
 
 SRCS=errors/errors.c \
      utils/slice.c \
-     map/map.c \
+     utils/map.c \
      bytes/bytes.c \
      paths/paths.c \
      io/ioutil/ioutil.c \

@@ -1,12 +1,12 @@
 #pragma once
 #include "bling/token/token.h"
-#include "map/map.h"
+#include "utils/utils.h"
 
 package(ast);
 
 import("bling/token");
 import("bytes");
-import("map");
+import("utils");
 
 typedef enum {
 
@@ -304,7 +304,7 @@ extern ast$Object *ast$newObject(ast$ObjKind kind, char *name);
 
 typedef struct ast$Scope {
     ast$Scope *outer;
-    map$Map objects;
+    utils$Map objects;
     char *pkg;
 } ast$Scope;
 
