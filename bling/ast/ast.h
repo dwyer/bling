@@ -5,6 +5,7 @@
 package(ast);
 
 import("bling/token");
+import("bytes");
 import("map");
 
 typedef enum {
@@ -66,6 +67,7 @@ typedef enum {
 
 typedef struct ast$Decl ast$Decl;
 typedef struct ast$Expr ast$Expr;
+typedef struct ast$Scope ast$Scope;
 typedef struct ast$Stmt ast$Stmt;
 
 typedef enum {
@@ -90,6 +92,7 @@ typedef struct ast$Decl {
         struct {
             ast$Expr *name;
             ast$Expr *path;
+            ast$Scope *scope;
         } imp;
 
         struct {
@@ -299,8 +302,6 @@ typedef struct ast$Stmt {
 
 extern ast$Object *object_new(ast$ObjKind kind, char *name);
 
-typedef struct ast$Scope ast$Scope;
-
 typedef struct ast$Scope {
     ast$Scope *outer;
     map$Map objects;
@@ -336,3 +337,5 @@ extern bool ast$isIdentNamed(ast$Expr *x, const char *name);
 extern bool ast$isNil(ast$Expr *x);
 extern bool ast$isVoid(ast$Expr *x);
 extern bool ast$isVoidPtr(ast$Expr *x);
+
+extern void ast$Scope_print(ast$Scope *s);

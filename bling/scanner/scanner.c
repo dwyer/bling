@@ -22,16 +22,15 @@ static void skip_line(scanner$Scanner *s) {
 }
 
 static bool is_letter(int ch) {
-    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_' ||
-        ch == '$';
+    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_';
 }
 
 static bool is_digit(int ch) {
     return '0' <= ch && ch <= '9';
 }
 
-static token$Token switch4(scanner$Scanner *s, token$Token tok0, token$Token tok1, int ch2,
-        token$Token tok2, token$Token tok3) {
+static token$Token switch4(scanner$Scanner *s, token$Token tok0,
+        token$Token tok1, int ch2, token$Token tok2, token$Token tok3) {
     if (s->ch == '=') {
         next0(s);
         return tok1;
@@ -47,12 +46,13 @@ static token$Token switch4(scanner$Scanner *s, token$Token tok0, token$Token tok
     return tok0;
 }
 
-static token$Token switch3(scanner$Scanner *s, token$Token tok0, token$Token tok1, int ch2,
-        token$Token tok2) {
+static token$Token switch3(scanner$Scanner *s, token$Token tok0,
+        token$Token tok1, int ch2, token$Token tok2) {
     return switch4(s, tok0, tok1, ch2, tok2, token$ILLEGAL);
 }
 
-static token$Token switch2(scanner$Scanner *s, token$Token tok0, token$Token tok1) {
+static token$Token switch2(scanner$Scanner *s, token$Token tok0,
+        token$Token tok1) {
     return switch4(s, tok0, tok1, '\0', token$ILLEGAL, token$ILLEGAL);
 }
 
@@ -65,7 +65,8 @@ static char *make_string_slice(scanner$Scanner *s, int start, int end) {
 
 static char *scan_ident(scanner$Scanner *s) {
     int offs = s->offset;
-    while (is_letter(s->ch) || is_digit(s->ch)) {
+    while (is_letter(s->ch) || is_digit(s->ch)
+            || (s->dontInsertSemis && s->ch == '$')) {
         next0(s);
     }
     return make_string_slice(s, offs, s->offset);

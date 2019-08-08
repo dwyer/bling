@@ -284,7 +284,17 @@ static void types$Scope_declare(ast$Scope *s, ast$Decl *decl) {
     }
     assert(ident->type == ast$EXPR_IDENT);
     if (ident->ident.obj != NULL) {
-        panic("already declared: %s", ident->ident.name);
+        ast$Scope_print(s);
+        panic("already declared: %s", types$declString(decl));
+    }
+    if (ident->ident.pkg != NULL) {
+        ast$Expr *pkg = ident->ident.pkg;
+        ast$Scope_resolve(s, pkg);
+        ast$Object *pkgObj = pkg->ident.obj;
+        ast$Decl *decl = pkgObj->decl;
+        assert(decl->type == ast$DECL_IMPORT);
+        s = decl->imp.scope;
+        // panic("get pkg scope: %s $ %s", pkg->ident.name, ident->ident.name);
     }
     ast$Object *obj = object_new(kind, ident->ident.name);
     obj->decl = decl;
@@ -471,7 +481,7 @@ static bool types$isLhs(ast$Expr *expr) {
     }
 }
 
-static ast$Expr *get_ast$Declype(ast$Decl *decl) {
+static ast$Expr *get_decl_type(ast$Decl *decl) {
     assert(decl);
     switch (decl->type) {
     case ast$DECL_FIELD:
@@ -493,7 +503,7 @@ static ast$Expr *get_ident_type(ast$Expr *ident) {
     assert(ident->type == ast$EXPR_IDENT);
     ast$Object *obj = ident->ident.obj;
     assert(obj);
-    return get_ast$Declype(obj->decl);
+    return get_decl_type(obj->decl);
 }
 
 static ast$Decl *find_field(ast$Expr *type, ast$Expr *sel) {
@@ -972,19 +982,29 @@ static void check_file(checker_t *w, ast$File *file);
 
 static void check_import(checker_t *w, ast$Decl *imp) {
     char *path = constant_stringVal(imp->imp.path);
+    print("importing %s", path);
     if (imp->imp.name == NULL) {
         char *base = paths$base(path);
         imp->imp.name = types$makeIdent(base);
     }
-    ast$Scope *scope = NULL;
-    map$get(&w->scopes, path, &scope);
-    if (scope) {
+
+    ast$Scope *oldScope = NULL;
+    map$get(&w->scopes, path, &oldScope);
+    if (oldScope) {
+        imp->imp.scope = oldScope;
         types$Scope_declare(w->pkg.scope, imp);
         free(path);
         return;
     }
-    scope = w->pkg.scope;
-    map$set(&w->scopes, path, &scope);
+
+    imp->imp.scope = ast$Scope_new(types$universe());
+    map$set(&w->scopes, path, &imp->imp.scope);
+
+    types$Scope_declare(w->pkg.scope, imp);
+    oldScope = w->pkg.scope;
+    w->pkg.scope = imp->imp.scope;
+    ast$Scope_insert(w->pkg.scope, imp->imp.name->ident.obj);
+
     error$Error *err = NULL;
     ast$File **files = parser$parseDir(path, &err);
     if (err) {
@@ -993,6 +1013,8 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     for (int i = 0; files[i]; i++) {
         check_file(w, files[i]);
     }
+
+    w->pkg.scope = oldScope;
 }
 
 static void check_decl(checker_t *w, ast$Decl *decl) {
@@ -1067,10 +1089,6 @@ static void check_func(checker_t *w, ast$Decl *decl) {
 }
 
 static void check_file(checker_t *w, ast$File *file) {
-    if (file->name) {
-        // checker_openScope(w);
-        // w->pkg.scope->pkg = file->name->ident.name;
-    }
     for (int i = 0; file->imports[i] != NULL; i++) {
         check_import(w, file->imports[i]);
     }
@@ -1082,9 +1100,6 @@ static void check_file(checker_t *w, ast$File *file) {
         for (int i = 0; file->decls[i] != NULL; i++) {
             check_func(w, file->decls[i]);
         }
-    }
-    if (file->name) {
-        // checker_closeScope(w);
     }
 }
 

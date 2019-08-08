@@ -1,4 +1,5 @@
 #include "bling/ast/ast.h"
+#include "bytes/bytes.h"
 
 extern bool ast$isExprType(ast$Expr *x) {
     return ast$_TYPE_START < x->type && x->type < ast$_DECL_END;
@@ -39,19 +40,48 @@ extern ast$Object *ast$Scope_lookup(ast$Scope *s, char *name) {
     return obj;
 }
 
+extern void ast$Scope_print(ast$Scope *s) {
+    bytes$Buffer buf = {};
+    while (s) {
+        map$iter_t iter = map$iter(&s->objects);
+        char *key = NULL;
+        while (map$iter_next(&iter, &key, NULL)) {
+            print("%s- %s", bytes$Buffer_string(&buf), key);
+        }
+        s = s->outer;
+        bytes$Buffer_writeByte(&buf, '\t', NULL);
+    }
+}
+
 extern void ast$Scope_resolve(ast$Scope *s, ast$Expr *x) {
     if (x->type != ast$EXPR_IDENT) {
         return;
     }
     assert(x->ident.obj == NULL);
-    while (s != NULL) {
-        ast$Object *obj = ast$Scope_lookup(s, x->ident.name);
+    if (x->ident.pkg) {
+        ast$Expr *pkg = x->ident.pkg;
+        ast$Scope_resolve(s, pkg);
+        if (pkg->ident.obj->kind != ast$ObjKind_PKG) {
+            panic("not a pkg: %s", pkg->ident.name);
+        }
+        ast$Decl *decl = pkg->ident.obj->decl;
+        assert(decl->type == ast$DECL_IMPORT);
+        ast$Scope *t = decl->imp.scope;
+        if (!t) {
+            ast$Scope_print(s);
+            panic("%s $ %s", pkg->ident.name, x->ident.name);
+        }
+        assert(t);
+        s = t;
+    }
+    for (ast$Scope *t = s; t != NULL; t = t->outer) {
+        ast$Object *obj = ast$Scope_lookup(t, x->ident.name);
         if (obj != NULL) {
             x->ident.obj = obj;
             return;
         }
-        s = s->outer;
     }
+    ast$Scope_print(s);
     panic("ast$Scope_resolve: unresolved: %s", x->ident.name);
 }
 

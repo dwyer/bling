@@ -10,6 +10,7 @@ import("bling/ast");
 import("bling/scanner");
 import("bling/token");
 import("bytes");
+import("error");
 import("fmt");
 import("io/ioutil");
 import("paths");

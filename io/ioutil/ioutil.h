@@ -5,6 +5,7 @@
 package(ioutil);
 
 import("bytes");
+import("error");
 import("os");
 
 extern char *ioutil$readAll(os$File *file, error$Error **error);

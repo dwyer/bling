@@ -456,6 +456,12 @@ extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
         }
         break;
 
+    case ast$DECL_IMPORT:
+        emitter$emitToken(e, token$IMPORT);
+        emitter$emitSpace(e);
+        emitter$emitExpr(e, decl->imp.path);
+        break;
+
     case ast$DECL_TYPEDEF:
         emitter$emitToken(e, token$TYPEDEF);
         emitter$emitSpace(e);

@@ -3,9 +3,9 @@
 extern int errno; // from libc
 extern char *strerror(int); // from libc
 
-extern error$Error *error$make(const char *error) {
+extern error$Error *error$make(const char *msg) {
     error$Error err = {
-        .error = strdup(error),
+        .error = strdup(msg),
     };
     return esc(err);
 }

@@ -42,7 +42,7 @@ static void slice$set_cap(slice$Slice *s, int cap) {
     s->array = realloc(s->array, s->cap * s->size);
 }
 
-static void set_len(slice$Slice *s, int len) {
+static void _set_len(slice$Slice *s, int len) {
     bool grow = false;
     int cap = s->cap;
     if (cap == 0) {
@@ -61,7 +61,7 @@ static void set_len(slice$Slice *s, int len) {
 
 extern void slice$set_len(slice$Slice *s, int len) {
     int old = s->len;
-    set_len(s, len);
+    _set_len(s, len);
     int diff = len - old;
     if (diff > 0) {
         memset(slice$ref(s, old), 0, diff * s->size);
@@ -77,7 +77,7 @@ extern void slice$set(slice$Slice *s, int i, const void *x) {
 }
 
 extern void slice$append(slice$Slice *s, const void *x) {
-    set_len(s, s->len + 1);
+    _set_len(s, s->len + 1);
     slice$set(s, s->len - 1, x);
 }
 
