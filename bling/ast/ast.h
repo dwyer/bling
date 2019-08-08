@@ -179,6 +179,7 @@ typedef struct ast$Expr {
         struct {
             char *name;
             ast$Object *obj;
+            ast$Expr *pkg;
         } ident;
 
         struct {

@@ -113,7 +113,7 @@ extern token$Pos parser$expect(parser$Parser *p, token$Token tok) {
     return pos;
 }
 
-extern ast$Expr *parser$parseIdent(parser$Parser *p) {
+extern ast$Expr *parser$_parseIdent(parser$Parser *p) {
     ast$Expr x = {
         .type = ast$EXPR_IDENT,
         .pos = p->pos,
@@ -124,6 +124,16 @@ extern ast$Expr *parser$parseIdent(parser$Parser *p) {
     }
     parser$expect(p, token$IDENT);
     return esc(x);
+}
+
+extern ast$Expr *parser$parseIdent(parser$Parser *p) {
+    ast$Expr *x = parser$_parseIdent(p);
+    if (parser$accept(p, token$DOLLAR)) {
+        ast$Expr *y = parser$_parseIdent(p);
+        y->ident.pkg = x;
+        x = y;
+    }
+    return x;
 }
 
 extern ast$Expr *parser$parseBasicLit(parser$Parser *p, token$Token kind) {
