@@ -5,10 +5,12 @@
 #include "bling/token/token.h"
 #include "bling/parser/parser.h"
 
+package(cparser);
+
 import("bling/ast");
 import("bling/parser");
 import("bling/scanner");
 import("bling/token");
 import("io/ioutil");
 
-extern ast$File *parser$parse_cfile(const char *filename, ast$Scope *pkg_scope);
+extern ast$File *cparser$parseFile(const char *filename, ast$Scope *pkg_scope);

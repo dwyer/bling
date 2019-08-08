@@ -42,7 +42,7 @@ void compile_c(char *argv[]) {
     emitter$Emitter emitter = {};
     while (*argv) {
         char *filename = *argv;
-        ast$File *file = parser$parse_cfile(filename, types$universe());
+        ast$File *file = cparser$parseFile(filename, types$universe());
         emitter$emitFile(&emitter, file);
         argv++;
     }
@@ -94,7 +94,7 @@ void compile_bling(char *argv[]) {
         if (bytes$hasSuffix(filename, ".bling")) {
             file = parser$parse_file(filename);
         } else if (bytes$hasSuffix(filename, ".c")) {
-            file = parser$parse_cfile(filename, types$universe());
+            file = cparser$parseFile(filename, types$universe());
         } else {
             panic("unknown file type: %s", filename);
         }
