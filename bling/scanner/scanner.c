@@ -1,6 +1,6 @@
 #include "bling/scanner/scanner.h"
 
-static void next0(scanner_t *s) {
+static void next0(scanner$Scanner *s) {
     s->offset = s->rd_offset;
     if (s->ch == '\n') {
         token$File_addLine(s->file, s->offset);
@@ -9,13 +9,13 @@ static void next0(scanner_t *s) {
     s->rd_offset++;
 }
 
-static void skip_whitespace(scanner_t *s) {
+static void skip_whitespace(scanner$Scanner *s) {
     while (s->ch == ' ' || (s->ch == '\n' && !s->insertSemi) || s->ch == '\t') {
         next0(s);
     }
 }
 
-static void skip_line(scanner_t *s) {
+static void skip_line(scanner$Scanner *s) {
     while (s->ch >= 0 && s->ch != '\n') {
         next0(s);
     }
@@ -30,7 +30,7 @@ static bool is_digit(int ch) {
     return '0' <= ch && ch <= '9';
 }
 
-static token$Token switch4(scanner_t *s, token$Token tok0, token$Token tok1, int ch2,
+static token$Token switch4(scanner$Scanner *s, token$Token tok0, token$Token tok1, int ch2,
         token$Token tok2, token$Token tok3) {
     if (s->ch == '=') {
         next0(s);
@@ -47,23 +47,23 @@ static token$Token switch4(scanner_t *s, token$Token tok0, token$Token tok1, int
     return tok0;
 }
 
-static token$Token switch3(scanner_t *s, token$Token tok0, token$Token tok1, int ch2,
+static token$Token switch3(scanner$Scanner *s, token$Token tok0, token$Token tok1, int ch2,
         token$Token tok2) {
     return switch4(s, tok0, tok1, ch2, tok2, token$ILLEGAL);
 }
 
-static token$Token switch2(scanner_t *s, token$Token tok0, token$Token tok1) {
+static token$Token switch2(scanner$Scanner *s, token$Token tok0, token$Token tok1) {
     return switch4(s, tok0, tok1, '\0', token$ILLEGAL, token$ILLEGAL);
 }
 
-static char *make_string_slice(scanner_t *s, int start, int end) {
+static char *make_string_slice(scanner$Scanner *s, int start, int end) {
     size_t len = end - start + 1;
     char *lit = (char *)malloc(len);
     strlcpy(lit, &s->src[start], len);
     return lit;
 }
 
-static char *scan_ident(scanner_t *s) {
+static char *scan_ident(scanner$Scanner *s) {
     int offs = s->offset;
     while (is_letter(s->ch) || is_digit(s->ch)) {
         next0(s);
@@ -71,7 +71,7 @@ static char *scan_ident(scanner_t *s) {
     return make_string_slice(s, offs, s->offset);
 }
 
-static char *scan_pragma(scanner_t *s) {
+static char *scan_pragma(scanner$Scanner *s) {
     int offs = s->offset;
     while (s->ch > 0 && s->ch != '\n') {
         next0(s);
@@ -79,7 +79,7 @@ static char *scan_pragma(scanner_t *s) {
     return make_string_slice(s, offs, s->offset);
 }
 
-static char *scan_number(scanner_t *s, token$Token *tokp) {
+static char *scan_number(scanner$Scanner *s, token$Token *tokp) {
     int offs = s->offset;
     bool is_float = false;
     while (is_digit(s->ch) || s->ch == '.') {
@@ -100,7 +100,7 @@ static char *scan_number(scanner_t *s, token$Token *tokp) {
     return make_string_slice(s, offs, s->offset);
 }
 
-static char *scan_rune(scanner_t *s) {
+static char *scan_rune(scanner$Scanner *s) {
     int offs = s->offset;
     int n = 0;
     bool escape = false;
@@ -116,7 +116,7 @@ static char *scan_rune(scanner_t *s) {
     return make_string_slice(s, offs, s->offset);
 }
 
-static char *scan_string(scanner_t *s) {
+static char *scan_string(scanner$Scanner *s) {
     int offs = s->offset;
     int n = 0;
     bool escape = false;
@@ -132,11 +132,11 @@ static char *scan_string(scanner_t *s) {
     return make_string_slice(s, offs, s->offset);
 }
 
-static void scanner_error(scanner_t *s, int offs, const char *msg) {
+static void scanner$error(scanner$Scanner *s, int offs, const char *msg) {
     panic("scanner error: offset %d: %s", offs, msg);
 }
 
-static void scan_comment(scanner_t *s) {
+static void scan_comment(scanner$Scanner *s) {
     int offs = s->offset - 1;
     switch (s->ch) {
     case '/':
@@ -152,7 +152,7 @@ static void scan_comment(scanner_t *s) {
                 return;
             }
         }
-        scanner_error(s, offs, "comment not terminated");
+        scanner$error(s, offs, "comment not terminated");
         break;
     default:
         panic("not a comment");
@@ -160,7 +160,7 @@ static void scan_comment(scanner_t *s) {
     }
 }
 
-extern token$Token scanner_scan(scanner_t *s, token$Pos *pos, char **lit) {
+extern token$Token scanner$scan(scanner$Scanner *s, token$Pos *pos, char **lit) {
     token$Token tok;
 scan_again:
     tok = token$ILLEGAL;
@@ -328,7 +328,7 @@ scan_again:
     return tok;
 }
 
-extern void scanner_init(scanner_t *s, token$File *file, char *src) {
+extern void scanner$init(scanner$Scanner *s, token$File *file, char *src) {
     s->file = file;
     s->src = src;
     s->rd_offset = 0;

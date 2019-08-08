@@ -17,7 +17,7 @@ extern ast_File **parser_parseDir(const char *path, error$Error **first);
 
 typedef struct {
     token$File *file;
-    scanner_t scanner;
+    scanner$Scanner scanner;
 
     token$Pos pos;
     token$Token tok;

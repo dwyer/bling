@@ -22,7 +22,7 @@ extern decl_t *parse_pragma(parser_t *p) {
 extern void parser_init(parser_t *p, const char *filename, char *src) {
     p->file = token$File_new(filename);
     p->lit = NULL;
-    scanner_init(&p->scanner, p->file, src);
+    scanner$init(&p->scanner, p->file, src);
     p->scanner.dontInsertSemis = !bytes$hasSuffix(filename, ".bling");
     parser_next(p);
 }
@@ -89,7 +89,7 @@ extern void parser_errorExpected(parser_t *p, token$Pos pos, char *msg) {
 }
 
 extern void parser_next(parser_t *p) {
-    p->tok = scanner_scan(&p->scanner, &p->pos, &p->lit);
+    p->tok = scanner$scan(&p->scanner, &p->pos, &p->lit);
 }
 
 extern bool accept(parser_t *p, token$Token tok0) {

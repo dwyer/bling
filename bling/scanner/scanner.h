@@ -1,6 +1,8 @@
 #pragma once
 #include "bling/token/token.h"
 
+package(scanner);
+
 import("bling/token");
 
 typedef struct {
@@ -11,7 +13,7 @@ typedef struct {
     int ch;
     bool insertSemi;
     bool dontInsertSemis;
-} scanner_t;
+} scanner$Scanner;
 
-extern token$Token scanner_scan(scanner_t *s, token$Pos *pos, char **lit);
-extern void scanner_init(scanner_t *s, token$File *file, char *src);
+extern token$Token scanner$scan(scanner$Scanner *s, token$Pos *pos, char **lit);
+extern void scanner$init(scanner$Scanner *s, token$File *file, char *src);
