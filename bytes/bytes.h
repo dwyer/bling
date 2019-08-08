@@ -3,16 +3,18 @@
 #include "error/error.h"
 #include "slice/slice.h"
 
+package(bytes);
+
 import("error");
 import("slice");
 
-extern bool bytes_hasSuffix(const char *s, const char *suffix);
-extern char *bytes_join(const char *a[], int size, const char *sep);
+extern bool bytes$hasSuffix(const char *s, const char *suffix);
+extern char *bytes$join(const char *a[], int size, const char *sep);
 
-typedef slice$Slice buffer_t;
+typedef slice$Slice bytes$Buffer;
 
-extern char *buffer_bytes(buffer_t *b);
-extern int buffer_len(buffer_t *b);
-extern char *buffer_string(buffer_t *b);
-extern int buffer_write(buffer_t *b, const char *p, int size, error_t **error);
-extern void buffer_writeByte(buffer_t *b, char p, error_t **error);
+extern char *bytes$Buffer_bytes(bytes$Buffer *b);
+extern int bytes$Buffer_len(bytes$Buffer *b);
+extern char *bytes$Buffer_string(bytes$Buffer *b);
+extern int bytes$Buffer_write(bytes$Buffer *b, const char *p, int size, error_t **error);
+extern void bytes$Buffer_writeByte(bytes$Buffer *b, char p, error_t **error);

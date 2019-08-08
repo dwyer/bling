@@ -23,7 +23,7 @@ extern void parser_init(parser_t *p, const char *filename, char *src) {
     p->file = token_File_new(filename);
     p->lit = NULL;
     scanner_init(&p->scanner, p->file, src);
-    p->scanner.dontInsertSemis = !bytes_hasSuffix(filename, ".bling");
+    p->scanner.dontInsertSemis = !bytes$hasSuffix(filename, ".bling");
     parser_next(p);
 }
 
@@ -54,36 +54,36 @@ static decl_t *parse_field(parser_t *p, bool anon);
 
 extern void parser_error(parser_t *p, pos_t pos, char *msg) {
     token_Position position = token_File_position(p->file, pos);
-    buffer_t buf = {};
+    bytes$Buffer buf = {};
     int i = 0;
     slice$get(&p->file->lines, position.line-1, &i);
     int ch = p->scanner.src[i];
     while (ch > 0 && ch != '\n') {
-        buffer_writeByte(&buf, ch, NULL);
+        bytes$Buffer_writeByte(&buf, ch, NULL);
         i++;
         ch = p->scanner.src[i];
     }
     panic(fmt$sprintf("%s: %s\n%s",
                 token_Position_string(&position),
                 msg,
-                buffer_string(&buf)));
+                bytes$Buffer_string(&buf)));
 }
 
 extern void parser_errorExpected(parser_t *p, pos_t pos, char *msg) {
-    buffer_t buf = {};
-    buffer_write(&buf, "expected ", -1, NULL);
-    buffer_write(&buf, msg, -1, NULL);
+    bytes$Buffer buf = {};
+    bytes$Buffer_write(&buf, "expected ", -1, NULL);
+    bytes$Buffer_write(&buf, msg, -1, NULL);
     if (pos == p->pos) {
         if (p->lit) {
-            buffer_write(&buf, ", found ", -1, NULL);
-            buffer_write(&buf, p->lit, -1, NULL);
+            bytes$Buffer_write(&buf, ", found ", -1, NULL);
+            bytes$Buffer_write(&buf, p->lit, -1, NULL);
         } else {
-            buffer_write(&buf, ", found '", -1, NULL);
-            buffer_write(&buf, token_string(p->tok), -1, NULL);
-            buffer_writeByte(&buf, '\'', NULL);
+            bytes$Buffer_write(&buf, ", found '", -1, NULL);
+            bytes$Buffer_write(&buf, token_string(p->tok), -1, NULL);
+            bytes$Buffer_writeByte(&buf, '\'', NULL);
         }
     }
-    msg = buffer_string(&buf);
+    msg = bytes$Buffer_string(&buf);
     parser_error(p, pos, msg);
     free(msg);
 }
@@ -1126,7 +1126,7 @@ static decl_t *parse_decl(parser_t *p, bool is_external) {
 }
 
 static bool isBlingFile(const char *name) {
-    return bytes_hasSuffix(name, ".bling");
+    return bytes$hasSuffix(name, ".bling");
 }
 
 static bool isTestFile(const char *name) {

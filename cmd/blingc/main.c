@@ -81,7 +81,7 @@ void compile_bling(char *argv[]) {
         argv++;
     }
     if (dst) {
-        emit_as_bling = bytes_hasSuffix(dst, ".bling");
+        emit_as_bling = bytes$hasSuffix(dst, ".bling");
     }
     emitter_t emitter = {};
     error_t *err = NULL;
@@ -91,9 +91,9 @@ void compile_bling(char *argv[]) {
     while (*argv) {
         char *filename = *argv;
         ast_File *file = NULL;
-        if (bytes_hasSuffix(filename, ".bling")) {
+        if (bytes$hasSuffix(filename, ".bling")) {
             file = parser_parse_file(filename);
-        } else if (bytes_hasSuffix(filename, ".c")) {
+        } else if (bytes$hasSuffix(filename, ".c")) {
             file = parser_parse_cfile(filename, types_universe());
         } else {
             panic("unknown file type: %s", filename);
@@ -113,7 +113,7 @@ void compile_bling(char *argv[]) {
     }
     char *out = emitter_string(&emitter);
     if (dst) {
-        if (bytes_hasSuffix(dst, ".out")) {
+        if (bytes$hasSuffix(dst, ".out")) {
             char *tmp = path_join2(os$tempDir(), "tmp.c");
             ioutil_writeFile(tmp, out, 0644, NULL);
             char *args[] = {

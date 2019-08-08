@@ -6,7 +6,7 @@ import("bling/ast");
 import("bytes");
 
 typedef struct {
-    buffer_t buf;
+    bytes$Buffer buf;
     int indent;
     bool skipSemi;
 } emitter_t;

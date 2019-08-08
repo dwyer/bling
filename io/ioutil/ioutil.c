@@ -7,19 +7,19 @@ extern char *ioutil_readAll(os$File *file, error_t **error) {
     if (err != NULL) {
         goto end;
     }
-    buffer_t b = {};
+    bytes$Buffer b = {};
     for (;;) {
         char buf[bufsiz];
         int n = os$read(file, buf, bufsiz, &err);
         if (err != NULL) {
             goto end;
         }
-        buffer_write(&b, buf, n, NULL); // ignore error
+        bytes$Buffer_write(&b, buf, n, NULL); // ignore error
         if (n < bufsiz) {
             break;
         }
     }
-    ret = buffer_string(&b);
+    ret = bytes$Buffer_string(&b);
 end:
     if (err != NULL) {
         error_move(err, error);

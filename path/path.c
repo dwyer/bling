@@ -32,7 +32,7 @@ extern bool path_isAbs(const char *path) {
 }
 
 extern char *path_join(const char **elems, int n) {
-    return bytes_join(elems, n, "/");
+    return bytes$join(elems, n, "/");
 }
 
 extern char *path_join2(const char *a, const char *b) {

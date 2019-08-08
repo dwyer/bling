@@ -1,6 +1,6 @@
 #include "bytes/bytes.h"
 
-extern bool bytes_hasSuffix(const char *s, const char *suffix) {
+extern bool bytes$hasSuffix(const char *s, const char *suffix) {
     for (int i = 0; s[i]; i++) {
         if (streq(&s[i], suffix)) {
             return true;
@@ -9,48 +9,48 @@ extern bool bytes_hasSuffix(const char *s, const char *suffix) {
     return false;
 }
 
-extern char *bytes_join(const char *a[], int size, const char *sep) {
+extern char *bytes$join(const char *a[], int size, const char *sep) {
     switch (size) {
     case 0:
         return strdup("");
     case 1:
         return strdup(a[0]);
     }
-    buffer_t b = {};
-    buffer_write(&b, a[0], strlen(a[0]), NULL);
+    bytes$Buffer b = {};
+    bytes$Buffer_write(&b, a[0], strlen(a[0]), NULL);
     for (int i = 1; i < size; i++) {
-        buffer_write(&b, sep, strlen(sep), NULL);
-        buffer_write(&b, a[i], strlen(a[i]), NULL);
+        bytes$Buffer_write(&b, sep, strlen(sep), NULL);
+        bytes$Buffer_write(&b, a[i], strlen(a[i]), NULL);
     }
-    return buffer_string(&b);
+    return bytes$Buffer_string(&b);
 }
 
-static void buffer_init(buffer_t *b) {
+static void bytes$Buffer_init(bytes$Buffer *b) {
     if (b->size == 0) {
         b->size = sizeof(char);
         b->cap = 1024;
     }
 }
 
-extern int buffer_len(buffer_t *b) {
+extern int bytes$Buffer_len(bytes$Buffer *b) {
     return slice$len(b);
 }
 
-extern char *buffer_bytes(buffer_t *b) {
-    buffer_init(b);
+extern char *bytes$Buffer_bytes(bytes$Buffer *b) {
+    bytes$Buffer_init(b);
     return b->array;
 }
 
-extern char *buffer_string(buffer_t *b) {
-    buffer_init(b);
-    char *s = malloc(buffer_len(b) + 1);
-    memcpy(s, b->array, buffer_len(b));
-    s[buffer_len(b)] = '\0';
+extern char *bytes$Buffer_string(bytes$Buffer *b) {
+    bytes$Buffer_init(b);
+    char *s = malloc(bytes$Buffer_len(b) + 1);
+    memcpy(s, b->array, bytes$Buffer_len(b));
+    s[bytes$Buffer_len(b)] = '\0';
     return s;
 }
 
-extern int buffer_write(buffer_t *b, const char *p, int size, error_t **error) {
-    buffer_init(b);
+extern int bytes$Buffer_write(bytes$Buffer *b, const char *p, int size, error_t **error) {
+    bytes$Buffer_init(b);
     if (size < 0) {
         size = strlen(p);
     }
@@ -60,7 +60,7 @@ extern int buffer_write(buffer_t *b, const char *p, int size, error_t **error) {
     return size;
 }
 
-extern void buffer_writeByte(buffer_t *b, char p, error_t **error) {
-    buffer_init(b);
+extern void bytes$Buffer_writeByte(bytes$Buffer *b, char p, error_t **error) {
+    bytes$Buffer_init(b);
     slice$append(b, &p);
 }
