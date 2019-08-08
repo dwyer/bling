@@ -3,16 +3,18 @@
 #include "bytes/bytes.h"
 #include "slice/slice.h"
 
+package(strings);
+
 import("bytes");
 import("error");
 
-extern char *strings_join(const char *a[], int size, const char *sep);
+extern char *strings$join(const char *a[], int size, const char *sep);
 
 typedef struct {
     slice$Slice _buf;
-} strings_Builder;
+} strings$Builder;
 
-extern int strings_Builder_len(strings_Builder *b);
-extern char *strings_Builder_string(strings_Builder *b);
-extern int strings_Builder_write(strings_Builder *b, const char *p, int size, error$Error **error);
-extern void strings_Builder_writeByte(strings_Builder *b, char p, error$Error **error);
+extern int strings$Builder_len(strings$Builder *b);
+extern char *strings$Builder_string(strings$Builder *b);
+extern int strings$Builder_write(strings$Builder *b, const char *p, int size, error$Error **error);
+extern void strings$Builder_writeByte(strings$Builder *b, char p, error$Error **error);
