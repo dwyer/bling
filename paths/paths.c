@@ -48,20 +48,16 @@ extern char **paths$split(const char *path) {
 }
 
 extern bool paths$match(const char *pattern, const char *path) {
-    if (pattern[0] == '\0' && path[0] == '\0') {
+    if (*pattern == '\0' && *path == '\0') {
         return true;
     }
-    if (pattern[0] == '\0' || path[0] == '\0') {
+    if (*pattern == '\0' || *path == '\0') {
         return false;
     }
-    if (pattern[0] == '*') {
-        bool res = paths$match(pattern+1, path);
-        if (res) {
-            return true;
-        }
-        return paths$match(pattern, path+1);
+    if (*pattern == '*') {
+        return paths$match(pattern+1, path) || paths$match(pattern, path+1);
     }
-    if (pattern[0] == path[0]) {
+    if (*pattern == *path) {
         return paths$match(pattern+1, path+1);
     }
     return false;
