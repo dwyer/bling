@@ -1,12 +1,21 @@
 #include "bytes/bytes.h"
 
-extern bool bytes$hasSuffix(const char *s, const char *suffix) {
-    for (int i = 0; s[i]; i++) {
-        if (streq(&s[i], suffix)) {
+extern bool bytes$hasSuffix(const char *b, const char *suffix) {
+    for (int i = 0; b[i]; i++) {
+        if (streq(&b[i], suffix)) {
             return true;
         }
     }
     return false;
+}
+
+extern int bytes$indexByte(const char *b, char c) {
+    for (int i = 0; b[i]; i++) {
+        if (b[i] == c) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 extern char *bytes$join(const char *a[], int size, const char *sep) {

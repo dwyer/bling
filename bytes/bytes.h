@@ -1,12 +1,12 @@
 #pragma once
-
 #include "utils/utils.h"
 
 package(bytes);
 
 import("utils");
 
-extern bool bytes$hasSuffix(const char *s, const char *suffix);
+extern bool bytes$hasSuffix(const char *b, const char *suffix);
+extern int bytes$indexByte(const char *b, char c);
 extern char *bytes$join(const char *a[], int size, const char *sep);
 
 typedef utils$Slice bytes$Buffer;
