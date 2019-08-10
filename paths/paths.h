@@ -1,7 +1,7 @@
 #pragma once
 #include "bootstrap/bootstrap.h"
 
-package(path);
+package(paths);
 
 import("bytes");
 
