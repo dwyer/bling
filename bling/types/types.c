@@ -297,6 +297,7 @@ static void types$Scope_declare(ast$Scope *s, ast$Decl *decl) {
         // panic("get pkg scope: %s $ %s", pkg->ident.name, ident->ident.name);
     }
     ast$Object *obj = ast$newObject(kind, ident->ident.name);
+    obj->scope = s;
     obj->decl = decl;
     obj->pkg = s->pkg;
     ident->ident.obj = obj;
@@ -393,9 +394,9 @@ static void checker_openScope(checker_t *w) {
 }
 
 static void checker_closeScope(checker_t *w) {
-    ast$Scope *inner = w->pkg.scope;
+    // ast$Scope *inner = w->pkg.scope;
     w->pkg.scope = w->pkg.scope->outer;
-    ast$Scope_free(inner);
+    // ast$Scope_free(inner);
 }
 
 static ast$Expr *check_expr(checker_t *w, ast$Expr *expr);
@@ -1000,7 +1001,6 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     utils$Map_set(&w->scopes, path, &imp->imp.scope);
 
     types$Scope_declare(w->pkg.scope, imp);
-    ast$Scope_insert(imp->imp.scope, imp->imp.name->ident.obj); // TODO remove
 
     oldScope = w->pkg.scope;
     w->pkg.scope = imp->imp.scope;
@@ -1089,6 +1089,9 @@ static void check_func(checker_t *w, ast$Decl *decl) {
 }
 
 static void check_file(checker_t *w, ast$File *file) {
+    if (file->name) {
+        w->pkg.scope->pkg = file->name->ident.name;
+    }
     for (int i = 0; file->imports[i] != NULL; i++) {
         check_import(w, file->imports[i]);
     }

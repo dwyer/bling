@@ -34,6 +34,15 @@ extern char *bytes$join(const char *a[], int size, const char *sep) {
     return bytes$Buffer_string(&b);
 }
 
+extern int bytes$lastIndexByte(const char *b, char c) {
+    for (int i = strlen(b) - 1; i >= 0; i--) {
+        if (c == b[i]) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 static void bytes$Buffer_init(bytes$Buffer *b) {
     if (b->size == 0) {
         b->size = sizeof(char);

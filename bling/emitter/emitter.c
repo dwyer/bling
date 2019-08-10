@@ -30,6 +30,15 @@ extern void emitter$emitToken(emitter$Emitter *e, token$Token tok) {
     emitter$emitString(e, token$string(tok));
 }
 
+extern bool hasPrefix(const char *s, const char *prefix) {
+    for (int i = 0; prefix[i]; i++) {
+        if (s[i] != prefix[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
     if (!expr) {
         panic("emitter$emitExpr: expr is NULL");
@@ -98,7 +107,13 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_IDENT:
-        emitter$emitString(e, expr->ident.name);
+        if (e->pkg
+                && hasPrefix(expr->ident.name, e->pkg)
+                && expr->ident.name[strlen(e->pkg)] == '$') {
+            emitter$emitString(e, &expr->ident.name[strlen(e->pkg)+1]);
+        } else {
+            emitter$emitString(e, expr->ident.name);
+        }
         break;
 
     case ast$EXPR_INDEX:
@@ -517,6 +532,9 @@ extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
 }
 
 extern void emitter$emitFile(emitter$Emitter *e, ast$File *file) {
+    if (file->name) {
+        e->pkg = file->name->ident.name;
+    }
     emitter$emitString(e, "//");
     emitter$emitString(e, file->filename);
     emitter$emitNewline(e);

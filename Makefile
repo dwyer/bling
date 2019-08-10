@@ -4,23 +4,38 @@ BLINGC=bazel-bin/cmd/blingc/blingc
 
 .PHONY: test $(BLINGC) all.bling
 
-HRDS=bootstrap/bootstrap.h \
+SRCS=bootstrap/bootstrap.h \
      sys/sys.h \
      utils/utils.h \
+     utils/error.c \
+     utils/slice.c \
+     utils/map.c \
      bytes/bytes.h \
+     bytes/bytes.c \
      paths/paths.h \
+     paths/paths.c \
      os/os.h \
      io/ioutil/ioutil.h \
+     io/ioutil/ioutil.c \
      bling/token/token.h \
+     bling/token/token.c \
      bling/ast/ast.h \
+     bling/ast/ast.c \
      bling/scanner/scanner.h \
+     bling/scanner/scanner.c \
      bling/parser/parser.h \
+     bling/parser/parser.c \
      bling/emitter/emitter.h \
+     bling/emitter/emitter.c \
      bling/types/types.h \
+     bling/types/types.c \
      subc/cparser/cparser.h \
-     subc/cemitter/cemitter.h
+     subc/cparser/cparser.c \
+     subc/cemitter/cemitter.h \
+     subc/cemitter/cemitter.c \
+     cmd/blingc/main.c
 
-SRCS=utils/error.c \
+CFILES=utils/error.c \
      utils/slice.c \
      utils/map.c \
      bytes/bytes.c \
@@ -47,11 +62,11 @@ test_compiler: $(BLINGC)
 	./test_compiler.sh
 
 all.bling: $(BLINGC)
-	$(BLINGC) -c -o all.bling $(HRDS) $(SRCS)
+	$(BLINGC) -c -o all.bling $(SRCS)
 	./splitall.py
 
 debug:
-	cc -g -I. $(SRCS) bootstrap/bootstrap.c fmt/fmt.c os/os.c
+	cc -g -I. $(CFILES) bootstrap/bootstrap.c os/os.c sys/fmt.c sys/sys.c
 	lldb a.out
 
 $(BLINGC):

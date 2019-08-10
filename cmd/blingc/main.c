@@ -6,6 +6,8 @@
 #include "subc/cparser/cparser.h"
 #include "sys/sys.h"
 
+package(main);
+
 import("bling/ast");
 import("bling/emitter");
 import("bling/parser");

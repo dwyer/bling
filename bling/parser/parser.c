@@ -32,6 +32,7 @@ extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,
     assert(name->type == ast$EXPR_IDENT);
     ast$Object *obj = ast$newObject(kind, name->ident.name);
     obj->decl = decl;
+    obj->scope = s;
     ast$Scope_insert(s, obj);
 }
 

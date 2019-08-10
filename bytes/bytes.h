@@ -8,6 +8,7 @@ import("utils");
 extern bool bytes$hasSuffix(const char *b, const char *suffix);
 extern int bytes$indexByte(const char *b, char c);
 extern char *bytes$join(const char *a[], int size, const char *sep);
+extern int bytes$lastIndexByte(const char *b, char c);
 
 typedef utils$Slice bytes$Buffer;
 

@@ -12,6 +12,7 @@ typedef struct {
     bytes$Buffer buf;
     int indent;
     bool skipSemi;
+    char *pkg;
 } emitter$Emitter;
 
 extern char *emitter$Emitter_string(emitter$Emitter *e);

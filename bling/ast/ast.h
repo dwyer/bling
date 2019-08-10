@@ -82,6 +82,7 @@ typedef struct {
     char *name;
     ast$Decl *decl;
     char *pkg;
+    ast$Scope *scope;
 } ast$Object;
 
 typedef struct ast$Decl {

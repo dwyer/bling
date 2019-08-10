@@ -2,12 +2,15 @@
 
 #include "bytes/bytes.h"
 
-extern char *basename(char *); // clib
-extern char *dirname(char *); // clib
-
 extern char *paths$base(const char *path) {
-    char *p = strdup(path);
-    return basename(p);
+    if (path == NULL || path[0] == '\0') {
+        return strdup(".");
+    }
+    int i = bytes$lastIndexByte(path, '/');
+    if (i > 0) {
+        path = &path[i+1];
+    }
+    return strdup(path);
 }
 
 extern char *paths$clean(const char *path) {
@@ -15,8 +18,15 @@ extern char *paths$clean(const char *path) {
 }
 
 extern char *paths$dir(const char *path) {
-    char *p = strdup(path);
-    return dirname(p);
+    if (path == NULL || path[0] == '\0') {
+        return strdup(".");
+    }
+    int i = bytes$lastIndexByte(path, '/');
+    if (i > 0) {
+        char *p = strdup(path);
+        p[i] = '\0';
+    }
+    return NULL;
 }
 
 extern const char *paths$ext(const char *path) {
