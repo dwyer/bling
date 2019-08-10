@@ -30,7 +30,7 @@ fun usage(progname *const char) {
     panic("usage: %s -o DST SRCS", progname)
 }
 
-fun emitter$emit_rawfile(e *emitter$Emitter, filename *const char) {
+fun emit_rawfile(e *emitter$Emitter, filename *const char) {
     var err *utils$Error = NULL
     var src *char = ioutil$readFile(filename, &err)
     if err {
@@ -102,7 +102,7 @@ fun compile_bling(argv []*char) {
     }
     var err *utils$Error = NULL
     if !emit_as_bling {
-        emitter$emit_rawfile(&e, "bootstrap/bootstrap.h")
+        emit_rawfile(&e, "bootstrap/bootstrap.h")
     }
     while *argv {
         var filename *char = *argv

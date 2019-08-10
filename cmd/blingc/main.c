@@ -25,7 +25,7 @@ void usage(const char *progname) {
     panic("usage: %s -o DST SRCS", progname);
 }
 
-void emitter$emit_rawfile(emitter$Emitter *e, const char *filename) {
+void emit_rawfile(emitter$Emitter *e, const char *filename) {
     utils$Error *err = NULL;
     char *src = ioutil$readFile(filename, &err);
     if (err) {
@@ -93,7 +93,7 @@ void compile_bling(char *argv[]) {
     emitter$Emitter e = {};
     utils$Error *err = NULL;
     if (!emit_as_bling) {
-        emitter$emit_rawfile(&e, "bootstrap/bootstrap.h");
+        emit_rawfile(&e, "bootstrap/bootstrap.h");
     }
     while (*argv) {
         char *filename = *argv;
