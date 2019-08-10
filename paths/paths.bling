@@ -1,0 +1,102 @@
+package paths
+import "bytes"
+
+#pragma once
+
+#include "bootstrap/bootstrap.h"
+
+fun base(path *const char) *char
+
+fun clean(path *const char) *char
+
+fun dir(path *const char) *char
+
+fun ext(path *const char) *const char
+
+fun isAbs(path *const char) bool
+
+fun join(elems **const char, n int) *char
+
+fun join2(a *const char, b *const char) *char
+
+fun split(path *const char) **char
+
+fun match(pattern *const char, path *const char) bool
+
+#include "paths/paths.h"
+
+#include "bytes/bytes.h"
+
+fun base(path *const char) *char {
+    if path == NULL || path[0] == '\0' {
+        return strdup(".")
+    }
+    var i int = bytes$lastIndexByte(path, '/')
+    if i > 0 {
+        path = &path[i + 1]
+    }
+    return strdup(path)
+}
+
+fun clean(path *const char) *char {
+    return NULL
+}
+
+fun dir(path *const char) *char {
+    if path == NULL || path[0] == '\0' {
+        return strdup(".")
+    }
+    var i int = bytes$lastIndexByte(path, '/')
+    if i > 0 {
+        var p *char = strdup(path)
+        p[i] = '\0'
+    }
+    return NULL
+}
+
+fun ext(path *const char) *const char {
+    var n int = strlen(path) - 1
+    while n > 0 && path[n] != '.' {
+        n--
+    }
+    return &path[n]
+}
+
+fun isAbs(path *const char) bool {
+    return path != NULL && path[0] == '/'
+}
+
+fun join(elems **const char, n int) *char {
+    return bytes$join(elems, n, "/")
+}
+
+fun join2(a *const char, b *const char) *char {
+    var elems []*const char = {
+        a,
+        b,
+    }
+    return join(elems, 2)
+}
+
+fun split(path *const char) **char {
+    var names **char = malloc(sizeof(*char) * 2)
+    names[0] = dir(path)
+    names[1] = base(path)
+    return names
+}
+
+fun match(pattern *const char, path *const char) bool {
+    if *pattern == '\0' && *path == '\0' {
+        return true
+    }
+    if *pattern == '\0' || *path == '\0' {
+        return false
+    }
+    if *pattern == '*' {
+        return match(pattern + 1, path) || match(pattern, path + 1)
+    }
+    if *pattern == *path {
+        return match(pattern + 1, path + 1)
+    }
+    return false
+}

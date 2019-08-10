@@ -1,0 +1,547 @@
+package emitter
+import "bling/ast"
+import "bling/token"
+import "bytes"
+
+#pragma once
+
+#include "bling/ast/ast.h"
+
+#include "bytes/bytes.h"
+
+typedef Emitter struct {
+    buf bytes$Buffer
+    indent int
+    skipSemi bool
+    pkg *char
+}
+
+fun Emitter_string(e *Emitter) *char
+
+fun emitString(e *Emitter, s *const char)
+
+fun emitSpace(e *Emitter)
+
+fun emitNewline(e *Emitter)
+
+fun emitTabs(e *Emitter)
+
+fun emitToken(e *Emitter, tok token$Token)
+
+fun emitDecl(e *Emitter, decl *ast$Decl)
+
+fun emitExpr(e *Emitter, expr *ast$Expr)
+
+fun emitStmt(e *Emitter, stmt *ast$Stmt)
+
+fun emitType(e *Emitter, type *ast$Expr)
+
+fun emitFile(e *Emitter, file *ast$File)
+
+#include "bling/emitter/emitter.h"
+
+#include "bling/token/token.h"
+
+fun Emitter_string(e *Emitter) *char {
+    return bytes$Buffer_string(&e.buf)
+}
+
+fun emitString(e *Emitter, s *const char) {
+    bytes$Buffer_write(&e.buf, s, strlen(s), NULL)
+}
+
+fun emitSpace(e *Emitter) {
+    emitString(e, " ")
+}
+
+fun emitNewline(e *Emitter) {
+    emitString(e, "\n")
+}
+
+fun emitTabs(e *Emitter) {
+    for var i int = 0; i < e.indent; i++ {
+        emitString(e, "    ")
+    }
+}
+
+fun emitToken(e *Emitter, tok token$Token) {
+    if e.skipSemi && tok == token$SEMICOLON {
+        return
+    }
+    emitString(e, token$string(tok))
+}
+
+fun hasPrefix(s *const char, prefix *const char) bool {
+    for var i int = 0; prefix[i]; i++ {
+        if s[i] != prefix[i] {
+            return false
+        }
+    }
+    return true
+}
+
+fun emitExpr(e *Emitter, expr *ast$Expr) {
+    if !expr {
+        panic("emitter$emitExpr: expr is NULL")
+    }
+    switch expr.type {
+    case ast$EXPR_BASIC_LIT:
+        emitString(e, expr.basic_lit.value)
+        break
+    case ast$EXPR_BINARY:
+        emitExpr(e, expr.binary.x)
+        emitSpace(e)
+        emitToken(e, expr.binary.op)
+        emitSpace(e)
+        emitExpr(e, expr.binary.y)
+        break
+    case ast$EXPR_CALL:
+        emitExpr(e, expr.call.func)
+        emitToken(e, token$LPAREN)
+        for var args **ast$Expr = expr.call.args; args && *args;  {
+            emitExpr(e, *args)
+            args++
+            if *args {
+                emitToken(e, token$COMMA)
+                emitSpace(e)
+            }
+        }
+        emitToken(e, token$RPAREN)
+        break
+    case ast$EXPR_CAST:
+        emitToken(e, token$LT)
+        emitType(e, expr.cast.type)
+        emitToken(e, token$GT)
+        emitSpace(e)
+        emitExpr(e, expr.cast.expr)
+        break
+    case ast$EXPR_COMPOUND:
+        emitToken(e, token$LBRACE)
+        emitNewline(e)
+        e.indent++
+        for var exprs **ast$Expr = expr.compound.list; exprs && *exprs; exprs++ {
+            emitTabs(e)
+            emitExpr(e, *exprs)
+            emitToken(e, token$COMMA)
+            emitNewline(e)
+        }
+        e.indent--
+        emitTabs(e)
+        emitToken(e, token$RBRACE)
+        break
+    case ast$EXPR_COND:
+        emitExpr(e, expr.conditional.condition)
+        emitSpace(e)
+        emitToken(e, token$QUESTION_MARK)
+        emitSpace(e)
+        emitExpr(e, expr.conditional.consequence)
+        emitSpace(e)
+        emitToken(e, token$COLON)
+        emitSpace(e)
+        emitExpr(e, expr.conditional.alternative)
+        break
+    case ast$EXPR_IDENT:
+        if e.pkg && hasPrefix(expr.ident.name, e.pkg) && expr.ident.name[strlen(e.pkg)] == '$' {
+            emitString(e, &expr.ident.name[strlen(e.pkg) + 1])
+        } else {
+            emitString(e, expr.ident.name)
+        }
+        break
+    case ast$EXPR_INDEX:
+        emitExpr(e, expr.index.x)
+        emitToken(e, token$LBRACK)
+        emitExpr(e, expr.index.index)
+        emitToken(e, token$RBRACK)
+        break
+    case ast$EXPR_KEY_VALUE:
+        emitExpr(e, expr.key_value.key)
+        emitToken(e, token$COLON)
+        emitSpace(e)
+        emitExpr(e, expr.key_value.value)
+        break
+    case ast$EXPR_PAREN:
+        emitToken(e, token$LPAREN)
+        emitExpr(e, expr.paren.x)
+        emitToken(e, token$RPAREN)
+        break
+    case ast$EXPR_SELECTOR:
+        emitExpr(e, expr.selector.x)
+        emitToken(e, token$PERIOD)
+        emitExpr(e, expr.selector.sel)
+        break
+    case ast$EXPR_SIZEOF:
+        emitToken(e, token$SIZEOF)
+        emitToken(e, token$LPAREN)
+        emitType(e, expr.sizeof_.x)
+        emitToken(e, token$RPAREN)
+        break
+    case ast$EXPR_STAR:
+        emitToken(e, token$MUL)
+        emitExpr(e, expr.star.x)
+        break
+    case ast$EXPR_UNARY:
+        emitToken(e, expr.unary.op)
+        emitExpr(e, expr.unary.x)
+        break
+    default:
+        panic("Unknown expr")
+        break
+    }
+}
+
+fun emitStmt(e *Emitter, stmt *ast$Stmt) {
+    switch stmt.type {
+    case ast$STMT_ASSIGN:
+        emitExpr(e, stmt.assign.x)
+        emitSpace(e)
+        emitToken(e, stmt.assign.op)
+        emitSpace(e)
+        emitExpr(e, stmt.assign.y)
+        break
+    case ast$STMT_BLOCK:
+        emitToken(e, token$LBRACE)
+        emitNewline(e)
+        e.indent++
+        for var stmts **ast$Stmt = stmt.block.stmts; stmts && *stmts; stmts++ {
+            switch (*stmts).type {
+            case ast$STMT_LABEL:
+                break
+            default:
+                emitTabs(e)
+                break
+            }
+            emitStmt(e, *stmts)
+            emitNewline(e)
+        }
+        e.indent--
+        emitTabs(e)
+        emitToken(e, token$RBRACE)
+        break
+    case ast$STMT_CASE:
+        if stmt.case_.exprs && *stmt.case_.exprs {
+            emitToken(e, token$CASE)
+            emitSpace(e)
+            for var i int = 0; stmt.case_.exprs[i]; i++ {
+                if i > 0 {
+                    emitToken(e, token$COMMA)
+                    emitSpace(e)
+                }
+                emitExpr(e, stmt.case_.exprs[i])
+            }
+        } else {
+            emitToken(e, token$DEFAULT)
+        }
+        emitToken(e, token$COLON)
+        emitNewline(e)
+        e.indent++
+        for var stmts **ast$Stmt = stmt.case_.stmts; stmts && *stmts; stmts++ {
+            emitTabs(e)
+            emitStmt(e, *stmts)
+            emitNewline(e)
+        }
+        e.indent--
+        break
+    case ast$STMT_DECL:
+        emitDecl(e, stmt.decl)
+        break
+    case ast$STMT_EMPTY:
+        emitToken(e, token$SEMICOLON)
+        break
+    case ast$STMT_EXPR:
+        emitExpr(e, stmt.expr.x)
+        break
+    case ast$STMT_IF:
+        emitToken(e, token$IF)
+        emitSpace(e)
+        emitExpr(e, stmt.if_.cond)
+        emitSpace(e)
+        emitStmt(e, stmt.if_.body)
+        if stmt.if_.else_ {
+            emitSpace(e)
+            emitToken(e, token$ELSE)
+            emitSpace(e)
+            emitStmt(e, stmt.if_.else_)
+        }
+        break
+    case ast$STMT_ITER:
+        emitToken(e, stmt.iter.kind)
+        emitSpace(e)
+        if stmt.iter.kind == token$FOR {
+            if stmt.iter.init {
+                emitStmt(e, stmt.iter.init)
+            }
+            emitToken(e, token$SEMICOLON)
+            emitSpace(e)
+        }
+        if stmt.iter.cond {
+            emitExpr(e, stmt.iter.cond)
+        }
+        if stmt.iter.kind == token$FOR {
+            emitToken(e, token$SEMICOLON)
+            emitSpace(e)
+            if stmt.iter.post {
+                e.skipSemi = true
+                emitStmt(e, stmt.iter.post)
+                e.skipSemi = false
+            }
+        }
+        emitSpace(e)
+        emitStmt(e, stmt.iter.body)
+        break
+    case ast$STMT_JUMP:
+        emitToken(e, stmt.jump.keyword)
+        if stmt.jump.label {
+            emitSpace(e)
+            emitExpr(e, stmt.jump.label)
+        }
+        break
+    case ast$STMT_LABEL:
+        emitExpr(e, stmt.label.label)
+        emitToken(e, token$COLON)
+        emitNewline(e)
+        emitTabs(e)
+        emitStmt(e, stmt.label.stmt)
+        break
+    case ast$STMT_POSTFIX:
+        emitExpr(e, stmt.postfix.x)
+        emitToken(e, stmt.postfix.op)
+        break
+    case ast$STMT_RETURN:
+        emitToken(e, token$RETURN)
+        if stmt.return_.x {
+            emitSpace(e)
+            emitExpr(e, stmt.return_.x)
+        }
+        break
+    case ast$STMT_SWITCH:
+        emitToken(e, token$SWITCH)
+        emitSpace(e)
+        emitExpr(e, stmt.switch_.tag)
+        emitSpace(e)
+        emitToken(e, token$LBRACE)
+        emitNewline(e)
+        for var stmts **ast$Stmt = stmt.switch_.stmts; stmts && *stmts; stmts++ {
+            emitTabs(e)
+            emitStmt(e, *stmts)
+        }
+        emitTabs(e)
+        emitToken(e, token$RBRACE)
+        break
+    default:
+        panic("Unknown stmt")
+        break
+    }
+}
+
+fun is_void(type *ast$Expr) bool {
+    return type == NULL || (type.type == ast$EXPR_IDENT && streq(type.ident.name, "void"))
+}
+
+fun emitType(e *Emitter, type *ast$Expr) {
+    if type.is_const {
+        emitToken(e, token$CONST)
+        emitSpace(e)
+    }
+    switch type.type {
+    case ast$TYPE_ARRAY:
+        emitToken(e, token$LBRACK)
+        if type.array.len {
+            emitExpr(e, type.array.len)
+        }
+        emitToken(e, token$RBRACK)
+        emitType(e, type.array.elt)
+        break
+    case ast$TYPE_FUNC:
+        emitToken(e, token$LPAREN)
+        for var params **ast$Decl = type.func.params; params && *params;  {
+            emitDecl(e, *params)
+            params++
+            if *params != NULL {
+                emitToken(e, token$COMMA)
+                emitSpace(e)
+            }
+        }
+        emitToken(e, token$RPAREN)
+        if !is_void(type.func.result) {
+            emitSpace(e)
+            emitType(e, type.func.result)
+        }
+        break
+    case ast$TYPE_ENUM:
+        emitToken(e, token$ENUM)
+        if type.enum_.name {
+            emitSpace(e)
+            emitExpr(e, type.enum_.name)
+        }
+        if type.enum_.enums {
+            emitSpace(e)
+            emitToken(e, token$LBRACE)
+            emitNewline(e)
+            e.indent++
+            for var enums **ast$Decl = type.enum_.enums; enums && *enums; enums++ {
+                var enumerator *ast$Decl = *enums
+                emitTabs(e)
+                emitExpr(e, enumerator.value.name)
+                if enumerator.value.value {
+                    emitSpace(e)
+                    emitToken(e, token$ASSIGN)
+                    emitSpace(e)
+                    emitExpr(e, enumerator.value.value)
+                }
+                emitToken(e, token$COMMA)
+                emitNewline(e)
+            }
+            e.indent--
+            emitTabs(e)
+            emitToken(e, token$RBRACE)
+        }
+        break
+    case ast$EXPR_STAR:
+        type = type.star.x
+        if type.type == ast$TYPE_FUNC {
+            emitToken(e, token$FUNC)
+            emitToken(e, token$LPAREN)
+            for var params **ast$Decl = type.func.params; params && *params;  {
+                emitDecl(e, *params)
+                params++
+                if *params != NULL {
+                    emitToken(e, token$COMMA)
+                    emitSpace(e)
+                }
+            }
+            emitToken(e, token$RPAREN)
+            if !is_void(type.func.result) {
+                emitSpace(e)
+                emitType(e, type.func.result)
+            }
+        } else {
+            emitToken(e, token$MUL)
+            emitType(e, type)
+        }
+        break
+    case ast$TYPE_STRUCT:
+        emitToken(e, type.struct_.tok)
+        if type.struct_.name {
+            emitSpace(e)
+            emitExpr(e, type.struct_.name)
+        }
+        if type.struct_.fields {
+            emitSpace(e)
+            emitToken(e, token$LBRACE)
+            emitNewline(e)
+            e.indent++
+            for var fields **ast$Decl = type.struct_.fields; fields && *fields; fields++ {
+                emitTabs(e)
+                emitDecl(e, *fields)
+                emitNewline(e)
+            }
+            e.indent--
+            emitTabs(e)
+            emitToken(e, token$RBRACE)
+        }
+        break
+    case ast$EXPR_IDENT:
+        emitExpr(e, type)
+        break
+    default:
+        panic("Unknown type: %d", type.type)
+    }
+}
+
+fun emitDecl(e *Emitter, decl *ast$Decl) {
+    switch decl.type {
+    case ast$DECL_FIELD:
+        if decl.field.type == NULL && decl.field.name == NULL {
+            emitString(e, "...")
+        } else {
+            if decl.field.name != NULL {
+                emitExpr(e, decl.field.name)
+                emitSpace(e)
+            }
+            emitType(e, decl.field.type)
+        }
+        break
+    case ast$DECL_FUNC:
+        emitToken(e, token$FUNC)
+        emitSpace(e)
+        emitExpr(e, decl.func.name)
+        emitType(e, decl.func.type)
+        if decl.func.body {
+            emitSpace(e)
+            emitStmt(e, decl.func.body)
+        }
+        break
+    case ast$DECL_IMPORT:
+        emitToken(e, token$IMPORT)
+        emitSpace(e)
+        emitExpr(e, decl.imp.path)
+        break
+    case ast$DECL_TYPEDEF:
+        emitToken(e, token$TYPEDEF)
+        emitSpace(e)
+        emitExpr(e, decl.typedef_.name)
+        emitSpace(e)
+        emitType(e, decl.typedef_.type)
+        break
+    case ast$DECL_PRAGMA:
+        emitToken(e, token$HASH)
+        emitString(e, decl.pragma.lit)
+        break
+    case ast$DECL_VALUE:
+        switch decl.value.kind {
+        case token$VAR:
+            emitToken(e, token$VAR)
+            if decl.value.name {
+                emitSpace(e)
+                emitExpr(e, decl.value.name)
+            }
+            emitSpace(e)
+            emitType(e, decl.value.type)
+            if decl.value.value {
+                emitSpace(e)
+                emitToken(e, token$ASSIGN)
+                emitSpace(e)
+                emitExpr(e, decl.value.value)
+            }
+            break
+        case token$CONST:
+            emitToken(e, token$HASH)
+            emitString(e, "define")
+            emitSpace(e)
+            emitExpr(e, decl.value.value)
+        default:
+            panic("bad kind for ast$DECL_VALUE: %s", token$string(decl.value.kind))
+            break
+        }
+        break
+    default:
+        panic("Unknown decl")
+        break
+    }
+}
+
+fun emitFile(e *Emitter, file *ast$File) {
+    if file.name {
+        e.pkg = file.name.ident.name
+    }
+    emitString(e, "//")
+    emitString(e, file.filename)
+    emitNewline(e)
+    if file.name != NULL {
+        emitToken(e, token$PACKAGE)
+        emitSpace(e)
+        emitExpr(e, file.name)
+        emitNewline(e)
+    }
+    for var imports **ast$Decl = file.imports; imports && *imports; imports++ {
+        emitToken(e, token$IMPORT)
+        emitSpace(e)
+        emitExpr(e, (*imports).imp.path)
+        emitNewline(e)
+    }
+    for var decls **ast$Decl = file.decls; decls && *decls; decls++ {
+        emitNewline(e)
+        emitDecl(e, *decls)
+        emitNewline(e)
+    }
+}

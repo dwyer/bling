@@ -1,0 +1,1113 @@
+package types
+import "bling/ast"
+import "bling/emitter"
+import "bling/parser"
+import "bling/token"
+import "paths"
+import "utils"
+
+#pragma once
+
+#include "bling/ast/ast.h"
+
+fun universe() *ast$Scope
+
+fun isIdent(expr *ast$Expr) bool
+
+fun isVoid(type *ast$Expr) bool
+
+fun isVoidPtr(type *ast$Expr) bool
+
+fun exprString(expr *ast$Expr) *char
+
+fun stmtString(stmt *ast$Stmt) *char
+
+fun typeString(expr *ast$Expr) *char
+
+typedef Config struct {
+    strict bool
+}
+
+fun checkFile(conf *Config, file *ast$File) ast$Package
+
+#include "bling/ast/ast.h"
+
+#include "bling/emitter/emitter.h"
+
+#include "bling/parser/parser.h"
+
+#include "bling/types/types.h"
+
+#include "paths/paths.h"
+
+var natives []struct {
+    name *char
+    size int
+    arith bool
+} = {
+    {
+        "char",
+        sizeof(char),
+        true,
+    },
+    {
+        "double",
+        sizeof(double),
+        true,
+    },
+    {
+        "float",
+        sizeof(float),
+        true,
+    },
+    {
+        "int",
+        sizeof(int),
+        true,
+    },
+    {
+        "void",
+        sizeof(void),
+    },
+    {
+        "int16_t",
+        sizeof(int16_t),
+        true,
+    },
+    {
+        "int32_t",
+        sizeof(int32_t),
+        true,
+    },
+    {
+        "int64_t",
+        sizeof(int64_t),
+        true,
+    },
+    {
+        "int8_t",
+        sizeof(int8_t),
+        true,
+    },
+    {
+        "size_t",
+        sizeof(size_t),
+        true,
+    },
+    {
+        "uint16_t",
+        sizeof(uint16_t),
+        true,
+    },
+    {
+        "uint32_t",
+        sizeof(uint32_t),
+        true,
+    },
+    {
+        "uint64_t",
+        sizeof(uint64_t),
+        true,
+    },
+    {
+        "uint8_t",
+        sizeof(uint8_t),
+        true,
+    },
+    {
+        "uintptr_t",
+        sizeof(uintptr_t),
+        true,
+    },
+    {
+        NULL,
+    },
+}
+
+fun declString(decl *ast$Decl) *char {
+    var e emitter$Emitter = {
+    }
+    emitter$emitDecl(&e, decl)
+    return emitter$Emitter_string(&e)
+}
+
+fun exprString(expr *ast$Expr) *char {
+    var e emitter$Emitter = {
+    }
+    emitter$emitExpr(&e, expr)
+    return emitter$Emitter_string(&e)
+}
+
+fun stmtString(stmt *ast$Stmt) *char {
+    var e emitter$Emitter = {
+    }
+    emitter$emitStmt(&e, stmt)
+    return emitter$Emitter_string(&e)
+}
+
+fun typeString(expr *ast$Expr) *char {
+    var e emitter$Emitter = {
+    }
+    emitter$emitType(&e, expr)
+    return emitter$Emitter_string(&e)
+}
+
+fun isType(expr *ast$Expr) bool {
+    switch expr.type {
+    case ast$EXPR_IDENT:
+        if expr.ident.obj == NULL {
+            panic("types$isType: unresolved identifier %s", expr.ident.name)
+        }
+        return expr.ident.obj.decl.type == ast$DECL_TYPEDEF
+    case ast$EXPR_STAR:
+        return isType(expr.star.x)
+    case ast$TYPE_ARRAY, ast$TYPE_ENUM, ast$TYPE_FUNC, ast$TYPE_NATIVE, ast$TYPE_STRUCT:
+        return true
+    default:
+        return false
+    }
+}
+
+fun makeIdent(name *const char) *ast$Expr {
+    var x ast$Expr = {
+        type: ast$EXPR_IDENT,
+        ident: {
+            name: strdup(name),
+        },
+    }
+    return esc(x)
+}
+
+fun makePtr(type *ast$Expr) *ast$Expr {
+    var x ast$Expr = {
+        type: ast$EXPR_STAR,
+        pos: type.pos,
+        star: {
+            x: type,
+        },
+    }
+    return esc(x)
+}
+
+fun lookup_typedef(ident *ast$Expr) *ast$Expr {
+    var decl *ast$Decl = ident.ident.obj.decl
+    if decl.type != ast$DECL_TYPEDEF {
+        panic("not a typedef: %s", typeString(ident))
+    }
+    return decl.typedef_.type
+}
+
+fun getBaseType(type *ast$Expr) *ast$Expr {
+    for ; ;  {
+        switch type.type {
+        case ast$EXPR_IDENT:
+            type = lookup_typedef(type)
+            break
+        case ast$TYPE_ARRAY, ast$TYPE_ENUM, ast$TYPE_NATIVE, ast$TYPE_STRUCT:
+            return type
+        default:
+            panic("not a typedef: %s", typeString(type))
+        }
+    }
+}
+
+fun isArithmetic(type *ast$Expr) bool {
+    switch type.type {
+    case ast$EXPR_IDENT:
+        return isArithmetic(getBaseType(type))
+    case ast$EXPR_STAR, ast$TYPE_ENUM:
+        return true
+    case ast$TYPE_NATIVE:
+        return !streq(type.native.name, "void")
+    default:
+        return false
+    }
+}
+
+fun isNative(type *ast$Expr, name *const char) bool {
+    switch type.type {
+    case ast$EXPR_IDENT:
+        return streq(type.ident.name, name)
+    case ast$TYPE_NATIVE:
+        return true
+    default:
+        return false
+    }
+}
+
+fun areIdentical(a *ast$Expr, b *ast$Expr) bool {
+    if a == b {
+        return true
+    }
+    if a == NULL || b == NULL {
+        return false
+    }
+    assert(a)
+    assert(b)
+    if a.type != b.type {
+        return false
+    }
+    switch a.type {
+    case ast$EXPR_IDENT:
+        return b.type == ast$EXPR_IDENT && a.ident.obj == a.ident.obj
+    case ast$EXPR_STAR:
+        if ast$isVoidPtr(a) || ast$isVoidPtr(b) {
+            return true
+        }
+        return areIdentical(a.star.x, b.star.x)
+    case ast$TYPE_ARRAY:
+        return areIdentical(a.array.elt, b.array.elt)
+    case ast$TYPE_FUNC:
+        {
+            if !areIdentical(a.func.result, b.func.result) {
+                return false
+            }
+            var i int = 0
+            if a.func.params {
+                for ; a.func.params[i]; i++ {
+                    var param1 *ast$Decl = a.func.params[i]
+                    var param2 *ast$Decl = b.func.params[i]
+                    if param2 == NULL {
+                        return false
+                    }
+                    if !areIdentical(param1.field.type, param2.field.type) {
+                        return false
+                    }
+                }
+                if b.func.params[i] {
+                    return false
+                }
+            }
+        }
+        return true
+    default:
+        panic("unreachable: %s == %s", typeString(a), typeString(b))
+        return false
+    }
+}
+
+fun isPointer(t *ast$Expr) bool {
+    return t.type == ast$EXPR_STAR || t.type == ast$TYPE_ARRAY
+}
+
+fun pointerBase(t *ast$Expr) *ast$Expr {
+    switch t.type {
+    case ast$EXPR_STAR:
+        return t.star.x
+    case ast$TYPE_ARRAY:
+        return t.array.elt
+    default:
+        panic("not a pointer: %s", typeString(t))
+        return NULL
+    }
+}
+
+fun areAssignable(a *ast$Expr, b *ast$Expr) bool {
+    if areIdentical(a, b) {
+        return true
+    }
+    if ast$isVoidPtr(a) || ast$isVoidPtr(b) {
+        return true
+    }
+    if isPointer(a) && isPointer(b) {
+        return areAssignable(pointerBase(a), pointerBase(b))
+    }
+    while a.type == ast$EXPR_IDENT {
+        a = lookup_typedef(a)
+    }
+    while b.type == ast$EXPR_IDENT {
+        b = lookup_typedef(b)
+    }
+    if isNative(a, "bool") && isArithmetic(b) {
+        return true
+    }
+    if b.type == ast$TYPE_ENUM && isArithmetic(a) {
+        return true
+    }
+    if a.type == ast$TYPE_ENUM && isArithmetic(a) {
+        return true
+    }
+    return areIdentical(a, b)
+}
+
+fun areComparable(a *ast$Expr, b *ast$Expr) bool {
+    if areIdentical(a, b) {
+        return true
+    }
+    if isArithmetic(a) && isArithmetic(b) {
+        return true
+    }
+    if a.type == ast$EXPR_STAR && isNative(b, "int") {
+        return true
+    }
+    return areIdentical(a, b)
+}
+
+fun Scope_declare(s *ast$Scope, decl *ast$Decl) {
+    var kind ast$ObjKind
+    var ident *ast$Expr = NULL
+    switch decl.type {
+    case ast$DECL_FIELD:
+        kind = ast$ObjKind_VALUE
+        ident = decl.field.name
+        break
+    case ast$DECL_FUNC:
+        kind = ast$ObjKind_FUNC
+        ident = decl.func.name
+        break
+    case ast$DECL_IMPORT:
+        kind = ast$ObjKind_PKG
+        ident = decl.imp.name
+        break
+    case ast$DECL_TYPEDEF:
+        kind = ast$ObjKind_TYPE
+        ident = decl.typedef_.name
+        break
+    case ast$DECL_VALUE:
+        kind = ast$ObjKind_VALUE
+        ident = decl.value.name
+        break
+    default:
+        panic("types$Scope_declare: bad decl: %d", decl.type)
+        return
+    }
+    assert(ident.type == ast$EXPR_IDENT)
+    if ident.ident.obj != NULL {
+        ast$Scope_print(s)
+        panic("already declared: %s", declString(decl))
+    }
+    if ident.ident.pkg != NULL {
+        var pkg *ast$Expr = ident.ident.pkg
+        ast$Scope_resolve(s, pkg)
+        var pkgObj *ast$Object = pkg.ident.obj
+        var decl *ast$Decl = pkgObj.decl
+        assert(decl.type == ast$DECL_IMPORT)
+        s = decl.imp.scope
+    }
+    var obj *ast$Object = ast$newObject(kind, ident.ident.name)
+    obj.scope = s
+    obj.decl = decl
+    obj.pkg = s.pkg
+    ident.ident.obj = obj
+    var alt *ast$Object = ast$Scope_insert(s, obj)
+    if alt != NULL {
+        if alt.kind != kind {
+            panic("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl))
+        }
+        var redecl bool = false
+        switch kind {
+        case ast$ObjKind_FUNC:
+            redecl = (alt.decl.func.body == NULL || decl.func.body == NULL) && areIdentical(alt.decl.func.type, decl.func.type)
+            break
+        case ast$ObjKind_PKG:
+            redecl = true
+            break
+        case ast$ObjKind_TYPE:
+            if alt.decl.typedef_.type.type == ast$TYPE_STRUCT {
+                redecl = alt.decl.typedef_.type.struct_.fields == NULL
+            }
+            break
+        case ast$ObjKind_VALUE:
+            redecl = alt.decl.value.value == NULL && !areIdentical(alt.decl.value.type, decl.value.value)
+            break
+        default:
+            panic("unknown kind: %d", kind)
+            break
+        }
+        if !redecl {
+            panic("already declared: %s", ident.ident.name)
+        }
+        alt.decl = decl
+    }
+}
+
+fun declare_builtins(s *ast$Scope) {
+    for var i int = 0; natives[i].name != NULL; i++ {
+        var name ast$Expr = {
+            type: ast$EXPR_IDENT,
+            ident: {
+                name: strdup(natives[i].name),
+            },
+        }
+        var type ast$Expr = {
+            type: ast$TYPE_NATIVE,
+            native: {
+                name: strdup(natives[i].name),
+                size: natives[i].size,
+            },
+        }
+        var decl ast$Decl = {
+            type: ast$DECL_TYPEDEF,
+            typedef_: {
+                name: esc(name),
+                type: esc(type),
+            },
+        }
+        Scope_declare(s, esc(decl))
+    }
+}
+
+var _universe *ast$Scope = NULL
+
+fun universe() *ast$Scope {
+    if _universe == NULL {
+        _universe = ast$Scope_new(NULL)
+        declare_builtins(_universe)
+        var file *ast$File = parser$parse_file("builtin/builtin.bling")
+        file.scope = _universe
+        var conf Config = {
+            strict: true,
+        }
+        checkFile(&conf, file)
+        free(file.decls)
+        free(file)
+    }
+    return _universe
+}
+
+typedef checker_t struct {
+    conf *Config
+    pkg ast$Package
+    result *ast$Expr
+    files utils$Slice
+    typedefName *ast$Expr
+    scopes utils$Map
+}
+
+fun checker_openScope(w *checker_t) {
+    w.pkg.scope = ast$Scope_new(w.pkg.scope)
+}
+
+fun checker_closeScope(w *checker_t) {
+    w.pkg.scope = w.pkg.scope.outer
+}
+
+fun check_expr(w *checker_t, expr *ast$Expr) *ast$Expr
+
+fun check_type(w *checker_t, expr *ast$Expr) {
+    assert(expr)
+    switch expr.type {
+    case ast$EXPR_IDENT:
+        ast$Scope_resolve(w.pkg.scope, expr)
+        break
+    case ast$TYPE_ARRAY:
+        check_type(w, expr.array.elt)
+        if expr.array.len {
+            var len *ast$Expr = check_expr(w, expr.array.len)
+            <void> len
+        }
+        break
+    case ast$TYPE_ENUM:
+        for var i int = 0; expr.enum_.enums[i]; i++ {
+            var decl *ast$Decl = expr.enum_.enums[i]
+            if w.typedefName {
+                decl.value.type = w.typedefName
+            }
+            Scope_declare(w.pkg.scope, decl)
+        }
+        break
+    case ast$TYPE_FUNC:
+        for var i int = 0; expr.func.params && expr.func.params[i]; i++ {
+            var param *ast$Decl = expr.func.params[i]
+            assert(param.type == ast$DECL_FIELD)
+            if param.field.type {
+                check_type(w, param.field.type)
+            }
+        }
+        if expr.func.result {
+            check_type(w, expr.func.result)
+        }
+        break
+    case ast$EXPR_STAR:
+        check_type(w, expr.star.x)
+        break
+    case ast$TYPE_STRUCT:
+        if expr.struct_.fields {
+            checker_openScope(w)
+            for var i int = 0; expr.struct_.fields[i]; i++ {
+                var field *ast$Decl = expr.struct_.fields[i]
+                check_type(w, field.field.type)
+                if field.field.name {
+                    Scope_declare(w.pkg.scope, field)
+                }
+            }
+            checker_closeScope(w)
+        }
+        break
+    default:
+        panic("check_type: unknown type: %s", typeString(expr))
+        break
+    }
+}
+
+fun isLhs(expr *ast$Expr) bool {
+    switch expr.type {
+    case ast$EXPR_IDENT, ast$EXPR_SELECTOR:
+        return true
+    case ast$EXPR_CAST:
+        return isLhs(expr.cast.expr)
+    case ast$EXPR_INDEX:
+        return isLhs(expr.index.x)
+    case ast$EXPR_PAREN:
+        return isLhs(expr.paren.x)
+    case ast$EXPR_STAR:
+        return isLhs(expr.star.x)
+    default:
+        return false
+    }
+}
+
+fun get_decl_type(decl *ast$Decl) *ast$Expr {
+    assert(decl)
+    switch decl.type {
+    case ast$DECL_FIELD:
+        return decl.field.type
+    case ast$DECL_FUNC:
+        return decl.func.type
+    case ast$DECL_TYPEDEF:
+        return decl.typedef_.type
+    case ast$DECL_VALUE:
+        return decl.value.type
+    default:
+        panic("unhandled decl: %d", decl.type)
+        return NULL
+    }
+}
+
+fun get_ident_type(ident *ast$Expr) *ast$Expr {
+    assert(ident.type == ast$EXPR_IDENT)
+    var obj *ast$Object = ident.ident.obj
+    assert(obj)
+    return get_decl_type(obj.decl)
+}
+
+fun find_field(type *ast$Expr, sel *ast$Expr) *ast$Decl {
+    assert(type.type == ast$TYPE_STRUCT)
+    assert(sel.type == ast$EXPR_IDENT)
+    for var i int = 0; type.struct_.fields && type.struct_.fields[i]; i++ {
+        var field *ast$Decl = type.struct_.fields[i]
+        var name *ast$Expr = field.field.name
+        if name {
+            if streq(sel.ident.name, name.ident.name) {
+                type = field.field.type
+                return field
+            }
+        } else {
+            return find_field(field.field.type, sel)
+        }
+    }
+    return NULL
+}
+
+fun isInteger(x *ast$Expr) bool {
+    switch x.type {
+    case ast$EXPR_IDENT:
+        return isInteger(x.ident.obj.decl.typedef_.type)
+    case ast$TYPE_ENUM, ast$TYPE_NATIVE:
+        return true
+    default:
+        return false
+    }
+}
+
+fun check_array(w *checker_t, x *ast$Expr) {
+    var baseT *ast$Expr = getBaseType(x.compound.type)
+    for var i int = 0; x.compound.list[i]; i++ {
+        var elt *ast$Expr = x.compound.list[i]
+        if elt.type == ast$EXPR_KEY_VALUE {
+            elt.key_value.isArray = true
+            var indexT *ast$Expr = check_expr(w, elt.key_value.key)
+            if !isInteger(indexT) {
+                panic("not a valid index: %s: %s", exprString(elt.key_value.key), exprString(elt))
+            }
+            elt = elt.key_value.value
+        }
+        if elt.type == ast$EXPR_COMPOUND {
+            if elt.compound.type == NULL {
+                elt.compound.type = baseT.array.elt
+            }
+        }
+        var eltT *ast$Expr = check_expr(w, elt)
+        <void> eltT
+    }
+}
+
+fun getStructField(type *ast$Expr, index int) *ast$Decl {
+    assert(type.type == ast$TYPE_STRUCT)
+    if type.struct_.fields == NULL {
+        panic("incomplete field defn: %s", typeString(type))
+    }
+    for var i int = 0; type.struct_.fields[i]; i++ {
+        if i == index {
+            return type.struct_.fields[i]
+        }
+    }
+    return NULL
+}
+
+fun check_struct(w *checker_t, x *ast$Expr) {
+    assert(x.compound.type)
+    var baseT *ast$Expr = getBaseType(x.compound.type)
+    var expectKV bool = false
+    for var i int = 0; x.compound.list[i]; i++ {
+        var elt *ast$Expr = x.compound.list[i]
+        var fieldT *ast$Expr = NULL
+        if elt.type == ast$EXPR_KEY_VALUE {
+            elt.key_value.isArray = false
+            expectKV = true
+            var key *ast$Expr = elt.key_value.key
+            if !ast$isIdent(key) {
+                panic("key must be an identifier: %s", typeString(x.compound.type))
+            }
+            var field *ast$Decl = find_field(baseT, key)
+            if field == NULL {
+                panic("struct `%s` has no field `%s`", typeString(x.compound.type), exprString(key))
+            }
+            key.ident.obj = field.field.name.ident.obj
+            fieldT = field.field.type
+            elt = elt.key_value.value
+        } else {
+            if expectKV {
+                panic("expected a key/value expr: %s", exprString(x))
+            }
+            var field *ast$Decl = getStructField(baseT, i)
+            fieldT = field.field.type
+        }
+        if elt.type == ast$EXPR_COMPOUND {
+            if elt.compound.type == NULL {
+                elt.compound.type = fieldT
+            }
+        }
+        var eltT *ast$Expr = check_expr(w, elt)
+        if !areAssignable(fieldT, eltT) {
+            panic("cannot init field of type `%s` with value of type `%s`: %s", typeString(fieldT), typeString(eltT), exprString(elt))
+        }
+    }
+}
+
+fun check_compositeLit(w *checker_t, x *ast$Expr) {
+    var t *ast$Expr = x.compound.type
+    assert(t)
+    var baseT *ast$Expr = getBaseType(t)
+    switch baseT.type {
+    case ast$TYPE_ARRAY:
+        check_array(w, x)
+        break
+    case ast$TYPE_STRUCT:
+        check_struct(w, x)
+        break
+    default:
+        panic("composite type must be an array or a struct: %s", typeString(t))
+    }
+}
+
+fun check_expr(w *checker_t, expr *ast$Expr) *ast$Expr {
+    assert(expr)
+    switch expr.type {
+    case ast$EXPR_BINARY:
+        {
+            var typ1 *ast$Expr = check_expr(w, expr.binary.x)
+            var typ2 *ast$Expr = check_expr(w, expr.binary.y)
+            if !areComparable(typ1, typ2) {
+                panic("not compariable: %s and %s: %s", typeString(typ1), typeString(typ2), exprString(expr))
+            }
+            switch expr.binary.op {
+            case token$EQUAL, token$GT, token$GT_EQUAL, token$LAND, token$LOR, token$LT, token$LT_EQUAL, token$NOT_EQUAL:
+                typ1 = makeIdent("bool")
+                check_type(w, typ1)
+            default:
+                return typ1
+            }
+        }
+    case ast$EXPR_BASIC_LIT:
+        {
+            var kind token$Token = expr.basic_lit.kind
+            var type *ast$Expr = NULL
+            switch kind {
+            case token$CHAR:
+                type = makeIdent("char")
+                break
+            case token$FLOAT:
+                type = makeIdent("float")
+                break
+            case token$INT:
+                type = makeIdent("int")
+                break
+            case token$STRING:
+                type = makePtr(makeIdent("char"))
+                break
+            default:
+                panic("check_expr: not implmented: %s", token$string(kind))
+                break
+            }
+            check_type(w, type)
+            return type
+        }
+    case ast$EXPR_CALL:
+        {
+            var func *ast$Expr = expr.call.func
+            var type *ast$Expr = check_expr(w, func)
+            if func.type == ast$EXPR_IDENT {
+                if streq(func.ident.name, "esc") {
+                    assert(expr.call.args[0] && !expr.call.args[1])
+                    var type *ast$Expr = check_expr(w, expr.call.args[0])
+                    return makePtr(type)
+                }
+            }
+            if type.type == ast$EXPR_STAR {
+                type = type.star.x
+            }
+            if type.type != ast$TYPE_FUNC {
+                panic("check_expr: `%s` is not a func: %s", exprString(expr.call.func), exprString(expr))
+            }
+            var j int = 0
+            for var i int = 0; expr.call.args[i]; i++ {
+                var param *ast$Decl = type.func.params[j]
+                assert(param.type == ast$DECL_FIELD)
+                var type *ast$Expr = check_expr(w, expr.call.args[i])
+                if param.field.type {
+                    if !areAssignable(param.field.type, type) {
+                        panic("not assignable: %s and %s: %s", typeString(param.field.type), typeString(type), exprString(expr))
+                    }
+                    j++
+                }
+            }
+            return type.func.result
+        }
+    case ast$EXPR_COMPOUND:
+        if expr.compound.type == NULL {
+            panic("untyped compound expr: %s", exprString(expr))
+        }
+        check_compositeLit(w, expr)
+        return expr.compound.type
+    case ast$EXPR_CAST:
+        {
+            check_type(w, expr.cast.type)
+            if expr.cast.expr.type == ast$EXPR_COMPOUND {
+                expr.cast.expr.compound.type = expr.cast.type
+            }
+            check_expr(w, expr.cast.expr)
+            return expr.cast.type
+        }
+    case ast$EXPR_IDENT:
+        {
+            ast$Scope_resolve(w.pkg.scope, expr)
+            return get_ident_type(expr)
+        }
+    case ast$EXPR_INDEX:
+        {
+            var type *ast$Expr = check_expr(w, expr.index.x)
+            switch type.type {
+            case ast$TYPE_ARRAY:
+                type = type.array.elt
+                break
+            case ast$EXPR_STAR:
+                type = type.star.x
+                break
+            default:
+                panic("indexing a non-array or pointer `%s`: %s", typeString(type), exprString(expr))
+                break
+            }
+            var typ2 *ast$Expr = check_expr(w, expr.index.index)
+            <void> typ2
+            return type
+        }
+    case ast$EXPR_PAREN:
+        return check_expr(w, expr.paren.x)
+    case ast$EXPR_SELECTOR:
+        {
+            var type *ast$Expr = check_expr(w, expr.selector.x)
+            if type.type == ast$EXPR_STAR {
+                expr.selector.tok = token$ARROW
+                type = type.star.x
+            } else {
+                assert(expr.selector.tok != token$ARROW)
+            }
+            type = getBaseType(type)
+            var field *ast$Decl = find_field(type, expr.selector.sel)
+            if field == NULL {
+                panic("struct `%s` (`%s`) has no field `%s`", exprString(expr.selector.x), typeString(type), expr.selector.sel.ident.name)
+            }
+            expr.selector.sel.ident.obj = field.field.name.ident.obj
+            return field.field.type
+        }
+    case ast$EXPR_SIZEOF:
+        {
+            check_type(w, expr.sizeof_.x)
+            var ident *ast$Expr = makeIdent("size_t")
+            ast$Scope_resolve(w.pkg.scope, ident)
+            return ident
+        }
+    case ast$EXPR_STAR:
+        {
+            var type *ast$Expr = check_expr(w, expr.star.x)
+            switch type.type {
+            case ast$EXPR_STAR:
+                return type.star.x
+            case ast$TYPE_ARRAY:
+                return type.array.elt
+            default:
+                panic("check_expr: derefencing a non-pointer `%s`: %s", typeString(type), exprString(expr))
+                return NULL
+            }
+        }
+    case ast$EXPR_UNARY:
+        {
+            var type *ast$Expr = check_expr(w, expr.unary.x)
+            if expr.unary.op == token$AND {
+                if !isLhs(expr.unary.x) {
+                    panic("check_expr: invalid lvalue `%s`: %s", exprString(expr.unary.x), exprString(expr))
+                }
+                return makePtr(type)
+            }
+            return type
+        }
+    default:
+        panic("check_expr: unknown expr: %s", exprString(expr))
+    }
+    return NULL
+}
+
+fun check_decl(w *checker_t, decl *ast$Decl)
+
+fun check_stmt(w *checker_t, stmt *ast$Stmt) {
+    switch stmt.type {
+    case ast$STMT_ASSIGN:
+        {
+            if !isLhs(stmt.assign.x) {
+                panic("check_stmt: invalid lvalue `%s`: %s", exprString(stmt.assign.x), stmtString(stmt))
+            }
+            var a *ast$Expr = check_expr(w, stmt.assign.x)
+            if a.is_const {
+                panic("cannot assign to const var: %s", stmtString(stmt))
+            }
+            var b *ast$Expr = check_expr(w, stmt.assign.y)
+            if !areAssignable(a, b) {
+                panic("check_stmt: not assignment `%s` and `%s`: %s", exprString(stmt.assign.x), exprString(stmt.assign.y), stmtString(stmt))
+            }
+        }
+        break
+    case ast$STMT_BLOCK:
+        checker_openScope(w)
+        for var i int = 0; stmt.block.stmts[i]; i++ {
+            check_stmt(w, stmt.block.stmts[i])
+        }
+        checker_closeScope(w)
+        break
+    case ast$STMT_DECL:
+        check_decl(w, stmt.decl)
+        break
+    case ast$STMT_EXPR:
+        check_expr(w, stmt.expr.x)
+        break
+    case ast$STMT_EMPTY:
+        break
+    case ast$STMT_IF:
+        check_expr(w, stmt.if_.cond)
+        check_stmt(w, stmt.if_.body)
+        if stmt.if_.else_ {
+            check_stmt(w, stmt.if_.else_)
+        }
+        break
+    case ast$STMT_ITER:
+        if stmt.iter.init || stmt.iter.post {
+            checker_openScope(w)
+        }
+        if stmt.iter.init {
+            check_stmt(w, stmt.iter.init)
+        }
+        if stmt.iter.cond {
+            check_expr(w, stmt.iter.cond)
+        }
+        if stmt.iter.post {
+            check_stmt(w, stmt.iter.post)
+        }
+        check_stmt(w, stmt.iter.body)
+        if stmt.iter.init || stmt.iter.post {
+            checker_closeScope(w)
+        }
+        break
+    case ast$STMT_JUMP:
+        break
+    case ast$STMT_LABEL:
+        check_stmt(w, stmt.label.stmt)
+        break
+    case ast$STMT_POSTFIX:
+        check_expr(w, stmt.postfix.x)
+        break
+    case ast$STMT_RETURN:
+        if stmt.return_.x {
+            var a *ast$Expr = w.result
+            assert(a)
+            var b *ast$Expr = check_expr(w, stmt.return_.x)
+            if !areAssignable(a, b) {
+                panic("check_stmt: not returnable: %s and %s: %s", typeString(a), typeString(b), stmtString(stmt))
+            }
+        }
+        break
+    case ast$STMT_SWITCH:
+        {
+            var type1 *ast$Expr = check_expr(w, stmt.switch_.tag)
+            for var i int = 0; stmt.switch_.stmts[i]; i++ {
+                var clause *ast$Stmt = stmt.switch_.stmts[i]
+                assert(clause.type == ast$STMT_CASE)
+                for var j int = 0; clause.case_.exprs && clause.case_.exprs[j]; j++ {
+                    var type2 *ast$Expr = check_expr(w, clause.case_.exprs[j])
+                    if !areComparable(type1, type2) {
+                        panic("check_stmt: not comparable: %s and %s: %s", typeString(type1), typeString(type2), stmtString(stmt))
+                    }
+                }
+                for var j int = 0; clause.case_.stmts[j]; j++ {
+                    check_stmt(w, clause.case_.stmts[j])
+                }
+            }
+        }
+        break
+    default:
+        panic("check_stmt: unknown stmt: %s", stmtString(stmt))
+    }
+}
+
+fun constant_stringVal(x *ast$Expr) *char {
+    var lit *const char = x.basic_lit.value
+    var n int = strlen(lit) - 2
+    var val *char = malloc(n + 1)
+    for var i int = 0; i < n; i++ {
+        val[i] = lit[i + 1]
+    }
+    val[n] = '\0'
+    return val
+}
+
+fun check_file(w *checker_t, file *ast$File)
+
+fun check_import(w *checker_t, imp *ast$Decl) {
+    var path *char = constant_stringVal(imp.imp.path)
+    if imp.imp.name == NULL {
+        var base *char = paths$base(path)
+        imp.imp.name = makeIdent(base)
+    }
+    var oldScope *ast$Scope = NULL
+    utils$Map_get(&w.scopes, path, &oldScope)
+    if oldScope {
+        imp.imp.scope = oldScope
+        Scope_declare(w.pkg.scope, imp)
+        free(path)
+        return
+    }
+    imp.imp.scope = ast$Scope_new(universe())
+    utils$Map_set(&w.scopes, path, &imp.imp.scope)
+    Scope_declare(w.pkg.scope, imp)
+    oldScope = w.pkg.scope
+    w.pkg.scope = imp.imp.scope
+    var err *utils$Error = NULL
+    var files **ast$File = parser$parseDir(path, &err)
+    if err {
+        panic("%s: %s", path, err.error)
+    }
+    for var i int = 0; files[i]; i++ {
+        check_file(w, files[i])
+    }
+    w.pkg.scope = oldScope
+}
+
+fun check_decl(w *checker_t, decl *ast$Decl) {
+    switch decl.type {
+    case ast$DECL_FUNC:
+        check_type(w, decl.func.type)
+        Scope_declare(w.pkg.scope, decl)
+        break
+    case ast$DECL_PRAGMA:
+        break
+    case ast$DECL_TYPEDEF:
+        w.typedefName = decl.typedef_.name
+        check_type(w, decl.typedef_.type)
+        w.typedefName = NULL
+        Scope_declare(w.pkg.scope, decl)
+        break
+    case ast$DECL_VALUE:
+        {
+            var valType *ast$Expr = NULL
+            if decl.value.type != NULL {
+                check_type(w, decl.value.type)
+            }
+            if decl.value.value != NULL {
+                if decl.value.value.type == ast$EXPR_COMPOUND {
+                    if decl.value.type == NULL {
+                        panic("cannot assign short var decls with composite type")
+                    }
+                    decl.value.value.compound.type = decl.value.type
+                }
+                valType = check_expr(w, decl.value.value)
+            }
+            if decl.value.type == NULL {
+                decl.value.type = valType
+            }
+            if valType != NULL {
+                var varType *ast$Expr = decl.value.type
+                if !areAssignable(varType, valType) {
+                    panic("check_decl: not assignable %s and %s: %s", typeString(varType), typeString(valType), declString(decl))
+                }
+            }
+            Scope_declare(w.pkg.scope, decl)
+            break
+        }
+    default:
+        panic("check_decl: not implemented: %s", declString(decl))
+    }
+}
+
+fun check_func(w *checker_t, decl *ast$Decl) {
+    if decl.type == ast$DECL_FUNC && decl.func.body {
+        checker_openScope(w)
+        var type *ast$Expr = decl.func.type
+        for var i int = 0; type.func.params && type.func.params[i]; i++ {
+            var param *ast$Decl = type.func.params[i]
+            assert(param.type == ast$DECL_FIELD)
+            if param.field.name {
+                Scope_declare(w.pkg.scope, param)
+            }
+        }
+        w.result = decl.func.type.func.result
+        for var i int = 0; decl.func.body.block.stmts[i]; i++ {
+            check_stmt(w, decl.func.body.block.stmts[i])
+        }
+        w.result = NULL
+        checker_closeScope(w)
+    }
+}
+
+fun check_file(w *checker_t, file *ast$File) {
+    if file.name {
+        w.pkg.scope.pkg = file.name.ident.name
+    }
+    for var i int = 0; file.imports[i] != NULL; i++ {
+        check_import(w, file.imports[i])
+    }
+    utils$Slice_append(&w.files, &file)
+    if w.conf.strict {
+        for var i int = 0; file.decls[i] != NULL; i++ {
+            check_decl(w, file.decls[i])
+        }
+        for var i int = 0; file.decls[i] != NULL; i++ {
+            check_func(w, file.decls[i])
+        }
+    }
+}
+
+fun checkFile(conf *Config, file *ast$File) ast$Package {
+    if file.scope == NULL {
+        file.scope = ast$Scope_new(universe())
+    }
+    var w checker_t = {
+        conf: conf,
+        pkg: {
+            scope: file.scope,
+        },
+        files: utils$Slice_init(sizeof(*ast$File)),
+        scopes: utils$Map_init(sizeof(*ast$Scope)),
+    }
+    check_file(&w, file)
+    w.pkg.files = utils$Slice_to_nil_array(w.files)
+    return w.pkg
+}

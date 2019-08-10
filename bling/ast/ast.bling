@@ -1,0 +1,425 @@
+package ast
+import "bling/token"
+import "bytes"
+import "utils"
+
+#pragma once
+
+#include "bling/token/token.h"
+
+#include "utils/utils.h"
+
+typedef NodeType enum {
+    NODE_ILLEGAL = 0,
+    _DECL_START,
+    DECL_FIELD,
+    DECL_FUNC,
+    DECL_IMPORT,
+    DECL_PRAGMA,
+    DECL_TYPEDEF,
+    DECL_VALUE,
+    _DECL_END,
+    _EXPR_START,
+    EXPR_BASIC_LIT,
+    EXPR_BINARY,
+    EXPR_CALL,
+    EXPR_CAST,
+    EXPR_COMPOUND,
+    EXPR_COND,
+    EXPR_IDENT,
+    EXPR_INDEX,
+    EXPR_INIT_DECL,
+    EXPR_KEY_VALUE,
+    EXPR_PAREN,
+    EXPR_SELECTOR,
+    EXPR_SIZEOF,
+    EXPR_STAR,
+    EXPR_UNARY,
+    _EXPR_END,
+    _STMT_START,
+    STMT_ASSIGN,
+    STMT_BLOCK,
+    STMT_CASE,
+    STMT_DECL,
+    STMT_EMPTY,
+    STMT_EXPR,
+    STMT_IF,
+    STMT_ITER,
+    STMT_JUMP,
+    STMT_LABEL,
+    STMT_POSTFIX,
+    STMT_RETURN,
+    STMT_SWITCH,
+    _STMT_END,
+    _TYPE_START,
+    TYPE_ARRAY,
+    TYPE_ENUM,
+    TYPE_NATIVE,
+    TYPE_FUNC,
+    TYPE_STRUCT,
+    _TYPE_END,
+}
+
+typedef Decl struct Decl
+
+typedef Expr struct Expr
+
+typedef Scope struct Scope
+
+typedef Stmt struct Stmt
+
+typedef ObjKind enum {
+    ObjKind_FUNC,
+    ObjKind_PKG,
+    ObjKind_TYPE,
+    ObjKind_VALUE,
+}
+
+typedef Object struct {
+    kind ObjKind
+    name *char
+    decl *Decl
+    pkg *char
+    scope *Scope
+}
+
+typedef Decl struct Decl {
+    type NodeType
+    pos token$Pos
+    union {
+        imp struct {
+            name *Expr
+            path *Expr
+            scope *Scope
+        }
+        pragma struct {
+            lit *char
+        }
+        typedef_ struct {
+            name *Expr
+            type *Expr
+        }
+        value struct {
+            name *Expr
+            type *Expr
+            value *Expr
+            kind token$Token
+        }
+        func struct {
+            name *Expr
+            type *Expr
+            body *Stmt
+        }
+        field struct {
+            name *Expr
+            type *Expr
+        }
+    }
+}
+
+typedef Expr struct Expr {
+    type NodeType
+    pos token$Pos
+    is_const bool
+    union {
+        array struct {
+            len *Expr
+            elt *Expr
+        }
+        basic_lit struct {
+            kind token$Token
+            value *char
+        }
+        binary struct {
+            op token$Token
+            x *Expr
+            y *Expr
+        }
+        call struct {
+            func *Expr
+            args **Expr
+        }
+        cast struct {
+            type *Expr
+            expr *Expr
+        }
+        compound struct {
+            type *Expr
+            list **Expr
+        }
+        conditional struct {
+            condition *Expr
+            consequence *Expr
+            alternative *Expr
+        }
+        enum_ struct {
+            name *Expr
+            enums **Decl
+        }
+        func struct {
+            result *Expr
+            params **Decl
+        }
+        ident struct {
+            name *char
+            obj *Object
+            pkg *Expr
+        }
+        index struct {
+            x *Expr
+            index *Expr
+        }
+        key_value struct {
+            key *Expr
+            value *Expr
+            isArray bool
+        }
+        native struct {
+            name *char
+            size int
+        }
+        paren struct {
+            x *Expr
+        }
+        selector struct {
+            x *Expr
+            tok token$Token
+            sel *Expr
+        }
+        sizeof_ struct {
+            x *Expr
+        }
+        star struct {
+            x *Expr
+        }
+        struct_ struct {
+            tok token$Token
+            name *Expr
+            fields **Decl
+        }
+        unary struct {
+            op token$Token
+            x *Expr
+        }
+    }
+}
+
+typedef Stmt struct Stmt {
+    type NodeType
+    pos token$Pos
+    union {
+        assign struct {
+            x *Expr
+            op token$Token
+            y *Expr
+        }
+        block struct {
+            stmts **Stmt
+        }
+        case_ struct {
+            exprs **Expr
+            stmts **Stmt
+        }
+        decl *Decl
+        expr struct {
+            x *Expr
+        }
+        iter struct {
+            kind token$Token
+            init *Stmt
+            cond *Expr
+            post *Stmt
+            body *Stmt
+        }
+        if_ struct {
+            cond *Expr
+            body *Stmt
+            else_ *Stmt
+        }
+        jump struct {
+            keyword token$Token
+            label *Expr
+        }
+        label struct {
+            label *Expr
+            stmt *Stmt
+        }
+        postfix struct {
+            x *Expr
+            op token$Token
+        }
+        return_ struct {
+            x *Expr
+        }
+        switch_ struct {
+            tag *Expr
+            stmts **Stmt
+        }
+    }
+}
+
+fun newObject(kind ObjKind, name *char) *Object
+
+typedef Scope struct Scope {
+    outer *Scope
+    objects utils$Map
+    pkg *char
+}
+
+fun isExprType(x *Expr) bool
+
+fun Scope_new(outer *Scope) *Scope
+
+fun Scope_deinit(s *Scope)
+
+fun Scope_insert(s *Scope, obj *Object) *Object
+
+fun Scope_lookup(s *Scope, name *char) *Object
+
+typedef File struct {
+    filename *const char
+    name *Expr
+    imports **Decl
+    decls **Decl
+    scope *Scope
+}
+
+typedef Package struct {
+    name *char
+    scope *Scope
+    files **File
+}
+
+fun Scope_resolve(s *Scope, x *Expr)
+
+fun Scope_free(s *Scope)
+
+fun isIdent(x *Expr) bool
+
+fun isIdentNamed(x *Expr, name *const char) bool
+
+fun isNil(x *Expr) bool
+
+fun isVoid(x *Expr) bool
+
+fun isVoidPtr(x *Expr) bool
+
+fun Scope_print(s *Scope)
+
+#include "bling/ast/ast.h"
+
+#include "bytes/bytes.h"
+
+fun isExprType(x *Expr) bool {
+    return _TYPE_START < x.type && x.type < _DECL_END
+}
+
+fun newObject(kind ObjKind, name *char) *Object {
+    var obj Object = {
+        kind: kind,
+        name: name,
+    }
+    return esc(obj)
+}
+
+fun Scope_new(outer *Scope) *Scope {
+    var s Scope = {
+        outer: outer,
+        objects: utils$Map_init(sizeof(*Object)),
+    }
+    return esc(s)
+}
+
+fun Scope_deinit(s *Scope) {
+    utils$Map_deinit(&s.objects)
+}
+
+fun Scope_insert(s *Scope, obj *Object) *Object {
+    var alt *Object = NULL
+    utils$Map_get(&s.objects, obj.name, &alt)
+    if alt == NULL {
+        utils$Map_set(&s.objects, obj.name, &obj)
+    }
+    return alt
+}
+
+fun Scope_lookup(s *Scope, name *char) *Object {
+    var obj *Object = NULL
+    utils$Map_get(&s.objects, name, &obj)
+    return obj
+}
+
+fun Scope_print(s *Scope) {
+    var buf bytes$Buffer = {
+    }
+    while s {
+        var iter utils$MapIter = utils$NewMapIter(&s.objects)
+        var key *char = NULL
+        while utils$MapIter_next(&iter, &key, NULL) {
+            print("%s- %s", bytes$Buffer_string(&buf), key)
+        }
+        s = s.outer
+        bytes$Buffer_writeByte(&buf, '\t', NULL)
+    }
+}
+
+fun Scope_resolve(s *Scope, x *Expr) {
+    if x.type != EXPR_IDENT {
+        return
+    }
+    assert(x.ident.obj == NULL)
+    if x.ident.pkg {
+        var pkg *Expr = x.ident.pkg
+        Scope_resolve(s, pkg)
+        if pkg.ident.obj.kind != ObjKind_PKG {
+            Scope_print(s)
+            panic("not a pkg: %s", pkg.ident.name)
+        }
+        var decl *Decl = pkg.ident.obj.decl
+        assert(decl.type == DECL_IMPORT)
+        var t *Scope = decl.imp.scope
+        if !t {
+            Scope_print(s)
+            panic("%s $ %s", pkg.ident.name, x.ident.name)
+        }
+        assert(t)
+        s = t
+    }
+    for var t *Scope = s; t != NULL; t = t.outer {
+        var obj *Object = Scope_lookup(t, x.ident.name)
+        if obj != NULL {
+            x.ident.obj = obj
+            return
+        }
+    }
+    Scope_print(s)
+    panic("ast$Scope_resolve: unresolved: %s", x.ident.name)
+}
+
+fun Scope_free(s *Scope) {
+    utils$Map_deinit(&s.objects)
+    free(s)
+}
+
+fun isIdent(x *Expr) bool {
+    return x.type == EXPR_IDENT
+}
+
+fun isIdentNamed(x *Expr, name *const char) bool {
+    return isIdent(x) && streq(x.ident.name, name)
+}
+
+fun isNil(x *Expr) bool {
+    return isIdentNamed(x, "NULL")
+}
+
+fun isVoid(x *Expr) bool {
+    return isIdent(x) && streq(x.ident.name, "void")
+}
+
+fun isVoidPtr(x *Expr) bool {
+    if x.type == EXPR_STAR {
+        return isVoid(x.star.x)
+    }
+    return false
+}

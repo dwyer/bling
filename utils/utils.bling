@@ -1,0 +1,357 @@
+package utils
+import "sys"
+
+#pragma once
+
+#include "bootstrap/bootstrap.h"
+
+typedef Error struct {
+    error *char
+}
+
+fun NewError(error *const char) *Error
+
+fun Error_move(src *Error, dst **Error)
+
+fun Error_free(e *Error)
+
+fun clearError()
+
+fun Error_check(e **Error)
+
+typedef Slice struct {
+    size int
+    len int
+    cap int
+    array *void
+}
+
+fun Slice_init(size int) Slice
+
+fun Slice_deinit(s *Slice)
+
+fun Slice_len(s *const Slice) int
+
+fun Slice_cap(s *const Slice) int
+
+fun Slice_ref(s *const Slice, i int) *void
+
+fun Slice_get(s *const Slice, i int, dst *void)
+
+fun Slice_set_len(s *Slice, len int)
+
+fun Slice_set(s *Slice, i int, x *const void)
+
+fun Slice_append(s *Slice, x *const void)
+
+fun Slice_to_nil_array(s Slice) *void
+
+typedef Map struct {
+    len int
+    key_size int
+    val_size int
+    pairs Slice
+}
+
+typedef MapStatus enum {
+    MapStatus_ok = 1,
+}
+
+fun Map_init(val_size int) Map
+
+fun Map_deinit(m *Map)
+
+fun Map_len(m *const Map) int
+
+fun Map_cap(m *const Map) int
+
+fun Map_get(m *const Map, key *const char, val *void) int
+
+fun Map_has_key(m *Map, key *const char) bool
+
+fun Map_set(m *Map, key *const char, val *const void)
+
+var Map_hits int
+
+var Map_misses int
+
+var Map_lookups int
+
+var Map_iters int
+
+typedef MapIter struct {
+    _map *const Map
+    _idx int
+}
+
+fun NewMapIter(m *const Map) MapIter
+
+fun MapIter_next(m *MapIter, key **char, val *void) int
+
+#include "utils/utils.h"
+
+#include "sys/sys.h"
+
+fun NewError(msg *const char) *Error {
+    var err Error = {
+        error: strdup(msg),
+    }
+    return esc(err)
+}
+
+fun Error_move(src *Error, dst **Error) {
+    if dst != NULL {
+        *dst = src
+    } else {
+        panic("Unhandled error: %s", src.error)
+    }
+}
+
+fun Error_check(e **Error) {
+    if sys$errno() {
+        var err *Error = NewError(sys$errnoString())
+        Error_move(err, e)
+    }
+}
+
+fun clearError() {
+    sys$errnoReset()
+}
+
+fun Error_free(e *Error) {
+    free(e.error)
+    free(e)
+}
+
+#include "utils/utils.h"
+
+fun Slice_init(size int) Slice {
+    var s Slice = {
+        size: size,
+        len: 0,
+        cap: 0,
+        array: NULL,
+    }
+    return s
+}
+
+fun Slice_deinit(s *Slice) {
+    free(s.array)
+}
+
+fun Slice_len(s *const Slice) int {
+    return s.len
+}
+
+fun Slice_cap(s *const Slice) int {
+    return s.cap
+}
+
+fun Slice_ref(s *const Slice, i int) *void {
+    return <*void> &(<*char> s.array)[i * s.size]
+}
+
+fun Slice_get(s *const Slice, i int, dst *void) {
+    if i >= s.len {
+        panic("out of range: index=%d, len=%d", i, s.len)
+    }
+    if s.size == 1 {
+        *<*char> dst = (<*char> s.array)[i]
+    } else {
+        memcpy(dst, Slice_ref(s, i), s.size)
+    }
+}
+
+fun Slice_set_cap(s *Slice, cap int) {
+    s.cap = cap
+    s.array = realloc(s.array, s.cap * s.size)
+}
+
+fun _set_len(s *Slice, len int) {
+    var grow bool = false
+    var cap int = s.cap
+    if cap == 0 {
+        cap = 1
+        grow = true
+    }
+    while cap < len {
+        cap *= 2
+        grow = true
+    }
+    if s.array == NULL || grow {
+        Slice_set_cap(s, cap)
+    }
+    s.len = len
+}
+
+fun Slice_set_len(s *Slice, len int) {
+    var old int = s.len
+    _set_len(s, len)
+    var diff int = len - old
+    if diff > 0 {
+        memset(Slice_ref(s, old), 0, diff * s.size)
+    }
+}
+
+fun Slice_set(s *Slice, i int, x *const void) {
+    if s.size == 1 {
+        (<*char> s.array)[i] = *<*char> x
+    } else {
+        memcpy(Slice_ref(s, i), x, s.size)
+    }
+}
+
+fun Slice_append(s *Slice, x *const void) {
+    _set_len(s, s.len + 1)
+    Slice_set(s, s.len - 1, x)
+}
+
+fun Slice_to_nil_array(s Slice) *void {
+    var nil *void = NULL
+    Slice_append(&s, &nil)
+    return s.array
+}
+
+#include "utils/utils.h"
+
+var max_load_factor const float = 0.65
+
+var default_cap const int = 8
+
+var Map_misses int = 0
+
+var Map_hits int = 0
+
+var Map_lookups int = 0
+
+var Map_iters int = 0
+
+fun djb2(s *const char) uintptr_t {
+    var hash uintptr_t = 5381
+    var ch int = *s
+    while ch {
+        hash = ((hash << 5) + hash) + ch
+        s++
+        ch = *s
+    }
+    return hash
+}
+
+fun memdup(src *const void, size size_t) *void {
+    return memcpy(malloc(size), src, size)
+}
+
+typedef pair_t struct {
+    key *void
+    val *void
+}
+
+fun Map_init(val_size int) Map {
+    var m Map = {
+        len: 0,
+        pairs: Slice_init(sizeof(pair_t)),
+        key_size: sizeof(uintptr_t),
+        val_size: val_size,
+    }
+    Slice_set_len(&m.pairs, default_cap)
+    return m
+}
+
+fun Map_deinit(m *Map) {
+    Slice_deinit(&m.pairs)
+}
+
+fun Map_len(m *const Map) int {
+    return m.len
+}
+
+fun Map_cap(m *const Map) int {
+    return Slice_len(&m.pairs)
+}
+
+fun pair_ref(m *const Map, key *const void) *pair_t {
+    var hash uintptr_t = djb2(key) % Map_cap(m)
+    Map_lookups++
+    for var i int = 0; i < Slice_len(&m.pairs); i++ {
+        Map_iters++
+        var idx int = (hash + i) % Map_cap(m)
+        var p *pair_t = <*pair_t> Slice_ref(&m.pairs, idx)
+        if !p.key || streq(key, p.key) {
+            if !i {
+                Map_hits++
+            } else {
+                Map_misses++
+            }
+            return p
+        }
+    }
+    return NULL
+}
+
+fun set_unsafe(m *Map, key *const char, val *const void) {
+    var p *pair_t = pair_ref(m, key)
+    if p.key == NULL {
+        p.key = strdup(key)
+        p.val = memdup(val, m.val_size)
+        m.len++
+    } else {
+        memcpy(p.val, val, m.val_size)
+    }
+}
+
+fun Map_has_key(m *Map, key *const char) bool {
+    var p *pair_t = pair_ref(m, key)
+    return p.key != NULL
+}
+
+fun Map_get(m *const Map, key *const char, val *void) int {
+    var p *pair_t = pair_ref(m, key)
+    if p.val {
+        memcpy(val, p.val, m.val_size)
+        return 1
+    }
+    return 0
+}
+
+fun Map_set(m *Map, key *const char, val *const void) {
+    set_unsafe(m, key, val)
+    var load_factor float = <float> Map_len(m) / Map_cap(m)
+    if load_factor >= max_load_factor {
+        var new_cap int = Map_cap(m) * 2
+        var pairs Slice = m.pairs
+        m.pairs = Slice_init(m.pairs.size)
+        Slice_set_len(&m.pairs, new_cap)
+        m.len = 0
+        for var i int = 0; i < Slice_len(&pairs); i++ {
+            var p *pair_t = <*pair_t> Slice_ref(&pairs, i)
+            if p.key {
+                set_unsafe(m, p.key, p.val)
+            }
+        }
+        Slice_deinit(&pairs)
+    }
+}
+
+fun NewMapIter(m *const Map) MapIter {
+    var iter MapIter = {
+        _map: m,
+    }
+    return iter
+}
+
+fun MapIter_next(m *MapIter, key **char, val *void) int {
+    while m._idx < Slice_len(&m._map.pairs) {
+        var p *pair_t = <*pair_t> Slice_ref(&m._map.pairs, m._idx)
+        m._idx++
+        if p.key {
+            if key {
+                *<**void> key = p.key
+            }
+            if val {
+                memcpy(val, p.val, m._map.val_size)
+            }
+            return 1
+        }
+    }
+    return 0
+}

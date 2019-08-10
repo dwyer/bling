@@ -1,0 +1,312 @@
+package token
+import "sys"
+import "utils"
+
+#pragma once
+
+#include "utils/utils.h"
+
+typedef Token enum {
+    ILLEGAL = 0,
+    CHAR,
+    FLOAT,
+    IDENT,
+    INT,
+    STRING,
+    _keywordBeg,
+    BREAK,
+    CASE,
+    CONST,
+    CONTINUE,
+    DEFAULT,
+    ELSE,
+    ENUM,
+    EXTERN,
+    FOR,
+    FUNC,
+    GOTO,
+    IF,
+    IMPORT,
+    PACKAGE,
+    RETURN,
+    SIGNED,
+    SIZEOF,
+    STATIC,
+    STRUCT,
+    SWITCH,
+    TYPEDEF,
+    UNION,
+    UNSIGNED,
+    VAR,
+    WHILE,
+    _keywordEnd,
+    ARROW,
+    COLON,
+    COMMA,
+    ELLIPSIS,
+    EOF,
+    HASH,
+    LBRACE,
+    LBRACK,
+    LPAREN,
+    PERIOD,
+    QUESTION_MARK,
+    RBRACE,
+    RBRACK,
+    RPAREN,
+    SEMICOLON,
+    ADD,
+    ADD_ASSIGN,
+    AND,
+    AND_ASSIGN,
+    ASSIGN,
+    BITWISE_NOT,
+    DEC,
+    DIV,
+    DIV_ASSIGN,
+    DOLLAR,
+    EQUAL,
+    GT,
+    GT_EQUAL,
+    INC,
+    LAND,
+    LOR,
+    LT,
+    LT_EQUAL,
+    MOD,
+    MOD_ASSIGN,
+    MUL,
+    MUL_ASSIGN,
+    NOT,
+    NOT_EQUAL,
+    OR,
+    OR_ASSIGN,
+    SHL,
+    SHL_ASSIGN,
+    SHR,
+    SHR_ASSIGN,
+    SUB,
+    SUB_ASSIGN,
+    XOR,
+    XOR_ASSIGN,
+}
+
+typedef Pos int
+
+fun string(tok Token) *char
+
+fun lookup(ident *char) Token
+
+typedef Prec enum {
+    lowest_prec = 0,
+    unary_prec = 11,
+    highest_prec = 12,
+}
+
+fun precedence(op Token) int
+
+typedef File struct {
+    name *char
+    lines utils$Slice
+}
+
+typedef Position struct {
+    filename *char
+    offset int
+    line int
+    column int
+}
+
+fun Position_string(p *Position) *char
+
+fun File_new(filename *const char) *File
+
+fun File_addLine(f *File, offset int)
+
+fun File_position(f *File, p Pos) Position
+
+#include "bling/token/token.h"
+
+#include "sys/sys.h"
+
+#include "utils/utils.h"
+
+var tokens []*char = {
+    ILLEGAL: "ILLEGAL",
+    CHAR: "CHAR",
+    FLOAT: "FLOAT",
+    IDENT: "IDENT",
+    INT: "INT",
+    STRING: "STRING",
+    BREAK: "break",
+    CASE: "case",
+    CONST: "const",
+    CONTINUE: "continue",
+    DEFAULT: "default",
+    ELSE: "else",
+    ENUM: "enum",
+    EXTERN: "extern",
+    FOR: "for",
+    FUNC: "fun",
+    GOTO: "goto",
+    IF: "if",
+    IMPORT: "import",
+    PACKAGE: "package",
+    RETURN: "return",
+    SIGNED: "signed",
+    SIZEOF: "sizeof",
+    STATIC: "static",
+    STRUCT: "struct",
+    SWITCH: "switch",
+    TYPEDEF: "typedef",
+    UNION: "union",
+    UNSIGNED: "unsigned",
+    VAR: "var",
+    WHILE: "while",
+    ARROW: "->",
+    COLON: ":",
+    COMMA: ",",
+    ELLIPSIS: "...",
+    EOF: "EOF",
+    HASH: "#",
+    LBRACE: "{",
+    LBRACK: "[",
+    LPAREN: "(",
+    PERIOD: ".",
+    QUESTION_MARK: "?",
+    RBRACE: "}",
+    RBRACK: "]",
+    RPAREN: ")",
+    SEMICOLON: ";",
+    ADD: "+",
+    ADD_ASSIGN: "+=",
+    AND: "&",
+    AND_ASSIGN: "&=",
+    ASSIGN: "=",
+    BITWISE_NOT: "~",
+    DEC: "--",
+    DIV: "/",
+    DIV_ASSIGN: "/=",
+    DOLLAR: "$",
+    EQUAL: "==",
+    GT: ">",
+    GT_EQUAL: ">=",
+    INC: "++",
+    LAND: "&&",
+    LOR: "||",
+    LT: "<",
+    LT_EQUAL: "<=",
+    MOD: "%",
+    MOD_ASSIGN: "%=",
+    MUL: "*",
+    MUL_ASSIGN: "*=",
+    NOT: "!",
+    NOT_EQUAL: "!=",
+    OR: "|",
+    OR_ASSIGN: "|=",
+    SHL: "<<",
+    SHL_ASSIGN: "<<=",
+    SHR: ">>",
+    SHR_ASSIGN: ">>=",
+    SUB: "-",
+    SUB_ASSIGN: "-=",
+    XOR: "^",
+    XOR_ASSIGN: "^=",
+}
+
+fun string(tok Token) *char {
+    return tokens[tok]
+}
+
+var keywords utils$Map = {
+}
+
+fun lookup(ident *char) Token {
+    if keywords.val_size == 0 {
+        keywords = utils$Map_init(sizeof(Token))
+        for var i int = _keywordBeg + 1; i < _keywordEnd; i++ {
+            var s *char = string(i)
+            utils$Map_set(&keywords, s, &i)
+        }
+    }
+    var tok Token = IDENT
+    utils$Map_get(&keywords, ident, &tok)
+    return tok
+}
+
+fun precedence(op Token) int {
+    switch op {
+    case MUL, DIV, MOD:
+        return 10
+    case ADD, SUB:
+        return 9
+    case SHL, SHR:
+        return 8
+    case GT, GT_EQUAL, LT, LT_EQUAL:
+        return 7
+    case EQUAL, NOT_EQUAL:
+        return 6
+    case AND:
+        return 5
+    case XOR:
+        return 4
+    case OR:
+        return 3
+    case LAND:
+        return 2
+    case LOR:
+        return 1
+    default:
+        return lowest_prec
+    }
+}
+
+fun Position_string(p *Position) *char {
+    return sys$sprintf("%s:%d:%d", p.filename, p.line, p.column)
+}
+
+fun File_new(filename *const char) *File {
+    var file File = {
+        name: strdup(filename),
+        lines: utils$Slice_init(sizeof(int)),
+    }
+    var zero int = 0
+    utils$Slice_append(&file.lines, &zero)
+    return esc(file)
+}
+
+fun File_addLine(f *File, offset int) {
+    utils$Slice_append(&f.lines, &offset)
+}
+
+fun getInt(a *utils$Slice, i int) int {
+    var x int
+    utils$Slice_get(a, i, &x)
+    return x
+}
+
+fun searchInts(a *utils$Slice, x int) int {
+    var i int = 0
+    var j int = utils$Slice_len(a)
+    while i < j {
+        var h int = i + (j - i) / 2
+        if getInt(a, h) <= x {
+            i = h + 1
+        } else {
+            j = h
+        }
+    }
+    return i - 1
+}
+
+fun File_position(f *File, p Pos) Position {
+    var offset int = p
+    var i int = searchInts(&f.lines, offset)
+    var epos Position = {
+        filename: f.name,
+        offset: offset,
+        line: i + 1,
+        column: offset - getInt(&f.lines, i) + 1,
+    }
+    return epos
+}

@@ -1,0 +1,105 @@
+package ioutil
+import "bytes"
+import "utils"
+import "os"
+
+#pragma once
+
+#include "bytes/bytes.h"
+
+#include "os/os.h"
+
+fun readAll(file *os$File, error **utils$Error) *char
+
+fun readDir(filename *const char, error **utils$Error) **os$FileInfo
+
+fun readFile(filename *const char, error **utils$Error) *char
+
+fun writeFile(filename *const char, data *const char, perm int, error **utils$Error)
+
+#include "io/ioutil/ioutil.h"
+
+fun readAll(file *os$File, error **utils$Error) *char {
+    var bufsiz const int = 1024
+    var ret *char = NULL
+    var err *utils$Error = NULL
+    if err != NULL {
+        goto end
+    }
+    var b bytes$Buffer = {
+    }
+    for ; ;  {
+        var buf [bufsiz]char
+        var n int = os$read(file, buf, bufsiz, &err)
+        if err != NULL {
+            goto end
+        }
+        bytes$Buffer_write(&b, buf, n, NULL)
+        if n < bufsiz {
+            break
+        }
+    }
+    ret = bytes$Buffer_string(&b)
+end:
+    if err != NULL {
+        utils$Error_move(err, error)
+    }
+    return ret
+}
+
+fun readDir(name *const char, error **utils$Error) **os$FileInfo {
+    var info **os$FileInfo = NULL
+    var err *utils$Error = NULL
+    var file *os$File = os$openDir(name, &err)
+    if err != NULL {
+        goto end
+    }
+    info = os$readdir(file, &err)
+    if err != NULL {
+        goto end
+    }
+end:
+    if file != NULL {
+        os$close(file, NULL)
+    }
+    if err != NULL {
+        utils$Error_move(err, error)
+    }
+    return info
+}
+
+fun readFile(name *const char, error **utils$Error) *char {
+    var err *utils$Error = NULL
+    var file *os$File = os$open(name, &err)
+    var ret *char = readAll(file, &err)
+    if err != NULL {
+        goto end
+    }
+end:
+    if file != NULL {
+        os$close(file, &err)
+    }
+    if err != NULL {
+        utils$Error_move(err, error)
+    }
+    return ret
+}
+
+fun writeFile(filename *const char, data *const char, perm int, error **utils$Error) {
+    <void> perm
+    var err *utils$Error = NULL
+    var file *os$File = os$create(filename, &err)
+    if err {
+        utils$Error_move(err, error)
+        goto end
+    }
+    os$write(file, data, &err)
+    if err {
+        utils$Error_move(err, error)
+        goto end
+    }
+end:
+    if file {
+        os$close(file, NULL)
+    }
+}

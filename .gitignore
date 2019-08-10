@@ -1,6 +1,6 @@
-*.bling
 *.dSYM
 *.o
 a.out
+all.bling
 all.c
 bazel-*

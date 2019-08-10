@@ -1,0 +1,349 @@
+package scanner
+import "bling/token"
+
+#pragma once
+
+#include "bling/token/token.h"
+
+typedef Scanner struct {
+    file *token$File
+    src *char
+    rd_offset int
+    offset int
+    ch int
+    insertSemi bool
+    dontInsertSemis bool
+}
+
+fun scan(s *Scanner, pos *token$Pos, lit **char) token$Token
+
+fun init(s *Scanner, file *token$File, src *char)
+
+#include "bling/scanner/scanner.h"
+
+fun next0(s *Scanner) {
+    s.offset = s.rd_offset
+    if s.ch == '\n' {
+        token$File_addLine(s.file, s.offset)
+    }
+    s.ch = s.src[s.rd_offset]
+    s.rd_offset++
+}
+
+fun skip_whitespace(s *Scanner) {
+    while s.ch == ' ' || (s.ch == '\n' && !s.insertSemi) || s.ch == '\t' {
+        next0(s)
+    }
+}
+
+fun skip_line(s *Scanner) {
+    while s.ch >= 0 && s.ch != '\n' {
+        next0(s)
+    }
+}
+
+fun is_letter(ch int) bool {
+    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_'
+}
+
+fun is_digit(ch int) bool {
+    return '0' <= ch && ch <= '9'
+}
+
+fun switch4(s *Scanner, tok0 token$Token, tok1 token$Token, ch2 int, tok2 token$Token, tok3 token$Token) token$Token {
+    if s.ch == '=' {
+        next0(s)
+        return tok1
+    }
+    if ch2 && tok2 && s.ch == ch2 {
+        next0(s)
+        if tok3 && s.ch == '=' {
+            next0(s)
+            return tok3
+        }
+        return tok2
+    }
+    return tok0
+}
+
+fun switch3(s *Scanner, tok0 token$Token, tok1 token$Token, ch2 int, tok2 token$Token) token$Token {
+    return switch4(s, tok0, tok1, ch2, tok2, token$ILLEGAL)
+}
+
+fun switch2(s *Scanner, tok0 token$Token, tok1 token$Token) token$Token {
+    return switch4(s, tok0, tok1, '\0', token$ILLEGAL, token$ILLEGAL)
+}
+
+fun make_string_slice(s *Scanner, start int, end int) *char {
+    var len size_t = end - start + 1
+    var lit *char = <*char> malloc(len)
+    strlcpy(lit, &s.src[start], len)
+    return lit
+}
+
+fun scan_ident(s *Scanner) *char {
+    var offs int = s.offset
+    while is_letter(s.ch) || is_digit(s.ch) || (s.dontInsertSemis && s.ch == '$') {
+        next0(s)
+    }
+    return make_string_slice(s, offs, s.offset)
+}
+
+fun scan_pragma(s *Scanner) *char {
+    var offs int = s.offset
+    while s.ch > 0 && s.ch != '\n' {
+        next0(s)
+    }
+    return make_string_slice(s, offs, s.offset)
+}
+
+fun scan_number(s *Scanner, tokp *token$Token) *char {
+    var offs int = s.offset
+    var is_float bool = false
+    while is_digit(s.ch) || s.ch == '.' {
+        if s.ch == '.' {
+            if !is_float {
+                is_float = true
+            } else {
+            }
+        }
+        next0(s)
+    }
+    if is_float {
+        *tokp = token$FLOAT
+    } else {
+        *tokp = token$INT
+    }
+    return make_string_slice(s, offs, s.offset)
+}
+
+fun scan_rune(s *Scanner) *char {
+    var offs int = s.offset
+    var n int = 0
+    var escape bool = false
+    for ; ;  {
+        if n > 0 && s.ch == '\'' && !escape {
+            break
+        }
+        escape = s.ch == '\\' && !escape
+        next0(s)
+        n++
+    }
+    next0(s)
+    return make_string_slice(s, offs, s.offset)
+}
+
+fun scan_string(s *Scanner) *char {
+    var offs int = s.offset
+    var n int = 0
+    var escape bool = false
+    for ; ;  {
+        if n > 0 && s.ch == '"' && !escape {
+            break
+        }
+        escape = s.ch == '\\' && !escape
+        next0(s)
+        n++
+    }
+    next0(s)
+    return make_string_slice(s, offs, s.offset)
+}
+
+fun error(s *Scanner, offs int, msg *const char) {
+    panic("scanner error: offset %d: %s", offs, msg)
+}
+
+fun scan_comment(s *Scanner) {
+    var offs int = s.offset - 1
+    switch s.ch {
+    case '/':
+        skip_line(s)
+        break
+    case '*':
+        next0(s)
+        while s.ch >= 0 {
+            var ch int = s.ch
+            next0(s)
+            if ch == '*' && s.ch == '/' {
+                next0(s)
+                return
+            }
+        }
+        error(s, offs, "comment not terminated")
+        break
+    default:
+        panic("not a comment")
+        break
+    }
+}
+
+fun scan(s *Scanner, pos *token$Pos, lit **char) token$Token {
+    var tok token$Token
+scan_again:
+    tok = token$ILLEGAL
+    skip_whitespace(s)
+    *pos = s.offset
+    var insertSemi bool = false
+    *lit = NULL
+    if is_letter(s.ch) {
+        *lit = scan_ident(s)
+        if strlen(*lit) > 1 {
+            tok = token$lookup(*lit)
+            if tok != token$IDENT {
+                free(*lit)
+                *lit = NULL
+            }
+            switch tok {
+            case token$IDENT, token$BREAK, token$CONTINUE, token$RETURN:
+                insertSemi = true
+            default:
+                break
+            }
+        } else {
+            insertSemi = true
+            tok = token$IDENT
+        }
+    } else if is_digit(s.ch) {
+        insertSemi = true
+        *lit = scan_number(s, &tok)
+    } else if s.ch == '\'' {
+        insertSemi = true
+        *lit = scan_rune(s)
+        tok = token$CHAR
+    } else if s.ch == '"' {
+        insertSemi = true
+        *lit = scan_string(s)
+        tok = token$STRING
+    } else {
+        var ch int = s.ch
+        next0(s)
+        switch ch {
+        case '\0':
+            insertSemi = true
+            tok = token$EOF
+            break
+        case '\n':
+            assert(s.insertSemi)
+            s.insertSemi = false
+            return token$SEMICOLON
+        case '#':
+            tok = token$HASH
+            *lit = scan_pragma(s)
+            break
+        case '(':
+            tok = token$LPAREN
+            break
+        case ')':
+            insertSemi = true
+            tok = token$RPAREN
+            break
+        case ',':
+            tok = token$COMMA
+            break
+        case ':':
+            tok = token$COLON
+            break
+        case ';':
+            tok = token$SEMICOLON
+            break
+        case '?':
+            tok = token$QUESTION_MARK
+            break
+        case '[':
+            tok = token$LBRACK
+            break
+        case ']':
+            insertSemi = true
+            tok = token$RBRACK
+            break
+        case '{':
+            tok = token$LBRACE
+            break
+        case '}':
+            insertSemi = true
+            tok = token$RBRACE
+            break
+        case '~':
+            tok = token$BITWISE_NOT
+            break
+        case '!':
+            tok = switch2(s, token$NOT, token$NOT_EQUAL)
+            break
+        case '$':
+            tok = token$DOLLAR
+            break
+        case '%':
+            tok = switch2(s, token$MOD, token$MOD_ASSIGN)
+            break
+        case '&':
+            tok = switch3(s, token$AND, token$AND_ASSIGN, '&', token$LAND)
+            break
+        case '*':
+            tok = switch2(s, token$MUL, token$MUL_ASSIGN)
+            break
+        case '+':
+            tok = switch3(s, token$ADD, token$ADD_ASSIGN, '+', token$INC)
+            if tok == token$INC {
+                insertSemi = true
+            }
+            break
+        case '-':
+            if s.ch == '>' {
+                next0(s)
+                tok = token$ARROW
+            } else {
+                tok = switch3(s, token$SUB, token$SUB_ASSIGN, '-', token$DEC)
+                if tok == token$DEC {
+                    insertSemi = true
+                }
+            }
+            break
+        case '.':
+            if s.ch == '.' {
+                next0(s)
+                if s.ch == '.' {
+                    next0(s)
+                    tok = token$ELLIPSIS
+                }
+            } else {
+                tok = token$PERIOD
+            }
+            break
+        case '/':
+            if s.ch == '/' || s.ch == '*' {
+                scan_comment(s)
+                goto scan_again
+            } else {
+                tok = switch2(s, token$DIV, token$DIV_ASSIGN)
+            }
+            break
+        case '<':
+            tok = switch4(s, token$LT, token$LT_EQUAL, '<', token$SHL, token$SHL_ASSIGN)
+            break
+        case '=':
+            tok = switch2(s, token$ASSIGN, token$EQUAL)
+            break
+        case '>':
+            tok = switch4(s, token$GT, token$GT_EQUAL, '>', token$SHR, token$SHR_ASSIGN)
+            break
+        case '|':
+            tok = switch3(s, token$OR, token$OR_ASSIGN, '|', token$LOR)
+            break
+        }
+    }
+    if !s.dontInsertSemis {
+        s.insertSemi = insertSemi
+    }
+    return tok
+}
+
+fun init(s *Scanner, file *token$File, src *char) {
+    s.file = file
+    s.src = src
+    s.rd_offset = 0
+    s.offset = 0
+    s.insertSemi = false
+    s.dontInsertSemis = true
+    next0(s)
+    s.dontInsertSemis = false
+}

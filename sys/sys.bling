@@ -1,0 +1,17 @@
+package sys
+
+#pragma once
+
+#include "bootstrap/bootstrap.h"
+
+fun errno() int
+
+fun errnoReset()
+
+fun errnoString() *char
+
+fun execve(path *const char, argv []const *char, envp []*char) int
+
+fun printf(s *const char, ...)
+
+fun sprintf(s *const char, ...) *char
