@@ -4,7 +4,6 @@
 
 package(os);
 
-import("utils");
 import("paths");
 import("utils");
 

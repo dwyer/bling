@@ -11,13 +11,13 @@ import("bling/emitter");
 import("bling/parser");
 import("bling/types");
 import("bytes");
-import("utils");
 import("io/ioutil");
 import("os");
 import("paths");
-import("subc/cparser");
 import("subc/cemitter");
+import("subc/cparser");
 import("sys");
+import("utils");
 
 void usage(const char *progname) {
     panic("usage: %s -o DST SRCS", progname);

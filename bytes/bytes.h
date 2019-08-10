@@ -1,11 +1,9 @@
 #pragma once
 
 #include "utils/utils.h"
-#include "utils/utils.h"
 
 package(bytes);
 
-import("utils");
 import("utils");
 
 extern bool bytes$hasSuffix(const char *s, const char *suffix);

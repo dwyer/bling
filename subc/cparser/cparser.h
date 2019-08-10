@@ -11,7 +11,6 @@ import("bling/ast");
 import("bling/parser");
 import("bling/scanner");
 import("bling/token");
-import("utils");
 import("io/ioutil");
 import("utils");
 import("sys");

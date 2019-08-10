@@ -10,7 +10,6 @@ import("bling/ast");
 import("bling/scanner");
 import("bling/token");
 import("bytes");
-import("utils");
 import("io/ioutil");
 import("os");
 import("paths");
