@@ -324,7 +324,7 @@ typedef struct ast$Stmt {
         ast$AssignStmt assign;
         ast$BlockStmt block;
         ast$CaseStmt case_;
-        ast$Decl *decl;
+        ast$DeclStmt decl;
         ast$ExprStmt expr;
         ast$IterStmt iter;
         ast$IfStmt if_;

@@ -751,7 +751,9 @@ static ast$Stmt *statement(parser$Parser *p) {
     if (is_type(p)) {
         ast$Stmt stmt = {
             .type = ast$STMT_DECL,
-            .decl = declaration(p, false),
+            .decl = {
+                .decl = declaration(p, false),
+            },
         };
         return esc(stmt);
     }

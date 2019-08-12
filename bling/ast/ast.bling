@@ -322,7 +322,7 @@ typedef Stmt struct Stmt {
         assign AssignStmt
         block BlockStmt
         case_ CaseStmt
-        decl *Decl
+        decl DeclStmt
         expr ExprStmt
         iter IterStmt
         if_ IfStmt

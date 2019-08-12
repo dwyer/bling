@@ -253,7 +253,7 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
         e.indent--
         break
     case ast.STMT_DECL:
-        emitDecl(e, stmt.decl)
+        emitDecl(e, stmt.decl.decl)
         break
     case ast.STMT_EMPTY:
         emitToken(e, token.SEMICOLON)

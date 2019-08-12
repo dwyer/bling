@@ -209,7 +209,7 @@ static void cemitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
         break;
 
     case ast$STMT_DECL:
-        cemitter$emitDecl(e, stmt->decl);
+        cemitter$emitDecl(e, stmt->decl.decl);
         break;
 
     case ast$STMT_EMPTY:

@@ -640,7 +640,9 @@ fun statement(p *parser.Parser) *ast.Stmt {
     if is_type(p) {
         var stmt ast.Stmt = {
             type: ast.STMT_DECL,
-            decl: declaration(p, false),
+            decl: {
+                decl: declaration(p, false),
+            },
         }
         return esc(stmt)
     }

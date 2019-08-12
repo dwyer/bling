@@ -876,7 +876,9 @@ static ast$Stmt *parse_decl_stmt(parser$Parser *p) {
     ast$Stmt stmt = {
         .type = ast$STMT_DECL,
         .pos = p->pos,
-        .decl = parse_decl(p, false),
+        .decl = {
+            .decl = parse_decl(p, false),
+        },
     };
     return esc(stmt);
 }

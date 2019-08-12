@@ -930,7 +930,7 @@ fun check_stmt(w *checker_t, stmt *ast.Stmt) {
         checker_closeScope(w)
         break
     case ast.STMT_DECL:
-        check_decl(w, stmt.decl)
+        check_decl(w, stmt.decl.decl)
         break
     case ast.STMT_EXPR:
         check_expr(w, stmt.expr.x)

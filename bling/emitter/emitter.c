@@ -233,7 +233,7 @@ extern void emitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
         break;
 
     case ast$STMT_DECL:
-        emitter$emitDecl(e, stmt->decl);
+        emitter$emitDecl(e, stmt->decl.decl);
         break;
 
     case ast$STMT_EMPTY:

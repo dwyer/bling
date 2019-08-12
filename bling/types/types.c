@@ -912,7 +912,7 @@ static void check_stmt(checker_t *w, ast$Stmt *stmt) {
         break;
 
     case ast$STMT_DECL:
-        check_decl(w, stmt->decl);
+        check_decl(w, stmt->decl.decl);
         break;
 
     case ast$STMT_EXPR:
