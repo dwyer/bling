@@ -83,38 +83,102 @@ typedef Object struct {
     scope *Scope
 }
 
-typedef Decl struct Decl {
-    type NodeType
-    pos token.Pos
-    union {
-        imp struct {
-            name *Expr
-            path *Expr
-            scope *Scope
-        }
-        pragma struct {
-            lit *char
-        }
-        typedef_ struct {
-            name *Expr
-            type *Expr
-        }
-        value struct {
-            name *Expr
-            type *Expr
-            value *Expr
-            kind token.Token
-        }
-        func struct {
-            name *Expr
-            type *Expr
-            body *Stmt
-        }
-        field struct {
-            name *Expr
-            type *Expr
-        }
-    }
+typedef Array struct {
+    len *Expr
+    elt *Expr
+}
+
+typedef BasicLit struct {
+    kind token.Token
+    value *char
+}
+
+typedef BinaryExpr struct {
+    op token.Token
+    x *Expr
+    y *Expr
+}
+
+typedef CallExpr struct {
+    func *Expr
+    args **Expr
+}
+
+typedef CastExpr struct {
+    type *Expr
+    expr *Expr
+}
+
+typedef CompositeLit struct {
+    type *Expr
+    list **Expr
+}
+
+typedef ConditionalExpr struct {
+    condition *Expr
+    consequence *Expr
+    alternative *Expr
+}
+
+typedef Enum struct {
+    name *Expr
+    enums **Decl
+}
+
+typedef FuncExpr struct {
+    result *Expr
+    params **Decl
+}
+
+typedef Ident struct {
+    name *char
+    obj *Object
+    pkg *Expr
+}
+
+typedef IndexExpr struct {
+    x *Expr
+    index *Expr
+}
+
+typedef KeyValue struct {
+    key *Expr
+    value *Expr
+    isArray bool
+}
+
+typedef NativeType struct {
+    name *char
+    size int
+}
+
+typedef ParenExpr struct {
+    x *Expr
+}
+
+typedef SelectorExpr struct {
+    x *Expr
+    tok token.Token
+    sel *Expr
+}
+
+typedef SizeofExpr struct {
+    x *Expr
+}
+
+typedef StarExpr struct {
+    x *Expr
+}
+
+typedef Struct struct {
+    tok token.Token
+    name *Expr
+    fields **Decl
+}
+
+typedef UnaryExpr struct {
+    op token.Token
+    x *Expr
 }
 
 typedef Expr struct Expr {
@@ -122,139 +186,151 @@ typedef Expr struct Expr {
     pos token.Pos
     is_const bool
     union {
-        array struct {
-            len *Expr
-            elt *Expr
-        }
-        basic_lit struct {
-            kind token.Token
-            value *char
-        }
-        binary struct {
-            op token.Token
-            x *Expr
-            y *Expr
-        }
-        call struct {
-            func *Expr
-            args **Expr
-        }
-        cast struct {
-            type *Expr
-            expr *Expr
-        }
-        compound struct {
-            type *Expr
-            list **Expr
-        }
-        conditional struct {
-            condition *Expr
-            consequence *Expr
-            alternative *Expr
-        }
-        enum_ struct {
-            name *Expr
-            enums **Decl
-        }
-        func struct {
-            result *Expr
-            params **Decl
-        }
-        ident struct {
-            name *char
-            obj *Object
-            pkg *Expr
-        }
-        index struct {
-            x *Expr
-            index *Expr
-        }
-        key_value struct {
-            key *Expr
-            value *Expr
-            isArray bool
-        }
-        native struct {
-            name *char
-            size int
-        }
-        paren struct {
-            x *Expr
-        }
-        selector struct {
-            x *Expr
-            tok token.Token
-            sel *Expr
-        }
-        sizeof_ struct {
-            x *Expr
-        }
-        star struct {
-            x *Expr
-        }
-        struct_ struct {
-            tok token.Token
-            name *Expr
-            fields **Decl
-        }
-        unary struct {
-            op token.Token
-            x *Expr
-        }
+        array Array
+        basic_lit BasicLit
+        binary BinaryExpr
+        call CallExpr
+        cast CastExpr
+        compound CompositeLit
+        conditional ConditionalExpr
+        enum_ Enum
+        func FuncExpr
+        ident Ident
+        index IndexExpr
+        key_value KeyValue
+        native NativeType
+        paren ParenExpr
+        selector SelectorExpr
+        sizeof_ SizeofExpr
+        star StarExpr
+        struct_ Struct
+        unary UnaryExpr
     }
+}
+
+typedef ImportDecl struct {
+    name *Expr
+    path *Expr
+    scope *Scope
+}
+
+typedef PragmaDecl struct {
+    lit *char
+}
+
+typedef TypeDecl struct {
+    name *Expr
+    type *Expr
+}
+
+typedef ValueDecl struct {
+    name *Expr
+    type *Expr
+    value *Expr
+    kind token.Token
+}
+
+typedef FuncDecl struct {
+    name *Expr
+    type *Expr
+    body *Stmt
+}
+
+typedef Field struct {
+    name *Expr
+    type *Expr
+}
+
+typedef Decl struct Decl {
+    type NodeType
+    pos token.Pos
+    union {
+        imp ImportDecl
+        pragma PragmaDecl
+        typedef_ TypeDecl
+        value ValueDecl
+        func FuncDecl
+        field Field
+    }
+}
+
+typedef AssignStmt struct {
+    x *Expr
+    op token.Token
+    y *Expr
+}
+
+typedef BlockStmt struct {
+    stmts **Stmt
+}
+
+typedef CaseStmt struct {
+    exprs **Expr
+    stmts **Stmt
+}
+
+typedef ExprStmt struct {
+    x *Expr
+}
+
+typedef DeclStmt struct {
+    decl *Decl
+}
+
+typedef IterStmt struct {
+    kind token.Token
+    init *Stmt
+    cond *Expr
+    post *Stmt
+    body *Stmt
+}
+
+typedef IfStmt struct {
+    cond *Expr
+    body *Stmt
+    else_ *Stmt
+}
+
+typedef JumpStmt struct {
+    keyword token.Token
+    label *Expr
+}
+
+typedef LabelStmt struct {
+    label *Expr
+    stmt *Stmt
+}
+
+typedef PostfixStmt struct {
+    x *Expr
+    op token.Token
+}
+
+typedef ReturnStmt struct {
+    x *Expr
+}
+
+typedef SwitchStmt struct {
+    tag *Expr
+    stmts **Stmt
 }
 
 typedef Stmt struct Stmt {
     type NodeType
     pos token.Pos
     union {
-        assign struct {
-            x *Expr
-            op token.Token
-            y *Expr
-        }
-        block struct {
-            stmts **Stmt
-        }
-        case_ struct {
-            exprs **Expr
-            stmts **Stmt
-        }
+        assign AssignStmt
+        block BlockStmt
+        case_ CaseStmt
         decl *Decl
-        expr struct {
-            x *Expr
-        }
-        iter struct {
-            kind token.Token
-            init *Stmt
-            cond *Expr
-            post *Stmt
-            body *Stmt
-        }
-        if_ struct {
-            cond *Expr
-            body *Stmt
-            else_ *Stmt
-        }
-        jump struct {
-            keyword token.Token
-            label *Expr
-        }
-        label struct {
-            label *Expr
-            stmt *Stmt
-        }
-        postfix struct {
-            x *Expr
-            op token.Token
-        }
-        return_ struct {
-            x *Expr
-        }
-        switch_ struct {
-            tag *Expr
-            stmts **Stmt
-        }
+        expr ExprStmt
+        iter IterStmt
+        if_ IfStmt
+        jump JumpStmt
+        label LabelStmt
+        postfix PostfixStmt
+        return_ ReturnStmt
+        switch_ SwitchStmt
     }
 }
 

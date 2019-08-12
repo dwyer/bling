@@ -85,219 +85,254 @@ typedef struct {
     ast$Scope *scope;
 } ast$Object;
 
-typedef struct ast$Decl {
-    ast$NodeType type;
-    token$Pos pos;
-    union {
+typedef struct {
+    ast$Expr *len;
+    ast$Expr *elt;
+} ast$Array;
 
-        struct {
-            ast$Expr *name;
-            ast$Expr *path;
-            ast$Scope *scope;
-        } imp;
+typedef struct {
+    token$Token kind;
+    char *value;
+} ast$BasicLit;
 
-        struct {
-            char *lit;
-        } pragma;
+typedef struct {
+    token$Token op;
+    ast$Expr *x;
+    ast$Expr *y;
+} ast$BinaryExpr;
 
-        struct {
-            ast$Expr *name;
-            ast$Expr *type;
-        } typedef_;
+typedef struct {
+    ast$Expr *func;
+    ast$Expr **args;
+} ast$CallExpr;
 
-        struct {
-            ast$Expr *name;
-            ast$Expr *type;
-            ast$Expr *value;
-            token$Token kind;
-        } value;
+typedef struct {
+    ast$Expr *type;
+    ast$Expr *expr;
+} ast$CastExpr;
 
-        struct {
-            ast$Expr *name;
-            ast$Expr *type;
-            ast$Stmt *body;
-        } func;
+typedef struct {
+    ast$Expr *type;
+    ast$Expr **list;
+} ast$CompositeLit;
 
-        struct {
-            ast$Expr *name;
-            ast$Expr *type;
-        } field;
+typedef struct {
+    ast$Expr *condition;
+    ast$Expr *consequence;
+    ast$Expr *alternative;
+} ast$ConditionalExpr;
 
-    };
-} ast$Decl;
+typedef struct {
+    ast$Expr *name;
+    ast$Decl **enums;
+} ast$Enum;
+
+typedef struct {
+    ast$Expr *result;
+    ast$Decl **params;
+} ast$FuncExpr;
+
+typedef struct {
+    char *name;
+    ast$Object *obj;
+    ast$Expr *pkg;
+} ast$Ident;
+
+typedef struct {
+    ast$Expr *x;
+    ast$Expr *index;
+} ast$IndexExpr;
+
+typedef struct {
+    ast$Expr *key;
+    ast$Expr *value;
+    bool isArray;
+} ast$KeyValue;
+
+typedef struct {
+    char *name;
+    int size;
+} ast$NativeType;
+
+typedef struct {
+    ast$Expr *x;
+} ast$ParenExpr;
+
+typedef struct {
+    ast$Expr *x;
+    token$Token tok;
+    ast$Expr *sel;
+} ast$SelectorExpr;
+
+typedef struct {
+    ast$Expr *x;
+} ast$SizeofExpr;
+
+typedef struct {
+    ast$Expr *x;
+} ast$StarExpr;
+
+typedef struct {
+    token$Token tok;
+    ast$Expr *name;
+    ast$Decl **fields;
+} ast$Struct;
+
+typedef struct {
+    token$Token op;
+    ast$Expr *x;
+} ast$UnaryExpr;
 
 typedef struct ast$Expr {
     ast$NodeType type;
     token$Pos pos;
     bool is_const;
-
     union {
-
-        struct {
-            ast$Expr *len;
-            ast$Expr *elt;
-        } array;
-
-        struct {
-            token$Token kind;
-            char *value;
-        } basic_lit;
-
-        struct {
-            token$Token op;
-            ast$Expr *x;
-            ast$Expr *y;
-        } binary;
-
-        struct {
-            ast$Expr *func;
-            ast$Expr **args;
-        } call;
-
-        struct {
-            ast$Expr *type;
-            ast$Expr *expr;
-        } cast;
-
-        struct {
-            ast$Expr *type;
-            ast$Expr **list;
-        } compound;
-
-        struct {
-            ast$Expr *condition;
-            ast$Expr *consequence;
-            ast$Expr *alternative;
-        } conditional;
-
-        struct {
-            ast$Expr *name;
-            ast$Decl **enums;
-        } enum_;
-
-        struct {
-            ast$Expr *result;
-            ast$Decl **params;
-        } func;
-
-        struct {
-            char *name;
-            ast$Object *obj;
-            ast$Expr *pkg;
-        } ident;
-
-        struct {
-            ast$Expr *x;
-            ast$Expr *index;
-        } index;
-
-        struct {
-            ast$Expr *key;
-            ast$Expr *value;
-            bool isArray;
-        } key_value;
-
-        struct {
-            char *name;
-            int size;
-        } native;
-
-        struct {
-            ast$Expr *x;
-        } paren;
-
-        struct {
-            ast$Expr *x;
-            token$Token tok;
-            ast$Expr *sel;
-        } selector;
-
-        struct {
-            ast$Expr *x;
-        } sizeof_;
-
-        struct {
-            ast$Expr *x;
-        } star;
-
-        struct {
-            token$Token tok;
-            ast$Expr *name;
-            ast$Decl **fields;
-        } struct_;
-
-        struct {
-            token$Token op;
-            ast$Expr *x;
-        } unary;
-
+        ast$Array array;
+        ast$BasicLit basic_lit;
+        ast$BinaryExpr binary;
+        ast$CallExpr call;
+        ast$CastExpr cast;
+        ast$CompositeLit compound;
+        ast$ConditionalExpr conditional;
+        ast$Enum enum_;
+        ast$FuncExpr func;
+        ast$Ident ident;
+        ast$IndexExpr index;
+        ast$KeyValue key_value;
+        ast$NativeType native;
+        ast$ParenExpr paren;
+        ast$SelectorExpr selector;
+        ast$SizeofExpr sizeof_;
+        ast$StarExpr star;
+        ast$Struct struct_;
+        ast$UnaryExpr unary;
     };
 } ast$Expr;
+
+typedef struct {
+    ast$Expr *name;
+    ast$Expr *path;
+    ast$Scope *scope;
+} ast$ImportDecl;
+
+typedef struct {
+    char *lit;
+} ast$PragmaDecl;
+
+typedef struct {
+    ast$Expr *name;
+    ast$Expr *type;
+} ast$TypeDecl;
+
+typedef struct {
+    ast$Expr *name;
+    ast$Expr *type;
+    ast$Expr *value;
+    token$Token kind;
+} ast$ValueDecl;
+
+typedef struct {
+    ast$Expr *name;
+    ast$Expr *type;
+    ast$Stmt *body;
+} ast$FuncDecl;
+
+typedef struct {
+    ast$Expr *name;
+    ast$Expr *type;
+} ast$Field;
+
+typedef struct ast$Decl {
+    ast$NodeType type;
+    token$Pos pos;
+    union {
+        ast$ImportDecl imp;
+        ast$PragmaDecl pragma;
+        ast$TypeDecl typedef_;
+        ast$ValueDecl value;
+        ast$FuncDecl func;
+        ast$Field field;
+    };
+} ast$Decl;
+
+typedef struct {
+    ast$Expr *x;
+    token$Token op;
+    ast$Expr *y;
+} ast$AssignStmt;
+
+typedef struct {
+    ast$Stmt **stmts;
+} ast$BlockStmt;
+
+typedef struct {
+    ast$Expr **exprs;
+    ast$Stmt **stmts;
+} ast$CaseStmt;
+
+typedef struct {
+    ast$Expr *x;
+} ast$ExprStmt;
+
+typedef struct {
+    ast$Decl *decl;
+} ast$DeclStmt;
+
+typedef struct {
+    token$Token kind;
+    ast$Stmt *init;
+    ast$Expr *cond;
+    ast$Stmt *post;
+    ast$Stmt *body;
+} ast$IterStmt;
+
+typedef struct {
+    ast$Expr *cond;
+    ast$Stmt *body;
+    ast$Stmt *else_;
+} ast$IfStmt;
+
+typedef struct {
+    token$Token keyword;
+    ast$Expr *label;
+} ast$JumpStmt;
+
+typedef struct {
+    ast$Expr *label;
+    ast$Stmt *stmt;
+} ast$LabelStmt;
+
+typedef struct {
+    ast$Expr *x;
+    token$Token op;
+} ast$PostfixStmt;
+
+typedef struct {
+    ast$Expr *x;
+} ast$ReturnStmt;
+
+typedef struct {
+    ast$Expr *tag;
+    ast$Stmt **stmts;
+} ast$SwitchStmt;
 
 typedef struct ast$Stmt {
     ast$NodeType type;
     token$Pos pos;
     union {
-
-        struct {
-            ast$Expr *x;
-            token$Token op;
-            ast$Expr *y;
-        } assign;
-
-        struct {
-            ast$Stmt **stmts;
-        } block;
-
-        struct {
-            ast$Expr **exprs;
-            ast$Stmt **stmts;
-        } case_;
-
+        ast$AssignStmt assign;
+        ast$BlockStmt block;
+        ast$CaseStmt case_;
         ast$Decl *decl;
-
-        struct {
-            ast$Expr *x;
-        } expr;
-
-        struct {
-            token$Token kind;
-            ast$Stmt *init;
-            ast$Expr *cond;
-            ast$Stmt *post;
-            ast$Stmt *body;
-        } iter;
-
-        struct {
-            ast$Expr *cond;
-            ast$Stmt *body;
-            ast$Stmt *else_;
-        } if_;
-
-        struct {
-            token$Token keyword;
-            ast$Expr *label;
-        } jump;
-
-        struct {
-            ast$Expr *label;
-            ast$Stmt *stmt;
-        } label;
-
-        struct {
-            ast$Expr *x;
-            token$Token op;
-        } postfix;
-
-        struct {
-            ast$Expr *x;
-        } return_;
-
-        struct {
-            ast$Expr *tag;
-            ast$Stmt **stmts;
-        } switch_;
-
+        ast$ExprStmt expr;
+        ast$IterStmt iter;
+        ast$IfStmt if_;
+        ast$JumpStmt jump;
+        ast$LabelStmt label;
+        ast$PostfixStmt postfix;
+        ast$ReturnStmt return_;
+        ast$SwitchStmt switch_;
     };
 } ast$Stmt;
 
