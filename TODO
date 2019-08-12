@@ -45,29 +45,4 @@ new scope by default. So the above example would be converted to:
         break;
     }
 
-Use dollar-sign ('$') to select members of a package. For instance:
-
-    var x pkg$Type = a
-    var y = pkg$function(x)
-
-    Dollar is used because cc interprets it as an ident, making it useful for
-    name mangling, while blingc will interpret it as a selector op (such as '.'
-    and '->').
-
-    Roadmap:
-        - Make '$' a token.
-        - Prepend pkg$ to names of all package decls (excluding builtins and C
-                primatives).
-
-    Eventually it will be emitted as '.' in bling and '$' in C.
-
-    Name mangling
-        Mangle names when emitting C. Depends on the dollar-sign selector above.
-
-    Declare pkg members into named scopes, to be selected (initially) by '$'
-    selector.
-
-        Consolidate different selector ops ('.', '->', '$') into just one ('.').
-        Enforce this convention when parsing bling code.
-
 Compile to assembly.
