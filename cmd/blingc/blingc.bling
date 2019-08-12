@@ -30,13 +30,13 @@ fun usage(progname *const char) {
     panic("usage: %s -o DST SRCS", progname)
 }
 
-fun emit_rawfile(e *emitter$Emitter, filename *const char) {
-    var err *utils$Error = NULL
-    var src *char = ioutil$readFile(filename, &err)
+fun emit_rawfile(e *emitter.Emitter, filename *const char) {
+    var err *utils.Error = NULL
+    var src *char = ioutil.readFile(filename, &err)
     if err {
         panic(err.error)
     }
-    emitter$emitString(e, src)
+    emitter.emitString(e, src)
     free(src)
 }
 
@@ -51,29 +51,29 @@ fun compile_c(argv []*char) {
         }
         argv++
     }
-    var e emitter$Emitter = {
+    var e emitter.Emitter = {
     }
     while *argv {
         var filename *char = *argv
-        var file *ast$File = cparser$parseFile(filename, types$universe())
-        emitter$emitFile(&e, file)
+        var file *ast.File = cparser.parseFile(filename, types.universe())
+        emitter.emitFile(&e, file)
         argv++
     }
-    var out *char = emitter$Emitter_string(&e)
-    var file *os$File = os$stdout
-    var err *utils$Error = NULL
+    var out *char = emitter.Emitter_string(&e)
+    var file *os.File = os.stdout
+    var err *utils.Error = NULL
     if dst {
-        file = os$create(dst, &err)
+        file = os.create(dst, &err)
         if err {
             panic(err.error)
         }
     }
-    os$write(file, out, &err)
+    os.write(file, out, &err)
     if err {
         panic(err.error)
     }
     if dst {
-        os$close(file, &err)
+        os.close(file, &err)
         if err {
             panic(err.error)
         }
@@ -82,7 +82,7 @@ fun compile_c(argv []*char) {
 
 fun compile_bling(argv []*char) {
     var emit_as_bling bool = false
-    var conf types$Config = {
+    var conf types.Config = {
         strict: true,
     }
     var dst *char = NULL
@@ -96,42 +96,42 @@ fun compile_bling(argv []*char) {
         argv++
     }
     if dst {
-        emit_as_bling = bytes$hasSuffix(dst, ".bling")
+        emit_as_bling = bytes.hasSuffix(dst, ".bling")
     }
-    var e emitter$Emitter = {
+    var e emitter.Emitter = {
     }
-    var err *utils$Error = NULL
+    var err *utils.Error = NULL
     if !emit_as_bling {
         emit_rawfile(&e, "bootstrap/bootstrap.h")
     }
     while *argv {
         var filename *char = *argv
-        var file *ast$File = NULL
-        if bytes$hasSuffix(filename, ".bling") {
-            file = parser$parse_file(filename)
-        } else if bytes$hasSuffix(filename, ".c") {
-            file = cparser$parseFile(filename, types$universe())
+        var file *ast.File = NULL
+        if bytes.hasSuffix(filename, ".bling") {
+            file = parser.parse_file(filename)
+        } else if bytes.hasSuffix(filename, ".c") {
+            file = cparser.parseFile(filename, types.universe())
         } else {
             panic("unknown file type: %s", filename)
         }
-        var pkg ast$Package = types$checkFile(&conf, file)
+        var pkg ast.Package = types.checkFile(&conf, file)
         for var i int = 0; pkg.files[i]; i++ {
-            var file *ast$File = pkg.files[i]
+            var file *ast.File = pkg.files[i]
             if emit_as_bling {
-                emitter$emitFile(&e, file)
+                emitter.emitFile(&e, file)
             } else {
-                cemitter$emitFile(&e, file)
+                cemitter.emitFile(&e, file)
             }
             free(file.decls)
             free(file)
         }
         argv++
     }
-    var out *char = emitter$Emitter_string(&e)
+    var out *char = emitter.Emitter_string(&e)
     if dst {
-        if bytes$hasSuffix(dst, ".out") {
-            var tmp *char = paths$join2(os$tempDir(), "tmp.c")
-            ioutil$writeFile(tmp, out, 0644, NULL)
+        if bytes.hasSuffix(dst, ".out") {
+            var tmp *char = paths.join2(os.tempDir(), "tmp.c")
+            ioutil.writeFile(tmp, out, 0644, NULL)
             var args []*char = {
                 "/usr/bin/cc",
                 "-o",
@@ -142,15 +142,15 @@ fun compile_bling(argv []*char) {
                 "bazel-bin/os/libos.a",
                 NULL,
             }
-            var code int = sys$execve(args[0], args, NULL)
+            var code int = sys.execve(args[0], args, NULL)
             if code {
                 print("%s exited with code: %d", argv[0], code)
             }
         } else {
-            ioutil$writeFile(dst, out, 0644, NULL)
+            ioutil.writeFile(dst, out, 0644, NULL)
         }
     } else {
-        os$write(os$stdout, out, &err)
+        os.write(os.stdout, out, &err)
     }
 }
 

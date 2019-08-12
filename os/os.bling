@@ -28,17 +28,17 @@ fun tempDir() *const char
 
 fun newFile(fd uintptr_t, name *const char) *File
 
-fun openFile(filename *const char, mode int, perm int, error **utils$Error) *File
+fun openFile(filename *const char, mode int, perm int, error **utils.Error) *File
 
-fun close(file *File, error **utils$Error)
+fun close(file *File, error **utils.Error)
 
-fun open(filename *const char, error **utils$Error) *File
+fun open(filename *const char, error **utils.Error) *File
 
-fun create(filename *const char, error **utils$Error) *File
+fun create(filename *const char, error **utils.Error) *File
 
-fun read(file *File, b *char, n int, error **utils$Error) int
+fun read(file *File, b *char, n int, error **utils.Error) int
 
-fun write(file *File, b *const char, error **utils$Error) int
+fun write(file *File, b *const char, error **utils.Error) int
 
 typedef FileInfo struct {
     _name *char
@@ -59,8 +59,8 @@ fun FileInfo_sys(info FileInfo) *void
 
 fun FileInfo_free(info FileInfo)
 
-fun stat(filename *const char, error **utils$Error) FileInfo
+fun stat(filename *const char, error **utils.Error) FileInfo
 
-fun openDir(filename *const char, error **utils$Error) *File
+fun openDir(filename *const char, error **utils.Error) *File
 
-fun readdir(file *File, error **utils$Error) **FileInfo
+fun readdir(file *File, error **utils.Error) **FileInfo

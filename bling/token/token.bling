@@ -107,7 +107,7 @@ fun precedence(op Token) int
 
 typedef File struct {
     name *char
-    lines utils$Slice
+    lines utils.Slice
 }
 
 typedef Position struct {
@@ -218,19 +218,19 @@ fun string(tok Token) *char {
     return tokens[tok]
 }
 
-var keywords utils$Map = {
+var keywords utils.Map = {
 }
 
 fun lookup(ident *char) Token {
     if keywords.val_size == 0 {
-        keywords = utils$Map_init(sizeof(Token))
+        keywords = utils.Map_init(sizeof(Token))
         for var i int = _keywordBeg + 1; i < _keywordEnd; i++ {
             var s *char = string(i)
-            utils$Map_set(&keywords, s, &i)
+            utils.Map_set(&keywords, s, &i)
         }
     }
     var tok Token = IDENT
-    utils$Map_get(&keywords, ident, &tok)
+    utils.Map_get(&keywords, ident, &tok)
     return tok
 }
 
@@ -262,32 +262,32 @@ fun precedence(op Token) int {
 }
 
 fun Position_string(p *Position) *char {
-    return sys$sprintf("%s:%d:%d", p.filename, p.line, p.column)
+    return sys.sprintf("%s:%d:%d", p.filename, p.line, p.column)
 }
 
 fun File_new(filename *const char) *File {
     var file File = {
         name: strdup(filename),
-        lines: utils$Slice_init(sizeof(int)),
+        lines: utils.Slice_init(sizeof(int)),
     }
     var zero int = 0
-    utils$Slice_append(&file.lines, &zero)
+    utils.Slice_append(&file.lines, &zero)
     return esc(file)
 }
 
 fun File_addLine(f *File, offset int) {
-    utils$Slice_append(&f.lines, &offset)
+    utils.Slice_append(&f.lines, &offset)
 }
 
-fun getInt(a *utils$Slice, i int) int {
+fun getInt(a *utils.Slice, i int) int {
     var x int
-    utils$Slice_get(a, i, &x)
+    utils.Slice_get(a, i, &x)
     return x
 }
 
-fun searchInts(a *utils$Slice, x int) int {
+fun searchInts(a *utils.Slice, x int) int {
     var i int = 0
-    var j int = utils$Slice_len(a)
+    var j int = utils.Slice_len(a)
     while i < j {
         var h int = i + (j - i) / 2
         if getInt(a, h) <= x {

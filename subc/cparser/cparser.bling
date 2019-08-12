@@ -19,116 +19,116 @@ import "sys"
 
 #include "bling/parser/parser.h"
 
-fun parseFile(filename *const char, pkg_scope *ast$Scope) *ast$File
+fun parseFile(filename *const char, pkg_scope *ast.Scope) *ast.File
 
 #include "subc/cparser/cparser.h"
 
 #include "sys/sys.h"
 
-fun cast_expression(p *parser$Parser) *ast$Expr
+fun cast_expression(p *parser.Parser) *ast.Expr
 
-fun expression(p *parser$Parser) *ast$Expr
+fun expression(p *parser.Parser) *ast.Expr
 
-fun constant_expression(p *parser$Parser) *ast$Expr
+fun constant_expression(p *parser.Parser) *ast.Expr
 
-fun initializer(p *parser$Parser) *ast$Expr
+fun initializer(p *parser.Parser) *ast.Expr
 
-fun type_specifier(p *parser$Parser) *ast$Expr
+fun type_specifier(p *parser.Parser) *ast.Expr
 
-fun struct_or_union_specifier(p *parser$Parser) *ast$Expr
+fun struct_or_union_specifier(p *parser.Parser) *ast.Expr
 
-fun enum_specifier(p *parser$Parser) *ast$Expr
+fun enum_specifier(p *parser.Parser) *ast.Expr
 
-fun pointer(p *parser$Parser, type *ast$Expr) *ast$Expr
+fun pointer(p *parser.Parser, type *ast.Expr) *ast.Expr
 
-fun parameter_type_list(p *parser$Parser) **ast$Decl
+fun parameter_type_list(p *parser.Parser) **ast.Decl
 
-fun type_name(p *parser$Parser) *ast$Expr
+fun type_name(p *parser.Parser) *ast.Expr
 
-fun declarator(p *parser$Parser, type_ptr **ast$Expr) *ast$Expr
+fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr
 
-fun abstract_declarator(p *parser$Parser, type *ast$Expr) *ast$Decl
+fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl
 
-fun statement(p *parser$Parser) *ast$Stmt
+fun statement(p *parser.Parser) *ast.Stmt
 
-fun compound_statement(p *parser$Parser, allow_single bool) *ast$Stmt
+fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt
 
-fun specifier_qualifier_list(p *parser$Parser) *ast$Expr
+fun specifier_qualifier_list(p *parser.Parser) *ast.Expr
 
-fun declaration_specifiers(p *parser$Parser, is_top bool) *ast$Expr
+fun declaration_specifiers(p *parser.Parser, is_top bool) *ast.Expr
 
-fun declaration(p *parser$Parser, is_external bool) *ast$Decl
+fun declaration(p *parser.Parser, is_external bool) *ast.Decl
 
-fun parameter_declaration(p *parser$Parser) *ast$Decl
+fun parameter_declaration(p *parser.Parser) *ast.Decl
 
-fun is_type(p *parser$Parser) bool {
+fun is_type(p *parser.Parser) bool {
     switch p.tok {
-    case token$CONST, token$ENUM, token$EXTERN, token$SIGNED, token$STATIC, token$STRUCT, token$UNION, token$UNSIGNED:
+    case token.CONST, token.ENUM, token.EXTERN, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED:
         return true
-    case token$IDENT:
+    case token.IDENT:
         {
-            var obj *ast$Object = ast$Scope_lookup(p.pkg_scope, p.lit)
-            return obj && obj.kind == ast$ObjKind_TYPE
+            var obj *ast.Object = ast.Scope_lookup(p.pkg_scope, p.lit)
+            return obj && obj.kind == ast.ObjKind_TYPE
         }
     default:
         return false
     }
 }
 
-fun postfix_expression(p *parser$Parser, x *ast$Expr) *ast$Expr {
+fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
     if x == NULL {
-        x = parser$parsePrimaryExpr(p)
+        x = parser.parsePrimaryExpr(p)
     }
     for ; ;  {
         switch p.tok {
-        case token$LBRACK:
+        case token.LBRACK:
             {
-                parser$expect(p, token$LBRACK)
-                var y ast$Expr = {
-                    type: ast$EXPR_INDEX,
+                parser.expect(p, token.LBRACK)
+                var y ast.Expr = {
+                    type: ast.EXPR_INDEX,
                     index: {
                         x: x,
                         index: expression(p),
                     },
                 }
-                parser$expect(p, token$RBRACK)
+                parser.expect(p, token.RBRACK)
                 x = esc(y)
             }
             break
-        case token$LPAREN:
+        case token.LPAREN:
             {
-                var args utils$Slice = {
-                    size: sizeof(*ast$Expr),
+                var args utils.Slice = {
+                    size: sizeof(*ast.Expr),
                 }
-                parser$expect(p, token$LPAREN)
-                while p.tok != token$RPAREN {
-                    var x *ast$Expr = expression(p)
-                    utils$Slice_append(&args, &x)
-                    if !parser$accept(p, token$COMMA) {
+                parser.expect(p, token.LPAREN)
+                while p.tok != token.RPAREN {
+                    var x *ast.Expr = expression(p)
+                    utils.Slice_append(&args, &x)
+                    if !parser.accept(p, token.COMMA) {
                         break
                     }
                 }
-                parser$expect(p, token$RPAREN)
-                var call ast$Expr = {
-                    type: ast$EXPR_CALL,
+                parser.expect(p, token.RPAREN)
+                var call ast.Expr = {
+                    type: ast.EXPR_CALL,
                     call: {
                         func: x,
-                        args: utils$Slice_to_nil_array(args),
+                        args: utils.Slice_to_nil_array(args),
                     },
                 }
                 x = esc(call)
             }
             break
-        case token$ARROW, token$PERIOD:
+        case token.ARROW, token.PERIOD:
             {
-                var tok token$Token = p.tok
-                parser$next(p)
-                var y ast$Expr = {
-                    type: ast$EXPR_SELECTOR,
+                var tok token.Token = p.tok
+                parser.next(p)
+                var y ast.Expr = {
+                    type: ast.EXPR_SELECTOR,
                     selector: {
                         x: x,
                         tok: tok,
-                        sel: parser$parseIdent(p),
+                        sel: parser.parseIdent(p),
                     },
                 }
                 x = esc(y)
@@ -142,14 +142,14 @@ done:
     return x
 }
 
-fun unary_expression(p *parser$Parser) *ast$Expr {
+fun unary_expression(p *parser.Parser) *ast.Expr {
     switch p.tok {
-    case token$ADD, token$AND, token$BITWISE_NOT, token$NOT, token$SUB:
+    case token.ADD, token.AND, token.BITWISE_NOT, token.NOT, token.SUB:
         {
-            var op token$Token = p.tok
-            parser$next(p)
-            var x ast$Expr = {
-                type: ast$EXPR_UNARY,
+            var op token.Token = p.tok
+            parser.next(p)
+            var x ast.Expr = {
+                type: ast.EXPR_UNARY,
                 unary: {
                     op: op,
                     x: cast_expression(p),
@@ -157,60 +157,60 @@ fun unary_expression(p *parser$Parser) *ast$Expr {
             }
             return esc(x)
         }
-    case token$MUL:
+    case token.MUL:
         {
-            parser$next(p)
-            var x ast$Expr = {
-                type: ast$EXPR_STAR,
+            parser.next(p)
+            var x ast.Expr = {
+                type: ast.EXPR_STAR,
                 star: {
                     x: cast_expression(p),
                 },
             }
             return esc(x)
         }
-    case token$SIZEOF:
+    case token.SIZEOF:
         {
-            parser$next(p)
-            parser$expect(p, token$LPAREN)
-            var x *ast$Expr = NULL
+            parser.next(p)
+            parser.expect(p, token.LPAREN)
+            var x *ast.Expr = NULL
             if is_type(p) {
                 x = type_name(p)
-                if p.tok == token$MUL {
+                if p.tok == token.MUL {
                     declarator(p, &x)
                 }
             } else {
                 x = unary_expression(p)
             }
-            parser$expect(p, token$RPAREN)
-            var y ast$Expr = {
-                type: ast$EXPR_SIZEOF,
+            parser.expect(p, token.RPAREN)
+            var y ast.Expr = {
+                type: ast.EXPR_SIZEOF,
                 sizeof_: {
                     x: x,
                 },
             }
             return esc(y)
         }
-    case token$DEC, token$INC:
-        parser$error(p, p.pos, sys$sprintf("unary `%s` not supported in subc", token$string(p.tok)))
+    case token.DEC, token.INC:
+        parser.error(p, p.pos, sys.sprintf("unary `%s` not supported in subc", token.string(p.tok)))
         return NULL
     default:
         return postfix_expression(p, NULL)
     }
 }
 
-fun cast_expression(p *parser$Parser) *ast$Expr {
-    if parser$accept(p, token$LPAREN) {
+fun cast_expression(p *parser.Parser) *ast.Expr {
+    if parser.accept(p, token.LPAREN) {
         if is_type(p) {
-            var type *ast$Expr = type_name(p)
-            parser$expect(p, token$RPAREN)
-            var x *ast$Expr
-            if p.tok == token$LBRACE {
+            var type *ast.Expr = type_name(p)
+            parser.expect(p, token.RPAREN)
+            var x *ast.Expr
+            if p.tok == token.LBRACE {
                 x = initializer(p)
             } else {
                 x = cast_expression(p)
             }
-            var y ast$Expr = {
-                type: ast$EXPR_CAST,
+            var y ast.Expr = {
+                type: ast.EXPR_CAST,
                 cast: {
                     type: type,
                     expr: x,
@@ -218,31 +218,31 @@ fun cast_expression(p *parser$Parser) *ast$Expr {
             }
             return esc(y)
         } else {
-            var x ast$Expr = {
-                type: ast$EXPR_PAREN,
+            var x ast.Expr = {
+                type: ast.EXPR_PAREN,
                 paren: {
                     x: expression(p),
                 },
             }
-            parser$expect(p, token$RPAREN)
+            parser.expect(p, token.RPAREN)
             return postfix_expression(p, esc(x))
         }
     }
     return unary_expression(p)
 }
 
-fun binary_expression(p *parser$Parser, prec1 int) *ast$Expr {
-    var x *ast$Expr = cast_expression(p)
+fun binary_expression(p *parser.Parser, prec1 int) *ast.Expr {
+    var x *ast.Expr = cast_expression(p)
     for ; ;  {
-        var op token$Token = p.tok
-        var oprec int = token$precedence(op)
+        var op token.Token = p.tok
+        var oprec int = token.precedence(op)
         if oprec < prec1 {
             return x
         }
-        parser$expect(p, op)
-        var y *ast$Expr = binary_expression(p, oprec + 1)
-        var z ast$Expr = {
-            type: ast$EXPR_BINARY,
+        parser.expect(p, op)
+        var y *ast.Expr = binary_expression(p, oprec + 1)
+        var z ast.Expr = {
+            type: ast.EXPR_BINARY,
             binary: {
                 x: x,
                 op: op,
@@ -253,14 +253,14 @@ fun binary_expression(p *parser$Parser, prec1 int) *ast$Expr {
     }
 }
 
-fun ternary_expression(p *parser$Parser) *ast$Expr {
-    var x *ast$Expr = binary_expression(p, token$lowest_prec + 1)
-    if parser$accept(p, token$QUESTION_MARK) {
-        var consequence *ast$Expr = expression(p)
-        parser$expect(p, token$COLON)
-        var alternative *ast$Expr = ternary_expression(p)
-        var conditional ast$Expr = {
-            type: ast$EXPR_COND,
+fun ternary_expression(p *parser.Parser) *ast.Expr {
+    var x *ast.Expr = binary_expression(p, token.lowest_prec + 1)
+    if parser.accept(p, token.QUESTION_MARK) {
+        var consequence *ast.Expr = expression(p)
+        parser.expect(p, token.COLON)
+        var alternative *ast.Expr = ternary_expression(p)
+        var conditional ast.Expr = {
+            type: ast.EXPR_COND,
             conditional: {
                 condition: x,
                 consequence: consequence,
@@ -272,48 +272,48 @@ fun ternary_expression(p *parser$Parser) *ast$Expr {
     return x
 }
 
-fun expression(p *parser$Parser) *ast$Expr {
+fun expression(p *parser.Parser) *ast.Expr {
     return ternary_expression(p)
 }
 
-fun constant_expression(p *parser$Parser) *ast$Expr {
+fun constant_expression(p *parser.Parser) *ast.Expr {
     return ternary_expression(p)
 }
 
-fun struct_or_union_specifier(p *parser$Parser) *ast$Expr {
-    var keyword token$Token = p.tok
-    var name *ast$Expr = NULL
-    parser$expect(p, keyword)
-    if p.tok == token$IDENT {
-        name = parser$parseIdent(p)
+fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
+    var keyword token.Token = p.tok
+    var name *ast.Expr = NULL
+    parser.expect(p, keyword)
+    if p.tok == token.IDENT {
+        name = parser.parseIdent(p)
     }
-    var fields **ast$Decl = NULL
-    if parser$accept(p, token$LBRACE) {
-        var fieldSlice utils$Slice = {
-            size: sizeof(*ast$Decl),
+    var fields **ast.Decl = NULL
+    if parser.accept(p, token.LBRACE) {
+        var fieldSlice utils.Slice = {
+            size: sizeof(*ast.Decl),
         }
         for ; ;  {
-            var type *ast$Expr = specifier_qualifier_list(p)
-            var name *ast$Expr = declarator(p, &type)
-            var f ast$Decl = {
-                type: ast$DECL_FIELD,
+            var type *ast.Expr = specifier_qualifier_list(p)
+            var name *ast.Expr = declarator(p, &type)
+            var f ast.Decl = {
+                type: ast.DECL_FIELD,
                 field: {
                     type: type,
                     name: name,
                 },
             }
-            parser$expect(p, token$SEMICOLON)
-            var field *ast$Decl = esc(f)
-            utils$Slice_append(&fieldSlice, &field)
-            if p.tok == token$RBRACE {
+            parser.expect(p, token.SEMICOLON)
+            var field *ast.Decl = esc(f)
+            utils.Slice_append(&fieldSlice, &field)
+            if p.tok == token.RBRACE {
                 break
             }
         }
-        parser$expect(p, token$RBRACE)
-        fields = utils$Slice_to_nil_array(fieldSlice)
+        parser.expect(p, token.RBRACE)
+        fields = utils.Slice_to_nil_array(fieldSlice)
     }
-    var x ast$Expr = {
-        type: ast$TYPE_STRUCT,
+    var x ast.Expr = {
+        type: ast.TYPE_STRUCT,
         struct_: {
             tok: keyword,
             name: name,
@@ -323,39 +323,39 @@ fun struct_or_union_specifier(p *parser$Parser) *ast$Expr {
     return esc(x)
 }
 
-fun enum_specifier(p *parser$Parser) *ast$Expr {
-    var name *ast$Expr = NULL
-    parser$expect(p, token$ENUM)
-    if p.tok == token$IDENT {
-        name = parser$parseIdent(p)
+fun enum_specifier(p *parser.Parser) *ast.Expr {
+    var name *ast.Expr = NULL
+    parser.expect(p, token.ENUM)
+    if p.tok == token.IDENT {
+        name = parser.parseIdent(p)
     }
-    var enums **ast$Decl = NULL
-    if parser$accept(p, token$LBRACE) {
-        var list utils$Slice = {
-            size: sizeof(*ast$Decl),
+    var enums **ast.Decl = NULL
+    if parser.accept(p, token.LBRACE) {
+        var list utils.Slice = {
+            size: sizeof(*ast.Decl),
         }
         for ; ;  {
-            var decl ast$Decl = {
-                type: ast$DECL_VALUE,
+            var decl ast.Decl = {
+                type: ast.DECL_VALUE,
                 value: {
-                    name: parser$parseIdent(p),
-                    kind: token$VAR,
+                    name: parser.parseIdent(p),
+                    kind: token.VAR,
                 },
             }
-            if parser$accept(p, token$ASSIGN) {
+            if parser.accept(p, token.ASSIGN) {
                 decl.value.value = constant_expression(p)
             }
-            var enumerator *ast$Decl = esc(decl)
-            utils$Slice_append(&list, &enumerator)
-            if !parser$accept(p, token$COMMA) || p.tok == token$RBRACE {
+            var enumerator *ast.Decl = esc(decl)
+            utils.Slice_append(&list, &enumerator)
+            if !parser.accept(p, token.COMMA) || p.tok == token.RBRACE {
                 break
             }
         }
-        enums = utils$Slice_to_nil_array(list)
-        parser$expect(p, token$RBRACE)
+        enums = utils.Slice_to_nil_array(list)
+        parser.expect(p, token.RBRACE)
     }
-    var x ast$Expr = {
-        type: ast$TYPE_ENUM,
+    var x ast.Expr = {
+        type: ast.TYPE_ENUM,
         enum_: {
             name: name,
             enums: enums,
@@ -364,59 +364,59 @@ fun enum_specifier(p *parser$Parser) *ast$Expr {
     return esc(x)
 }
 
-fun declarator(p *parser$Parser, type_ptr **ast$Expr) *ast$Expr {
-    if p.tok == token$MUL {
+fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
+    if p.tok == token.MUL {
         *type_ptr = pointer(p, *type_ptr)
     }
-    var name *ast$Expr = NULL
+    var name *ast.Expr = NULL
     var is_ptr bool = false
     switch p.tok {
-    case token$IDENT:
-        name = parser$parseIdent(p)
+    case token.IDENT:
+        name = parser.parseIdent(p)
         break
-    case token$LPAREN:
-        parser$expect(p, token$LPAREN)
-        is_ptr = parser$accept(p, token$MUL)
-        if !is_ptr || p.tok == token$IDENT {
-            name = parser$parseIdent(p)
+    case token.LPAREN:
+        parser.expect(p, token.LPAREN)
+        is_ptr = parser.accept(p, token.MUL)
+        if !is_ptr || p.tok == token.IDENT {
+            name = parser.parseIdent(p)
         }
-        parser$expect(p, token$RPAREN)
+        parser.expect(p, token.RPAREN)
         break
     default:
         break
     }
-    if parser$accept(p, token$LBRACK) {
-        var len *ast$Expr = NULL
-        if p.tok != token$RBRACK {
+    if parser.accept(p, token.LBRACK) {
+        var len *ast.Expr = NULL
+        if p.tok != token.RBRACK {
             len = constant_expression(p)
         }
-        var type ast$Expr = {
-            type: ast$TYPE_ARRAY,
+        var type ast.Expr = {
+            type: ast.TYPE_ARRAY,
             array: {
                 elt: *type_ptr,
                 len: len,
             },
         }
-        parser$expect(p, token$RBRACK)
+        parser.expect(p, token.RBRACK)
         *type_ptr = esc(type)
-    } else if parser$accept(p, token$LPAREN) {
-        var params **ast$Decl = NULL
-        if p.tok != token$RPAREN {
+    } else if parser.accept(p, token.LPAREN) {
+        var params **ast.Decl = NULL
+        if p.tok != token.RPAREN {
             params = parameter_type_list(p)
         }
-        var type ast$Expr = {
-            type: ast$TYPE_FUNC,
+        var type ast.Expr = {
+            type: ast.TYPE_FUNC,
             func: {
                 result: *type_ptr,
                 params: params,
             },
         }
-        parser$expect(p, token$RPAREN)
+        parser.expect(p, token.RPAREN)
         *type_ptr = esc(type)
     }
     if is_ptr {
-        var type ast$Expr = {
-            type: ast$EXPR_STAR,
+        var type ast.Expr = {
+            type: ast.EXPR_STAR,
             star: {
                 x: *type_ptr,
             },
@@ -426,17 +426,17 @@ fun declarator(p *parser$Parser, type_ptr **ast$Expr) *ast$Expr {
     return name
 }
 
-fun type_qualifier(p *parser$Parser, type *ast$Expr) *ast$Expr {
-    if parser$accept(p, token$CONST) {
+fun type_qualifier(p *parser.Parser, type *ast.Expr) *ast.Expr {
+    if parser.accept(p, token.CONST) {
         type.is_const = true
     }
     return type
 }
 
-fun pointer(p *parser$Parser, type *ast$Expr) *ast$Expr {
-    while parser$accept(p, token$MUL) {
-        var x ast$Expr = {
-            type: ast$EXPR_STAR,
+fun pointer(p *parser.Parser, type *ast.Expr) *ast.Expr {
+    while parser.accept(p, token.MUL) {
+        var x ast.Expr = {
+            type: ast.EXPR_STAR,
             star: {
                 x: type,
             },
@@ -447,88 +447,88 @@ fun pointer(p *parser$Parser, type *ast$Expr) *ast$Expr {
     return type
 }
 
-fun parameter_type_list(p *parser$Parser) **ast$Decl {
-    var params utils$Slice = {
-        size: sizeof(*ast$Decl),
+fun parameter_type_list(p *parser.Parser) **ast.Decl {
+    var params utils.Slice = {
+        size: sizeof(*ast.Decl),
     }
-    while p.tok != token$RPAREN {
-        var param *ast$Decl = parameter_declaration(p)
-        utils$Slice_append(&params, &param)
-        if !parser$accept(p, token$COMMA) {
+    while p.tok != token.RPAREN {
+        var param *ast.Decl = parameter_declaration(p)
+        utils.Slice_append(&params, &param)
+        if !parser.accept(p, token.COMMA) {
             break
         }
-        if parser$accept(p, token$ELLIPSIS) {
-            var decl ast$Decl = {
-                type: ast$DECL_FIELD,
+        if parser.accept(p, token.ELLIPSIS) {
+            var decl ast.Decl = {
+                type: ast.DECL_FIELD,
             }
-            var param *ast$Decl = esc(decl)
-            utils$Slice_append(&params, &param)
+            var param *ast.Decl = esc(decl)
+            utils.Slice_append(&params, &param)
             break
         }
     }
-    return utils$Slice_to_nil_array(params)
+    return utils.Slice_to_nil_array(params)
 }
 
-fun type_name(p *parser$Parser) *ast$Expr {
-    var type *ast$Expr = specifier_qualifier_list(p)
-    var decl *ast$Decl = abstract_declarator(p, type)
+fun type_name(p *parser.Parser) *ast.Expr {
+    var type *ast.Expr = specifier_qualifier_list(p)
+    var decl *ast.Decl = abstract_declarator(p, type)
     return decl.field.type
 }
 
-fun abstract_declarator(p *parser$Parser, type *ast$Expr) *ast$Decl {
-    if p.tok == token$MUL {
+fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
+    if p.tok == token.MUL {
         type = pointer(p, type)
     }
     var is_ptr bool = false
-    if parser$accept(p, token$LPAREN) {
-        parser$expect(p, token$MUL)
-        parser$expect(p, token$RPAREN)
+    if parser.accept(p, token.LPAREN) {
+        parser.expect(p, token.MUL)
+        parser.expect(p, token.RPAREN)
         is_ptr = true
     }
     for ; ;  {
-        if parser$accept(p, token$LBRACK) {
-            var len *ast$Expr = NULL
-            if p.tok != token$RBRACK {
+        if parser.accept(p, token.LBRACK) {
+            var len *ast.Expr = NULL
+            if p.tok != token.RBRACK {
                 len = constant_expression(p)
             }
-            var t ast$Expr = {
-                type: ast$TYPE_ARRAY,
+            var t ast.Expr = {
+                type: ast.TYPE_ARRAY,
                 array: {
                     elt: type,
                     len: len,
                 },
             }
-            parser$expect(p, token$RBRACK)
+            parser.expect(p, token.RBRACK)
             type = esc(t)
-        } else if parser$accept(p, token$LPAREN) {
-            var params **ast$Decl = NULL
-            if p.tok != token$RPAREN {
+        } else if parser.accept(p, token.LPAREN) {
+            var params **ast.Decl = NULL
+            if p.tok != token.RPAREN {
                 params = parameter_type_list(p)
             }
-            var t ast$Expr = {
-                type: ast$TYPE_FUNC,
+            var t ast.Expr = {
+                type: ast.TYPE_FUNC,
                 func: {
                     result: type,
                     params: params,
                 },
             }
-            parser$expect(p, token$RPAREN)
+            parser.expect(p, token.RPAREN)
             type = esc(t)
         } else {
             break
         }
     }
     if is_ptr {
-        var tmp ast$Expr = {
-            type: ast$EXPR_STAR,
+        var tmp ast.Expr = {
+            type: ast.EXPR_STAR,
             star: {
                 x: type,
             },
         }
         type = esc(tmp)
     }
-    var declarator ast$Decl = {
-        type: ast$DECL_FIELD,
+    var declarator ast.Decl = {
+        type: ast.DECL_FIELD,
         field: {
             type: type,
         },
@@ -536,29 +536,29 @@ fun abstract_declarator(p *parser$Parser, type *ast$Expr) *ast$Decl {
     return esc(declarator)
 }
 
-fun initializer(p *parser$Parser) *ast$Expr {
-    if !parser$accept(p, token$LBRACE) {
+fun initializer(p *parser.Parser) *ast.Expr {
+    if !parser.accept(p, token.LBRACE) {
         return expression(p)
     }
-    var list utils$Slice = {
-        size: sizeof(*ast$Expr),
+    var list utils.Slice = {
+        size: sizeof(*ast.Expr),
     }
-    while p.tok != token$RBRACE && p.tok != token$EOF {
-        var key *ast$Expr = NULL
+    while p.tok != token.RBRACE && p.tok != token.EOF {
+        var key *ast.Expr = NULL
         var isArray bool = false
-        if parser$accept(p, token$PERIOD) {
-            key = parser$parseIdent(p)
-            parser$expect(p, token$ASSIGN)
-        } else if parser$accept(p, token$LBRACK) {
+        if parser.accept(p, token.PERIOD) {
+            key = parser.parseIdent(p)
+            parser.expect(p, token.ASSIGN)
+        } else if parser.accept(p, token.LBRACK) {
             isArray = true
             key = expression(p)
-            parser$expect(p, token$RBRACK)
-            parser$expect(p, token$ASSIGN)
+            parser.expect(p, token.RBRACK)
+            parser.expect(p, token.ASSIGN)
         }
-        var value *ast$Expr = initializer(p)
+        var value *ast.Expr = initializer(p)
         if key {
-            var x ast$Expr = {
-                type: ast$EXPR_KEY_VALUE,
+            var x ast.Expr = {
+                type: ast.EXPR_KEY_VALUE,
                 key_value: {
                     key: key,
                     value: value,
@@ -567,31 +567,31 @@ fun initializer(p *parser$Parser) *ast$Expr {
             }
             value = esc(x)
         }
-        utils$Slice_append(&list, &value)
-        if !parser$accept(p, token$COMMA) {
+        utils.Slice_append(&list, &value)
+        if !parser.accept(p, token.COMMA) {
             break
         }
     }
-    parser$expect(p, token$RBRACE)
-    var expr ast$Expr = {
-        type: ast$EXPR_COMPOUND,
+    parser.expect(p, token.RBRACE)
+    var expr ast.Expr = {
+        type: ast.EXPR_COMPOUND,
         compound: {
-            list: utils$Slice_to_nil_array(list),
+            list: utils.Slice_to_nil_array(list),
         },
     }
     return esc(expr)
 }
 
-fun simple_statement(p *parser$Parser, labelOk bool) *ast$Stmt {
-    var x *ast$Expr = expression(p)
-    var op token$Token = p.tok
+fun simple_statement(p *parser.Parser, labelOk bool) *ast.Stmt {
+    var x *ast.Expr = expression(p)
+    var op token.Token = p.tok
     switch op {
-    case token$ADD_ASSIGN, token$ASSIGN, token$DIV_ASSIGN, token$MOD_ASSIGN, token$MUL_ASSIGN, token$SHL_ASSIGN, token$SHR_ASSIGN, token$SUB_ASSIGN, token$XOR_ASSIGN:
+    case token.ADD_ASSIGN, token.ASSIGN, token.DIV_ASSIGN, token.MOD_ASSIGN, token.MUL_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.SUB_ASSIGN, token.XOR_ASSIGN:
         {
-            parser$next(p)
-            var y *ast$Expr = expression(p)
-            var stmt ast$Stmt = {
-                type: ast$STMT_ASSIGN,
+            parser.next(p)
+            var y *ast.Expr = expression(p)
+            var stmt ast.Stmt = {
+                type: ast.STMT_ASSIGN,
                 assign: {
                     x: x,
                     op: op,
@@ -600,11 +600,11 @@ fun simple_statement(p *parser$Parser, labelOk bool) *ast$Stmt {
             }
             return esc(stmt)
         }
-    case token$INC, token$DEC:
+    case token.INC, token.DEC:
         {
-            parser$next(p)
-            var stmt ast$Stmt = {
-                type: ast$STMT_POSTFIX,
+            parser.next(p)
+            var stmt ast.Stmt = {
+                type: ast.STMT_POSTFIX,
                 postfix: {
                     x: x,
                     op: op,
@@ -615,10 +615,10 @@ fun simple_statement(p *parser$Parser, labelOk bool) *ast$Stmt {
     default:
         break
     }
-    if labelOk && x.type == ast$EXPR_IDENT {
-        if parser$accept(p, token$COLON) {
-            var stmt ast$Stmt = {
-                type: ast$STMT_LABEL,
+    if labelOk && x.type == ast.EXPR_IDENT {
+        if parser.accept(p, token.COLON) {
+            var stmt ast.Stmt = {
+                type: ast.STMT_LABEL,
                 label: {
                     label: x,
                     stmt: statement(p),
@@ -627,8 +627,8 @@ fun simple_statement(p *parser$Parser, labelOk bool) *ast$Stmt {
             return esc(stmt)
         }
     }
-    var stmt ast$Stmt = {
-        type: ast$STMT_EXPR,
+    var stmt ast.Stmt = {
+        type: ast.STMT_EXPR,
         expr: {
             x: x,
         },
@@ -636,35 +636,35 @@ fun simple_statement(p *parser$Parser, labelOk bool) *ast$Stmt {
     return esc(stmt)
 }
 
-fun statement(p *parser$Parser) *ast$Stmt {
+fun statement(p *parser.Parser) *ast.Stmt {
     if is_type(p) {
-        var stmt ast$Stmt = {
-            type: ast$STMT_DECL,
+        var stmt ast.Stmt = {
+            type: ast.STMT_DECL,
             decl: declaration(p, false),
         }
         return esc(stmt)
     }
-    if parser$accept(p, token$FOR) {
-        parser$expect(p, token$LPAREN)
-        var init *ast$Stmt = NULL
-        if !parser$accept(p, token$SEMICOLON) {
+    if parser.accept(p, token.FOR) {
+        parser.expect(p, token.LPAREN)
+        var init *ast.Stmt = NULL
+        if !parser.accept(p, token.SEMICOLON) {
             init = statement(p)
         }
-        var cond *ast$Expr = NULL
-        if p.tok != token$SEMICOLON {
+        var cond *ast.Expr = NULL
+        if p.tok != token.SEMICOLON {
             cond = expression(p)
         }
-        parser$expect(p, token$SEMICOLON)
-        var post *ast$Stmt = NULL
-        if p.tok != token$RPAREN {
+        parser.expect(p, token.SEMICOLON)
+        var post *ast.Stmt = NULL
+        if p.tok != token.RPAREN {
             post = simple_statement(p, false)
         }
-        parser$expect(p, token$RPAREN)
-        var body *ast$Stmt = compound_statement(p, true)
-        var stmt ast$Stmt = {
-            type: ast$STMT_ITER,
+        parser.expect(p, token.RPAREN)
+        var body *ast.Stmt = compound_statement(p, true)
+        var stmt ast.Stmt = {
+            type: ast.STMT_ITER,
             iter: {
-                kind: token$FOR,
+                kind: token.FOR,
                 init: init,
                 cond: cond,
                 post: post,
@@ -673,21 +673,21 @@ fun statement(p *parser$Parser) *ast$Stmt {
         }
         return esc(stmt)
     }
-    if parser$accept(p, token$IF) {
-        parser$expect(p, token$LPAREN)
-        var cond *ast$Expr = expression(p)
-        parser$expect(p, token$RPAREN)
-        var body *ast$Stmt = compound_statement(p, true)
-        var else_ *ast$Stmt = NULL
-        if parser$accept(p, token$ELSE) {
-            if p.tok == token$IF {
+    if parser.accept(p, token.IF) {
+        parser.expect(p, token.LPAREN)
+        var cond *ast.Expr = expression(p)
+        parser.expect(p, token.RPAREN)
+        var body *ast.Stmt = compound_statement(p, true)
+        var else_ *ast.Stmt = NULL
+        if parser.accept(p, token.ELSE) {
+            if p.tok == token.IF {
                 else_ = statement(p)
             } else {
                 else_ = compound_statement(p, true)
             }
         }
-        var stmt ast$Stmt = {
-            type: ast$STMT_IF,
+        var stmt ast.Stmt = {
+            type: ast.STMT_IF,
             if_: {
                 cond: cond,
                 body: body,
@@ -696,87 +696,87 @@ fun statement(p *parser$Parser) *ast$Stmt {
         }
         return esc(stmt)
     }
-    if parser$accept(p, token$RETURN) {
-        var x *ast$Expr = NULL
-        if p.tok != token$SEMICOLON {
+    if parser.accept(p, token.RETURN) {
+        var x *ast.Expr = NULL
+        if p.tok != token.SEMICOLON {
             x = expression(p)
         }
-        parser$expect(p, token$SEMICOLON)
-        var stmt ast$Stmt = {
-            type: ast$STMT_RETURN,
+        parser.expect(p, token.SEMICOLON)
+        var stmt ast.Stmt = {
+            type: ast.STMT_RETURN,
             return_: {
                 x: x,
             },
         }
         return esc(stmt)
     }
-    if parser$accept(p, token$SWITCH) {
-        parser$expect(p, token$LPAREN)
-        var tag *ast$Expr = expression(p)
-        parser$expect(p, token$RPAREN)
-        parser$expect(p, token$LBRACE)
-        var clauses utils$Slice = {
-            size: sizeof(*ast$Stmt),
+    if parser.accept(p, token.SWITCH) {
+        parser.expect(p, token.LPAREN)
+        var tag *ast.Expr = expression(p)
+        parser.expect(p, token.RPAREN)
+        parser.expect(p, token.LBRACE)
+        var clauses utils.Slice = {
+            size: sizeof(*ast.Stmt),
         }
-        while p.tok == token$CASE || p.tok == token$DEFAULT {
-            var exprs utils$Slice = {
-                size: sizeof(*ast$Expr),
+        while p.tok == token.CASE || p.tok == token.DEFAULT {
+            var exprs utils.Slice = {
+                size: sizeof(*ast.Expr),
             }
-            while parser$accept(p, token$CASE) {
-                var expr *ast$Expr = constant_expression(p)
-                parser$expect(p, token$COLON)
-                utils$Slice_append(&exprs, &expr)
+            while parser.accept(p, token.CASE) {
+                var expr *ast.Expr = constant_expression(p)
+                parser.expect(p, token.COLON)
+                utils.Slice_append(&exprs, &expr)
             }
-            if utils$Slice_len(&exprs) == 0 {
-                parser$expect(p, token$DEFAULT)
-                parser$expect(p, token$COLON)
+            if utils.Slice_len(&exprs) == 0 {
+                parser.expect(p, token.DEFAULT)
+                parser.expect(p, token.COLON)
             }
-            var stmts utils$Slice = {
-                size: sizeof(*ast$Stmt),
+            var stmts utils.Slice = {
+                size: sizeof(*ast.Stmt),
             }
             var loop bool = true
             while loop {
                 switch p.tok {
-                case token$CASE, token$DEFAULT, token$RBRACE:
+                case token.CASE, token.DEFAULT, token.RBRACE:
                     loop = false
                     break
                 default:
                     break
                 }
                 if loop {
-                    var stmt *ast$Stmt = statement(p)
-                    utils$Slice_append(&stmts, &stmt)
+                    var stmt *ast.Stmt = statement(p)
+                    utils.Slice_append(&stmts, &stmt)
                 }
             }
-            var stmt ast$Stmt = {
-                type: ast$STMT_CASE,
+            var stmt ast.Stmt = {
+                type: ast.STMT_CASE,
                 case_: {
-                    exprs: utils$Slice_to_nil_array(exprs),
-                    stmts: utils$Slice_to_nil_array(stmts),
+                    exprs: utils.Slice_to_nil_array(exprs),
+                    stmts: utils.Slice_to_nil_array(stmts),
                 },
             }
-            var clause *ast$Stmt = esc(stmt)
-            utils$Slice_append(&clauses, &clause)
+            var clause *ast.Stmt = esc(stmt)
+            utils.Slice_append(&clauses, &clause)
         }
-        parser$expect(p, token$RBRACE)
-        var stmt ast$Stmt = {
-            type: ast$STMT_SWITCH,
+        parser.expect(p, token.RBRACE)
+        var stmt ast.Stmt = {
+            type: ast.STMT_SWITCH,
             switch_: {
                 tag: tag,
-                stmts: utils$Slice_to_nil_array(clauses),
+                stmts: utils.Slice_to_nil_array(clauses),
             },
         }
         return esc(stmt)
     }
-    if parser$accept(p, token$WHILE) {
-        parser$expect(p, token$LPAREN)
-        var cond *ast$Expr = expression(p)
-        parser$expect(p, token$RPAREN)
-        var body *ast$Stmt = compound_statement(p, true)
-        var stmt ast$Stmt = {
-            type: ast$STMT_ITER,
+    if parser.accept(p, token.WHILE) {
+        parser.expect(p, token.LPAREN)
+        var cond *ast.Expr = expression(p)
+        parser.expect(p, token.RPAREN)
+        var body *ast.Stmt = compound_statement(p, true)
+        var stmt ast.Stmt = {
+            type: ast.STMT_ITER,
             iter: {
-                kind: token$WHILE,
+                kind: token.WHILE,
                 cond: cond,
                 body: body,
             },
@@ -784,17 +784,17 @@ fun statement(p *parser$Parser) *ast$Stmt {
         return esc(stmt)
     }
     switch p.tok {
-    case token$BREAK, token$CONTINUE, token$GOTO:
+    case token.BREAK, token.CONTINUE, token.GOTO:
         {
-            var keyword token$Token = p.tok
-            parser$next(p)
-            var label *ast$Expr = NULL
-            if keyword == token$GOTO {
-                label = parser$parseIdent(p)
+            var keyword token.Token = p.tok
+            parser.next(p)
+            var label *ast.Expr = NULL
+            if keyword == token.GOTO {
+                label = parser.parseIdent(p)
             }
-            parser$expect(p, token$SEMICOLON)
-            var stmt ast$Stmt = {
-                type: ast$STMT_JUMP,
+            parser.expect(p, token.SEMICOLON)
+            var stmt ast.Stmt = {
+                type: ast.STMT_JUMP,
                 jump: {
                     keyword: keyword,
                     label: label,
@@ -802,168 +802,168 @@ fun statement(p *parser$Parser) *ast$Stmt {
             }
             return esc(stmt)
         }
-    case token$LBRACE:
+    case token.LBRACE:
         return compound_statement(p, false)
     default:
         break
     }
-    if parser$accept(p, token$SEMICOLON) {
-        var stmt ast$Stmt = {
-            type: ast$STMT_EMPTY,
+    if parser.accept(p, token.SEMICOLON) {
+        var stmt ast.Stmt = {
+            type: ast.STMT_EMPTY,
         }
         return esc(stmt)
     }
-    var stmt *ast$Stmt = simple_statement(p, true)
-    if stmt.type != ast$STMT_LABEL {
-        parser$expect(p, token$SEMICOLON)
+    var stmt *ast.Stmt = simple_statement(p, true)
+    if stmt.type != ast.STMT_LABEL {
+        parser.expect(p, token.SEMICOLON)
     }
     return stmt
 }
 
-fun compound_statement(p *parser$Parser, allow_single bool) *ast$Stmt {
-    var stmts utils$Slice = {
-        size: sizeof(*ast$Stmt),
+fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt {
+    var stmts utils.Slice = {
+        size: sizeof(*ast.Stmt),
     }
-    if allow_single && p.tok != token$LBRACE {
-        var stmt *ast$Stmt = statement(p)
-        assert(stmt.type != ast$STMT_DECL)
-        utils$Slice_append(&stmts, &stmt)
+    if allow_single && p.tok != token.LBRACE {
+        var stmt *ast.Stmt = statement(p)
+        assert(stmt.type != ast.STMT_DECL)
+        utils.Slice_append(&stmts, &stmt)
     } else {
-        parser$expect(p, token$LBRACE)
-        while p.tok != token$RBRACE {
-            var stmt *ast$Stmt = statement(p)
-            utils$Slice_append(&stmts, &stmt)
+        parser.expect(p, token.LBRACE)
+        while p.tok != token.RBRACE {
+            var stmt *ast.Stmt = statement(p)
+            utils.Slice_append(&stmts, &stmt)
         }
-        parser$expect(p, token$RBRACE)
+        parser.expect(p, token.RBRACE)
     }
-    var stmt ast$Stmt = {
-        type: ast$STMT_BLOCK,
+    var stmt ast.Stmt = {
+        type: ast.STMT_BLOCK,
         block: {
-            stmts: utils$Slice_to_nil_array(stmts),
+            stmts: utils.Slice_to_nil_array(stmts),
         },
     }
     return esc(stmt)
 }
 
-fun parameter_declaration(p *parser$Parser) *ast$Decl {
-    var decl ast$Decl = {
-        type: ast$DECL_FIELD,
+fun parameter_declaration(p *parser.Parser) *ast.Decl {
+    var decl ast.Decl = {
+        type: ast.DECL_FIELD,
     }
     decl.field.type = declaration_specifiers(p, false)
     decl.field.name = declarator(p, &decl.field.type)
     return esc(decl)
 }
 
-fun type_specifier(p *parser$Parser) *ast$Expr {
-    var x *ast$Expr = NULL
+fun type_specifier(p *parser.Parser) *ast.Expr {
+    var x *ast.Expr = NULL
     switch p.tok {
-    case token$SIGNED, token$UNSIGNED:
-        parser$error(p, p.pos, sys$sprintf("`%s` is not supported in subc", token$string(p.tok)))
+    case token.SIGNED, token.UNSIGNED:
+        parser.error(p, p.pos, sys.sprintf("`%s` is not supported in subc", token.string(p.tok)))
         break
-    case token$STRUCT, token$UNION:
+    case token.STRUCT, token.UNION:
         x = struct_or_union_specifier(p)
         break
-    case token$ENUM:
+    case token.ENUM:
         x = enum_specifier(p)
         break
     default:
         if is_type(p) {
-            x = parser$parseIdent(p)
+            x = parser.parseIdent(p)
         } else {
-            parser$errorExpected(p, p.pos, "type")
+            parser.errorExpected(p, p.pos, "type")
         }
         break
     }
     return x
 }
 
-fun declaration_specifiers(p *parser$Parser, is_top bool) *ast$Expr {
+fun declaration_specifiers(p *parser.Parser, is_top bool) *ast.Expr {
     if is_top {
         switch p.tok {
-        case token$EXTERN, token$STATIC:
-            parser$next(p)
+        case token.EXTERN, token.STATIC:
+            parser.next(p)
             break
         default:
             break
         }
     }
-    var is_const bool = parser$accept(p, token$CONST)
-    var type *ast$Expr = type_specifier(p)
+    var is_const bool = parser.accept(p, token.CONST)
+    var type *ast.Expr = type_specifier(p)
     if is_const {
         type.is_const = is_const
     }
     return type
 }
 
-fun specifier_qualifier_list(p *parser$Parser) *ast$Expr {
+fun specifier_qualifier_list(p *parser.Parser) *ast.Expr {
     return declaration_specifiers(p, false)
 }
 
-fun declaration(p *parser$Parser, is_external bool) *ast$Decl {
-    if p.tok == token$HASH {
-        return parser$parsePragma(p)
+fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
+    if p.tok == token.HASH {
+        return parser.parsePragma(p)
     }
-    if p.tok == token$TYPEDEF {
-        var keyword token$Token = p.tok
-        parser$expect(p, keyword)
-        var type *ast$Expr = declaration_specifiers(p, true)
-        var name *ast$Expr = declarator(p, &type)
-        parser$expect(p, token$SEMICOLON)
-        var declref ast$Decl = {
-            type: ast$DECL_TYPEDEF,
+    if p.tok == token.TYPEDEF {
+        var keyword token.Token = p.tok
+        parser.expect(p, keyword)
+        var type *ast.Expr = declaration_specifiers(p, true)
+        var name *ast.Expr = declarator(p, &type)
+        parser.expect(p, token.SEMICOLON)
+        var declref ast.Decl = {
+            type: ast.DECL_TYPEDEF,
             typedef_: {
                 name: name,
                 type: type,
             },
         }
-        var decl *ast$Decl = esc(declref)
-        parser$declare(p, p.pkg_scope, decl, ast$ObjKind_TYPE, name)
+        var decl *ast.Decl = esc(declref)
+        parser.declare(p, p.pkg_scope, decl, ast.ObjKind_TYPE, name)
         return decl
     }
-    var type *ast$Expr = declaration_specifiers(p, true)
-    var name *ast$Expr = declarator(p, &type)
-    var value *ast$Expr = NULL
-    if type.type == ast$TYPE_FUNC {
-        var decl ast$Decl = {
-            type: ast$DECL_FUNC,
+    var type *ast.Expr = declaration_specifiers(p, true)
+    var name *ast.Expr = declarator(p, &type)
+    var value *ast.Expr = NULL
+    if type.type == ast.TYPE_FUNC {
+        var decl ast.Decl = {
+            type: ast.DECL_FUNC,
             func: {
                 type: type,
                 name: name,
             },
         }
-        if is_external && p.tok == token$LBRACE {
+        if is_external && p.tok == token.LBRACE {
             decl.func.body = compound_statement(p, false)
         } else {
-            parser$expect(p, token$SEMICOLON)
+            parser.expect(p, token.SEMICOLON)
         }
         return esc(decl)
     }
-    if parser$accept(p, token$ASSIGN) {
+    if parser.accept(p, token.ASSIGN) {
         value = initializer(p)
     }
-    parser$expect(p, token$SEMICOLON)
+    parser.expect(p, token.SEMICOLON)
     if name != NULL {
-        var decl ast$Decl = {
-            type: ast$DECL_VALUE,
+        var decl ast.Decl = {
+            type: ast.DECL_VALUE,
             value: {
                 type: type,
                 name: name,
                 value: value,
-                kind: token$VAR,
+                kind: token.VAR,
             },
         }
         return esc(decl)
     } else {
         switch type.type {
-        case ast$TYPE_STRUCT:
+        case ast.TYPE_STRUCT:
             name = type.struct_.name
             break
         default:
             panic("FUCK: %d", type.type)
             break
         }
-        var decl ast$Decl = {
-            type: ast$DECL_TYPEDEF,
+        var decl ast.Decl = {
+            type: ast.DECL_TYPEDEF,
             typedef_: {
                 type: type,
                 name: name,
@@ -973,60 +973,60 @@ fun declaration(p *parser$Parser, is_external bool) *ast$Decl {
     }
 }
 
-fun parse_cfile(p *parser$Parser) *ast$File {
-    var decls utils$Slice = {
-        size: sizeof(*ast$Decl),
+fun parse_cfile(p *parser.Parser) *ast.File {
+    var decls utils.Slice = {
+        size: sizeof(*ast.Decl),
     }
-    var imports utils$Slice = {
-        size: sizeof(*ast$Decl),
+    var imports utils.Slice = {
+        size: sizeof(*ast.Decl),
     }
-    var name *ast$Expr = NULL
-    while p.tok == token$HASH {
-        var lit *ast$Decl = parser$parsePragma(p)
-        utils$Slice_append(&decls, &lit)
+    var name *ast.Expr = NULL
+    while p.tok == token.HASH {
+        var lit *ast.Decl = parser.parsePragma(p)
+        utils.Slice_append(&decls, &lit)
     }
-    if parser$accept(p, token$PACKAGE) {
-        parser$expect(p, token$LPAREN)
-        name = parser$parseIdent(p)
-        parser$expect(p, token$RPAREN)
-        parser$expect(p, token$SEMICOLON)
+    if parser.accept(p, token.PACKAGE) {
+        parser.expect(p, token.LPAREN)
+        name = parser.parseIdent(p)
+        parser.expect(p, token.RPAREN)
+        parser.expect(p, token.SEMICOLON)
     }
-    while p.tok == token$IMPORT {
-        parser$expect(p, token$IMPORT)
-        parser$expect(p, token$LPAREN)
-        var path *ast$Expr = parser$parseBasicLit(p, token$STRING)
-        parser$expect(p, token$RPAREN)
-        parser$expect(p, token$SEMICOLON)
-        var decl ast$Decl = {
-            type: ast$DECL_IMPORT,
+    while p.tok == token.IMPORT {
+        parser.expect(p, token.IMPORT)
+        parser.expect(p, token.LPAREN)
+        var path *ast.Expr = parser.parseBasicLit(p, token.STRING)
+        parser.expect(p, token.RPAREN)
+        parser.expect(p, token.SEMICOLON)
+        var decl ast.Decl = {
+            type: ast.DECL_IMPORT,
             imp: {
                 path: path,
             },
         }
-        var declp *ast$Decl = esc(decl)
-        utils$Slice_append(&imports, &declp)
+        var declp *ast.Decl = esc(decl)
+        utils.Slice_append(&imports, &declp)
     }
-    while p.tok != token$EOF {
-        var decl *ast$Decl = declaration(p, true)
-        utils$Slice_append(&decls, &decl)
+    while p.tok != token.EOF {
+        var decl *ast.Decl = declaration(p, true)
+        utils.Slice_append(&decls, &decl)
     }
-    var file ast$File = {
+    var file ast.File = {
         filename: p.file.name,
         name: name,
-        decls: utils$Slice_to_nil_array(decls),
-        imports: utils$Slice_to_nil_array(imports),
+        decls: utils.Slice_to_nil_array(decls),
+        imports: utils.Slice_to_nil_array(imports),
     }
     return esc(file)
 }
 
-fun parseFile(filename *const char, pkg_scope *ast$Scope) *ast$File {
-    var src *char = ioutil$readFile(filename, NULL)
-    var p parser$Parser = {
+fun parseFile(filename *const char, pkg_scope *ast.Scope) *ast.File {
+    var src *char = ioutil.readFile(filename, NULL)
+    var p parser.Parser = {
     }
-    parser$init(&p, filename, src)
+    parser.init(&p, filename, src)
     p.pkg_scope = pkg_scope
     p.c_mode = true
-    var file *ast$File = parse_cfile(&p)
+    var file *ast.File = parse_cfile(&p)
     file.scope = p.pkg_scope
     free(src)
     return file

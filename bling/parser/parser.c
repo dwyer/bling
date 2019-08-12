@@ -232,8 +232,6 @@ static ast$Expr *parse_postfix_expr(parser$Parser *p) {
                 x = esc(call);
             }
             break;
-        case token$ARROW:
-        case token$DOLLAR:
         case token$PERIOD:
             {
                 token$Token tok = p->tok;
@@ -1003,7 +1001,7 @@ static ast$Expr *parse_type_spec(parser$Parser *p) {
         break;
     case token$IDENT:
         x = parser$parseIdent(p);
-        if (parser$accept(p, token$DOLLAR)) {
+        if (parser$accept(p, token$PERIOD)) {
             ast$Expr y = {
                 .type = ast$EXPR_SELECTOR,
                 .pos = x->pos,

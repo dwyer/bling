@@ -31,7 +31,7 @@ fun base(path *const char) *char {
     if path == NULL || path[0] == '\0' {
         return strdup(".")
     }
-    var i int = bytes$lastIndexByte(path, '/')
+    var i int = bytes.lastIndexByte(path, '/')
     if i > 0 {
         path = &path[i + 1]
     }
@@ -46,7 +46,7 @@ fun dir(path *const char) *char {
     if path == NULL || path[0] == '\0' {
         return strdup(".")
     }
-    var i int = bytes$lastIndexByte(path, '/')
+    var i int = bytes.lastIndexByte(path, '/')
     if i > 0 {
         var p *char = strdup(path)
         p[i] = '\0'
@@ -67,7 +67,7 @@ fun isAbs(path *const char) bool {
 }
 
 fun join(elems **const char, n int) *char {
-    return bytes$join(elems, n, "/")
+    return bytes.join(elems, n, "/")
 }
 
 fun join2(a *const char, b *const char) *char {

@@ -5,8 +5,12 @@ extern char *emitter$Emitter_string(emitter$Emitter *e) {
     return bytes$Buffer_string(&e->buf);
 }
 
+static void emitter$emitBytes(emitter$Emitter *e, const char *s, int n) {
+    bytes$Buffer_write(&e->buf, s, n, NULL);
+}
+
 extern void emitter$emitString(emitter$Emitter *e, const char *s) {
-    bytes$Buffer_write(&e->buf, s, strlen(s), NULL);
+    emitter$emitBytes(e, s, strlen(s));
 }
 
 extern void emitter$emitSpace(emitter$Emitter *e) {
@@ -112,7 +116,14 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
                 && expr->ident.name[strlen(e->pkg)] == '$') {
             emitter$emitString(e, &expr->ident.name[strlen(e->pkg)+1]);
         } else {
-            emitter$emitString(e, expr->ident.name);
+            int i = bytes$indexByte(expr->ident.name, '$');
+            if (i >= 0) {
+                emitter$emitBytes(e, expr->ident.name, i);
+                emitter$emitToken(e, token$PERIOD);
+                emitter$emitString(e, &expr->ident.name[i+1]);
+            } else {
+                emitter$emitString(e, expr->ident.name);
+            }
         }
         break;
 
@@ -138,11 +149,7 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
 
     case ast$EXPR_SELECTOR:
         emitter$emitExpr(e, expr->selector.x);
-        if (expr->selector.tok == token$DOLLAR) {
-            emitter$emitToken(e, token$DOLLAR);
-        } else {
-            emitter$emitToken(e, token$PERIOD);
-        }
+        emitter$emitToken(e, token$PERIOD);
         emitter$emitExpr(e, expr->selector.sel);
         break;
 

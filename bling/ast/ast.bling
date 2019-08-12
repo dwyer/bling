@@ -85,7 +85,7 @@ typedef Object struct {
 
 typedef Decl struct Decl {
     type NodeType
-    pos token$Pos
+    pos token.Pos
     union {
         imp struct {
             name *Expr
@@ -103,7 +103,7 @@ typedef Decl struct Decl {
             name *Expr
             type *Expr
             value *Expr
-            kind token$Token
+            kind token.Token
         }
         func struct {
             name *Expr
@@ -119,7 +119,7 @@ typedef Decl struct Decl {
 
 typedef Expr struct Expr {
     type NodeType
-    pos token$Pos
+    pos token.Pos
     is_const bool
     union {
         array struct {
@@ -127,11 +127,11 @@ typedef Expr struct Expr {
             elt *Expr
         }
         basic_lit struct {
-            kind token$Token
+            kind token.Token
             value *char
         }
         binary struct {
-            op token$Token
+            op token.Token
             x *Expr
             y *Expr
         }
@@ -183,7 +183,7 @@ typedef Expr struct Expr {
         }
         selector struct {
             x *Expr
-            tok token$Token
+            tok token.Token
             sel *Expr
         }
         sizeof_ struct {
@@ -193,12 +193,12 @@ typedef Expr struct Expr {
             x *Expr
         }
         struct_ struct {
-            tok token$Token
+            tok token.Token
             name *Expr
             fields **Decl
         }
         unary struct {
-            op token$Token
+            op token.Token
             x *Expr
         }
     }
@@ -206,11 +206,11 @@ typedef Expr struct Expr {
 
 typedef Stmt struct Stmt {
     type NodeType
-    pos token$Pos
+    pos token.Pos
     union {
         assign struct {
             x *Expr
-            op token$Token
+            op token.Token
             y *Expr
         }
         block struct {
@@ -225,7 +225,7 @@ typedef Stmt struct Stmt {
             x *Expr
         }
         iter struct {
-            kind token$Token
+            kind token.Token
             init *Stmt
             cond *Expr
             post *Stmt
@@ -237,7 +237,7 @@ typedef Stmt struct Stmt {
             else_ *Stmt
         }
         jump struct {
-            keyword token$Token
+            keyword token.Token
             label *Expr
         }
         label struct {
@@ -246,7 +246,7 @@ typedef Stmt struct Stmt {
         }
         postfix struct {
             x *Expr
-            op token$Token
+            op token.Token
         }
         return_ struct {
             x *Expr
@@ -262,7 +262,7 @@ fun newObject(kind ObjKind, name *char) *Object
 
 typedef Scope struct Scope {
     outer *Scope
-    objects utils$Map
+    objects utils.Map
     pkg *char
 }
 
@@ -325,41 +325,41 @@ fun newObject(kind ObjKind, name *char) *Object {
 fun Scope_new(outer *Scope) *Scope {
     var s Scope = {
         outer: outer,
-        objects: utils$Map_init(sizeof(*Object)),
+        objects: utils.Map_init(sizeof(*Object)),
     }
     return esc(s)
 }
 
 fun Scope_deinit(s *Scope) {
-    utils$Map_deinit(&s.objects)
+    utils.Map_deinit(&s.objects)
 }
 
 fun Scope_insert(s *Scope, obj *Object) *Object {
     var alt *Object = NULL
-    utils$Map_get(&s.objects, obj.name, &alt)
+    utils.Map_get(&s.objects, obj.name, &alt)
     if alt == NULL {
-        utils$Map_set(&s.objects, obj.name, &obj)
+        utils.Map_set(&s.objects, obj.name, &obj)
     }
     return alt
 }
 
 fun Scope_lookup(s *Scope, name *char) *Object {
     var obj *Object = NULL
-    utils$Map_get(&s.objects, name, &obj)
+    utils.Map_get(&s.objects, name, &obj)
     return obj
 }
 
 fun Scope_print(s *Scope) {
-    var buf bytes$Buffer = {
+    var buf bytes.Buffer = {
     }
     while s {
-        var iter utils$MapIter = utils$NewMapIter(&s.objects)
+        var iter utils.MapIter = utils.NewMapIter(&s.objects)
         var key *char = NULL
-        while utils$MapIter_next(&iter, &key, NULL) {
-            print("%s- %s", bytes$Buffer_string(&buf), key)
+        while utils.MapIter_next(&iter, &key, NULL) {
+            print("%s- %s", bytes.Buffer_string(&buf), key)
         }
         s = s.outer
-        bytes$Buffer_writeByte(&buf, '\t', NULL)
+        bytes.Buffer_writeByte(&buf, '\t', NULL)
     }
 }
 
@@ -397,7 +397,7 @@ fun Scope_resolve(s *Scope, x *Expr) {
 }
 
 fun Scope_free(s *Scope) {
-    utils$Map_deinit(&s.objects)
+    utils.Map_deinit(&s.objects)
     free(s)
 }
 

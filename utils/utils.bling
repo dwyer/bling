@@ -108,14 +108,14 @@ fun Error_move(src *Error, dst **Error) {
 }
 
 fun Error_check(e **Error) {
-    if sys$errno() {
-        var err *Error = NewError(sys$errnoString())
+    if sys.errno() {
+        var err *Error = NewError(sys.errnoString())
         Error_move(err, e)
     }
 }
 
 fun clearError() {
-    sys$errnoReset()
+    sys.errnoReset()
 }
 
 fun Error_free(e *Error) {

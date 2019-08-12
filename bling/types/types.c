@@ -813,6 +813,7 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
                 w->pkg.scope = decl->imp.scope;
                 type = check_expr(w, expr->selector.sel);
                 w->pkg.scope = oldScope;
+                expr->selector.tok = token$DOLLAR;
                 return type;
             }
             if (type->type == ast$EXPR_STAR) {

@@ -13,7 +13,7 @@ fun join(a []*const char, size int, sep *const char) *char
 
 fun lastIndexByte(b *const char, c char) int
 
-typedef Buffer utils$Slice
+typedef Buffer utils.Slice
 
 fun Buffer_bytes(b *Buffer) *char
 
@@ -21,9 +21,9 @@ fun Buffer_len(b *Buffer) int
 
 fun Buffer_string(b *Buffer) *char
 
-fun Buffer_write(b *Buffer, p *const char, size int, error **utils$Error) int
+fun Buffer_write(b *Buffer, p *const char, size int, error **utils.Error) int
 
-fun Buffer_writeByte(b *Buffer, p char, error **utils$Error)
+fun Buffer_writeByte(b *Buffer, p char, error **utils.Error)
 
 #include "bytes/bytes.h"
 
@@ -79,7 +79,7 @@ fun Buffer_init(b *Buffer) {
 }
 
 fun Buffer_len(b *Buffer) int {
-    return utils$Slice_len(b)
+    return utils.Slice_len(b)
 }
 
 fun Buffer_bytes(b *Buffer) *char {
@@ -95,18 +95,18 @@ fun Buffer_string(b *Buffer) *char {
     return s
 }
 
-fun Buffer_write(b *Buffer, p *const char, size int, error **utils$Error) int {
+fun Buffer_write(b *Buffer, p *const char, size int, error **utils.Error) int {
     Buffer_init(b)
     if size < 0 {
         size = strlen(p)
     }
     for var i int = 0; i < size; i++ {
-        utils$Slice_append(b, &p[i])
+        utils.Slice_append(b, &p[i])
     }
     return size
 }
 
-fun Buffer_writeByte(b *Buffer, p char, error **utils$Error) {
+fun Buffer_writeByte(b *Buffer, p char, error **utils.Error) {
     Buffer_init(b)
-    utils$Slice_append(b, &p)
+    utils.Slice_append(b, &p)
 }
