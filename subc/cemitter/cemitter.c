@@ -120,8 +120,10 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_SELECTOR:
-        cemitter$emitExpr(e, expr->selector.x);
-        emitter$emitToken(e, expr->selector.tok);
+        if (expr->selector.tok != token$DOLLAR) {
+            cemitter$emitExpr(e, expr->selector.x);
+            emitter$emitToken(e, expr->selector.tok);
+        }
         cemitter$emitExpr(e, expr->selector.sel);
         break;
 
@@ -443,6 +445,10 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
 
     case ast$EXPR_IDENT:
         cemitter$emitExpr(e, type);
+        break;
+
+    case ast$EXPR_SELECTOR:
+        cemitter$emitExpr(e, type->selector.sel);
         break;
 
     default:

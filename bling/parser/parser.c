@@ -114,7 +114,7 @@ extern token$Pos parser$expect(parser$Parser *p, token$Token tok) {
     return pos;
 }
 
-extern ast$Expr *parser$_parseIdent(parser$Parser *p) {
+extern ast$Expr *parser$parseIdent(parser$Parser *p) {
     ast$Expr x = {
         .type = ast$EXPR_IDENT,
         .pos = p->pos,
@@ -125,16 +125,6 @@ extern ast$Expr *parser$_parseIdent(parser$Parser *p) {
     }
     parser$expect(p, token$IDENT);
     return esc(x);
-}
-
-extern ast$Expr *parser$parseIdent(parser$Parser *p) {
-    ast$Expr *x = parser$_parseIdent(p);
-    if (parser$accept(p, token$DOLLAR)) {
-        ast$Expr *y = parser$_parseIdent(p);
-        y->ident.pkg = x;
-        x = y;
-    }
-    return x;
 }
 
 extern ast$Expr *parser$parseBasicLit(parser$Parser *p, token$Token kind) {
@@ -243,6 +233,7 @@ static ast$Expr *parse_postfix_expr(parser$Parser *p) {
             }
             break;
         case token$ARROW:
+        case token$DOLLAR:
         case token$PERIOD:
             {
                 token$Token tok = p->tok;
@@ -1012,6 +1003,18 @@ static ast$Expr *parse_type_spec(parser$Parser *p) {
         break;
     case token$IDENT:
         x = parser$parseIdent(p);
+        if (parser$accept(p, token$DOLLAR)) {
+            ast$Expr y = {
+                .type = ast$EXPR_SELECTOR,
+                .pos = x->pos,
+                .selector = {
+                    .x = x,
+                    .tok = token$DOLLAR,
+                    .sel = parser$parseIdent(p),
+                },
+            };
+            x = esc(y);
+        }
         break;
     case token$MUL:
         x = parse_pointer(p);

@@ -166,7 +166,11 @@ fun emitExpr(e *Emitter, expr *ast$Expr) {
         break
     case ast$EXPR_SELECTOR:
         emitExpr(e, expr.selector.x)
-        emitToken(e, token$PERIOD)
+        if expr.selector.tok == token$DOLLAR {
+            emitToken(e, token$DOLLAR)
+        } else {
+            emitToken(e, token$PERIOD)
+        }
         emitExpr(e, expr.selector.sel)
         break
     case ast$EXPR_SIZEOF:
@@ -343,6 +347,9 @@ fun emitType(e *Emitter, type *ast$Expr) {
         emitSpace(e)
     }
     switch type.type {
+    case ast$EXPR_IDENT, ast$EXPR_SELECTOR:
+        emitExpr(e, type)
+        break
     case ast$TYPE_ARRAY:
         emitToken(e, token$LBRACK)
         if type.array.len {
@@ -439,9 +446,6 @@ fun emitType(e *Emitter, type *ast$Expr) {
             emitTabs(e)
             emitToken(e, token$RBRACE)
         }
-        break
-    case ast$EXPR_IDENT:
-        emitExpr(e, type)
         break
     default:
         panic("Unknown type: %d", type.type)

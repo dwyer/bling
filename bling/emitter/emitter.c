@@ -138,7 +138,11 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
 
     case ast$EXPR_SELECTOR:
         emitter$emitExpr(e, expr->selector.x);
-        emitter$emitToken(e, token$PERIOD);
+        if (expr->selector.tok == token$DOLLAR) {
+            emitter$emitToken(e, token$DOLLAR);
+        } else {
+            emitter$emitToken(e, token$PERIOD);
+        }
         emitter$emitExpr(e, expr->selector.sel);
         break;
 
@@ -333,6 +337,11 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         emitter$emitSpace(e);
     }
     switch (type->type) {
+    case ast$EXPR_IDENT:
+    case ast$EXPR_SELECTOR:
+        emitter$emitExpr(e, type);
+        break;
+
     case ast$TYPE_ARRAY:
         emitter$emitToken(e, token$LBRACK);
         if (type->array.len) {
@@ -434,10 +443,6 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
             emitter$emitTabs(e);
             emitter$emitToken(e, token$RBRACE);
         }
-        break;
-
-    case ast$EXPR_IDENT:
-        emitter$emitExpr(e, type);
         break;
 
     default:

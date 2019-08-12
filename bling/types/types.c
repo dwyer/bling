@@ -109,6 +109,9 @@ static ast$Expr *types$getBaseType(ast$Expr *type) {
         case ast$EXPR_IDENT:
             type = lookup_typedef(type);
             break;
+        case ast$EXPR_SELECTOR:
+            type = type->selector.sel;
+            break;
         case ast$TYPE_ARRAY:
         case ast$TYPE_ENUM:
         case ast$TYPE_NATIVE:
@@ -154,6 +157,12 @@ static bool types$areIdentical(ast$Expr *a, ast$Expr *b) {
     }
     assert(a);
     assert(b);
+    if (a->type == ast$EXPR_SELECTOR) {
+        a = a->selector.sel;
+    }
+    if (b->type == ast$EXPR_SELECTOR) {
+        b = b->selector.sel;
+    }
     if (a->type != b->type) {
         return false;
     }
@@ -409,6 +418,19 @@ static void check_type(checker_t *w, ast$Expr *expr) {
         ast$Scope_resolve(w->pkg.scope, expr);
         break;
 
+    case ast$EXPR_SELECTOR:
+        {
+            ast$Expr *type = check_expr(w, expr->selector.x);
+            assert(type == NULL);
+            assert(ast$isIdent(expr->selector.x));
+            assert(expr->selector.x->ident.obj->kind == ast$ObjKind_PKG);
+            ast$Scope *oldScope = w->pkg.scope;
+            w->pkg.scope = expr->selector.x->ident.obj->decl->imp.scope;
+            check_type(w, expr->selector.sel);
+            w->pkg.scope = oldScope;
+        }
+        break;
+
     case ast$TYPE_ARRAY:
         check_type(w, expr->array.elt);
         if (expr->array.len) {
@@ -489,12 +511,14 @@ static ast$Expr *get_decl_type(ast$Decl *decl) {
         return decl->field.type;
     case ast$DECL_FUNC:
         return decl->func.type;
+    case ast$DECL_IMPORT:
+        return NULL;
     case ast$DECL_TYPEDEF:
         return decl->typedef_.type;
     case ast$DECL_VALUE:
         return decl->value.type;
     default:
-        panic("unhandled decl: %d", decl->type);
+        panic("unhandled decl: %s", types$declString(decl));
         return NULL;
     }
 }
@@ -780,6 +804,17 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
     case ast$EXPR_SELECTOR:
         {
             ast$Expr *type = check_expr(w, expr->selector.x);
+            if (type == NULL) {
+                ast$Expr *x = expr->selector.x;
+                assert(x->type == ast$EXPR_IDENT);
+                ast$Decl *decl = x->ident.obj->decl;
+                assert(decl->type == ast$DECL_IMPORT);
+                ast$Scope *oldScope = w->pkg.scope;
+                w->pkg.scope = decl->imp.scope;
+                type = check_expr(w, expr->selector.sel);
+                w->pkg.scope = oldScope;
+                return type;
+            }
             if (type->type == ast$EXPR_STAR) {
                 expr->selector.tok = token$ARROW;
                 type = type->star.x;
@@ -838,8 +873,8 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
 
     default:
         panic("check_expr: unknown expr: %s", types$exprString(expr));
+        return NULL;
     }
-    return NULL;
 }
 
 static void check_decl(checker_t *w, ast$Decl *decl);
@@ -859,9 +894,9 @@ static void check_stmt(checker_t *w, ast$Stmt *stmt) {
             }
             ast$Expr *b = check_expr(w, stmt->assign.y);
             if (!types$areAssignable(a, b)) {
-                panic("check_stmt: not assignment `%s` and `%s`: %s",
-                        types$exprString(stmt->assign.x),
-                        types$exprString(stmt->assign.y),
+                panic("check_stmt: not assignable: `%s` and `%s`: %s",
+                        types$typeString(a),
+                        types$typeString(b),
                         types$stmtString(stmt));
             }
         }

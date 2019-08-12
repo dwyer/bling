@@ -203,6 +203,9 @@ fun getBaseType(type *ast$Expr) *ast$Expr {
         case ast$EXPR_IDENT:
             type = lookup_typedef(type)
             break
+        case ast$EXPR_SELECTOR:
+            type = type.selector.sel
+            break
         case ast$TYPE_ARRAY, ast$TYPE_ENUM, ast$TYPE_NATIVE, ast$TYPE_STRUCT:
             return type
         default:
@@ -244,6 +247,12 @@ fun areIdentical(a *ast$Expr, b *ast$Expr) bool {
     }
     assert(a)
     assert(b)
+    if a.type == ast$EXPR_SELECTOR {
+        a = a.selector.sel
+    }
+    if b.type == ast$EXPR_SELECTOR {
+        b = b.selector.sel
+    }
     if a.type != b.type {
         return false
     }
@@ -490,6 +499,18 @@ fun check_type(w *checker_t, expr *ast$Expr) {
     case ast$EXPR_IDENT:
         ast$Scope_resolve(w.pkg.scope, expr)
         break
+    case ast$EXPR_SELECTOR:
+        {
+            var type *ast$Expr = check_expr(w, expr.selector.x)
+            assert(type == NULL)
+            assert(ast$isIdent(expr.selector.x))
+            assert(expr.selector.x.ident.obj.kind == ast$ObjKind_PKG)
+            var oldScope *ast$Scope = w.pkg.scope
+            w.pkg.scope = expr.selector.x.ident.obj.decl.imp.scope
+            check_type(w, expr.selector.sel)
+            w.pkg.scope = oldScope
+        }
+        break
     case ast$TYPE_ARRAY:
         check_type(w, expr.array.elt)
         if expr.array.len {
@@ -564,12 +585,14 @@ fun get_decl_type(decl *ast$Decl) *ast$Expr {
         return decl.field.type
     case ast$DECL_FUNC:
         return decl.func.type
+    case ast$DECL_IMPORT:
+        return NULL
     case ast$DECL_TYPEDEF:
         return decl.typedef_.type
     case ast$DECL_VALUE:
         return decl.value.type
     default:
-        panic("unhandled decl: %d", decl.type)
+        panic("unhandled decl: %s", declString(decl))
         return NULL
     }
 }
@@ -817,6 +840,17 @@ fun check_expr(w *checker_t, expr *ast$Expr) *ast$Expr {
     case ast$EXPR_SELECTOR:
         {
             var type *ast$Expr = check_expr(w, expr.selector.x)
+            if type == NULL {
+                var x *ast$Expr = expr.selector.x
+                assert(x.type == ast$EXPR_IDENT)
+                var decl *ast$Decl = x.ident.obj.decl
+                assert(decl.type == ast$DECL_IMPORT)
+                var oldScope *ast$Scope = w.pkg.scope
+                w.pkg.scope = decl.imp.scope
+                type = check_expr(w, expr.selector.sel)
+                w.pkg.scope = oldScope
+                return type
+            }
             if type.type == ast$EXPR_STAR {
                 expr.selector.tok = token$ARROW
                 type = type.star.x
@@ -864,8 +898,8 @@ fun check_expr(w *checker_t, expr *ast$Expr) *ast$Expr {
         }
     default:
         panic("check_expr: unknown expr: %s", exprString(expr))
+        return NULL
     }
-    return NULL
 }
 
 fun check_decl(w *checker_t, decl *ast$Decl)
@@ -883,7 +917,7 @@ fun check_stmt(w *checker_t, stmt *ast$Stmt) {
             }
             var b *ast$Expr = check_expr(w, stmt.assign.y)
             if !areAssignable(a, b) {
-                panic("check_stmt: not assignment `%s` and `%s`: %s", exprString(stmt.assign.x), exprString(stmt.assign.y), stmtString(stmt))
+                panic("check_stmt: not assignable: `%s` and `%s`: %s", typeString(a), typeString(b), stmtString(stmt))
             }
         }
         break

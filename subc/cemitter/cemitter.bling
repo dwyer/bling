@@ -123,8 +123,10 @@ fun emitExpr(e *emitter$Emitter, expr *ast$Expr) {
         emitter$emitToken(e, token$RPAREN)
         break
     case ast$EXPR_SELECTOR:
-        emitExpr(e, expr.selector.x)
-        emitter$emitToken(e, expr.selector.tok)
+        if expr.selector.tok != token$DOLLAR {
+            emitExpr(e, expr.selector.x)
+            emitter$emitToken(e, expr.selector.tok)
+        }
         emitExpr(e, expr.selector.sel)
         break
     case ast$EXPR_SIZEOF:
@@ -422,6 +424,9 @@ fun emitType(e *emitter$Emitter, type *ast$Expr, name *ast$Expr) {
         break
     case ast$EXPR_IDENT:
         emitExpr(e, type)
+        break
+    case ast$EXPR_SELECTOR:
+        emitExpr(e, type.selector.sel)
         break
     default:
         panic("Unknown type: %d", type.type)

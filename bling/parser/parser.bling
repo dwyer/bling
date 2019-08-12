@@ -181,7 +181,7 @@ fun expect(p *Parser, tok token$Token) token$Pos {
     return pos
 }
 
-fun _parseIdent(p *Parser) *ast$Expr {
+fun parseIdent(p *Parser) *ast$Expr {
     var x ast$Expr = {
         type: ast$EXPR_IDENT,
         pos: p.pos,
@@ -192,16 +192,6 @@ fun _parseIdent(p *Parser) *ast$Expr {
     }
     expect(p, token$IDENT)
     return esc(x)
-}
-
-fun parseIdent(p *Parser) *ast$Expr {
-    var x *ast$Expr = _parseIdent(p)
-    if accept(p, token$DOLLAR) {
-        var y *ast$Expr = _parseIdent(p)
-        y.ident.pkg = x
-        x = y
-    }
-    return x
 }
 
 fun parseBasicLit(p *Parser, kind token$Token) *ast$Expr {
@@ -291,7 +281,7 @@ fun parse_postfix_expr(p *Parser) *ast$Expr {
                 x = esc(call)
             }
             break
-        case token$ARROW, token$PERIOD:
+        case token$ARROW, token$DOLLAR, token$PERIOD:
             {
                 var tok token$Token = p.tok
                 next(p)
@@ -963,6 +953,18 @@ fun parse_type_spec(p *Parser) *ast$Expr {
         break
     case token$IDENT:
         x = parseIdent(p)
+        if accept(p, token$DOLLAR) {
+            var y ast$Expr = {
+                type: ast$EXPR_SELECTOR,
+                pos: x.pos,
+                selector: {
+                    x: x,
+                    tok: token$DOLLAR,
+                    sel: parseIdent(p),
+                },
+            }
+            x = esc(y)
+        }
         break
     case token$MUL:
         x = parse_pointer(p)
