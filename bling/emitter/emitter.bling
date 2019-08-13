@@ -102,7 +102,7 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
     case ast.EXPR_CALL:
         emitExpr(e, expr.call.func)
         emitToken(e, token.LPAREN)
-        for var args **ast.Expr = expr.call.args; args && *args;  {
+        for var args **ast.Expr = expr.call.args; args && *args; {
             emitExpr(e, *args)
             args++
             if *args {
@@ -284,15 +284,15 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
                 emitStmt(e, stmt.iter.init)
             }
             emitToken(e, token.SEMICOLON)
-            emitSpace(e)
         }
         if stmt.iter.cond {
+            emitSpace(e)
             emitExpr(e, stmt.iter.cond)
         }
         if stmt.iter.kind == token.FOR {
             emitToken(e, token.SEMICOLON)
-            emitSpace(e)
             if stmt.iter.post {
+                emitSpace(e)
                 e.skipSemi = true
                 emitStmt(e, stmt.iter.post)
                 e.skipSemi = false
@@ -369,7 +369,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
         break
     case ast.TYPE_FUNC:
         emitToken(e, token.LPAREN)
-        for var params **ast.Decl = type.func.params; params && *params;  {
+        for var params **ast.Decl = type.func.params; params && *params; {
             emitDecl(e, *params)
             params++
             if *params != NULL {
@@ -417,7 +417,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
         if type.type == ast.TYPE_FUNC {
             emitToken(e, token.FUNC)
             emitToken(e, token.LPAREN)
-            for var params **ast.Decl = type.func.params; params && *params;  {
+            for var params **ast.Decl = type.func.params; params && *params; {
                 emitDecl(e, *params)
                 params++
                 if *params != NULL {

@@ -42,7 +42,7 @@ fun emit_rawfile(e *emitter.Emitter, filename *const char) {
 
 fun compile_c(argv []*char) {
     var dst *const char = NULL
-    while **argv == '-' {
+    while  **argv == '-' {
         if streq(*argv, "-o") {
             argv++
             dst = *argv
@@ -52,7 +52,7 @@ fun compile_c(argv []*char) {
         argv++
     }
     var e emitter.Emitter = {}
-    while *argv {
+    while  *argv {
         var filename *char = *argv
         var file *ast.File = cparser.parseFile(filename, types.universe())
         emitter.emitFile(&e, file)
@@ -85,7 +85,7 @@ fun compile_bling(argv []*char) {
         strict: true,
     }
     var dst *char = NULL
-    while **argv == '-' {
+    while  **argv == '-' {
         if streq(*argv, "-o") {
             argv++
             dst = *argv
@@ -102,7 +102,7 @@ fun compile_bling(argv []*char) {
     if !emit_as_bling {
         emit_rawfile(&e, "bootstrap/bootstrap.h")
     }
-    while *argv {
+    while  *argv {
         var filename *char = *argv
         var file *ast.File = NULL
         if bytes.hasSuffix(filename, ".bling") {

@@ -37,7 +37,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     case ast.EXPR_CALL:
         emitExpr(e, expr.call.func)
         emitter.emitToken(e, token.LPAREN)
-        for var args **ast.Expr = expr.call.args; args && *args;  {
+        for var args **ast.Expr = expr.call.args; args && *args; {
             emitExpr(e, *args)
             args++
             if *args {
@@ -334,7 +334,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitExpr(e, name)
         }
         emitter.emitToken(e, token.LPAREN)
-        for var params **ast.Decl = type.func.params; params && *params;  {
+        for var params **ast.Decl = type.func.params; params && *params; {
             emitDecl(e, *params)
             params++
             if *params != NULL {
@@ -385,7 +385,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             }
             emitter.emitToken(e, token.RPAREN)
             emitter.emitToken(e, token.LPAREN)
-            for var params **ast.Decl = type.func.params; params && *params;  {
+            for var params **ast.Decl = type.func.params; params && *params; {
                 emitDecl(e, *params)
                 params++
                 if *params != NULL {

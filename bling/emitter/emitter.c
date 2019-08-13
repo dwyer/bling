@@ -268,15 +268,15 @@ extern void emitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
                 emitter$emitStmt(e, stmt->iter.init);
             }
             emitter$emitToken(e, token$SEMICOLON);
-            emitter$emitSpace(e);
         }
         if (stmt->iter.cond) {
+            emitter$emitSpace(e);
             emitter$emitExpr(e, stmt->iter.cond);
         }
         if (stmt->iter.kind == token$FOR) {
             emitter$emitToken(e, token$SEMICOLON);
-            emitter$emitSpace(e);
             if (stmt->iter.post) {
+                emitter$emitSpace(e);
                 e->skipSemi = true;
                 emitter$emitStmt(e, stmt->iter.post);
                 e->skipSemi = false;

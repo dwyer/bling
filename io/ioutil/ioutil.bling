@@ -27,7 +27,7 @@ fun readAll(file *os.File, error **utils.Error) *char {
         goto end
     }
     var b bytes.Buffer = {}
-    for ; ;  {
+    for ;; {
         var buf [bufsiz]char
         var n int = os.read(file, buf, bufsiz, &err)
         if err != NULL {
