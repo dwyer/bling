@@ -123,8 +123,7 @@ fun parse_field(p *Parser, anon bool) *ast.Decl
 
 fun error(p *Parser, pos token.Pos, msg *char) {
     var position token.Position = token.File_position(p.file, pos)
-    var buf bytes.Buffer = {
-    }
+    var buf bytes.Buffer = {}
     var i int = 0
     utils.Slice_get(&p.file.lines, position.line - 1, &i)
     var ch int = p.scanner.src[i]
@@ -137,8 +136,7 @@ fun error(p *Parser, pos token.Pos, msg *char) {
 }
 
 fun errorExpected(p *Parser, pos token.Pos, msg *char) {
-    var buf bytes.Buffer = {
-    }
+    var buf bytes.Buffer = {}
     bytes.Buffer_write(&buf, "expected ", -1, NULL)
     bytes.Buffer_write(&buf, msg, -1, NULL)
     if pos == p.pos {
@@ -1161,8 +1159,7 @@ fun parse_file(filename *const char) *ast.File {
     if err {
         panic("%s: %s", filename, err.error)
     }
-    var p Parser = {
-    }
+    var p Parser = {}
     init(&p, filename, src)
     var file *ast.File = _parse_file(&p)
     free(src)

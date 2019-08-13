@@ -218,8 +218,7 @@ fun string(tok Token) *char {
     return tokens[tok]
 }
 
-var keywords utils.Map = {
-}
+var keywords utils.Map = {}
 
 fun lookup(ident *char) Token {
     if keywords.val_size == 0 {

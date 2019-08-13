@@ -426,8 +426,7 @@ fun Scope_lookup(s *Scope, name *char) *Object {
 }
 
 fun Scope_print(s *Scope) {
-    var buf bytes.Buffer = {
-    }
+    var buf bytes.Buffer = {}
     while s {
         var iter utils.MapIter = utils.NewMapIter(&s.objects)
         var key *char = NULL

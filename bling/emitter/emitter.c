@@ -85,16 +85,18 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
 
     case ast$EXPR_COMPOUND:
         emitter$emitToken(e, token$LBRACE);
-        emitter$emitNewline(e);
-        e->indent++;
-        for (ast$Expr **exprs = expr->compound.list; exprs && *exprs; exprs++) {
-            emitter$emitTabs(e);
-            emitter$emitExpr(e, *exprs);
-            emitter$emitToken(e, token$COMMA);
+        if (expr->compound.list && *expr->compound.list) {
             emitter$emitNewline(e);
+            e->indent++;
+            for (ast$Expr **exprs = expr->compound.list; *exprs; exprs++) {
+                emitter$emitTabs(e);
+                emitter$emitExpr(e, *exprs);
+                emitter$emitToken(e, token$COMMA);
+                emitter$emitNewline(e);
+            }
+            e->indent--;
+            emitter$emitTabs(e);
         }
-        e->indent--;
-        emitter$emitTabs(e);
         emitter$emitToken(e, token$RBRACE);
         break;
 
