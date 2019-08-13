@@ -174,7 +174,7 @@ fun _set_len(s *Slice, len int) {
         cap = 1
         grow = true
     }
-    while  cap < len {
+    while cap < len {
         cap *= 2
         grow = true
     }
@@ -229,7 +229,7 @@ var Map_iters int = 0
 fun djb2(s *const char) uintptr_t {
     var hash uintptr_t = 5381
     var ch int = *s
-    while  ch {
+    while ch {
         hash = ((hash << 5) + hash) + ch
         s++
         ch = *s
@@ -340,7 +340,7 @@ fun NewMapIter(m *const Map) MapIter {
 }
 
 fun MapIter_next(m *MapIter, key **char, val *void) int {
-    while  m._idx < Slice_len(&m._map.pairs) {
+    while m._idx < Slice_len(&m._map.pairs) {
         var p *pair_t = <*pair_t> Slice_ref(&m._map.pairs, m._idx)
         m._idx++
         if p.key {

@@ -101,7 +101,7 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
                     size: sizeof(*ast.Expr),
                 }
                 parser.expect(p, token.LPAREN)
-                while  p.tok != token.RPAREN {
+                while p.tok != token.RPAREN {
                     var x *ast.Expr = expression(p)
                     utils.Slice_append(&args, &x)
                     if !parser.accept(p, token.COMMA) {
@@ -434,7 +434,7 @@ fun type_qualifier(p *parser.Parser, type *ast.Expr) *ast.Expr {
 }
 
 fun pointer(p *parser.Parser, type *ast.Expr) *ast.Expr {
-    while  parser.accept(p, token.MUL) {
+    while parser.accept(p, token.MUL) {
         var x ast.Expr = {
             type: ast.EXPR_STAR,
             star: {
@@ -451,7 +451,7 @@ fun parameter_type_list(p *parser.Parser) **ast.Decl {
     var params utils.Slice = {
         size: sizeof(*ast.Decl),
     }
-    while  p.tok != token.RPAREN {
+    while p.tok != token.RPAREN {
         var param *ast.Decl = parameter_declaration(p)
         utils.Slice_append(&params, &param)
         if !parser.accept(p, token.COMMA) {
@@ -543,7 +543,7 @@ fun initializer(p *parser.Parser) *ast.Expr {
     var list utils.Slice = {
         size: sizeof(*ast.Expr),
     }
-    while  p.tok != token.RBRACE && p.tok != token.EOF {
+    while p.tok != token.RBRACE && p.tok != token.EOF {
         var key *ast.Expr = NULL
         var isArray bool = false
         if parser.accept(p, token.PERIOD) {
@@ -720,11 +720,11 @@ fun statement(p *parser.Parser) *ast.Stmt {
         var clauses utils.Slice = {
             size: sizeof(*ast.Stmt),
         }
-        while  p.tok == token.CASE || p.tok == token.DEFAULT {
+        while p.tok == token.CASE || p.tok == token.DEFAULT {
             var exprs utils.Slice = {
                 size: sizeof(*ast.Expr),
             }
-            while  parser.accept(p, token.CASE) {
+            while parser.accept(p, token.CASE) {
                 var expr *ast.Expr = constant_expression(p)
                 parser.expect(p, token.COLON)
                 utils.Slice_append(&exprs, &expr)
@@ -737,7 +737,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 size: sizeof(*ast.Stmt),
             }
             var loop bool = true
-            while  loop {
+            while loop {
                 switch p.tok {
                 case token.CASE, token.DEFAULT, token.RBRACE:
                     loop = false
@@ -832,7 +832,7 @@ fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt {
         utils.Slice_append(&stmts, &stmt)
     } else {
         parser.expect(p, token.LBRACE)
-        while  p.tok != token.RBRACE {
+        while p.tok != token.RBRACE {
             var stmt *ast.Stmt = statement(p)
             utils.Slice_append(&stmts, &stmt)
         }
@@ -983,7 +983,7 @@ fun parse_cfile(p *parser.Parser) *ast.File {
         size: sizeof(*ast.Decl),
     }
     var name *ast.Expr = NULL
-    while  p.tok == token.HASH {
+    while p.tok == token.HASH {
         var lit *ast.Decl = parser.parsePragma(p)
         utils.Slice_append(&decls, &lit)
     }
@@ -993,7 +993,7 @@ fun parse_cfile(p *parser.Parser) *ast.File {
         parser.expect(p, token.RPAREN)
         parser.expect(p, token.SEMICOLON)
     }
-    while  p.tok == token.IMPORT {
+    while p.tok == token.IMPORT {
         parser.expect(p, token.IMPORT)
         parser.expect(p, token.LPAREN)
         var path *ast.Expr = parser.parseBasicLit(p, token.STRING)
@@ -1008,7 +1008,7 @@ fun parse_cfile(p *parser.Parser) *ast.File {
         var declp *ast.Decl = esc(decl)
         utils.Slice_append(&imports, &declp)
     }
-    while  p.tok != token.EOF {
+    while p.tok != token.EOF {
         var decl *ast.Decl = declaration(p, true)
         utils.Slice_append(&decls, &decl)
     }

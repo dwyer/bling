@@ -31,13 +31,13 @@ fun next0(s *Scanner) {
 }
 
 fun skip_whitespace(s *Scanner) {
-    while  s.ch == ' ' || (s.ch == '\n' && !s.insertSemi) || s.ch == '\t' {
+    while s.ch == ' ' || (s.ch == '\n' && !s.insertSemi) || s.ch == '\t' {
         next0(s)
     }
 }
 
 fun skip_line(s *Scanner) {
-    while  s.ch >= 0 && s.ch != '\n' {
+    while s.ch >= 0 && s.ch != '\n' {
         next0(s)
     }
 }
@@ -83,7 +83,7 @@ fun make_string_slice(s *Scanner, start int, end int) *char {
 
 fun scan_ident(s *Scanner) *char {
     var offs int = s.offset
-    while  is_letter(s.ch) || is_digit(s.ch) || (s.dontInsertSemis && s.ch == '$') {
+    while is_letter(s.ch) || is_digit(s.ch) || (s.dontInsertSemis && s.ch == '$') {
         next0(s)
     }
     return make_string_slice(s, offs, s.offset)
@@ -91,7 +91,7 @@ fun scan_ident(s *Scanner) *char {
 
 fun scan_pragma(s *Scanner) *char {
     var offs int = s.offset
-    while  s.ch > 0 && s.ch != '\n' {
+    while s.ch > 0 && s.ch != '\n' {
         next0(s)
     }
     return make_string_slice(s, offs, s.offset)
@@ -100,7 +100,7 @@ fun scan_pragma(s *Scanner) *char {
 fun scan_number(s *Scanner, tokp *token.Token) *char {
     var offs int = s.offset
     var is_float bool = false
-    while  is_digit(s.ch) || s.ch == '.' {
+    while is_digit(s.ch) || s.ch == '.' {
         if s.ch == '.' {
             if !is_float {
                 is_float = true
@@ -161,7 +161,7 @@ fun scan_comment(s *Scanner) {
         break
     case '*':
         next0(s)
-        while  s.ch >= 0 {
+        while s.ch >= 0 {
             var ch int = s.ch
             next0(s)
             if ch == '*' && s.ch == '/' {

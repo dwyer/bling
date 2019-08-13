@@ -262,8 +262,8 @@ extern void emitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
 
     case ast$STMT_ITER:
         emitter$emitToken(e, stmt->iter.kind);
-        emitter$emitSpace(e);
         if (stmt->iter.kind == token$FOR) {
+            emitter$emitSpace(e);
             if (stmt->iter.init) {
                 emitter$emitStmt(e, stmt->iter.init);
             }

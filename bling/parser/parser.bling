@@ -127,7 +127,7 @@ fun error(p *Parser, pos token.Pos, msg *char) {
     var i int = 0
     utils.Slice_get(&p.file.lines, position.line - 1, &i)
     var ch int = p.scanner.src[i]
-    while  ch > 0 && ch != '\n' {
+    while ch > 0 && ch != '\n' {
         bytes.Buffer_writeByte(&buf, ch, NULL)
         i++
         ch = p.scanner.src[i]
@@ -260,7 +260,7 @@ fun parse_postfix_expr(p *Parser) *ast.Expr {
                     size: sizeof(*ast.Expr),
                 }
                 expect(p, token.LPAREN)
-                while  p.tok != token.RPAREN {
+                while p.tok != token.RPAREN {
                     var x *ast.Expr = parse_expr(p)
                     utils.Slice_append(&args, &x)
                     if !accept(p, token.COMMA) {
@@ -534,7 +534,7 @@ fun parse_param_type_list(p *Parser, anon bool) **ast.Decl {
     var params utils.Slice = {
         size: sizeof(*ast.Decl),
     }
-    while  p.tok != token.RPAREN {
+    while p.tok != token.RPAREN {
         var param *ast.Decl = parse_field(p, anon)
         utils.Slice_append(&params, &param)
         if !accept(p, token.COMMA) {
@@ -561,7 +561,7 @@ fun parse_init_expr(p *Parser) *ast.Expr {
         var list utils.Slice = {
             size: sizeof(*ast.Expr),
         }
-        while  p.tok != token.RBRACE && p.tok != token.EOF {
+        while p.tok != token.RBRACE && p.tok != token.EOF {
             var value *ast.Expr = parse_init_expr(p)
             if value.type == ast.EXPR_IDENT && accept(p, token.COLON) {
                 var key *ast.Expr = value
@@ -734,7 +734,7 @@ fun parse_switch_stmt(p *Parser) *ast.Stmt {
     var clauses utils.Slice = {
         size: sizeof(*ast.Stmt),
     }
-    while  p.tok == token.CASE || p.tok == token.DEFAULT {
+    while p.tok == token.CASE || p.tok == token.DEFAULT {
         var exprs utils.Slice = {
             size: sizeof(*ast.Expr),
         }
@@ -755,7 +755,7 @@ fun parse_switch_stmt(p *Parser) *ast.Stmt {
             size: sizeof(*ast.Stmt),
         }
         var loop bool = true
-        while  loop {
+        while loop {
             switch p.tok {
             case token.CASE, token.DEFAULT, token.RBRACE:
                 loop = false
@@ -878,7 +878,7 @@ fun parse_block_stmt(p *Parser) *ast.Stmt {
         size: sizeof(*ast.Stmt),
     }
     var pos token.Pos = expect(p, token.LBRACE)
-    while  p.tok != token.RBRACE {
+    while p.tok != token.RBRACE {
         var stmt *ast.Stmt = parse_stmt(p)
         utils.Slice_append(&stmts, &stmt)
     }
@@ -1103,7 +1103,7 @@ fun parseDir(path *const char, first **utils.Error) **ast.File {
         return NULL
     }
     var files utils.Slice = utils.Slice_init(sizeof(uintptr_t))
-    while  *infos != NULL {
+    while *infos != NULL {
         var name *char = os.FileInfo_name(**infos)
         if isBlingFile(name) && !isTestFile(name) {
             var file *ast.File = parse_file(name)
@@ -1118,7 +1118,7 @@ fun _parse_file(p *Parser) *ast.File {
     var name *ast.Expr = NULL
     var imports utils.Slice = utils.Slice_init(sizeof(uintptr_t))
     var decls utils.Slice = utils.Slice_init(sizeof(*ast.Decl))
-    while  p.tok == token.HASH {
+    while p.tok == token.HASH {
         var lit *ast.Decl = parsePragma(p)
         utils.Slice_append(&decls, &lit)
     }
@@ -1126,7 +1126,7 @@ fun _parse_file(p *Parser) *ast.File {
         name = parseIdent(p)
         expect(p, token.SEMICOLON)
     }
-    while  p.tok == token.IMPORT {
+    while p.tok == token.IMPORT {
         var pos token.Pos = expect(p, token.IMPORT)
         var path *ast.Expr = parseBasicLit(p, token.STRING)
         expect(p, token.SEMICOLON)
@@ -1140,7 +1140,7 @@ fun _parse_file(p *Parser) *ast.File {
         var declp *ast.Decl = esc(decl)
         utils.Slice_append(&imports, &declp)
     }
-    while  p.tok != token.EOF {
+    while p.tok != token.EOF {
         var decl *ast.Decl = parse_decl(p, true)
         utils.Slice_append(&decls, &decl)
     }

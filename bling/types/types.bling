@@ -317,10 +317,10 @@ fun areAssignable(a *ast.Expr, b *ast.Expr) bool {
     if isPointer(a) && isPointer(b) {
         return areAssignable(pointerBase(a), pointerBase(b))
     }
-    while  a.type == ast.EXPR_IDENT {
+    while a.type == ast.EXPR_IDENT {
         a = lookup_typedef(a)
     }
-    while  b.type == ast.EXPR_IDENT {
+    while b.type == ast.EXPR_IDENT {
         b = lookup_typedef(b)
     }
     if isNative(a, "bool") && isArithmetic(b) {

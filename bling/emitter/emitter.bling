@@ -278,8 +278,8 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
         break
     case ast.STMT_ITER:
         emitToken(e, stmt.iter.kind)
-        emitSpace(e)
         if stmt.iter.kind == token.FOR {
+            emitSpace(e)
             if stmt.iter.init {
                 emitStmt(e, stmt.iter.init)
             }
