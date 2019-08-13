@@ -762,20 +762,16 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
         return expr->compound.type;
 
     case ast$EXPR_CAST:
-        {
-            check_type(w, expr->cast.type);
-            if (expr->cast.expr->type == ast$EXPR_COMPOUND) {
-                expr->cast.expr->compound.type = expr->cast.type;
-            }
-            check_expr(w, expr->cast.expr);
-            return expr->cast.type;
+        check_type(w, expr->cast.type);
+        if (expr->cast.expr->type == ast$EXPR_COMPOUND) {
+            expr->cast.expr->compound.type = expr->cast.type;
         }
+        check_expr(w, expr->cast.expr);
+        return expr->cast.type;
 
     case ast$EXPR_IDENT:
-        {
-            ast$Scope_resolve(w->pkg.scope, expr);
-            return get_ident_type(expr);
-        }
+        ast$Scope_resolve(w->pkg.scope, expr);
+        return get_ident_type(expr);
 
     case ast$EXPR_INDEX:
         {
