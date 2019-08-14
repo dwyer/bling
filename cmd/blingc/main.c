@@ -128,8 +128,8 @@ void compile_bling(char *argv[]) {
                 "-o", dst,
                 tmp,
                 "bazel-bin/bootstrap/libbootstrap.a",
-                "bazel-bin/fmt/libfmt.a",
                 "bazel-bin/os/libos.a",
+                "bazel-bin/sys/libsys.a",
                 NULL,
             };
             int code = sys$execve(args[0], args, NULL);

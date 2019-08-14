@@ -136,8 +136,8 @@ fun compile_bling(argv []*char) {
                 dst,
                 tmp,
                 "bazel-bin/bootstrap/libbootstrap.a",
-                "bazel-bin/fmt/libfmt.a",
                 "bazel-bin/os/libos.a",
+                "bazel-bin/sys/libsys.a",
                 NULL,
             }
             var code int = sys.execve(args[0], args, NULL)

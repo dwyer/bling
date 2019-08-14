@@ -1,6 +1,7 @@
 #include "sys/sys.h"
 
 #include <errno.h>
+#include <stdlib.h>
 #include <strings.h>
 #include <unistd.h>
 
@@ -18,4 +19,8 @@ extern char *sys$errnoString() {
 
 extern int sys$execve(const char *path, char *const argv[], char *envp[]) {
     return execve(path, argv, envp);
+}
+
+extern char *sys$getenv(const char *key) {
+    return getenv(key);
 }

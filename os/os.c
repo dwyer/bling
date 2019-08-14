@@ -1,6 +1,7 @@
 #include "os/os.h"
 
 #include "paths/paths.h"
+#include "sys/sys.h"
 #include "utils/utils.h"
 
 #include <dirent.h> // DIR, dirent, opendir, readdir, closedir
@@ -170,5 +171,9 @@ extern void *os$FileInfo_sys(os$FileInfo info) {
 }
 
 extern const char *os$tempDir() {
+    char *tmpdir = sys$getenv("TMPDIR");
+    if (tmpdir) {
+        return tmpdir;
+    }
     return "/tmp";
 }

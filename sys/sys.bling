@@ -12,6 +12,8 @@ fun errnoString() *char
 
 fun execve(path *const char, argv []const *char, envp []*char) int
 
+fun getenv(key *const char) *char
+
 fun printf(s *const char, ...)
 
 fun sprintf(s *const char, ...) *char
