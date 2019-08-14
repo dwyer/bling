@@ -176,6 +176,7 @@ typedef struct {
     token$Token tok;
     ast$Expr *name;
     ast$Decl **fields;
+    ast$Scope *scope;
 } ast$Struct;
 
 typedef struct {

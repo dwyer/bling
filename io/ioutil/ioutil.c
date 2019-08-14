@@ -36,12 +36,11 @@ extern os$FileInfo **ioutil$readDir(const char *name, utils$Error **error) {
     }
     info = os$readdir(file, &err);
     if (err != NULL) {
+        os$close(file, NULL);
         goto end;
     }
+    os$close(file, &err);
 end:
-    if (file != NULL) {
-        os$close(file, NULL);
-    }
     if (err != NULL) {
         utils$Error_move(err, error);
     }
@@ -50,15 +49,18 @@ end:
 
 extern char *ioutil$readFile(const char *name, utils$Error **error) {
     utils$Error *err = NULL;
+    char *ret = NULL;
     os$File *file = os$open(name, &err);
-    char *ret = ioutil$readAll(file, &err);
-    if (err != NULL) {
+    if (err) {
         goto end;
     }
-end:
-    if (file != NULL) {
-        os$close(file, &err);
+    ret = ioutil$readAll(file, &err);
+    if (err != NULL) {
+        os$close(file, NULL);
+        goto end;
     }
+    os$close(file, &err);
+end:
     if (err != NULL) {
         utils$Error_move(err, error);
     }
@@ -71,16 +73,16 @@ extern void ioutil$writeFile(const char *filename, const char *data, int perm,
     utils$Error *err = NULL;
     os$File *file = os$create(filename, &err);
     if (err) {
-        utils$Error_move(err, error);
         goto end;
     }
     os$write(file, data, &err);
     if (err) {
-        utils$Error_move(err, error);
+        os$close(file, NULL);
         goto end;
     }
+    os$close(file, NULL);
 end:
-    if (file) {
-        os$close(file, NULL);
+    if (err) {
+        utils$Error_move(err, error);
     }
 }
