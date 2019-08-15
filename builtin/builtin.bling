@@ -8,7 +8,7 @@ const NULL = <*void> 0
 
 fun esc(*void) *void
 
-fun print(fmt *const char, ...)
+fun print(fmt *const char)
 
 fun panic(fmt *const char, ...)
 

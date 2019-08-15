@@ -6,6 +6,7 @@ package(ast);
 
 import("bling/token");
 import("bytes");
+import("sys");
 import("utils");
 
 typedef enum {

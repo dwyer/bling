@@ -137,7 +137,9 @@ void compile_bling(char *argv[]) {
             };
             int code = sys$execve(args[0], args, NULL);
             if (code) {
-                print("%s exited with code: %d", argv[0], code);
+                char *s = sys$sprintf("%s exited with code: %d", argv[0], code);
+                print(s);
+                free(s);
             }
         } else {
             ioutil$writeFile(dst, out, 0644, NULL);

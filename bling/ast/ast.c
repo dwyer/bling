@@ -1,5 +1,6 @@
 #include "bling/ast/ast.h"
 #include "bytes/bytes.h"
+#include "sys/sys.h"
 
 extern bool ast$isExprType(ast$Expr *x) {
     return ast$_TYPE_START < x->type && x->type < ast$_DECL_END;
@@ -46,7 +47,9 @@ extern void ast$Scope_print(ast$Scope *s) {
         utils$MapIter iter = utils$NewMapIter(&s->objects);
         char *key = NULL;
         while (utils$MapIter_next(&iter, &key, NULL)) {
-            print("%s- %s", bytes$Buffer_string(&buf), key);
+            char *s = sys$sprintf("%s- %s", bytes$Buffer_string(&buf), key);
+            print(s);
+            free(s);
         }
         s = s->outer;
         bytes$Buffer_writeByte(&buf, '\t', NULL);

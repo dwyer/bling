@@ -12,11 +12,8 @@ static void vprint(const char *s, va_list ap) {
     fprintf(stderr, "\n");
 }
 
-extern void print(const char *s, ...) {
-    va_list ap;
-    va_start(ap, s);
-    vprint(s, ap);
-    va_end(ap);
+extern void print(const char *s) {
+    fprintf(stderr, "%s\n", s);
 }
 
 extern void panic(const char *s, ...) {

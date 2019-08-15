@@ -21,7 +21,7 @@ var false const bool = <bool> 0
 
 var true const bool = !false
 
-fun print(s *const char, ...)
+fun print(s *const char)
 
 fun panic(s *const char, ...)
 

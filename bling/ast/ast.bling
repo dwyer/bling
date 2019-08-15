@@ -1,6 +1,7 @@
 package ast
 import "bling/token"
 import "bytes"
+import "sys"
 import "utils"
 
 #pragma once
@@ -387,6 +388,8 @@ fun Scope_print(s *Scope)
 
 #include "bytes/bytes.h"
 
+#include "sys/sys.h"
+
 fun isExprType(x *Expr) bool {
     return _TYPE_START < x.type && x.type < _DECL_END
 }
@@ -432,7 +435,9 @@ fun Scope_print(s *Scope) {
         var iter utils.MapIter = utils.NewMapIter(&s.objects)
         var key *char = NULL
         while utils.MapIter_next(&iter, &key, NULL) {
-            print("%s- %s", bytes.Buffer_string(&buf), key)
+            var s *char = sys.sprintf("%s- %s", bytes.Buffer_string(&buf), key)
+            print(s)
+            free(s)
         }
         s = s.outer
         bytes.Buffer_writeByte(&buf, '\t', NULL)
