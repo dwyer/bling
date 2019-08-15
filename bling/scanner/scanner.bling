@@ -182,7 +182,7 @@ fun scan(s *Scanner, pos *token.Pos, lit **char) token.Token {
 scan_again:
     tok = token.ILLEGAL
     skip_whitespace(s)
-    *pos = s.offset
+    *pos = token.File_pos(s.file, s.offset)
     var insertSemi bool = false
     *lit = NULL
     if is_letter(s.ch) {

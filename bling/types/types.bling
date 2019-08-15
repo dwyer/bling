@@ -458,7 +458,8 @@ fun universe() *ast.Scope {
     if _universe == NULL {
         _universe = ast.Scope_new(NULL)
         declare_builtins(_universe)
-        var file *ast.File = parser.parseFile("builtin/builtin.bling")
+        var fset *token.FileSet = token.newFileSet()
+        var file *ast.File = parser.parseFile(fset, "builtin/builtin.bling")
         file.scope = _universe
         var conf Config = {
             strict: true,
@@ -1028,7 +1029,8 @@ fun check_import(w *checker_t, imp *ast.Decl) {
     oldScope = w.pkg.scope
     w.pkg.scope = imp.imp.scope
     var err *utils.Error = NULL
-    var files **ast.File = parser.parseDir(path, &err)
+    var fset *token.FileSet = token.newFileSet()
+    var files **ast.File = parser.parseDir(fset, path, &err)
     if err {
         panic("%s: %s", path, err.error)
     }

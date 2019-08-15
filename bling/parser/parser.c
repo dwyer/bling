@@ -19,8 +19,10 @@ extern ast$Decl *parser$parsePragma(parser$Parser *p) {
     return esc(decl);
 }
 
-extern void parser$init(parser$Parser *p, const char *filename, char *src) {
-    p->file = token$File_new(filename);
+extern void parser$init(parser$Parser *p, token$FileSet *fset,
+        const char *filename, char *src) {
+    assert(fset);
+    p->file = token$FileSet_addFile(fset, filename, -1, strlen(src));
     p->lit = NULL;
     scanner$init(&p->scanner, p->file, src);
     p->scanner.dontInsertSemis = !bytes$hasSuffix(filename, ".bling");
@@ -1147,7 +1149,8 @@ static bool isTestFile(const char *name) {
     return paths$match("*_test.bling", name);
 }
 
-extern ast$File **parser$parseDir(const char *path, utils$Error **first) {
+extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
+        utils$Error **first) {
     utils$Error *err = NULL;
     os$FileInfo **infos = ioutil$readDir(path, &err);
     if (err) {
@@ -1158,7 +1161,7 @@ extern ast$File **parser$parseDir(const char *path, utils$Error **first) {
     while (*infos != NULL) {
         char *name = os$FileInfo_name(**infos);
         if (isBlingFile(name) && !isTestFile(name)) {
-            ast$File *file = parser$parseFile(name);
+            ast$File *file = parser$parseFile(fset, name);
             utils$Slice_append(&files, &file);
         }
         infos++;
@@ -1205,14 +1208,14 @@ static ast$File *_parse_file(parser$Parser *p) {
     return esc(file);
 }
 
-extern ast$File *parser$parseFile(const char *filename) {
+extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename) {
     utils$Error *err = NULL;
     char *src = ioutil$readFile(filename, &err);
     if (err) {
         panic("%s: %s", filename, err->error);
     }
     parser$Parser p = {};
-    parser$init(&p, filename, src);
+    parser$init(&p, fset, filename, src);
     ast$File *file = _parse_file(&p);
     free(src);
     return file;

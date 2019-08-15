@@ -19,9 +19,9 @@ import "sys"
 
 #include "bling/token/token.h"
 
-fun parseFile(filename *const char) *ast.File
+fun parseFile(fset *token.FileSet, filename *const char) *ast.File
 
-fun parseDir(path *const char, first **utils.Error) **ast.File
+fun parseDir(fset *token.FileSet, path *const char, first **utils.Error) **ast.File
 
 typedef Parser struct {
     file *token.File
@@ -38,7 +38,7 @@ fun declare(p *Parser, s *ast.Scope, decl *ast.Decl, kind ast.ObjKind, name *ast
 
 fun next(p *Parser)
 
-fun init(p *Parser, filename *const char, src *char)
+fun init(p *Parser, fset *token.FileSet, filename *const char, src *char)
 
 fun error(p *Parser, pos token.Pos, msg *char)
 
@@ -79,8 +79,9 @@ fun parsePragma(p *Parser) *ast.Decl {
     return esc(decl)
 }
 
-fun init(p *Parser, filename *const char, src *char) {
-    p.file = token.File_new(filename)
+fun init(p *Parser, fset *token.FileSet, filename *const char, src *char) {
+    assert(fset)
+    p.file = token.FileSet_addFile(fset, filename, -1, strlen(src))
     p.lit = NULL
     scanner.init(&p.scanner, p.file, src)
     p.scanner.dontInsertSemis = !bytes.hasSuffix(filename, ".bling")
@@ -1095,7 +1096,7 @@ fun isTestFile(name *const char) bool {
     return paths.match("*_test.bling", name)
 }
 
-fun parseDir(path *const char, first **utils.Error) **ast.File {
+fun parseDir(fset *token.FileSet, path *const char, first **utils.Error) **ast.File {
     var err *utils.Error = NULL
     var infos **os.FileInfo = ioutil.readDir(path, &err)
     if err {
@@ -1106,7 +1107,7 @@ fun parseDir(path *const char, first **utils.Error) **ast.File {
     while *infos != NULL {
         var name *char = os.FileInfo_name(**infos)
         if isBlingFile(name) && !isTestFile(name) {
-            var file *ast.File = parseFile(name)
+            var file *ast.File = parseFile(fset, name)
             utils.Slice_append(&files, &file)
         }
         infos++
@@ -1153,14 +1154,14 @@ fun _parse_file(p *Parser) *ast.File {
     return esc(file)
 }
 
-fun parseFile(filename *const char) *ast.File {
+fun parseFile(fset *token.FileSet, filename *const char) *ast.File {
     var err *utils.Error = NULL
     var src *char = ioutil.readFile(filename, &err)
     if err {
         panic("%s: %s", filename, err.error)
     }
     var p Parser = {}
-    init(&p, filename, src)
+    init(&p, fset, filename, src)
     var file *ast.File = _parse_file(&p)
     free(src)
     return file

@@ -166,7 +166,7 @@ extern token$Token scanner$scan(scanner$Scanner *s, token$Pos *pos, char **lit) 
 scan_again:
     tok = token$ILLEGAL;
     skip_whitespace(s);
-    *pos = s->offset;
+    *pos = token$File_pos(s->file, s->offset);
     bool insertSemi = false;
     *lit = NULL;
     if (is_letter(s->ch)) {

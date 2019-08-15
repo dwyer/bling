@@ -105,17 +105,21 @@ typedef Prec enum {
 
 fun precedence(op Token) int
 
+typedef FileSet struct FileSet
+
 typedef File struct {
+    set *FileSet
     name *char
+    base int
+    size int
     lines utils.Slice
 }
-
-typedef FileSet struct FileSet
 
 typedef FileSet struct FileSet {
     fset *FileSet
     base int
     files utils.Slice
+    last *File
 }
 
 typedef Position struct {
@@ -127,13 +131,15 @@ typedef Position struct {
 
 fun Position_string(p *Position) *char
 
-fun File_new(filename *const char) *File
-
 fun File_addLine(f *File, offset int)
+
+fun File_pos(f *File, offset int) Pos
 
 fun File_position(f *File, p Pos) Position
 
 fun newFileSet() *FileSet
+
+fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File
 
 #include "bling/token/token.h"
 
@@ -274,24 +280,21 @@ fun Position_string(p *Position) *char {
     return sys.sprintf("%s:%d:%d", p.filename, p.line, p.column)
 }
 
-fun File_new(filename *const char) *File {
-    var file File = {
-        name: strdup(filename),
-        lines: utils.Slice_init(sizeof(int)),
-    }
-    var zero int = 0
-    utils.Slice_append(&file.lines, &zero)
-    return esc(file)
-}
-
-fun File_addLine(f *File, offset int) {
-    utils.Slice_append(&f.lines, &offset)
-}
-
 fun getInt(a *utils.Slice, i int) int {
     var x int
     utils.Slice_get(a, i, &x)
     return x
+}
+
+fun File_addLine(f *File, offset int) {
+    var i int = utils.Slice_len(&f.lines)
+    if (i == 0 || getInt(&f.lines, i - 1) < offset) && offset < f.size {
+        utils.Slice_append(&f.lines, &offset)
+    }
+}
+
+fun File_pos(f *File, offset int) Pos {
+    return f.base + offset
 }
 
 fun searchInts(a *utils.Slice, x int) int {
@@ -308,16 +311,33 @@ fun searchInts(a *utils.Slice, x int) int {
     return i - 1
 }
 
-fun File_position(f *File, p Pos) Position {
-    var offset int = p
+fun _File_position(f *File, p Pos, adjusted bool) Position {
+    var offset int = p - f.base
     var i int = searchInts(&f.lines, offset)
-    var epos Position = {
+    var pos Position = {
         filename: f.name,
         offset: offset,
         line: i + 1,
         column: offset - getInt(&f.lines, i) + 1,
     }
-    return epos
+    return pos
+}
+
+var noPos const Pos = 0
+
+fun File_positionFor(f *File, p Pos, adjusted bool) Position {
+    var pos Position = {}
+    if p != noPos {
+        if p < f.base || p > f.base + f.size {
+            panic("illegal Pos value")
+        }
+        pos = _File_position(f, p, adjusted)
+    }
+    return pos
+}
+
+fun File_position(f *File, p Pos) Position {
+    return File_positionFor(f, p, true)
 }
 
 fun newFileSet() *FileSet {
@@ -325,4 +345,27 @@ fun newFileSet() *FileSet {
         base: 1,
     }
     return esc(fset)
+}
+
+fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File {
+    if base < 0 {
+        base = s.base
+    }
+    if base < s.base || size < 0 {
+        panic("illegal base or size")
+    }
+    var lines utils.Slice = utils.Slice_init(sizeof(int))
+    var zero int = 0
+    utils.Slice_append(&lines, &zero)
+    var file File = {
+        name: strdup(filename),
+        base: base,
+        size: size,
+        lines: lines,
+    }
+    var f *File = esc(file)
+    s.base = base
+    utils.Slice_append(&s.files, f)
+    s.last = f
+    return f
 }

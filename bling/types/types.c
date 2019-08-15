@@ -379,7 +379,8 @@ extern ast$Scope *types$universe() {
     if (_universe == NULL) {
         _universe = ast$Scope_new(NULL);
         declare_builtins(_universe);
-        ast$File *file = parser$parseFile("builtin/builtin.bling");
+        token$FileSet *fset = token$newFileSet();
+        ast$File *file = parser$parseFile(fset, "builtin/builtin.bling");
         file->scope = _universe;
         types$Config conf = {.strict = true};
         types$checkFile(&conf, file);
@@ -1038,7 +1039,8 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     w->pkg.scope = imp->imp.scope;
 
     utils$Error *err = NULL;
-    ast$File **files = parser$parseDir(path, &err);
+    token$FileSet *fset = token$newFileSet();
+    ast$File **files = parser$parseDir(fset, path, &err);
     if (err) {
         panic("%s: %s", path, err->error);
     }

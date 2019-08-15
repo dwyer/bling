@@ -19,7 +19,7 @@ import "sys"
 
 #include "bling/parser/parser.h"
 
-fun parseFile(filename *const char, pkg_scope *ast.Scope) *ast.File
+fun parseFile(fset *token.FileSet, filename *const char, pkg_scope *ast.Scope) *ast.File
 
 #include "subc/cparser/cparser.h"
 
@@ -1021,10 +1021,10 @@ fun parse_cfile(p *parser.Parser) *ast.File {
     return esc(file)
 }
 
-fun parseFile(filename *const char, pkg_scope *ast.Scope) *ast.File {
+fun parseFile(fset *token.FileSet, filename *const char, pkg_scope *ast.Scope) *ast.File {
     var src *char = ioutil.readFile(filename, NULL)
     var p parser.Parser = {}
-    parser.init(&p, filename, src)
+    parser.init(&p, fset, filename, src)
     p.pkg_scope = pkg_scope
     p.c_mode = true
     var file *ast.File = parse_cfile(&p)

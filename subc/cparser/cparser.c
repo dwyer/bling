@@ -1195,10 +1195,11 @@ static ast$File *parse_cfile(parser$Parser *p) {
     return esc(file);
 }
 
-extern ast$File *cparser$parseFile(const char *filename, ast$Scope *pkg_scope) {
+extern ast$File *cparser$parseFile(token$FileSet *fset, const char *filename,
+        ast$Scope *pkg_scope) {
     char *src = ioutil$readFile(filename, NULL);
     parser$Parser p = {};
-    parser$init(&p, filename, src);
+    parser$init(&p, fset, filename, src);
     p.pkg_scope = pkg_scope;
     p.c_mode = true;
     ast$File *file = parse_cfile(&p);

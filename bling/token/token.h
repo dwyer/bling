@@ -109,17 +109,21 @@ typedef enum {
 
 extern int token$precedence(token$Token op);
 
+typedef struct token$FileSet token$FileSet;
+
 typedef struct {
+    token$FileSet *set;
     char *name;
+    int base;
+    int size;
     utils$Slice lines;
 } token$File;
-
-typedef struct token$FileSet token$FileSet;
 
 typedef struct token$FileSet {
     token$FileSet *fset;
     int base;
     utils$Slice files;
+    token$File *last;
 } token$FileSet;
 
 typedef struct {
@@ -131,8 +135,10 @@ typedef struct {
 
 extern char *token$Position_string(token$Position *p);
 
-extern token$File      *token$File_new(const char *filename);
 extern void             token$File_addLine(token$File *f, int offset);
+extern token$Pos        token$File_pos(token$File *f, int offset);
 extern token$Position   token$File_position(token$File *f, token$Pos p);
 
 extern token$FileSet *token$newFileSet();
+extern token$File    *token$FileSet_addFile(token$FileSet *s,
+        const char *filename, int base, int size);

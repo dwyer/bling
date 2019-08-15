@@ -11,6 +11,7 @@ package(main);
 import("bling/ast");
 import("bling/emitter");
 import("bling/parser");
+import("bling/token");
 import("bling/types");
 import("bytes");
 import("io/ioutil");
@@ -47,9 +48,10 @@ void compile_c(char *argv[]) {
         argv++;
     }
     emitter$Emitter e = {};
+    token$FileSet *fset = token$newFileSet();
     while (*argv) {
         char *filename = *argv;
-        ast$File *file = cparser$parseFile(filename, types$universe());
+        ast$File *file = cparser$parseFile(fset, filename, types$universe());
         emitter$emitFile(&e, file);
         argv++;
     }
@@ -95,13 +97,14 @@ void compile_bling(char *argv[]) {
     if (!emit_as_bling) {
         emit_rawfile(&e, "bootstrap/bootstrap.h");
     }
+    token$FileSet *fset = token$newFileSet();
     while (*argv) {
         char *filename = *argv;
         ast$File *file = NULL;
         if (bytes$hasSuffix(filename, ".bling")) {
-            file = parser$parseFile(filename);
+            file = parser$parseFile(fset, filename);
         } else if (bytes$hasSuffix(filename, ".c")) {
-            file = cparser$parseFile(filename, types$universe());
+            file = cparser$parseFile(fset, filename, types$universe());
         } else {
             panic("unknown file type: %s", filename);
         }

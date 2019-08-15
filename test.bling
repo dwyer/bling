@@ -1,0 +1,16 @@
+typedef String struct {
+    _chars *char
+    _len int
+}
+
+fun newString(chars *char) String {
+    var s String = {
+        _chars: chars,
+        _len: strlen(chars),
+    }
+    return s
+}
+
+fun (s *String) len() {
+    return s._len
+}

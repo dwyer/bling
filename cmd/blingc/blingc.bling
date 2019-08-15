@@ -2,6 +2,7 @@ package main
 import "bling/ast"
 import "bling/emitter"
 import "bling/parser"
+import "bling/token"
 import "bling/types"
 import "bytes"
 import "io/ioutil"
@@ -52,9 +53,10 @@ fun compile_c(argv []*char) {
         argv++
     }
     var e emitter.Emitter = {}
+    var fset *token.FileSet = token.newFileSet()
     while *argv {
         var filename *char = *argv
-        var file *ast.File = cparser.parseFile(filename, types.universe())
+        var file *ast.File = cparser.parseFile(fset, filename, types.universe())
         emitter.emitFile(&e, file)
         argv++
     }
@@ -102,13 +104,14 @@ fun compile_bling(argv []*char) {
     if !emit_as_bling {
         emit_rawfile(&e, "bootstrap/bootstrap.h")
     }
+    var fset *token.FileSet = token.newFileSet()
     while *argv {
         var filename *char = *argv
         var file *ast.File = NULL
         if bytes.hasSuffix(filename, ".bling") {
-            file = parser.parseFile(filename)
+            file = parser.parseFile(fset, filename)
         } else if bytes.hasSuffix(filename, ".c") {
-            file = cparser.parseFile(filename, types.universe())
+            file = cparser.parseFile(fset, filename, types.universe())
         } else {
             panic("unknown file type: %s", filename)
         }

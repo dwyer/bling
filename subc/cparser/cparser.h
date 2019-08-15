@@ -15,4 +15,5 @@ import("io/ioutil");
 import("utils");
 import("sys");
 
-extern ast$File *cparser$parseFile(const char *filename, ast$Scope *pkg_scope);
+extern ast$File *cparser$parseFile(token$FileSet *fset, const char *filename,
+        ast$Scope *pkg_scope);

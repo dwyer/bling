@@ -148,24 +148,21 @@ extern char *token$Position_string(token$Position *p) {
     return sys$sprintf("%s:%d:%d", p->filename, p->line, p->column);
 }
 
-extern token$File *token$File_new(const char *filename) {
-    token$File file = {
-        .name = strdup(filename),
-        .lines = utils$Slice_init(sizeof(int)),
-    };
-    int zero = 0;
-    utils$Slice_append(&file.lines, &zero);
-    return esc(file);
-}
-
-extern void token$File_addLine(token$File *f, int offset) {
-    utils$Slice_append(&f->lines, &offset);
-}
-
 static int getInt(utils$Slice *a, int i) {
     int x;
     utils$Slice_get(a, i, &x);
     return x;
+}
+
+extern void token$File_addLine(token$File *f, int offset) {
+    int i = utils$Slice_len(&f->lines);
+    if ((i == 0 || getInt(&f->lines, i-1) < offset) && offset < f->size) {
+        utils$Slice_append(&f->lines, &offset);
+    }
+}
+
+extern token$Pos token$File_pos(token$File *f, int offset) {
+    return f->base + offset;
 }
 
 static int searchInts(utils$Slice *a, int x) {
@@ -182,19 +179,62 @@ static int searchInts(utils$Slice *a, int x) {
     return i - 1;
 }
 
-extern token$Position token$File_position(token$File *f, token$Pos p) {
-    int offset = p;
+extern token$Position token$_File_position(token$File *f, token$Pos p,
+        bool adjusted) {
+    int offset = p - f->base;
     int i = searchInts(&f->lines, offset);
-    token$Position epos = {
+    token$Position pos = {
         .filename = f->name,
         .offset = offset,
         .line = i + 1,
         .column = offset - getInt(&f->lines, i) + 1,
     };
-    return epos;
+    return pos;
+}
+
+static const token$Pos token$noPos = 0;
+
+extern token$Position token$File_positionFor(token$File *f, token$Pos p,
+        bool adjusted) {
+    token$Position pos = {};
+    if (p != token$noPos) {
+        if (p < f->base || p > f->base + f->size) {
+            panic("illegal Pos value");
+        }
+        pos = token$_File_position(f, p, adjusted);
+    }
+    return pos;
+}
+
+extern token$Position token$File_position(token$File *f, token$Pos p) {
+    return token$File_positionFor(f, p, true);
 }
 
 extern token$FileSet *token$newFileSet() {
     token$FileSet fset = {.base = 1};
     return esc(fset);
+}
+
+extern token$File *token$FileSet_addFile(token$FileSet *s,
+        const char *filename, int base, int size) {
+    if (base < 0) {
+        base = s->base;
+    }
+    if (base < s->base || size < 0) {
+        panic("illegal base or size");
+    }
+    utils$Slice lines = utils$Slice_init(sizeof(int));
+    int zero = 0;
+    utils$Slice_append(&lines, &zero);
+    token$File file = {
+        .name = strdup(filename),
+        .base = base,
+        .size = size,
+        .lines = lines,
+    };
+    token$File *f = esc(file);
+    s->base = base;
+    utils$Slice_append(&s->files, f);
+    s->last = f;
+    return f;
 }

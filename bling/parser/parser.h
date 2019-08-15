@@ -16,8 +16,9 @@ import("paths");
 import("utils");
 import("sys");
 
-extern ast$File *parser$parseFile(const char *filename);
-extern ast$File **parser$parseDir(const char *path, utils$Error **first);
+extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename);
+extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
+        utils$Error **first);
 
 typedef struct {
     token$File *file;
@@ -35,7 +36,8 @@ typedef struct {
 extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,
         ast$ObjKind kind, ast$Expr *name);
 extern void parser$next(parser$Parser *p);
-extern void parser$init(parser$Parser *p, const char *filename, char *src);
+extern void parser$init(parser$Parser *p, token$FileSet *fset,
+        const char *filename, char *src);
 extern void parser$error(parser$Parser *p, token$Pos pos, char *msg);
 extern void parser$errorExpected(parser$Parser *p, token$Pos pos, char *msg);
 extern bool parser$accept(parser$Parser *p, token$Token tok);
