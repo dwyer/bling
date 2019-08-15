@@ -114,6 +114,14 @@ typedef struct {
     utils$Slice lines;
 } token$File;
 
+typedef struct token$FileSet token$FileSet;
+
+typedef struct token$FileSet {
+    token$FileSet *fset;
+    int base;
+    utils$Slice files;
+} token$FileSet;
+
 typedef struct {
     char *filename;
     int offset;
@@ -126,3 +134,5 @@ extern char *token$Position_string(token$Position *p);
 extern token$File      *token$File_new(const char *filename);
 extern void             token$File_addLine(token$File *f, int offset);
 extern token$Position   token$File_position(token$File *f, token$Pos p);
+
+extern token$FileSet *token$newFileSet();

@@ -193,3 +193,8 @@ extern token$Position token$File_position(token$File *f, token$Pos p) {
     };
     return epos;
 }
+
+extern token$FileSet *token$newFileSet() {
+    token$FileSet fset = {.base = 1};
+    return esc(fset);
+}

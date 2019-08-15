@@ -110,6 +110,14 @@ typedef File struct {
     lines utils.Slice
 }
 
+typedef FileSet struct FileSet
+
+typedef FileSet struct FileSet {
+    fset *FileSet
+    base int
+    files utils.Slice
+}
+
 typedef Position struct {
     filename *char
     offset int
@@ -124,6 +132,8 @@ fun File_new(filename *const char) *File
 fun File_addLine(f *File, offset int)
 
 fun File_position(f *File, p Pos) Position
+
+fun newFileSet() *FileSet
 
 #include "bling/token/token.h"
 
@@ -308,4 +318,11 @@ fun File_position(f *File, p Pos) Position {
         column: offset - getInt(&f.lines, i) + 1,
     }
     return epos
+}
+
+fun newFileSet() *FileSet {
+    var fset FileSet = {
+        base: 1,
+    }
+    return esc(fset)
 }
