@@ -19,7 +19,7 @@ import "sys"
 
 #include "bling/token/token.h"
 
-fun parse_file(filename *const char) *ast.File
+fun parseFile(filename *const char) *ast.File
 
 fun parseDir(path *const char, first **utils.Error) **ast.File
 
@@ -1106,7 +1106,7 @@ fun parseDir(path *const char, first **utils.Error) **ast.File {
     while *infos != NULL {
         var name *char = os.FileInfo_name(**infos)
         if isBlingFile(name) && !isTestFile(name) {
-            var file *ast.File = parse_file(name)
+            var file *ast.File = parseFile(name)
             utils.Slice_append(&files, &file)
         }
         infos++
@@ -1153,7 +1153,7 @@ fun _parse_file(p *Parser) *ast.File {
     return esc(file)
 }
 
-fun parse_file(filename *const char) *ast.File {
+fun parseFile(filename *const char) *ast.File {
     var err *utils.Error = NULL
     var src *char = ioutil.readFile(filename, &err)
     if err {

@@ -99,7 +99,7 @@ void compile_bling(char *argv[]) {
         char *filename = *argv;
         ast$File *file = NULL;
         if (bytes$hasSuffix(filename, ".bling")) {
-            file = parser$parse_file(filename);
+            file = parser$parseFile(filename);
         } else if (bytes$hasSuffix(filename, ".c")) {
             file = cparser$parseFile(filename, types$universe());
         } else {

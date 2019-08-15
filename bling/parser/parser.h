@@ -16,7 +16,7 @@ import("paths");
 import("utils");
 import("sys");
 
-extern ast$File *parser$parse_file(const char *filename);
+extern ast$File *parser$parseFile(const char *filename);
 extern ast$File **parser$parseDir(const char *path, utils$Error **first);
 
 typedef struct {

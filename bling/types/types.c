@@ -379,7 +379,7 @@ extern ast$Scope *types$universe() {
     if (_universe == NULL) {
         _universe = ast$Scope_new(NULL);
         declare_builtins(_universe);
-        ast$File *file = parser$parse_file("builtin/builtin.bling");
+        ast$File *file = parser$parseFile("builtin/builtin.bling");
         file->scope = _universe;
         types$Config conf = {.strict = true};
         types$checkFile(&conf, file);

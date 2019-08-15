@@ -458,7 +458,7 @@ fun universe() *ast.Scope {
     if _universe == NULL {
         _universe = ast.Scope_new(NULL)
         declare_builtins(_universe)
-        var file *ast.File = parser.parse_file("builtin/builtin.bling")
+        var file *ast.File = parser.parseFile("builtin/builtin.bling")
         file.scope = _universe
         var conf Config = {
             strict: true,

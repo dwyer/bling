@@ -1158,7 +1158,7 @@ extern ast$File **parser$parseDir(const char *path, utils$Error **first) {
     while (*infos != NULL) {
         char *name = os$FileInfo_name(**infos);
         if (isBlingFile(name) && !isTestFile(name)) {
-            ast$File *file = parser$parse_file(name);
+            ast$File *file = parser$parseFile(name);
             utils$Slice_append(&files, &file);
         }
         infos++;
@@ -1205,7 +1205,7 @@ static ast$File *_parse_file(parser$Parser *p) {
     return esc(file);
 }
 
-extern ast$File *parser$parse_file(const char *filename) {
+extern ast$File *parser$parseFile(const char *filename) {
     utils$Error *err = NULL;
     char *src = ioutil$readFile(filename, &err);
     if (err) {
