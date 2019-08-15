@@ -962,8 +962,11 @@ static void check_stmt(checker_t *w, ast$Stmt *stmt) {
     case ast$STMT_RETURN:
         if (stmt->return_.x) {
             ast$Expr *a = w->result;
-            assert(a);
             ast$Expr *b = check_expr(w, stmt->return_.x);
+            if (a == NULL) {
+                panic("check_stmt: returning value in void function: %s",
+                        types$stmtString(stmt));
+            }
             if (!types$areAssignable(a, b)) {
                 panic("check_stmt: not returnable: %s and %s: %s",
                         types$typeString(a),

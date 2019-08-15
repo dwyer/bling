@@ -1,16 +1,16 @@
 typedef String struct {
-    _chars *char
+    _str *char
     _len int
 }
 
-fun newString(chars *char) String {
+fun newString(str *char) String {
     var s String = {
-        _chars: chars,
-        _len: strlen(chars),
+        _str: strdup(str),
+        _len: strlen(str),
     }
     return s
 }
 
-fun (s *String) len() {
-    return s._len
-}
+// fun (s *String) len() {
+//     return s._len
+// }
