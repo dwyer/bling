@@ -141,6 +141,8 @@ fun newFileSet() *FileSet
 
 fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File
 
+fun FileSet_file(s *FileSet, pos Pos) *File
+
 #include "bling/token/token.h"
 
 #include "sys/sys.h"
@@ -368,4 +370,31 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     utils.Slice_append(&s.files, f)
     s.last = f
     return f
+}
+
+fun searchFiles(files *utils.Slice, x int) int {
+    for var i int = 0; i < utils.Slice_len(files); i++ {
+        var f *File
+        utils.Slice_get(files, i, &f)
+        if f.base <= x && x <= f.base + f.size {
+            return i
+        }
+    }
+    return -1
+}
+
+fun FileSet_file(s *FileSet, p Pos) *File {
+    var f *File = s.last
+    if f != NULL && f.base <= p && p <= f.base + f.size {
+        return f
+    }
+    var i int = searchFiles(&s.files, p)
+    if i >= 0 {
+        utils.Slice_get(&s.files, i, &f)
+        if p <= f.base + f.size {
+            s.last = f
+            return f
+        }
+    }
+    return NULL
 }

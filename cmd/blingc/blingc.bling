@@ -115,7 +115,7 @@ fun compile_bling(argv []*char) {
         } else {
             panic("unknown file type: %s", filename)
         }
-        var pkg ast.Package = types.checkFile(&conf, file)
+        var pkg ast.Package = types.checkFile(&conf, fset, file)
         for var i int = 0; pkg.files[i]; i++ {
             var file *ast.File = pkg.files[i]
             if emit_as_bling {

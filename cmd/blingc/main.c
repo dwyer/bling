@@ -108,7 +108,7 @@ void compile_bling(char *argv[]) {
         } else {
             panic("unknown file type: %s", filename);
         }
-        ast$Package pkg = types$checkFile(&conf, file);
+        ast$Package pkg = types$checkFile(&conf, fset, file);
         for (int i = 0; pkg.files[i]; i++) {
             ast$File *file = pkg.files[i];
             if (emit_as_bling) {

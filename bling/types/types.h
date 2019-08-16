@@ -25,4 +25,5 @@ typedef struct {
     bool strict;
 } types$Config;
 
-extern ast$Package types$checkFile(types$Config *conf, ast$File *file);
+extern ast$Package types$checkFile(types$Config *conf, token$FileSet *fset,
+        ast$File *file);

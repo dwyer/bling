@@ -238,3 +238,30 @@ extern token$File *token$FileSet_addFile(token$FileSet *s,
     s->last = f;
     return f;
 }
+
+static int searchFiles(utils$Slice *files, int x) {
+    for (int i = 0; i < utils$Slice_len(files); i++) {
+        token$File *f;
+        utils$Slice_get(files, i, &f);
+        if (f->base <= x && x <= f->base + f->size) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+extern token$File *token$FileSet_file(token$FileSet *s, token$Pos p) {
+    token$File *f = s->last;
+    if (f != NULL && f->base <= p && p <= f->base + f->size) {
+        return f;
+    }
+    int i = searchFiles(&s->files, p);
+    if (i >= 0) {
+        utils$Slice_get(&s->files, i, &f);
+        if (p <= f->base + f->size) {
+            s->last = f;
+            return f;
+        }
+    }
+    return NULL;
+}

@@ -142,3 +142,4 @@ extern token$Position   token$File_position(token$File *f, token$Pos p);
 extern token$FileSet *token$newFileSet();
 extern token$File    *token$FileSet_addFile(token$FileSet *s,
         const char *filename, int base, int size);
+extern token$File    *token$FileSet_file(token$FileSet *s, token$Pos pos);

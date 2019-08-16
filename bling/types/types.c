@@ -384,7 +384,7 @@ extern ast$Scope *types$universe() {
         ast$File *file = parser$parseFile(fset, "builtin/builtin.bling");
         file->scope = _universe;
         types$Config conf = {.strict = true};
-        types$checkFile(&conf, file);
+        types$checkFile(&conf, fset, file);
         free(file->decls);
         free(file);
     }
@@ -392,6 +392,7 @@ extern ast$Scope *types$universe() {
 }
 
 typedef struct {
+    token$FileSet *fset;
     types$Config *conf;
     ast$Package pkg;
     ast$Expr *result;
@@ -400,8 +401,13 @@ typedef struct {
     utils$Map scopes;
 } checker_t;
 
-static void checker_error(checker_t *w, token$Pos pos, const char *s) {
-    panic(s);
+static void checker_error(checker_t *w, token$Pos pos, const char *msg) {
+    token$Position position = {};
+    token$File *file = token$FileSet_file(w->fset, pos);
+    if (file) {
+        position = token$File_position(file, pos);
+    }
+    panic(sys$sprintf("%s: %s", token$Position_string(&position), msg));
 }
 
 static void checker_openScope(checker_t *w) {
@@ -1170,11 +1176,13 @@ static void check_file(checker_t *w, ast$File *file) {
     }
 }
 
-extern ast$Package types$checkFile(types$Config *conf, ast$File *file) {
+extern ast$Package types$checkFile(types$Config *conf, token$FileSet *fset,
+        ast$File *file) {
     if (file->scope == NULL) {
         file->scope = ast$Scope_new(types$universe());
     }
     checker_t w = {
+        .fset = fset,
         .conf = conf,
         .pkg = {
             .scope = file->scope,

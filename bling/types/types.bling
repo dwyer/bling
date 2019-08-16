@@ -29,7 +29,7 @@ typedef Config struct {
     strict bool
 }
 
-fun checkFile(conf *Config, file *ast.File) ast.Package
+fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package
 
 #include "bling/ast/ast.h"
 
@@ -467,7 +467,7 @@ fun universe() *ast.Scope {
         var conf Config = {
             strict: true,
         }
-        checkFile(&conf, file)
+        checkFile(&conf, fset, file)
         free(file.decls)
         free(file)
     }
@@ -475,6 +475,7 @@ fun universe() *ast.Scope {
 }
 
 typedef checker_t struct {
+    fset *token.FileSet
     conf *Config
     pkg ast.Package
     result *ast.Expr
@@ -483,8 +484,13 @@ typedef checker_t struct {
     scopes utils.Map
 }
 
-fun checker_error(w *checker_t, pos token.Pos, s *const char) {
-    panic(s)
+fun checker_error(w *checker_t, pos token.Pos, msg *const char) {
+    var position token.Position = {}
+    var file *token.File = token.FileSet_file(w.fset, pos)
+    if file {
+        position = token.File_position(file, pos)
+    }
+    panic(sys.sprintf("%s: %s", token.Position_string(&position), msg))
 }
 
 fun checker_openScope(w *checker_t) {
@@ -1133,11 +1139,12 @@ fun check_file(w *checker_t, file *ast.File) {
     }
 }
 
-fun checkFile(conf *Config, file *ast.File) ast.Package {
+fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package {
     if file.scope == NULL {
         file.scope = ast.Scope_new(universe())
     }
     var w checker_t = {
+        fset: fset,
         conf: conf,
         pkg: {
             scope: file.scope,
