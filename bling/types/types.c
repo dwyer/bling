@@ -215,7 +215,8 @@ static bool types$areIdentical(ast$Expr *a, ast$Expr *b) {
         }
         return true;
     default:
-        panic("unreachable: %s == %s", types$typeString(a), types$typeString(b));
+        panic("not implemented: %s == %s",
+                types$typeString(a), types$typeString(b));
         return false;
     }
 }

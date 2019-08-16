@@ -301,7 +301,7 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
         }
         return true
     default:
-        panic("unreachable: %s == %s", typeString(a), typeString(b))
+        panic("not implemented: %s == %s", typeString(a), typeString(b))
         return false
     }
 }
