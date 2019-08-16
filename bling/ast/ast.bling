@@ -70,6 +70,7 @@ typedef Scope struct Scope
 typedef Stmt struct Stmt
 
 typedef ObjKind enum {
+    ObjKind_BAD,
     ObjKind_FUNC,
     ObjKind_PKG,
     ObjKind_TYPE,

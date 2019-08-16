@@ -44,6 +44,7 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package
 #include "sys/sys.h"
 
 fun constant_stringVal(x *ast.Expr) *char {
+    assert(x.type == ast.EXPR_BASIC_LIT)
     var lit *const char = x.basic_lit.value
     var n int = strlen(lit) - 2
     var val *char = malloc(n + 1)
@@ -362,92 +363,48 @@ fun areComparable(a *ast.Expr, b *ast.Expr) bool {
     return areIdentical(a, b)
 }
 
-fun Scope_declare(s *ast.Scope, decl *ast.Decl) {
-    var kind ast.ObjKind
-    var ident *ast.Expr = NULL
+fun getDeclKind(decl *ast.Decl) ast.ObjKind {
+    switch decl.type {
+    case ast.DECL_FIELD, ast.DECL_VALUE:
+        return ast.ObjKind_VALUE
+    case ast.DECL_FUNC:
+        return ast.ObjKind_FUNC
+    case ast.DECL_IMPORT:
+        return ast.ObjKind_PKG
+    case ast.DECL_TYPEDEF:
+        return ast.ObjKind_TYPE
+    default:
+        return ast.ObjKind_BAD
+    }
+}
+
+fun getDeclName(decl *ast.Decl) *ast.Expr {
     switch decl.type {
     case ast.DECL_FIELD:
-        kind = ast.ObjKind_VALUE
-        ident = decl.field.name
-        break
+        return decl.field.name
     case ast.DECL_FUNC:
-        kind = ast.ObjKind_FUNC
-        ident = decl.func.name
-        break
+        return decl.func.name
     case ast.DECL_IMPORT:
-        kind = ast.ObjKind_PKG
-        ident = decl.imp.name
-        break
+        return decl.imp.name
     case ast.DECL_TYPEDEF:
-        kind = ast.ObjKind_TYPE
-        ident = decl.typedef_.name
-        break
+        return decl.typedef_.name
     case ast.DECL_VALUE:
-        kind = ast.ObjKind_VALUE
-        ident = decl.value.name
-        break
+        return decl.value.name
     default:
-        panic("types$Scope_declare: bad decl: %d", decl.type)
-        return
-    }
-    assert(ident.type == ast.EXPR_IDENT)
-    if ident.ident.obj != NULL {
-        ast.Scope_print(s)
-        panic("already declared: %s", declString(decl))
-    }
-    if ident.ident.pkg != NULL {
-        var pkg *ast.Expr = ident.ident.pkg
-        ast.Scope_resolve(s, pkg)
-        var pkgObj *ast.Object = pkg.ident.obj
-        var decl *ast.Decl = pkgObj.decl
-        assert(decl.type == ast.DECL_IMPORT)
-        s = decl.imp.scope
-    }
-    var obj *ast.Object = ast.newObject(kind, ident.ident.name)
-    obj.scope = s
-    obj.decl = decl
-    obj.pkg = s.pkg
-    ident.ident.obj = obj
-    var alt *ast.Object = ast.Scope_insert(s, obj)
-    if alt != NULL {
-        if alt.kind != kind {
-            panic("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl))
-        }
-        var redecl bool = false
-        switch kind {
-        case ast.ObjKind_FUNC:
-            redecl = (alt.decl.func.body == NULL || decl.func.body == NULL) && areIdentical(alt.decl.func.type, decl.func.type)
-            break
-        case ast.ObjKind_PKG:
-            redecl = true
-            break
-        case ast.ObjKind_TYPE:
-            if alt.decl.typedef_.type.type == ast.TYPE_STRUCT {
-                redecl = alt.decl.typedef_.type.struct_.fields == NULL
-            }
-            break
-        case ast.ObjKind_VALUE:
-            redecl = alt.decl.value.value == NULL && !areIdentical(alt.decl.value.type, decl.value.value)
-            break
-        default:
-            panic("unknown kind: %d", kind)
-            break
-        }
-        if !redecl {
-            panic("already declared: %s", ident.ident.name)
-        }
-        alt.decl = decl
+        panic("bad decl: %s", declString(decl))
+        return NULL
     }
 }
 
 fun declareBuiltins(s *ast.Scope) {
     for var i int = 0; natives[i].name != NULL; i++ {
-        var name ast.Expr = {
+        var _name ast.Expr = {
             type: ast.EXPR_IDENT,
             ident: {
                 name: strdup(natives[i].name),
             },
         }
+        var name *ast.Expr = esc(_name)
         var type ast.Expr = {
             type: ast.TYPE_NATIVE,
             native: {
@@ -458,11 +415,14 @@ fun declareBuiltins(s *ast.Scope) {
         var decl ast.Decl = {
             type: ast.DECL_TYPEDEF,
             typedef_: {
-                name: esc(name),
+                name: name,
                 type: esc(type),
             },
         }
-        Scope_declare(s, esc(decl))
+        var obj *ast.Object = ast.newObject(ast.ObjKind_TYPE, name.ident.name)
+        obj.decl = esc(decl)
+        name.ident.obj = obj
+        assert(ast.Scope_insert(s, obj) == NULL)
     }
 }
 
@@ -571,6 +531,58 @@ fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
     panic(sys.sprintf("%s: %s", token.Position_string(&position), msg))
 }
 
+fun Checker_declare(c *Checker, s *ast.Scope, decl *ast.Decl) {
+    var ident *ast.Expr = getDeclName(decl)
+    if ident.ident.obj != NULL {
+        ast.Scope_print(s)
+        Checker_error(c, decl.pos, sys.sprintf("already declared: %s", ident.ident.name))
+    }
+    if ident.ident.pkg != NULL {
+        var pkg *ast.Expr = ident.ident.pkg
+        ast.Scope_resolve(s, pkg)
+        var pkgObj *ast.Object = pkg.ident.obj
+        var decl *ast.Decl = pkgObj.decl
+        assert(decl.type == ast.DECL_IMPORT)
+        s = decl.imp.scope
+    }
+    var kind ast.ObjKind = getDeclKind(decl)
+    var obj *ast.Object = ast.newObject(kind, ident.ident.name)
+    obj.decl = decl
+    obj.scope = s
+    obj.pkg = s.pkg
+    ident.ident.obj = obj
+    var alt *ast.Object = ast.Scope_insert(s, obj)
+    if alt != NULL {
+        if alt.kind != kind {
+            Checker_error(c, decl.pos, sys.sprintf("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl)))
+        }
+        var redecl bool = false
+        switch kind {
+        case ast.ObjKind_BAD:
+            panic("unreachable")
+            break
+        case ast.ObjKind_FUNC:
+            redecl = (alt.decl.func.body == NULL || decl.func.body == NULL) && areIdentical(alt.decl.func.type, decl.func.type)
+            break
+        case ast.ObjKind_PKG:
+            redecl = true
+            break
+        case ast.ObjKind_TYPE:
+            if alt.decl.typedef_.type.type == ast.TYPE_STRUCT {
+                redecl = alt.decl.typedef_.type.struct_.fields == NULL
+            }
+            break
+        case ast.ObjKind_VALUE:
+            redecl = alt.decl.value.value == NULL && !areIdentical(alt.decl.value.type, decl.value.value)
+            break
+        }
+        if !redecl {
+            Checker_error(c, decl.pos, sys.sprintf("already declared: %s", ident.ident.name))
+        }
+        alt.decl = decl
+    }
+}
+
 fun Checker_openScope(c *Checker) {
     c.pkg.scope = ast.Scope_new(c.pkg.scope)
 }
@@ -612,7 +624,7 @@ fun Checker_checkType(c *Checker, expr *ast.Expr) {
             if c.typedefName {
                 decl.value.type = c.typedefName
             }
-            Scope_declare(c.pkg.scope, decl)
+            Checker_declare(c, c.pkg.scope, decl)
         }
         break
     case ast.TYPE_FUNC:
@@ -637,7 +649,7 @@ fun Checker_checkType(c *Checker, expr *ast.Expr) {
                 var field *ast.Decl = expr.struct_.fields[i]
                 Checker_checkType(c, field.field.type)
                 if field.field.name {
-                    Scope_declare(c.pkg.scope, field)
+                    Checker_declare(c, c.pkg.scope, field)
                 }
             }
             Checker_closeScope(c)
@@ -1035,13 +1047,13 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
     utils.Map_get(&c.scopes, path, &oldScope)
     if oldScope {
         imp.imp.scope = oldScope
-        Scope_declare(c.pkg.scope, imp)
+        Checker_declare(c, c.pkg.scope, imp)
         free(path)
         return
     }
     imp.imp.scope = ast.Scope_new(universe())
     utils.Map_set(&c.scopes, path, &imp.imp.scope)
-    Scope_declare(c.pkg.scope, imp)
+    Checker_declare(c, c.pkg.scope, imp)
     oldScope = c.pkg.scope
     c.pkg.scope = imp.imp.scope
     var err *utils.Error = NULL
@@ -1060,7 +1072,7 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
     switch decl.type {
     case ast.DECL_FUNC:
         Checker_checkType(c, decl.func.type)
-        Scope_declare(c.pkg.scope, decl)
+        Checker_declare(c, c.pkg.scope, decl)
         break
     case ast.DECL_PRAGMA:
         break
@@ -1068,7 +1080,7 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
         c.typedefName = decl.typedef_.name
         Checker_checkType(c, decl.typedef_.type)
         c.typedefName = NULL
-        Scope_declare(c.pkg.scope, decl)
+        Checker_declare(c, c.pkg.scope, decl)
         break
     case ast.DECL_VALUE:
         {
@@ -1094,7 +1106,7 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
                     Checker_error(c, decl.pos, sys.sprintf("not assignable %s and %s: %s", typeString(varType), typeString(valType), declString(decl)))
                 }
             }
-            Scope_declare(c.pkg.scope, decl)
+            Checker_declare(c, c.pkg.scope, decl)
             break
         }
     default:
@@ -1110,7 +1122,7 @@ fun Checker_checkFunc(c *Checker, decl *ast.Decl) {
             var param *ast.Decl = type.func.params[i]
             assert(param.type == ast.DECL_FIELD)
             if param.field.name {
-                Scope_declare(c.pkg.scope, param)
+                Checker_declare(c, c.pkg.scope, param)
             }
         }
         c.result = decl.func.type.func.result

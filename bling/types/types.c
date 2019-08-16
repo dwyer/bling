@@ -7,6 +7,7 @@
 
 static char *constant_stringVal(ast$Expr *x) {
     // TODO move this to const pkg
+    assert(x->type == ast$EXPR_BASIC_LIT);
     const char *lit = x->basic_lit.value;
     int n = strlen(lit) - 2;
     char *val = malloc(n + 1);
@@ -276,98 +277,49 @@ static bool types$areComparable(ast$Expr *a, ast$Expr *b) {
     return types$areIdentical(a, b);
 }
 
-static void types$Scope_declare(ast$Scope *s, ast$Decl *decl) {
-    ast$ObjKind kind;
-    ast$Expr *ident = NULL;
+static ast$ObjKind getDeclKind(ast$Decl *decl) {
     switch (decl->type) {
     case ast$DECL_FIELD:
-        kind = ast$ObjKind_VALUE;
-        ident = decl->field.name;
-        break;
-    case ast$DECL_FUNC:
-        kind = ast$ObjKind_FUNC;
-        ident = decl->func.name;
-        break;
-    case ast$DECL_IMPORT:
-        kind = ast$ObjKind_PKG;
-        ident = decl->imp.name;
-        break;
-    case ast$DECL_TYPEDEF:
-        kind = ast$ObjKind_TYPE;
-        ident = decl->typedef_.name;
-        break;
     case ast$DECL_VALUE:
-        kind = ast$ObjKind_VALUE;
-        ident = decl->value.name;
-        break;
+        return ast$ObjKind_VALUE;
+    case ast$DECL_FUNC:
+        return ast$ObjKind_FUNC;
+    case ast$DECL_IMPORT:
+        return ast$ObjKind_PKG;
+    case ast$DECL_TYPEDEF:
+        return ast$ObjKind_TYPE;
     default:
-        panic("types$Scope_declare: bad decl: %d", decl->type);
-        return;
+        return ast$ObjKind_BAD;
     }
-    assert(ident->type == ast$EXPR_IDENT);
-    if (ident->ident.obj != NULL) {
-        ast$Scope_print(s);
-        panic("already declared: %s", types$declString(decl));
-    }
-    if (ident->ident.pkg != NULL) {
-        ast$Expr *pkg = ident->ident.pkg;
-        ast$Scope_resolve(s, pkg);
-        ast$Object *pkgObj = pkg->ident.obj;
-        ast$Decl *decl = pkgObj->decl;
-        assert(decl->type == ast$DECL_IMPORT);
-        s = decl->imp.scope;
-        // panic("get pkg scope: %s $ %s", pkg->ident.name, ident->ident.name);
-    }
-    ast$Object *obj = ast$newObject(kind, ident->ident.name);
-    obj->scope = s;
-    obj->decl = decl;
-    obj->pkg = s->pkg;
-    ident->ident.obj = obj;
-    ast$Object *alt = ast$Scope_insert(s, obj);
-    if (alt != NULL) {
-        if (alt->kind != kind) {
-            panic("incompatible redefinition of `%s`: %s",
-                    types$declString(obj->decl),
-                    types$declString(decl));
-        }
-        bool redecl = false;
-        switch (kind) {
-        case ast$ObjKind_FUNC:
-            redecl =
-                (alt->decl->func.body == NULL || decl->func.body == NULL) &&
-                types$areIdentical(alt->decl->func.type, decl->func.type);
-            break;
-        case ast$ObjKind_PKG:
-            redecl = true;
-            break;
-        case ast$ObjKind_TYPE:
-            if (alt->decl->typedef_.type->type == ast$TYPE_STRUCT) {
-                redecl = alt->decl->typedef_.type->struct_.fields == NULL;
-            }
-            break;
-        case ast$ObjKind_VALUE:
-            redecl = alt->decl->value.value == NULL &&
-                !types$areIdentical(alt->decl->value.type, decl->value.value);
-            break;
-        default:
-            panic("unknown kind: %d", kind);
-            break;
-        }
-        if (!redecl) {
-            panic("already declared: %s", ident->ident.name);
-        }
-        alt->decl = decl;
+}
+
+static ast$Expr *getDeclName(ast$Decl *decl) {
+    switch (decl->type) {
+    case ast$DECL_FIELD:
+        return decl->field.name;
+    case ast$DECL_FUNC:
+        return decl->func.name;
+    case ast$DECL_IMPORT:
+        return decl->imp.name;
+    case ast$DECL_TYPEDEF:
+        return decl->typedef_.name;
+    case ast$DECL_VALUE:
+        return decl->value.name;
+    default:
+        panic("bad decl: %s", types$declString(decl));
+        return NULL;
     }
 }
 
 static void declareBuiltins(ast$Scope *s) {
     for (int i = 0; natives[i].name != NULL; i++) {
-        ast$Expr name = {
+        ast$Expr _name = {
             .type = ast$EXPR_IDENT,
             .ident = {
                 .name = strdup(natives[i].name),
             },
         };
+        ast$Expr *name = esc(_name);
         ast$Expr type = {
             .type = ast$TYPE_NATIVE,
             .native = {
@@ -378,11 +330,14 @@ static void declareBuiltins(ast$Scope *s) {
         ast$Decl decl = {
             .type = ast$DECL_TYPEDEF,
             .typedef_ = {
-                .name = esc(name),
+                .name = name,
                 .type = esc(type),
             },
         };
-        types$Scope_declare(s, esc(decl));
+        ast$Object *obj = ast$newObject(ast$ObjKind_TYPE, name->ident.name);
+        obj->decl = esc(decl);
+        name->ident.obj = obj;
+        assert(ast$Scope_insert(s, obj) == NULL);
     }
 }
 
@@ -490,6 +445,67 @@ static void Checker_error(Checker *c, token$Pos pos, const char *msg) {
     panic(sys$sprintf("%s: %s", token$Position_string(&position), msg));
 }
 
+static void Checker_declare(Checker *c, ast$Scope *s, ast$Decl *decl) {
+    ast$Expr *ident = getDeclName(decl);
+    if (ident->ident.obj != NULL) {
+        ast$Scope_print(s);
+        Checker_error(c, decl->pos,
+                sys$sprintf("already declared: %s", ident->ident.name));
+    }
+    if (ident->ident.pkg != NULL) {
+        ast$Expr *pkg = ident->ident.pkg;
+        ast$Scope_resolve(s, pkg);
+        ast$Object *pkgObj = pkg->ident.obj;
+        ast$Decl *decl = pkgObj->decl;
+        assert(decl->type == ast$DECL_IMPORT);
+        s = decl->imp.scope;
+        // panic("get pkg scope: %s $ %s", pkg->ident.name, ident->ident.name);
+    }
+    ast$ObjKind kind = getDeclKind(decl);
+    ast$Object *obj = ast$newObject(kind, ident->ident.name);
+    obj->decl = decl;
+    obj->scope = s;
+    obj->pkg = s->pkg;
+    ident->ident.obj = obj;
+    ast$Object *alt = ast$Scope_insert(s, obj);
+    if (alt != NULL) {
+        if (alt->kind != kind) {
+            Checker_error(c, decl->pos,
+                    sys$sprintf("incompatible redefinition of `%s`: %s",
+                        types$declString(obj->decl),
+                        types$declString(decl)));
+        }
+        bool redecl = false;
+        switch (kind) {
+        case ast$ObjKind_BAD:
+            panic("unreachable");
+            break;
+        case ast$ObjKind_FUNC:
+            redecl =
+                (alt->decl->func.body == NULL || decl->func.body == NULL) &&
+                types$areIdentical(alt->decl->func.type, decl->func.type);
+            break;
+        case ast$ObjKind_PKG:
+            redecl = true;
+            break;
+        case ast$ObjKind_TYPE:
+            if (alt->decl->typedef_.type->type == ast$TYPE_STRUCT) {
+                redecl = alt->decl->typedef_.type->struct_.fields == NULL;
+            }
+            break;
+        case ast$ObjKind_VALUE:
+            redecl = alt->decl->value.value == NULL &&
+                !types$areIdentical(alt->decl->value.type, decl->value.value);
+            break;
+        }
+        if (!redecl) {
+            Checker_error(c, decl->pos,
+                    sys$sprintf("already declared: %s", ident->ident.name));
+        }
+        alt->decl = decl;
+    }
+}
+
 static void Checker_openScope(Checker *c) {
     c->pkg.scope = ast$Scope_new(c->pkg.scope);
 }
@@ -537,7 +553,7 @@ static void Checker_checkType(Checker *c, ast$Expr *expr) {
             if (c->typedefName) {
                 decl->value.type = c->typedefName;
             }
-            types$Scope_declare(c->pkg.scope, decl);
+            Checker_declare(c, c->pkg.scope, decl);
         }
         break;
 
@@ -565,7 +581,7 @@ static void Checker_checkType(Checker *c, ast$Expr *expr) {
                 ast$Decl *field = expr->struct_.fields[i];
                 Checker_checkType(c, field->field.type);
                 if (field->field.name) {
-                    types$Scope_declare(c->pkg.scope, field);
+                    Checker_declare(c, c->pkg.scope, field);
                 }
             }
             Checker_closeScope(c);
@@ -1067,7 +1083,7 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
     utils$Map_get(&c->scopes, path, &oldScope);
     if (oldScope) {
         imp->imp.scope = oldScope;
-        types$Scope_declare(c->pkg.scope, imp);
+        Checker_declare(c, c->pkg.scope, imp);
         free(path);
         return;
     }
@@ -1075,7 +1091,7 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
     imp->imp.scope = ast$Scope_new(types$universe());
     utils$Map_set(&c->scopes, path, &imp->imp.scope);
 
-    types$Scope_declare(c->pkg.scope, imp);
+    Checker_declare(c, c->pkg.scope, imp);
 
     oldScope = c->pkg.scope;
     c->pkg.scope = imp->imp.scope;
@@ -1097,7 +1113,7 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
     switch (decl->type) {
     case ast$DECL_FUNC:
         Checker_checkType(c, decl->func.type);
-        types$Scope_declare(c->pkg.scope, decl);
+        Checker_declare(c, c->pkg.scope, decl);
         break;
     case ast$DECL_PRAGMA:
         break;
@@ -1105,7 +1121,7 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
         c->typedefName = decl->typedef_.name;
         Checker_checkType(c, decl->typedef_.type);
         c->typedefName = NULL;
-        types$Scope_declare(c->pkg.scope, decl);
+        Checker_declare(c, c->pkg.scope, decl);
         break;
     case ast$DECL_VALUE:
         {
@@ -1136,7 +1152,7 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
                                 types$declString(decl)));
                 }
             }
-            types$Scope_declare(c->pkg.scope, decl);
+            Checker_declare(c, c->pkg.scope, decl);
             break;
         }
     default:
@@ -1153,7 +1169,7 @@ static void Checker_checkFunc(Checker *c, ast$Decl *decl) {
             ast$Decl *param = type->func.params[i];
             assert(param->type == ast$DECL_FIELD);
             if (param->field.name) {
-                types$Scope_declare(c->pkg.scope, param);
+                Checker_declare(c, c->pkg.scope, param);
             }
         }
         c->result = decl->func.type->func.result;

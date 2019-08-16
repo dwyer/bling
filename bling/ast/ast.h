@@ -72,6 +72,7 @@ typedef struct ast$Scope ast$Scope;
 typedef struct ast$Stmt ast$Stmt;
 
 typedef enum {
+    ast$ObjKind_BAD,
     ast$ObjKind_FUNC,
     ast$ObjKind_PKG,
     ast$ObjKind_TYPE,
