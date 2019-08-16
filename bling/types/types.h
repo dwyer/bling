@@ -8,6 +8,7 @@ import("bling/emitter");
 import("bling/parser");
 import("bling/token");
 import("paths");
+import("sys");
 import("utils");
 
 extern ast$Scope *types$universe();
