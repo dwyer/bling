@@ -5,6 +5,18 @@
 #include "paths/paths.h"
 #include "sys/sys.h"
 
+static char *constant_stringVal(ast$Expr *x) {
+    // TODO move this to const pkg
+    const char *lit = x->basic_lit.value;
+    int n = strlen(lit) - 2;
+    char *val = malloc(n + 1);
+    for (int i = 0; i < n; i++) {
+        val[i] = lit[i+1];
+    }
+    val[n] = '\0';
+    return val;
+}
+
 static struct {
     char *name;
     int size;
@@ -96,10 +108,10 @@ static ast$Expr *types$makePtr(ast$Expr *type) {
     return esc(x);
 }
 
-static ast$Expr *lookup_typedef(ast$Expr *ident) {
+static ast$Expr *getUnderlyingType(ast$Expr *ident) {
     ast$Decl *decl = ident->ident.obj->decl;
     if (decl->type != ast$DECL_TYPEDEF) {
-        panic("not a typedef: %s", types$typeString(ident));
+        panic("not a type: %s", types$typeString(ident));
     }
     return decl->typedef_.type;
 }
@@ -108,7 +120,7 @@ static ast$Expr *types$getBaseType(ast$Expr *type) {
     for (;;) {
         switch (type->type) {
         case ast$EXPR_IDENT:
-            type = lookup_typedef(type);
+            type = getUnderlyingType(type);
             break;
         case ast$EXPR_SELECTOR:
             type = type->selector.sel;
@@ -119,7 +131,7 @@ static ast$Expr *types$getBaseType(ast$Expr *type) {
         case ast$TYPE_STRUCT:
             return type;
         default:
-            panic("not a typedef: %s", types$typeString(type));
+            panic("not a type: %s", types$typeString(type));
         }
     }
 }
@@ -234,10 +246,10 @@ static bool types$areAssignable(ast$Expr *a, ast$Expr *b) {
         return types$areAssignable(types$pointerBase(a), types$pointerBase(b));
     }
     while (a->type == ast$EXPR_IDENT) {
-        a = lookup_typedef(a);
+        a = getUnderlyingType(a);
     }
     while (b->type == ast$EXPR_IDENT) {
-        b = lookup_typedef(b);
+        b = getUnderlyingType(b);
     }
     if (types$isNative(a, "bool") && types$isArithmetic(b)) {
         return true;
@@ -348,7 +360,7 @@ static void types$Scope_declare(ast$Scope *s, ast$Decl *decl) {
     }
 }
 
-static void declare_builtins(ast$Scope *s) {
+static void declareBuiltins(ast$Scope *s) {
     for (int i = 0; natives[i].name != NULL; i++) {
         ast$Expr name = {
             .type = ast$EXPR_IDENT,
@@ -379,7 +391,7 @@ ast$Scope *_universe = NULL;
 extern ast$Scope *types$universe() {
     if (_universe == NULL) {
         _universe = ast$Scope_new(NULL);
-        declare_builtins(_universe);
+        declareBuiltins(_universe);
         token$FileSet *fset = token$newFileSet();
         ast$File *file = parser$parseFile(fset, "builtin/builtin.bling");
         file->scope = _universe;
@@ -389,6 +401,74 @@ extern ast$Scope *types$universe() {
         free(file);
     }
     return _universe;
+}
+
+static bool types$isLhs(ast$Expr *expr) {
+    switch (expr->type) {
+    case ast$EXPR_IDENT:
+    case ast$EXPR_SELECTOR:
+        return true;
+    case ast$EXPR_CAST:
+        return types$isLhs(expr->cast.expr);
+    case ast$EXPR_INDEX:
+        return types$isLhs(expr->index.x);
+    case ast$EXPR_PAREN:
+        return types$isLhs(expr->paren.x);
+    case ast$EXPR_STAR:
+        return types$isLhs(expr->star.x);
+    default:
+        return false;
+    }
+}
+
+static ast$Expr *getDeclType(ast$Decl *decl) {
+    assert(decl);
+    switch (decl->type) {
+    case ast$DECL_FIELD:
+        return decl->field.type;
+    case ast$DECL_FUNC:
+        return decl->func.type;
+    case ast$DECL_IMPORT:
+        return NULL;
+    case ast$DECL_TYPEDEF:
+        return decl->typedef_.type;
+    case ast$DECL_VALUE:
+        return decl->value.type;
+    default:
+        panic("unhandled decl: %s", types$declString(decl));
+        return NULL;
+    }
+}
+
+static ast$Decl *getStructFieldByName(ast$Expr *type, ast$Expr *name) {
+    assert(type->type == ast$TYPE_STRUCT);
+    assert(name->type == ast$EXPR_IDENT);
+    for (int i = 0; type->struct_.fields && type->struct_.fields[i]; i++) {
+        ast$Decl *field = type->struct_.fields[i];
+        ast$Expr *fieldName = field->field.name;
+        if (fieldName) {
+            if (streq(name->ident.name, fieldName->ident.name)) {
+                type = field->field.type;
+                return field;
+            }
+        } else {
+            return getStructFieldByName(field->field.type, name);
+        }
+    }
+    return NULL;
+}
+
+static ast$Decl *getStructField(ast$Expr *type, int index) {
+    assert(type->type == ast$TYPE_STRUCT);
+    if (type->struct_.fields == NULL) {
+        panic("incomplete field defn: %s", types$typeString(type));
+    }
+    for (int i = 0; type->struct_.fields[i]; i++) {
+        if (i == index) {
+            return type->struct_.fields[i];
+        }
+    }
+    return NULL;
 }
 
 typedef struct {
@@ -499,67 +579,13 @@ static void Checker_checkType(Checker *c, ast$Expr *expr) {
     }
 }
 
-static bool types$isLhs(ast$Expr *expr) {
-    switch (expr->type) {
-    case ast$EXPR_IDENT:
-    case ast$EXPR_SELECTOR:
-        return true;
-    case ast$EXPR_CAST:
-        return types$isLhs(expr->cast.expr);
-    case ast$EXPR_INDEX:
-        return types$isLhs(expr->index.x);
-    case ast$EXPR_PAREN:
-        return types$isLhs(expr->paren.x);
-    case ast$EXPR_STAR:
-        return types$isLhs(expr->star.x);
-    default:
-        return false;
+static ast$Expr *Checker_checkIdent(Checker *c, ast$Expr *expr) {
+    assert(expr->type == ast$EXPR_IDENT);
+    if (expr->ident.obj == NULL) {
+        Checker_error(c, expr->pos, sys$sprintf("unresolved identifier: %s",
+                    types$exprString(expr)));
     }
-}
-
-static ast$Expr *getDeclType(ast$Decl *decl) {
-    assert(decl);
-    switch (decl->type) {
-    case ast$DECL_FIELD:
-        return decl->field.type;
-    case ast$DECL_FUNC:
-        return decl->func.type;
-    case ast$DECL_IMPORT:
-        return NULL;
-    case ast$DECL_TYPEDEF:
-        return decl->typedef_.type;
-    case ast$DECL_VALUE:
-        return decl->value.type;
-    default:
-        panic("unhandled decl: %s", types$declString(decl));
-        return NULL;
-    }
-}
-
-
-static ast$Expr *get_ident_type(ast$Expr *ident) {
-    assert(ident->type == ast$EXPR_IDENT);
-    ast$Object *obj = ident->ident.obj;
-    assert(obj);
-    return getDeclType(obj->decl);
-}
-
-static ast$Decl *find_field(ast$Expr *type, ast$Expr *sel) {
-    assert(type->type == ast$TYPE_STRUCT);
-    assert(sel->type == ast$EXPR_IDENT);
-    for (int i = 0; type->struct_.fields && type->struct_.fields[i]; i++) {
-        ast$Decl *field = type->struct_.fields[i];
-        ast$Expr *name = field->field.name;
-        if (name) {
-            if (streq(sel->ident.name, name->ident.name)) {
-                type = field->field.type;
-                return field;
-            }
-        } else {
-            return find_field(field->field.type, sel);
-        }
-    }
-    return NULL;
+    return getDeclType(expr->ident.obj->decl);
 }
 
 static bool types$isInteger(ast$Expr *x) {
@@ -599,19 +625,6 @@ static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
     }
 }
 
-static ast$Decl *getStructField(ast$Expr *type, int index) {
-    assert(type->type == ast$TYPE_STRUCT);
-    if (type->struct_.fields == NULL) {
-        panic("incomplete field defn: %s", types$typeString(type));
-    }
-    for (int i = 0; type->struct_.fields[i]; i++) {
-        if (i == index) {
-            return type->struct_.fields[i];
-        }
-    }
-    return NULL;
-}
-
 static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
     assert(x->compound.type);
     ast$Expr *baseT = types$getBaseType(x->compound.type);
@@ -628,7 +641,7 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
                         sys$sprintf("key must be an identifier: %s",
                             types$typeString(x->compound.type)));
             }
-            ast$Decl *field = find_field(baseT, key);
+            ast$Decl *field = getStructFieldByName(baseT, key);
             if (field == NULL) {
                 Checker_error(c, x->pos,
                         sys$sprintf("struct `%s` has no field `%s`",
@@ -797,7 +810,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
 
     case ast$EXPR_IDENT:
         ast$Scope_resolve(c->pkg.scope, expr);
-        return get_ident_type(expr);
+        return Checker_checkIdent(c, expr);
 
     case ast$EXPR_INDEX:
         {
@@ -846,7 +859,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                 assert(expr->selector.tok != token$ARROW);
             }
             type = types$getBaseType(type);
-            ast$Decl *field = find_field(type, expr->selector.sel);
+            ast$Decl *field = getStructFieldByName(type, expr->selector.sel);
             if (field == NULL) {
                 Checker_error(c, expr->pos,
                         sys$sprintf("struct `%s` (`%s`) has no field `%s`",
@@ -1039,18 +1052,6 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
         Checker_error(c, stmt->pos,
                 sys$sprintf("unknown stmt: %s", types$stmtString(stmt)));
     }
-}
-
-static char *constant_stringVal(ast$Expr *x) {
-    // TODO move this to const pkg
-    const char *lit = x->basic_lit.value;
-    int n = strlen(lit) - 2;
-    char *val = malloc(n + 1);
-    for (int i = 0; i < n; i++) {
-        val[i] = lit[i+1];
-    }
-    val[n] = '\0';
-    return val;
 }
 
 static void Checker_checkFile(Checker *c, ast$File *file);

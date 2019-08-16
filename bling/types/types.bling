@@ -43,6 +43,17 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package
 
 #include "sys/sys.h"
 
+fun constant_stringVal(x *ast.Expr) *char {
+    var lit *const char = x.basic_lit.value
+    var n int = strlen(lit) - 2
+    var val *char = malloc(n + 1)
+    for var i int = 0; i < n; i++ {
+        val[i] = lit[i + 1]
+    }
+    val[n] = '\0'
+    return val
+}
+
 var natives []struct {
     name *char
     size int
@@ -188,10 +199,10 @@ fun makePtr(type *ast.Expr) *ast.Expr {
     return esc(x)
 }
 
-fun lookup_typedef(ident *ast.Expr) *ast.Expr {
+fun getUnderlyingType(ident *ast.Expr) *ast.Expr {
     var decl *ast.Decl = ident.ident.obj.decl
     if decl.type != ast.DECL_TYPEDEF {
-        panic("not a typedef: %s", typeString(ident))
+        panic("not a type: %s", typeString(ident))
     }
     return decl.typedef_.type
 }
@@ -200,7 +211,7 @@ fun getBaseType(type *ast.Expr) *ast.Expr {
     for ;; {
         switch type.type {
         case ast.EXPR_IDENT:
-            type = lookup_typedef(type)
+            type = getUnderlyingType(type)
             break
         case ast.EXPR_SELECTOR:
             type = type.selector.sel
@@ -208,7 +219,7 @@ fun getBaseType(type *ast.Expr) *ast.Expr {
         case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
             return type
         default:
-            panic("not a typedef: %s", typeString(type))
+            panic("not a type: %s", typeString(type))
         }
     }
 }
@@ -321,10 +332,10 @@ fun areAssignable(a *ast.Expr, b *ast.Expr) bool {
         return areAssignable(pointerBase(a), pointerBase(b))
     }
     while a.type == ast.EXPR_IDENT {
-        a = lookup_typedef(a)
+        a = getUnderlyingType(a)
     }
     while b.type == ast.EXPR_IDENT {
-        b = lookup_typedef(b)
+        b = getUnderlyingType(b)
     }
     if isNative(a, "bool") && isArithmetic(b) {
         return true
@@ -429,7 +440,7 @@ fun Scope_declare(s *ast.Scope, decl *ast.Decl) {
     }
 }
 
-fun declare_builtins(s *ast.Scope) {
+fun declareBuiltins(s *ast.Scope) {
     for var i int = 0; natives[i].name != NULL; i++ {
         var name ast.Expr = {
             type: ast.EXPR_IDENT,
@@ -460,7 +471,7 @@ var _universe *ast.Scope = NULL
 fun universe() *ast.Scope {
     if _universe == NULL {
         _universe = ast.Scope_new(NULL)
-        declare_builtins(_universe)
+        declareBuiltins(_universe)
         var fset *token.FileSet = token.newFileSet()
         var file *ast.File = parser.parseFile(fset, "builtin/builtin.bling")
         file.scope = _universe
@@ -472,6 +483,73 @@ fun universe() *ast.Scope {
         free(file)
     }
     return _universe
+}
+
+fun isLhs(expr *ast.Expr) bool {
+    switch expr.type {
+    case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
+        return true
+    case ast.EXPR_CAST:
+        return isLhs(expr.cast.expr)
+    case ast.EXPR_INDEX:
+        return isLhs(expr.index.x)
+    case ast.EXPR_PAREN:
+        return isLhs(expr.paren.x)
+    case ast.EXPR_STAR:
+        return isLhs(expr.star.x)
+    default:
+        return false
+    }
+}
+
+fun getDeclType(decl *ast.Decl) *ast.Expr {
+    assert(decl)
+    switch decl.type {
+    case ast.DECL_FIELD:
+        return decl.field.type
+    case ast.DECL_FUNC:
+        return decl.func.type
+    case ast.DECL_IMPORT:
+        return NULL
+    case ast.DECL_TYPEDEF:
+        return decl.typedef_.type
+    case ast.DECL_VALUE:
+        return decl.value.type
+    default:
+        panic("unhandled decl: %s", declString(decl))
+        return NULL
+    }
+}
+
+fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
+    assert(type.type == ast.TYPE_STRUCT)
+    assert(name.type == ast.EXPR_IDENT)
+    for var i int = 0; type.struct_.fields && type.struct_.fields[i]; i++ {
+        var field *ast.Decl = type.struct_.fields[i]
+        var fieldName *ast.Expr = field.field.name
+        if fieldName {
+            if streq(name.ident.name, fieldName.ident.name) {
+                type = field.field.type
+                return field
+            }
+        } else {
+            return getStructFieldByName(field.field.type, name)
+        }
+    }
+    return NULL
+}
+
+fun getStructField(type *ast.Expr, index int) *ast.Decl {
+    assert(type.type == ast.TYPE_STRUCT)
+    if type.struct_.fields == NULL {
+        panic("incomplete field defn: %s", typeString(type))
+    }
+    for var i int = 0; type.struct_.fields[i]; i++ {
+        if i == index {
+            return type.struct_.fields[i]
+        }
+    }
+    return NULL
 }
 
 typedef Checker struct {
@@ -571,65 +649,12 @@ fun Checker_checkType(c *Checker, expr *ast.Expr) {
     }
 }
 
-fun isLhs(expr *ast.Expr) bool {
-    switch expr.type {
-    case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
-        return true
-    case ast.EXPR_CAST:
-        return isLhs(expr.cast.expr)
-    case ast.EXPR_INDEX:
-        return isLhs(expr.index.x)
-    case ast.EXPR_PAREN:
-        return isLhs(expr.paren.x)
-    case ast.EXPR_STAR:
-        return isLhs(expr.star.x)
-    default:
-        return false
+fun Checker_checkIdent(c *Checker, expr *ast.Expr) *ast.Expr {
+    assert(expr.type == ast.EXPR_IDENT)
+    if expr.ident.obj == NULL {
+        Checker_error(c, expr.pos, sys.sprintf("unresolved identifier: %s", exprString(expr)))
     }
-}
-
-fun getDeclType(decl *ast.Decl) *ast.Expr {
-    assert(decl)
-    switch decl.type {
-    case ast.DECL_FIELD:
-        return decl.field.type
-    case ast.DECL_FUNC:
-        return decl.func.type
-    case ast.DECL_IMPORT:
-        return NULL
-    case ast.DECL_TYPEDEF:
-        return decl.typedef_.type
-    case ast.DECL_VALUE:
-        return decl.value.type
-    default:
-        panic("unhandled decl: %s", declString(decl))
-        return NULL
-    }
-}
-
-fun get_ident_type(ident *ast.Expr) *ast.Expr {
-    assert(ident.type == ast.EXPR_IDENT)
-    var obj *ast.Object = ident.ident.obj
-    assert(obj)
-    return getDeclType(obj.decl)
-}
-
-fun find_field(type *ast.Expr, sel *ast.Expr) *ast.Decl {
-    assert(type.type == ast.TYPE_STRUCT)
-    assert(sel.type == ast.EXPR_IDENT)
-    for var i int = 0; type.struct_.fields && type.struct_.fields[i]; i++ {
-        var field *ast.Decl = type.struct_.fields[i]
-        var name *ast.Expr = field.field.name
-        if name {
-            if streq(sel.ident.name, name.ident.name) {
-                type = field.field.type
-                return field
-            }
-        } else {
-            return find_field(field.field.type, sel)
-        }
-    }
-    return NULL
+    return getDeclType(expr.ident.obj.decl)
 }
 
 fun isInteger(x *ast.Expr) bool {
@@ -665,19 +690,6 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
     }
 }
 
-fun getStructField(type *ast.Expr, index int) *ast.Decl {
-    assert(type.type == ast.TYPE_STRUCT)
-    if type.struct_.fields == NULL {
-        panic("incomplete field defn: %s", typeString(type))
-    }
-    for var i int = 0; type.struct_.fields[i]; i++ {
-        if i == index {
-            return type.struct_.fields[i]
-        }
-    }
-    return NULL
-}
-
 fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
     assert(x.compound.type)
     var baseT *ast.Expr = getBaseType(x.compound.type)
@@ -692,7 +704,7 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             if !ast.isIdent(key) {
                 Checker_error(c, x.pos, sys.sprintf("key must be an identifier: %s", typeString(x.compound.type)))
             }
-            var field *ast.Decl = find_field(baseT, key)
+            var field *ast.Decl = getStructFieldByName(baseT, key)
             if field == NULL {
                 Checker_error(c, x.pos, sys.sprintf("struct `%s` has no field `%s`", typeString(x.compound.type), exprString(key)))
             }
@@ -822,7 +834,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         return expr.cast.type
     case ast.EXPR_IDENT:
         ast.Scope_resolve(c.pkg.scope, expr)
-        return get_ident_type(expr)
+        return Checker_checkIdent(c, expr)
     case ast.EXPR_INDEX:
         {
             var type *ast.Expr = Checker_checkExpr(c, expr.index.x)
@@ -865,7 +877,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 assert(expr.selector.tok != token.ARROW)
             }
             type = getBaseType(type)
-            var field *ast.Decl = find_field(type, expr.selector.sel)
+            var field *ast.Decl = getStructFieldByName(type, expr.selector.sel)
             if field == NULL {
                 Checker_error(c, expr.pos, sys.sprintf("struct `%s` (`%s`) has no field `%s`", exprString(expr.selector.x), typeString(type), expr.selector.sel.ident.name))
             }
@@ -1009,17 +1021,6 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
     default:
         Checker_error(c, stmt.pos, sys.sprintf("unknown stmt: %s", stmtString(stmt)))
     }
-}
-
-fun constant_stringVal(x *ast.Expr) *char {
-    var lit *const char = x.basic_lit.value
-    var n int = strlen(lit) - 2
-    var val *char = malloc(n + 1)
-    for var i int = 0; i < n; i++ {
-        val[i] = lit[i + 1]
-    }
-    val[n] = '\0'
-    return val
 }
 
 fun Checker_checkFile(c *Checker, file *ast.File)
