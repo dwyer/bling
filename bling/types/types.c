@@ -493,7 +493,8 @@ static void Checker_checkType(Checker *c, ast$Expr *expr) {
         break;
 
     default:
-        Checker_error(c, 0, sys$sprintf("Checker_checkType: unknown type: %s", types$typeString(expr)));
+        Checker_error(c, 0, sys$sprintf("unknown type: %s",
+                    types$typeString(expr)));
         break;
     }
 }
@@ -516,7 +517,7 @@ static bool types$isLhs(ast$Expr *expr) {
     }
 }
 
-static ast$Expr *get_decl_type(ast$Decl *decl) {
+static ast$Expr *getDeclType(ast$Decl *decl) {
     assert(decl);
     switch (decl->type) {
     case ast$DECL_FIELD:
@@ -540,7 +541,7 @@ static ast$Expr *get_ident_type(ast$Expr *ident) {
     assert(ident->type == ast$EXPR_IDENT);
     ast$Object *obj = ident->ident.obj;
     assert(obj);
-    return get_decl_type(obj->decl);
+    return getDeclType(obj->decl);
 }
 
 static ast$Decl *find_field(ast$Expr *type, ast$Expr *sel) {
@@ -581,7 +582,8 @@ static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
             elt->key_value.isArray = true;
             ast$Expr *indexT = Checker_checkExpr(c, elt->key_value.key);
             if (!types$isInteger(indexT)) {
-                Checker_error(c, x->pos, sys$sprintf("not a valid index: %s: %s",
+                Checker_error(c, elt->pos,
+                        sys$sprintf("not a valid index: %s: %s",
                             types$exprString(elt->key_value.key),
                             types$exprString(elt)));
             }
@@ -652,7 +654,8 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
         }
         ast$Expr *eltT = Checker_checkExpr(c, elt);
         if (!types$areAssignable(fieldT, eltT)) {
-            Checker_error(c, elt->pos, sys$sprintf("cannot init field of type `%s` with value of type `%s`: %s",
+            Checker_error(c, elt->pos, sys$sprintf(
+                        "cannot init field of type `%s` with value of type `%s`: %s",
                         types$typeString(fieldT),
                         types$typeString(eltT),
                         types$exprString(elt)));
@@ -727,8 +730,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                 type = types$makePtr(types$makeIdent("char"));
                 break;
             default:
-                Checker_error(c, expr->pos,
-                        sys$sprintf("Checker_checkExpr: not implmented: %s",
+                Checker_error(c, expr->pos, sys$sprintf("not implmented: %s",
                             token$string(kind)));
                 break;
             }
@@ -752,7 +754,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             }
             if (type->type != ast$TYPE_FUNC) {
                 Checker_error(c, expr->pos,
-                        sys$sprintf("Checker_checkExpr: `%s` is not a func: %s",
+                        sys$sprintf("`%s` is not a func: %s",
                             types$exprString(expr->call.func),
                             types$exprString(expr)));
             }
@@ -763,7 +765,8 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                 ast$Expr *type = Checker_checkExpr(c, expr->call.args[i]);
                 if (param->field.type) {
                     if (!types$areAssignable(param->field.type, type)) {
-                        Checker_error(c, expr->pos, sys$sprintf("not assignable: %s and %s: %s",
+                        Checker_error(c, expr->pos, sys$sprintf(
+                                    "not assignable: %s and %s: %s",
                                     types$typeString(param->field.type),
                                     types$typeString(type),
                                     types$exprString(expr)));
@@ -777,7 +780,9 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
 
     case ast$EXPR_COMPOUND:
         if (expr->compound.type == NULL) {
-            Checker_error(c, expr->pos, sys$sprintf("untyped compound expr: %s", types$exprString(expr)));
+            Checker_error(c, expr->pos,
+                    sys$sprintf("untyped compound expr: %s",
+                        types$exprString(expr)));
         }
         Checker_checkCompositeLit(c, expr);
         return expr->compound.type;
@@ -805,7 +810,8 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                 type = type->star.x;
                 break;
             default:
-                Checker_error(c, expr->pos, sys$sprintf("indexing a non-array or pointer `%s`: %s",
+                Checker_error(c, expr->pos,
+                        sys$sprintf("indexing a non-array or pointer `%s`: %s",
                             types$typeString(type),
                             types$exprString(expr)));
                 break;
@@ -842,7 +848,8 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             type = types$getBaseType(type);
             ast$Decl *field = find_field(type, expr->selector.sel);
             if (field == NULL) {
-                Checker_error(c, expr->pos, sys$sprintf("struct `%s` (`%s`) has no field `%s`",
+                Checker_error(c, expr->pos,
+                        sys$sprintf("struct `%s` (`%s`) has no field `%s`",
                             types$exprString(expr->selector.x),
                             types$typeString(type),
                             expr->selector.sel->ident.name));
@@ -868,7 +875,8 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             case ast$TYPE_ARRAY:
                 return type->array.elt;
             default:
-                Checker_error(c, expr->pos, sys$sprintf("Checker_checkExpr: derefencing a non-pointer `%s`: %s",
+                Checker_error(c, expr->pos,
+                        sys$sprintf("derefencing a non-pointer `%s`: %s",
                             types$typeString(type),
                             types$exprString(expr)));
                 return NULL;
@@ -880,7 +888,8 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             ast$Expr *type = Checker_checkExpr(c, expr->unary.x);
             if (expr->unary.op == token$AND) {
                 if (!types$isLhs(expr->unary.x)) {
-                    Checker_error(c, expr->pos, sys$sprintf("Checker_checkExpr: invalid lvalue `%s`: %s",
+                    Checker_error(c, expr->pos, sys$sprintf(
+                                "invalid lvalue `%s`: %s",
                                 types$exprString(expr->unary.x),
                                 types$exprString(expr)));
                 }
@@ -890,8 +899,8 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
         }
 
     default:
-        Checker_error(c, expr->pos, sys$sprintf("Checker_checkExpr: unknown expr: %s",
-                    types$exprString(expr)));
+        Checker_error(c, expr->pos,
+                sys$sprintf("unknown expr: %s", types$exprString(expr)));
         return NULL;
     }
 }
@@ -904,7 +913,7 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
         {
             if (!types$isLhs(stmt->assign.x)) {
                 Checker_error(c, stmt->pos,
-                        sys$sprintf("Checker_checkStmt: invalid lvalue `%s`: %s",
+                        sys$sprintf("invalid lvalue `%s`: %s",
                             types$exprString(stmt->assign.x),
                             types$stmtString(stmt)));
             }
@@ -917,7 +926,7 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
             ast$Expr *b = Checker_checkExpr(c, stmt->assign.y);
             if (!types$areAssignable(a, b)) {
                 Checker_error(c, stmt->pos,
-                        sys$sprintf("Checker_checkStmt: not assignable: `%s` and `%s`: %s",
+                        sys$sprintf("not assignable: `%s` and `%s`: %s",
                             types$typeString(a),
                             types$typeString(b),
                             types$stmtString(stmt)));
@@ -989,13 +998,13 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
             ast$Expr *a = c->result;
             ast$Expr *b = Checker_checkExpr(c, stmt->return_.x);
             if (a == NULL) {
-                Checker_error(c, stmt->pos, sys$sprintf(
-                            "Checker_checkStmt: returning value in void function: %s",
+                Checker_error(c, stmt->pos,
+                        sys$sprintf("returning value in void function: %s",
                             types$stmtString(stmt)));
             }
             if (!types$areAssignable(a, b)) {
                 Checker_error(c, stmt->pos,
-                        sys$sprintf("Checker_checkStmt: not returnable: %s and %s: %s",
+                        sys$sprintf("not returnable: %s and %s: %s",
                             types$typeString(a),
                             types$typeString(b),
                             types$stmtString(stmt)));
@@ -1012,8 +1021,8 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
                 for (int j = 0; clause->case_.exprs && clause->case_.exprs[j]; j++) {
                     ast$Expr *type2 = Checker_checkExpr(c, clause->case_.exprs[j]);
                     if (!types$areComparable(type1, type2)) {
-                        Checker_error(c, stmt->pos, sys$sprintf(
-                                    "Checker_checkStmt: not comparable: %s and %s: %s",
+                        Checker_error(c, stmt->pos,
+                                sys$sprintf("not comparable: %s and %s: %s",
                                     types$typeString(type1),
                                     types$typeString(type2),
                                     types$stmtString(stmt)));
@@ -1028,8 +1037,7 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
 
     default:
         Checker_error(c, stmt->pos,
-                sys$sprintf("Checker_checkStmt: unknown stmt: %s",
-                    types$stmtString(stmt)));
+                sys$sprintf("unknown stmt: %s", types$stmtString(stmt)));
     }
 }
 
@@ -1121,7 +1129,7 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
                 ast$Expr *varType = decl->value.type;
                 if (!types$areAssignable(varType, valType)) {
                     Checker_error(c, decl->pos,
-                            sys$sprintf("Checker_checkDecl: not assignable %s and %s: %s",
+                            sys$sprintf("not assignable %s and %s: %s",
                                 types$typeString(varType),
                                 types$typeString(valType),
                                 types$declString(decl)));
@@ -1132,8 +1140,7 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
         }
     default:
         Checker_error(c, decl->pos,
-                sys$sprintf("Checker_checkDecl: not implemented: %s",
-                    types$declString(decl)));
+                sys$sprintf("not implemented: %s", types$declString(decl)));
     }
 }
 
