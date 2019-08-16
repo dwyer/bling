@@ -528,7 +528,7 @@ fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
     if file {
         position = token.File_position(file, pos)
     }
-    panic(sys.sprintf("%s: %s", token.Position_string(&position), msg))
+    panic(sys.sprintf("%s: %s\n%s", token.Position_string(&position), msg, token.File_lineString(file, position.line)))
 }
 
 fun Checker_declare(c *Checker, s *ast.Scope, decl *ast.Decl) {

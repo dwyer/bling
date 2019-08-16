@@ -443,7 +443,10 @@ static void Checker_error(Checker *c, token$Pos pos, const char *msg) {
     if (file) {
         position = token$File_position(file, pos);
     }
-    panic(sys$sprintf("%s: %s", token$Position_string(&position), msg));
+    panic(sys$sprintf("%s: %s\n%s",
+                token$Position_string(&position),
+                msg,
+                token$File_lineString(file, position.line)));
 }
 
 static void Checker_declare(Checker *c, ast$Scope *s, ast$Decl *decl) {

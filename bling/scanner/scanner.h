@@ -4,8 +4,6 @@
 package(scanner);
 
 import("bling/token");
-import("bytes");
-import("utils");
 
 typedef struct {
     token$File *file;
@@ -19,4 +17,3 @@ typedef struct {
 
 extern token$Token scanner$scan(scanner$Scanner *s, token$Pos *pos, char **lit);
 extern void scanner$init(scanner$Scanner *s, token$File *file, char *src);
-extern char *scanner$getLine(scanner$Scanner *s, int line);

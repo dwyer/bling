@@ -60,7 +60,7 @@ extern void parser$error(parser$Parser *p, token$Pos pos, char *msg) {
     panic(sys$sprintf("%s: %s\n%s",
                 token$Position_string(&position),
                 msg,
-                scanner$getLine(&p->scanner, position.line)));
+                token$File_lineString(p->file, position.line)));
 }
 
 extern void parser$errorExpected(parser$Parser *p, token$Pos pos, char *msg) {

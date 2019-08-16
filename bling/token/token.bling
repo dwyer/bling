@@ -1,4 +1,5 @@
 package token
+import "bytes"
 import "sys"
 import "utils"
 
@@ -113,6 +114,7 @@ typedef File struct {
     base int
     size int
     lines utils.Slice
+    src *char
 }
 
 typedef FileSet struct FileSet {
@@ -137,6 +139,8 @@ fun File_pos(f *File, offset int) Pos
 
 fun File_position(f *File, p Pos) Position
 
+fun File_lineString(f *File, line int) *char
+
 fun newFileSet() *FileSet
 
 fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File
@@ -144,6 +148,8 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File
 fun FileSet_file(s *FileSet, pos Pos) *File
 
 #include "bling/token/token.h"
+
+#include "bytes/bytes.h"
 
 #include "sys/sys.h"
 
@@ -340,6 +346,22 @@ fun File_positionFor(f *File, p Pos, adjusted bool) Position {
 
 fun File_position(f *File, p Pos) Position {
     return File_positionFor(f, p, true)
+}
+
+fun File_lineString(f *File, line int) *char {
+    if line < 1 {
+        return NULL
+    }
+    var buf bytes.Buffer = {}
+    var i int = 0
+    utils.Slice_get(&f.lines, line - 1, &i)
+    var ch int = f.src[i]
+    while ch > 0 && ch != '\n' {
+        bytes.Buffer_writeByte(&buf, ch, NULL)
+        i++
+        ch = f.src[i]
+    }
+    return bytes.Buffer_string(&buf)
 }
 
 fun newFileSet() *FileSet {

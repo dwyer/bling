@@ -8,7 +8,6 @@ cc_library(
     ],
     deps = [
         "//bling/token",
-        "//bytes",
     ],
     visibility = ["//visibility:public"],
 )

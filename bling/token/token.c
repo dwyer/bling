@@ -1,5 +1,6 @@
 #include "bling/token/token.h"
 
+#include "bytes/bytes.h"
 #include "sys/sys.h"
 #include "utils/utils.h"
 
@@ -208,6 +209,22 @@ extern token$Position token$File_positionFor(token$File *f, token$Pos p,
 
 extern token$Position token$File_position(token$File *f, token$Pos p) {
     return token$File_positionFor(f, p, true);
+}
+
+extern char *token$File_lineString(token$File *f, int line) {
+    if (line < 1) {
+        return NULL;
+    }
+    bytes$Buffer buf = {};
+    int i = 0;
+    utils$Slice_get(&f->lines, line-1, &i);
+    int ch = f->src[i];
+    while (ch > 0 && ch != '\n') {
+        bytes$Buffer_writeByte(&buf, ch, NULL);
+        i++;
+        ch = f->src[i];
+    }
+    return bytes$Buffer_string(&buf);
 }
 
 extern token$FileSet *token$newFileSet() {

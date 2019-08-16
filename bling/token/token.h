@@ -3,6 +3,7 @@
 
 package(token);
 
+import("bytes");
 import("sys");
 import("utils");
 
@@ -117,6 +118,7 @@ typedef struct {
     int base;
     int size;
     utils$Slice lines;
+    char *src;
 } token$File;
 
 typedef struct token$FileSet {
@@ -138,6 +140,7 @@ extern char *token$Position_string(token$Position *p);
 extern void             token$File_addLine(token$File *f, int offset);
 extern token$Pos        token$File_pos(token$File *f, int offset);
 extern token$Position   token$File_position(token$File *f, token$Pos p);
+extern char            *token$File_lineString(token$File *f, int line);
 
 extern token$FileSet *token$newFileSet();
 extern token$File    *token$FileSet_addFile(token$FileSet *s,
