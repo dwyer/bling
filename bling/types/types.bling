@@ -593,34 +593,34 @@ fun Checker_closeScope(c *Checker) {
 
 fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr
 
-fun Checker_checkType(c *Checker, expr *ast.Expr) {
-    assert(expr)
-    switch expr.type {
+fun Checker_checkType(c *Checker, t *ast.Expr) {
+    assert(t)
+    switch t.type {
     case ast.EXPR_IDENT:
-        ast.Scope_resolve(c.pkg.scope, expr)
+        ast.Scope_resolve(c.pkg.scope, t)
         break
     case ast.EXPR_SELECTOR:
         {
-            var type *ast.Expr = Checker_checkExpr(c, expr.selector.x)
+            var type *ast.Expr = Checker_checkExpr(c, t.selector.x)
             assert(type == NULL)
-            assert(ast.isIdent(expr.selector.x))
-            assert(expr.selector.x.ident.obj.kind == ast.ObjKind_PKG)
+            assert(ast.isIdent(t.selector.x))
+            assert(t.selector.x.ident.obj.kind == ast.ObjKind_PKG)
             var oldScope *ast.Scope = c.pkg.scope
-            c.pkg.scope = expr.selector.x.ident.obj.decl.imp.scope
-            Checker_checkType(c, expr.selector.sel)
+            c.pkg.scope = t.selector.x.ident.obj.decl.imp.scope
+            Checker_checkType(c, t.selector.sel)
             c.pkg.scope = oldScope
         }
         break
     case ast.TYPE_ARRAY:
-        Checker_checkType(c, expr.array.elt)
-        if expr.array.len {
-            var len *ast.Expr = Checker_checkExpr(c, expr.array.len)
+        Checker_checkType(c, t.array.elt)
+        if t.array.len {
+            var len *ast.Expr = Checker_checkExpr(c, t.array.len)
             <void> len
         }
         break
     case ast.TYPE_ENUM:
-        for var i int = 0; expr.enum_.enums[i]; i++ {
-            var decl *ast.Decl = expr.enum_.enums[i]
+        for var i int = 0; t.enum_.enums[i]; i++ {
+            var decl *ast.Decl = t.enum_.enums[i]
             if c.typedefName {
                 decl.value.type = c.typedefName
             }
@@ -628,25 +628,25 @@ fun Checker_checkType(c *Checker, expr *ast.Expr) {
         }
         break
     case ast.TYPE_FUNC:
-        for var i int = 0; expr.func.params && expr.func.params[i]; i++ {
-            var param *ast.Decl = expr.func.params[i]
+        for var i int = 0; t.func.params && t.func.params[i]; i++ {
+            var param *ast.Decl = t.func.params[i]
             assert(param.type == ast.DECL_FIELD)
             if param.field.type {
                 Checker_checkType(c, param.field.type)
             }
         }
-        if expr.func.result {
-            Checker_checkType(c, expr.func.result)
+        if t.func.result {
+            Checker_checkType(c, t.func.result)
         }
         break
     case ast.EXPR_STAR:
-        Checker_checkType(c, expr.star.x)
+        Checker_checkType(c, t.star.x)
         break
     case ast.TYPE_STRUCT:
-        if expr.struct_.fields {
+        if t.struct_.fields {
             Checker_openScope(c)
-            for var i int = 0; expr.struct_.fields[i]; i++ {
-                var field *ast.Decl = expr.struct_.fields[i]
+            for var i int = 0; t.struct_.fields[i]; i++ {
+                var field *ast.Decl = t.struct_.fields[i]
                 Checker_checkType(c, field.field.type)
                 if field.field.name {
                     Checker_declare(c, c.pkg.scope, field)
@@ -656,7 +656,7 @@ fun Checker_checkType(c *Checker, expr *ast.Expr) {
         }
         break
     default:
-        Checker_error(c, 0, sys.sprintf("unknown type: %s", typeString(expr)))
+        Checker_error(c, t.pos, "unknown type")
         break
     }
 }
@@ -664,7 +664,7 @@ fun Checker_checkType(c *Checker, expr *ast.Expr) {
 fun Checker_checkIdent(c *Checker, expr *ast.Expr) *ast.Expr {
     assert(expr.type == ast.EXPR_IDENT)
     if expr.ident.obj == NULL {
-        Checker_error(c, expr.pos, sys.sprintf("unresolved identifier: %s", exprString(expr)))
+        Checker_error(c, expr.pos, "unresolved identifier")
     }
     return getDeclType(expr.ident.obj.decl)
 }
@@ -688,7 +688,7 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
             elt.key_value.isArray = true
             var indexT *ast.Expr = Checker_checkExpr(c, elt.key_value.key)
             if !isInteger(indexT) {
-                Checker_error(c, elt.pos, sys.sprintf("not a valid index: %s: %s", exprString(elt.key_value.key), exprString(elt)))
+                Checker_error(c, elt.pos, sys.sprintf("not a valid index: %s", exprString(elt.key_value.key)))
             }
             elt = elt.key_value.value
         }
@@ -714,18 +714,18 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             expectKV = true
             var key *ast.Expr = elt.key_value.key
             if !ast.isIdent(key) {
-                Checker_error(c, x.pos, sys.sprintf("key must be an identifier: %s", typeString(x.compound.type)))
+                Checker_error(c, x.pos, "key must be an identifier")
             }
             var field *ast.Decl = getStructFieldByName(baseT, key)
             if field == NULL {
-                Checker_error(c, x.pos, sys.sprintf("struct `%s` has no field `%s`", typeString(x.compound.type), exprString(key)))
+                Checker_error(c, key.pos, sys.sprintf("struct `%s` has no field `%s`", typeString(x.compound.type), exprString(key)))
             }
             key.ident.obj = field.field.name.ident.obj
             fieldT = field.field.type
             elt = elt.key_value.value
         } else {
             if expectKV {
-                Checker_error(c, x.pos, sys.sprintf("expected a key/value expr: %s", exprString(x)))
+                Checker_error(c, x.pos, "expected a key/value expr")
             }
             var field *ast.Decl = getStructField(baseT, i)
             fieldT = field.field.type
@@ -737,7 +737,7 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
         }
         var eltT *ast.Expr = Checker_checkExpr(c, elt)
         if !areAssignable(fieldT, eltT) {
-            Checker_error(c, elt.pos, sys.sprintf("cannot init field of type `%s` with value of type `%s`: %s", typeString(fieldT), typeString(eltT), exprString(elt)))
+            Checker_error(c, elt.pos, sys.sprintf("cannot init field of type `%s` with value of type `%s`", typeString(fieldT), typeString(eltT)))
         }
     }
 }
@@ -754,7 +754,8 @@ fun Checker_checkCompositeLit(c *Checker, x *ast.Expr) {
         Checker_checkStructLit(c, x)
         break
     default:
-        Checker_error(c, x.pos, sys.sprintf("composite type must be an array or a struct: %s", typeString(t)))
+        Checker_error(c, x.pos, "composite type must be an array or a struct")
+        break
     }
 }
 
@@ -766,7 +767,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             var typ1 *ast.Expr = Checker_checkExpr(c, expr.binary.x)
             var typ2 *ast.Expr = Checker_checkExpr(c, expr.binary.y)
             if !areComparable(typ1, typ2) {
-                Checker_error(c, expr.pos, sys.sprintf("not compariable: %s and %s: %s", typeString(typ1), typeString(typ2), exprString(expr)))
+                Checker_error(c, expr.pos, sys.sprintf("not compariable: %s and %s", typeString(typ1), typeString(typ2)))
             }
             switch expr.binary.op {
             case token.EQUAL, token.GT, token.GT_EQUAL, token.LAND, token.LOR, token.LT, token.LT_EQUAL, token.NOT_EQUAL:
@@ -794,7 +795,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 type = makePtr(makeIdent("char"))
                 break
             default:
-                Checker_error(c, expr.pos, sys.sprintf("not implmented: %s", token.string(kind)))
+                Checker_error(c, expr.pos, "unreachable")
                 break
             }
             Checker_checkType(c, type)
@@ -815,7 +816,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 type = type.star.x
             }
             if type.type != ast.TYPE_FUNC {
-                Checker_error(c, expr.pos, sys.sprintf("`%s` is not a func: %s", exprString(expr.call.func), exprString(expr)))
+                Checker_error(c, expr.pos, sys.sprintf("`%s` is not a func", exprString(expr.call.func)))
             }
             var j int = 0
             for var i int = 0; expr.call.args[i]; i++ {
@@ -824,7 +825,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 var type *ast.Expr = Checker_checkExpr(c, expr.call.args[i])
                 if param.field.type {
                     if !areAssignable(param.field.type, type) {
-                        Checker_error(c, expr.pos, sys.sprintf("not assignable: %s and %s: %s", typeString(param.field.type), typeString(type), exprString(expr)))
+                        Checker_error(c, expr.pos, sys.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
                     }
                     j++
                 }
@@ -833,7 +834,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         }
     case ast.EXPR_COMPOUND:
         if expr.compound.type == NULL {
-            Checker_error(c, expr.pos, sys.sprintf("untyped compound expr: %s", exprString(expr)))
+            Checker_error(c, expr.pos, "untyped compound expr")
         }
         Checker_checkCompositeLit(c, expr)
         return expr.compound.type
@@ -858,7 +859,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 type = type.star.x
                 break
             default:
-                Checker_error(c, expr.pos, sys.sprintf("indexing a non-array or pointer `%s`: %s", typeString(type), exprString(expr)))
+                Checker_error(c, expr.pos, sys.sprintf("indexing a non-array or pointer `%s`", typeString(type)))
                 break
             }
             var typ2 *ast.Expr = Checker_checkExpr(c, expr.index.index)
@@ -912,7 +913,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             case ast.TYPE_ARRAY:
                 return type.array.elt
             default:
-                Checker_error(c, expr.pos, sys.sprintf("derefencing a non-pointer `%s`: %s", typeString(type), exprString(expr)))
+                Checker_error(c, expr.pos, sys.sprintf("derefencing a non-pointer `%s`", typeString(type)))
                 return NULL
             }
         }
@@ -921,14 +922,14 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             var type *ast.Expr = Checker_checkExpr(c, expr.unary.x)
             if expr.unary.op == token.AND {
                 if !isLhs(expr.unary.x) {
-                    Checker_error(c, expr.pos, sys.sprintf("invalid lvalue `%s`: %s", exprString(expr.unary.x), exprString(expr)))
+                    Checker_error(c, expr.pos, sys.sprintf("invalid lvalue `%s`", exprString(expr.unary.x)))
                 }
                 return makePtr(type)
             }
             return type
         }
     default:
-        Checker_error(c, expr.pos, sys.sprintf("unknown expr: %s", exprString(expr)))
+        Checker_error(c, expr.pos, "unknown expr")
         return NULL
     }
 }
@@ -940,15 +941,15 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
     case ast.STMT_ASSIGN:
         {
             if !isLhs(stmt.assign.x) {
-                Checker_error(c, stmt.pos, sys.sprintf("invalid lvalue `%s`: %s", exprString(stmt.assign.x), stmtString(stmt)))
+                Checker_error(c, stmt.pos, sys.sprintf("invalid lvalue `%s`", exprString(stmt.assign.x)))
             }
             var a *ast.Expr = Checker_checkExpr(c, stmt.assign.x)
             if a.is_const {
-                Checker_error(c, stmt.pos, sys.sprintf("cannot assign to const var: %s", stmtString(stmt)))
+                Checker_error(c, stmt.pos, "cannot assign to const var")
             }
             var b *ast.Expr = Checker_checkExpr(c, stmt.assign.y)
             if !areAssignable(a, b) {
-                Checker_error(c, stmt.pos, sys.sprintf("not assignable: `%s` and `%s`: %s", typeString(a), typeString(b), stmtString(stmt)))
+                Checker_error(c, stmt.pos, sys.sprintf("not assignable: `%s` and `%s`", typeString(a), typeString(b)))
             }
         }
         break
@@ -1005,10 +1006,10 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
             var a *ast.Expr = c.result
             var b *ast.Expr = Checker_checkExpr(c, stmt.return_.x)
             if a == NULL {
-                Checker_error(c, stmt.pos, sys.sprintf("returning value in void function: %s", stmtString(stmt)))
+                Checker_error(c, stmt.pos, "returning value in void function")
             }
             if !areAssignable(a, b) {
-                Checker_error(c, stmt.pos, sys.sprintf("not returnable: %s and %s: %s", typeString(a), typeString(b), stmtString(stmt)))
+                Checker_error(c, stmt.pos, sys.sprintf("not returnable: %s and %s", typeString(a), typeString(b)))
             }
         }
         break
@@ -1021,7 +1022,7 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
                 for var j int = 0; clause.case_.exprs && clause.case_.exprs[j]; j++ {
                     var type2 *ast.Expr = Checker_checkExpr(c, clause.case_.exprs[j])
                     if !areComparable(type1, type2) {
-                        Checker_error(c, stmt.pos, sys.sprintf("not comparable: %s and %s: %s", typeString(type1), typeString(type2), stmtString(stmt)))
+                        Checker_error(c, stmt.pos, sys.sprintf("not comparable: %s and %s", typeString(type1), typeString(type2)))
                     }
                 }
                 for var j int = 0; clause.case_.stmts[j]; j++ {
@@ -1031,7 +1032,7 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
         }
         break
     default:
-        Checker_error(c, stmt.pos, sys.sprintf("unknown stmt: %s", stmtString(stmt)))
+        Checker_error(c, stmt.pos, "unknown stmt")
     }
 }
 
@@ -1103,14 +1104,14 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
             if valType != NULL {
                 var varType *ast.Expr = decl.value.type
                 if !areAssignable(varType, valType) {
-                    Checker_error(c, decl.pos, sys.sprintf("not assignable %s and %s: %s", typeString(varType), typeString(valType), declString(decl)))
+                    Checker_error(c, decl.pos, sys.sprintf("not assignable %s and %s", typeString(varType), typeString(valType)))
                 }
             }
             Checker_declare(c, c.pkg.scope, decl)
             break
         }
     default:
-        Checker_error(c, decl.pos, sys.sprintf("not implemented: %s", declString(decl)))
+        Checker_error(c, decl.pos, "unreachable")
     }
 }
 
