@@ -124,16 +124,7 @@ fun parse_field(p *Parser, anon bool) *ast.Decl
 
 fun error(p *Parser, pos token.Pos, msg *char) {
     var position token.Position = token.File_position(p.file, pos)
-    var buf bytes.Buffer = {}
-    var i int = 0
-    utils.Slice_get(&p.file.lines, position.line - 1, &i)
-    var ch int = p.scanner.src[i]
-    while ch > 0 && ch != '\n' {
-        bytes.Buffer_writeByte(&buf, ch, NULL)
-        i++
-        ch = p.scanner.src[i]
-    }
-    panic(sys.sprintf("%s: %s\n%s", token.Position_string(&position), msg, bytes.Buffer_string(&buf)))
+    panic(sys.sprintf("%s: %s\n%s", token.Position_string(&position), msg, scanner.getLine(&p.scanner, position.line)))
 }
 
 fun errorExpected(p *Parser, pos token.Pos, msg *char) {

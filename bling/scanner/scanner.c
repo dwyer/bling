@@ -1,4 +1,5 @@
 #include "bling/scanner/scanner.h"
+#include "bytes/bytes.h"
 
 static void next0(scanner$Scanner *s) {
     s->offset = s->rd_offset;
@@ -338,4 +339,17 @@ extern void scanner$init(scanner$Scanner *s, token$File *file, char *src) {
     s->dontInsertSemis = true;
     next0(s);
     s->dontInsertSemis = false;
+}
+
+extern char *scanner$getLine(scanner$Scanner *s, int line) {
+    bytes$Buffer buf = {};
+    int i = 0;
+    utils$Slice_get(&s->file->lines, line-1, &i);
+    int ch = s->src[i];
+    while (ch > 0 && ch != '\n') {
+        bytes$Buffer_writeByte(&buf, ch, NULL);
+        i++;
+        ch = s->src[i];
+    }
+    return bytes$Buffer_string(&buf);
 }

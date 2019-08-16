@@ -57,19 +57,10 @@ static ast$Decl *parse_field(parser$Parser *p, bool anon);
 
 extern void parser$error(parser$Parser *p, token$Pos pos, char *msg) {
     token$Position position = token$File_position(p->file, pos);
-    bytes$Buffer buf = {};
-    int i = 0;
-    utils$Slice_get(&p->file->lines, position.line-1, &i);
-    int ch = p->scanner.src[i];
-    while (ch > 0 && ch != '\n') {
-        bytes$Buffer_writeByte(&buf, ch, NULL);
-        i++;
-        ch = p->scanner.src[i];
-    }
     panic(sys$sprintf("%s: %s\n%s",
                 token$Position_string(&position),
                 msg,
-                bytes$Buffer_string(&buf)));
+                scanner$getLine(&p->scanner, position.line)));
 }
 
 extern void parser$errorExpected(parser$Parser *p, token$Pos pos, char *msg) {

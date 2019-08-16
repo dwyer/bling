@@ -1,5 +1,7 @@
 package scanner
 import "bling/token"
+import "bytes"
+import "utils"
 
 #pragma once
 
@@ -19,7 +21,11 @@ fun scan(s *Scanner, pos *token.Pos, lit **char) token.Token
 
 fun init(s *Scanner, file *token.File, src *char)
 
+fun getLine(s *Scanner, line int) *char
+
 #include "bling/scanner/scanner.h"
+
+#include "bytes/bytes.h"
 
 fun next0(s *Scanner) {
     s.offset = s.rd_offset
@@ -346,4 +352,17 @@ fun init(s *Scanner, file *token.File, src *char) {
     s.dontInsertSemis = true
     next0(s)
     s.dontInsertSemis = false
+}
+
+fun getLine(s *Scanner, line int) *char {
+    var buf bytes.Buffer = {}
+    var i int = 0
+    utils.Slice_get(&s.file.lines, line - 1, &i)
+    var ch int = s.src[i]
+    while ch > 0 && ch != '\n' {
+        bytes.Buffer_writeByte(&buf, ch, NULL)
+        i++
+        ch = s.src[i]
+    }
+    return bytes.Buffer_string(&buf)
 }
