@@ -399,54 +399,54 @@ typedef struct {
     utils$Slice files;
     ast$Expr *typedefName;
     utils$Map scopes;
-} checker_t;
+} Checker;
 
-static void checker_error(checker_t *w, token$Pos pos, const char *msg) {
+static void Checker_error(Checker *c, token$Pos pos, const char *msg) {
     token$Position position = {};
-    token$File *file = token$FileSet_file(w->fset, pos);
+    token$File *file = token$FileSet_file(c->fset, pos);
     if (file) {
         position = token$File_position(file, pos);
     }
     panic(sys$sprintf("%s: %s", token$Position_string(&position), msg));
 }
 
-static void checker_openScope(checker_t *w) {
-    w->pkg.scope = ast$Scope_new(w->pkg.scope);
+static void Checker_openScope(Checker *c) {
+    c->pkg.scope = ast$Scope_new(c->pkg.scope);
 }
 
-static void checker_closeScope(checker_t *w) {
-    // ast$Scope *inner = w->pkg.scope;
-    w->pkg.scope = w->pkg.scope->outer;
+static void Checker_closeScope(Checker *c) {
+    // ast$Scope *inner = c->pkg.scope;
+    c->pkg.scope = c->pkg.scope->outer;
     // ast$Scope_free(inner);
 }
 
-static ast$Expr *check_expr(checker_t *w, ast$Expr *expr);
+static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr);
 
-static void check_type(checker_t *w, ast$Expr *expr) {
+static void Checker_checkType(Checker *c, ast$Expr *expr) {
     assert(expr);
     switch (expr->type) {
 
     case ast$EXPR_IDENT:
-        ast$Scope_resolve(w->pkg.scope, expr);
+        ast$Scope_resolve(c->pkg.scope, expr);
         break;
 
     case ast$EXPR_SELECTOR:
         {
-            ast$Expr *type = check_expr(w, expr->selector.x);
+            ast$Expr *type = Checker_checkExpr(c, expr->selector.x);
             assert(type == NULL);
             assert(ast$isIdent(expr->selector.x));
             assert(expr->selector.x->ident.obj->kind == ast$ObjKind_PKG);
-            ast$Scope *oldScope = w->pkg.scope;
-            w->pkg.scope = expr->selector.x->ident.obj->decl->imp.scope;
-            check_type(w, expr->selector.sel);
-            w->pkg.scope = oldScope;
+            ast$Scope *oldScope = c->pkg.scope;
+            c->pkg.scope = expr->selector.x->ident.obj->decl->imp.scope;
+            Checker_checkType(c, expr->selector.sel);
+            c->pkg.scope = oldScope;
         }
         break;
 
     case ast$TYPE_ARRAY:
-        check_type(w, expr->array.elt);
+        Checker_checkType(c, expr->array.elt);
         if (expr->array.len) {
-            ast$Expr *len = check_expr(w, expr->array.len);
+            ast$Expr *len = Checker_checkExpr(c, expr->array.len);
             (void)len; // TODO assert that len resolves to int
         }
         break;
@@ -454,10 +454,10 @@ static void check_type(checker_t *w, ast$Expr *expr) {
     case ast$TYPE_ENUM:
         for (int i = 0; expr->enum_.enums[i]; i++) {
             ast$Decl *decl = expr->enum_.enums[i];
-            if (w->typedefName) {
-                decl->value.type = w->typedefName;
+            if (c->typedefName) {
+                decl->value.type = c->typedefName;
             }
-            types$Scope_declare(w->pkg.scope, decl);
+            types$Scope_declare(c->pkg.scope, decl);
         }
         break;
 
@@ -466,34 +466,34 @@ static void check_type(checker_t *w, ast$Expr *expr) {
             ast$Decl *param = expr->func.params[i];
             assert(param->type == ast$DECL_FIELD);
             if (param->field.type) {
-                check_type(w, param->field.type);
+                Checker_checkType(c, param->field.type);
             }
         }
         if (expr->func.result) {
-            check_type(w, expr->func.result);
+            Checker_checkType(c, expr->func.result);
         }
         break;
 
     case ast$EXPR_STAR:
-        check_type(w, expr->star.x);
+        Checker_checkType(c, expr->star.x);
         break;
 
     case ast$TYPE_STRUCT:
         if (expr->struct_.fields) {
-            checker_openScope(w);
+            Checker_openScope(c);
             for (int i = 0; expr->struct_.fields[i]; i++) {
                 ast$Decl *field = expr->struct_.fields[i];
-                check_type(w, field->field.type);
+                Checker_checkType(c, field->field.type);
                 if (field->field.name) {
-                    types$Scope_declare(w->pkg.scope, field);
+                    types$Scope_declare(c->pkg.scope, field);
                 }
             }
-            checker_closeScope(w);
+            Checker_closeScope(c);
         }
         break;
 
     default:
-        checker_error(w, 0, sys$sprintf("check_type: unknown type: %s", types$typeString(expr)));
+        Checker_error(c, 0, sys$sprintf("Checker_checkType: unknown type: %s", types$typeString(expr)));
         break;
     }
 }
@@ -573,15 +573,15 @@ static bool types$isInteger(ast$Expr *x) {
     }
 }
 
-static void check_array(checker_t *w, ast$Expr *x) {
+static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
     ast$Expr *baseT = types$getBaseType(x->compound.type);
     for (int i = 0; x->compound.list[i]; i++) {
         ast$Expr *elt = x->compound.list[i];
         if (elt->type == ast$EXPR_KEY_VALUE) {
             elt->key_value.isArray = true;
-            ast$Expr *indexT = check_expr(w, elt->key_value.key);
+            ast$Expr *indexT = Checker_checkExpr(c, elt->key_value.key);
             if (!types$isInteger(indexT)) {
-                checker_error(w, x->pos, sys$sprintf("not a valid index: %s: %s",
+                Checker_error(c, x->pos, sys$sprintf("not a valid index: %s: %s",
                             types$exprString(elt->key_value.key),
                             types$exprString(elt)));
             }
@@ -592,7 +592,7 @@ static void check_array(checker_t *w, ast$Expr *x) {
                 elt->compound.type = baseT->array.elt;
             }
         }
-        ast$Expr *eltT = check_expr(w, elt);
+        ast$Expr *eltT = Checker_checkExpr(c, elt);
         (void)eltT;
     }
 }
@@ -610,7 +610,7 @@ static ast$Decl *getStructField(ast$Expr *type, int index) {
     return NULL;
 }
 
-static void check_struct(checker_t *w, ast$Expr *x) {
+static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
     assert(x->compound.type);
     ast$Expr *baseT = types$getBaseType(x->compound.type);
     bool expectKV = false;
@@ -622,13 +622,13 @@ static void check_struct(checker_t *w, ast$Expr *x) {
             expectKV = true;
             ast$Expr *key = elt->key_value.key;
             if (!ast$isIdent(key)) {
-                checker_error(w, x->pos,
+                Checker_error(c, x->pos,
                         sys$sprintf("key must be an identifier: %s",
                             types$typeString(x->compound.type)));
             }
             ast$Decl *field = find_field(baseT, key);
             if (field == NULL) {
-                checker_error(w, x->pos,
+                Checker_error(c, x->pos,
                         sys$sprintf("struct `%s` has no field `%s`",
                             types$typeString(x->compound.type),
                             types$exprString(key)));
@@ -638,7 +638,7 @@ static void check_struct(checker_t *w, ast$Expr *x) {
             elt = elt->key_value.value;
         } else {
             if (expectKV) {
-                checker_error(w, x->pos,
+                Checker_error(c, x->pos,
                         sys$sprintf("expected a key/value expr: %s",
                             types$exprString(x)));
             }
@@ -650,9 +650,9 @@ static void check_struct(checker_t *w, ast$Expr *x) {
                 elt->compound.type = fieldT;
             }
         }
-        ast$Expr *eltT = check_expr(w, elt);
+        ast$Expr *eltT = Checker_checkExpr(c, elt);
         if (!types$areAssignable(fieldT, eltT)) {
-            checker_error(w, elt->pos, sys$sprintf("cannot init field of type `%s` with value of type `%s`: %s",
+            Checker_error(c, elt->pos, sys$sprintf("cannot init field of type `%s` with value of type `%s`: %s",
                         types$typeString(fieldT),
                         types$typeString(eltT),
                         types$exprString(elt)));
@@ -660,34 +660,34 @@ static void check_struct(checker_t *w, ast$Expr *x) {
     }
 }
 
-static void check_compositeLit(checker_t *w, ast$Expr *x) {
+static void Checker_checkCompositeLit(Checker *c, ast$Expr *x) {
     ast$Expr *t = x->compound.type;
     assert(t);
     ast$Expr *baseT = types$getBaseType(t);
     switch (baseT->type) {
     case ast$TYPE_ARRAY:
-        check_array(w, x);
+        Checker_checkArrayLit(c, x);
         break;
     case ast$TYPE_STRUCT:
-        check_struct(w, x);
+        Checker_checkStructLit(c, x);
         break;
     default:
-        checker_error(w, x->pos,
+        Checker_error(c, x->pos,
                 sys$sprintf("composite type must be an array or a struct: %s",
                     types$typeString(t)));
     }
 }
 
-static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
+static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
     assert(expr);
     switch (expr->type) {
 
     case ast$EXPR_BINARY:
         {
-            ast$Expr *typ1 = check_expr(w, expr->binary.x);
-            ast$Expr *typ2 = check_expr(w, expr->binary.y);
+            ast$Expr *typ1 = Checker_checkExpr(c, expr->binary.x);
+            ast$Expr *typ2 = Checker_checkExpr(c, expr->binary.y);
             if (!types$areComparable(typ1, typ2)) {
-                checker_error(w, expr->pos,
+                Checker_error(c, expr->pos,
                         sys$sprintf("not compariable: %s and %s: %s",
                             types$typeString(typ1),
                             types$typeString(typ2),
@@ -703,7 +703,7 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
             case token$LT_EQUAL:
             case token$NOT_EQUAL:
                 typ1 = types$makeIdent("bool");
-                check_type(w, typ1);
+                Checker_checkType(c, typ1);
             default:
                 return typ1;
             }
@@ -727,23 +727,23 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
                 type = types$makePtr(types$makeIdent("char"));
                 break;
             default:
-                checker_error(w, expr->pos,
-                        sys$sprintf("check_expr: not implmented: %s",
+                Checker_error(c, expr->pos,
+                        sys$sprintf("Checker_checkExpr: not implmented: %s",
                             token$string(kind)));
                 break;
             }
-            check_type(w, type);
+            Checker_checkType(c, type);
             return type;
         }
 
     case ast$EXPR_CALL:
         {
             ast$Expr *func = expr->call.func;
-            ast$Expr *type = check_expr(w, func);
+            ast$Expr *type = Checker_checkExpr(c, func);
             if (func->type == ast$EXPR_IDENT) {
                 if (streq(func->ident.name, "esc")) {
                     assert(expr->call.args[0] && !expr->call.args[1]);
-                    ast$Expr *type = check_expr(w, expr->call.args[0]);
+                    ast$Expr *type = Checker_checkExpr(c, expr->call.args[0]);
                     return types$makePtr(type);
                 }
             }
@@ -751,8 +751,8 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
                 type = type->star.x;
             }
             if (type->type != ast$TYPE_FUNC) {
-                checker_error(w, expr->pos,
-                        sys$sprintf("check_expr: `%s` is not a func: %s",
+                Checker_error(c, expr->pos,
+                        sys$sprintf("Checker_checkExpr: `%s` is not a func: %s",
                             types$exprString(expr->call.func),
                             types$exprString(expr)));
             }
@@ -760,10 +760,10 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
             for (int i = 0; expr->call.args[i]; i++) {
                 ast$Decl *param = type->func.params[j];
                 assert(param->type == ast$DECL_FIELD);
-                ast$Expr *type = check_expr(w, expr->call.args[i]);
+                ast$Expr *type = Checker_checkExpr(c, expr->call.args[i]);
                 if (param->field.type) {
                     if (!types$areAssignable(param->field.type, type)) {
-                        checker_error(w, expr->pos, sys$sprintf("not assignable: %s and %s: %s",
+                        Checker_error(c, expr->pos, sys$sprintf("not assignable: %s and %s: %s",
                                     types$typeString(param->field.type),
                                     types$typeString(type),
                                     types$exprString(expr)));
@@ -777,26 +777,26 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
 
     case ast$EXPR_COMPOUND:
         if (expr->compound.type == NULL) {
-            checker_error(w, expr->pos, sys$sprintf("untyped compound expr: %s", types$exprString(expr)));
+            Checker_error(c, expr->pos, sys$sprintf("untyped compound expr: %s", types$exprString(expr)));
         }
-        check_compositeLit(w, expr);
+        Checker_checkCompositeLit(c, expr);
         return expr->compound.type;
 
     case ast$EXPR_CAST:
-        check_type(w, expr->cast.type);
+        Checker_checkType(c, expr->cast.type);
         if (expr->cast.expr->type == ast$EXPR_COMPOUND) {
             expr->cast.expr->compound.type = expr->cast.type;
         }
-        check_expr(w, expr->cast.expr);
+        Checker_checkExpr(c, expr->cast.expr);
         return expr->cast.type;
 
     case ast$EXPR_IDENT:
-        ast$Scope_resolve(w->pkg.scope, expr);
+        ast$Scope_resolve(c->pkg.scope, expr);
         return get_ident_type(expr);
 
     case ast$EXPR_INDEX:
         {
-            ast$Expr *type = check_expr(w, expr->index.x);
+            ast$Expr *type = Checker_checkExpr(c, expr->index.x);
             switch (type->type) {
             case ast$TYPE_ARRAY:
                 type = type->array.elt;
@@ -805,31 +805,31 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
                 type = type->star.x;
                 break;
             default:
-                checker_error(w, expr->pos, sys$sprintf("indexing a non-array or pointer `%s`: %s",
+                Checker_error(c, expr->pos, sys$sprintf("indexing a non-array or pointer `%s`: %s",
                             types$typeString(type),
                             types$exprString(expr)));
                 break;
             }
-            ast$Expr *typ2 = check_expr(w, expr->index.index);
+            ast$Expr *typ2 = Checker_checkExpr(c, expr->index.index);
             (void)typ2; // TODO assert that typ2 is an integer
             return type;
         }
 
     case ast$EXPR_PAREN:
-        return check_expr(w, expr->paren.x);
+        return Checker_checkExpr(c, expr->paren.x);
 
     case ast$EXPR_SELECTOR:
         {
-            ast$Expr *type = check_expr(w, expr->selector.x);
+            ast$Expr *type = Checker_checkExpr(c, expr->selector.x);
             if (type == NULL) {
                 ast$Expr *x = expr->selector.x;
                 assert(x->type == ast$EXPR_IDENT);
                 ast$Decl *decl = x->ident.obj->decl;
                 assert(decl->type == ast$DECL_IMPORT);
-                ast$Scope *oldScope = w->pkg.scope;
-                w->pkg.scope = decl->imp.scope;
-                type = check_expr(w, expr->selector.sel);
-                w->pkg.scope = oldScope;
+                ast$Scope *oldScope = c->pkg.scope;
+                c->pkg.scope = decl->imp.scope;
+                type = Checker_checkExpr(c, expr->selector.sel);
+                c->pkg.scope = oldScope;
                 expr->selector.tok = token$DOLLAR;
                 return type;
             }
@@ -842,7 +842,7 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
             type = types$getBaseType(type);
             ast$Decl *field = find_field(type, expr->selector.sel);
             if (field == NULL) {
-                checker_error(w, expr->pos, sys$sprintf("struct `%s` (`%s`) has no field `%s`",
+                Checker_error(c, expr->pos, sys$sprintf("struct `%s` (`%s`) has no field `%s`",
                             types$exprString(expr->selector.x),
                             types$typeString(type),
                             expr->selector.sel->ident.name));
@@ -853,22 +853,22 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
 
     case ast$EXPR_SIZEOF:
         {
-            check_type(w, expr->sizeof_.x);
+            Checker_checkType(c, expr->sizeof_.x);
             ast$Expr *ident = types$makeIdent("size_t");
-            ast$Scope_resolve(w->pkg.scope, ident);
+            ast$Scope_resolve(c->pkg.scope, ident);
             return ident;
         }
 
     case ast$EXPR_STAR:
         {
-            ast$Expr *type = check_expr(w, expr->star.x);
+            ast$Expr *type = Checker_checkExpr(c, expr->star.x);
             switch (type->type) {
             case ast$EXPR_STAR:
                 return type->star.x;
             case ast$TYPE_ARRAY:
                 return type->array.elt;
             default:
-                checker_error(w, expr->pos, sys$sprintf("check_expr: derefencing a non-pointer `%s`: %s",
+                Checker_error(c, expr->pos, sys$sprintf("Checker_checkExpr: derefencing a non-pointer `%s`: %s",
                             types$typeString(type),
                             types$exprString(expr)));
                 return NULL;
@@ -877,10 +877,10 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
 
     case ast$EXPR_UNARY:
         {
-            ast$Expr *type = check_expr(w, expr->unary.x);
+            ast$Expr *type = Checker_checkExpr(c, expr->unary.x);
             if (expr->unary.op == token$AND) {
                 if (!types$isLhs(expr->unary.x)) {
-                    checker_error(w, expr->pos, sys$sprintf("check_expr: invalid lvalue `%s`: %s",
+                    Checker_error(c, expr->pos, sys$sprintf("Checker_checkExpr: invalid lvalue `%s`: %s",
                                 types$exprString(expr->unary.x),
                                 types$exprString(expr)));
                 }
@@ -890,34 +890,34 @@ static ast$Expr *check_expr(checker_t *w, ast$Expr *expr) {
         }
 
     default:
-        checker_error(w, expr->pos, sys$sprintf("check_expr: unknown expr: %s",
+        Checker_error(c, expr->pos, sys$sprintf("Checker_checkExpr: unknown expr: %s",
                     types$exprString(expr)));
         return NULL;
     }
 }
 
-static void check_decl(checker_t *w, ast$Decl *decl);
+static void Checker_checkDecl(Checker *c, ast$Decl *decl);
 
-static void check_stmt(checker_t *w, ast$Stmt *stmt) {
+static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
     switch (stmt->type) {
     case ast$STMT_ASSIGN:
         {
             if (!types$isLhs(stmt->assign.x)) {
-                checker_error(w, stmt->pos,
-                        sys$sprintf("check_stmt: invalid lvalue `%s`: %s",
+                Checker_error(c, stmt->pos,
+                        sys$sprintf("Checker_checkStmt: invalid lvalue `%s`: %s",
                             types$exprString(stmt->assign.x),
                             types$stmtString(stmt)));
             }
-            ast$Expr *a = check_expr(w, stmt->assign.x);
+            ast$Expr *a = Checker_checkExpr(c, stmt->assign.x);
             if (a->is_const) {
-                checker_error(w, stmt->pos,
+                Checker_error(c, stmt->pos,
                         sys$sprintf("cannot assign to const var: %s",
                             types$stmtString(stmt)));
             }
-            ast$Expr *b = check_expr(w, stmt->assign.y);
+            ast$Expr *b = Checker_checkExpr(c, stmt->assign.y);
             if (!types$areAssignable(a, b)) {
-                checker_error(w, stmt->pos,
-                        sys$sprintf("check_stmt: not assignable: `%s` and `%s`: %s",
+                Checker_error(c, stmt->pos,
+                        sys$sprintf("Checker_checkStmt: not assignable: `%s` and `%s`: %s",
                             types$typeString(a),
                             types$typeString(b),
                             types$stmtString(stmt)));
@@ -926,48 +926,48 @@ static void check_stmt(checker_t *w, ast$Stmt *stmt) {
         break;
 
     case ast$STMT_BLOCK:
-        checker_openScope(w);
+        Checker_openScope(c);
         for (int i = 0; stmt->block.stmts[i]; i++) {
-            check_stmt(w, stmt->block.stmts[i]);
+            Checker_checkStmt(c, stmt->block.stmts[i]);
         }
-        checker_closeScope(w);
+        Checker_closeScope(c);
         break;
 
     case ast$STMT_DECL:
-        check_decl(w, stmt->decl.decl);
+        Checker_checkDecl(c, stmt->decl.decl);
         break;
 
     case ast$STMT_EXPR:
-        check_expr(w, stmt->expr.x);
+        Checker_checkExpr(c, stmt->expr.x);
         break;
 
     case ast$STMT_EMPTY:
         break;
 
     case ast$STMT_IF:
-        check_expr(w, stmt->if_.cond);
-        check_stmt(w, stmt->if_.body);
+        Checker_checkExpr(c, stmt->if_.cond);
+        Checker_checkStmt(c, stmt->if_.body);
         if (stmt->if_.else_) {
-            check_stmt(w, stmt->if_.else_);
+            Checker_checkStmt(c, stmt->if_.else_);
         }
         break;
 
     case ast$STMT_ITER:
         if (stmt->iter.init || stmt->iter.post) {
-            checker_openScope(w);
+            Checker_openScope(c);
         }
         if (stmt->iter.init) {
-            check_stmt(w, stmt->iter.init);
+            Checker_checkStmt(c, stmt->iter.init);
         }
         if (stmt->iter.cond) {
-            check_expr(w, stmt->iter.cond);
+            Checker_checkExpr(c, stmt->iter.cond);
         }
         if (stmt->iter.post) {
-            check_stmt(w, stmt->iter.post);
+            Checker_checkStmt(c, stmt->iter.post);
         }
-        check_stmt(w, stmt->iter.body);
+        Checker_checkStmt(c, stmt->iter.body);
         if (stmt->iter.init || stmt->iter.post) {
-            checker_closeScope(w);
+            Checker_closeScope(c);
         }
         break;
 
@@ -977,25 +977,25 @@ static void check_stmt(checker_t *w, ast$Stmt *stmt) {
 
     case ast$STMT_LABEL:
         /* TODO walk label in label scope */
-        check_stmt(w, stmt->label.stmt);
+        Checker_checkStmt(c, stmt->label.stmt);
         break;
 
     case ast$STMT_POSTFIX:
-        check_expr(w, stmt->postfix.x);
+        Checker_checkExpr(c, stmt->postfix.x);
         break;
 
     case ast$STMT_RETURN:
         if (stmt->return_.x) {
-            ast$Expr *a = w->result;
-            ast$Expr *b = check_expr(w, stmt->return_.x);
+            ast$Expr *a = c->result;
+            ast$Expr *b = Checker_checkExpr(c, stmt->return_.x);
             if (a == NULL) {
-                checker_error(w, stmt->pos, sys$sprintf(
-                            "check_stmt: returning value in void function: %s",
+                Checker_error(c, stmt->pos, sys$sprintf(
+                            "Checker_checkStmt: returning value in void function: %s",
                             types$stmtString(stmt)));
             }
             if (!types$areAssignable(a, b)) {
-                checker_error(w, stmt->pos,
-                        sys$sprintf("check_stmt: not returnable: %s and %s: %s",
+                Checker_error(c, stmt->pos,
+                        sys$sprintf("Checker_checkStmt: not returnable: %s and %s: %s",
                             types$typeString(a),
                             types$typeString(b),
                             types$stmtString(stmt)));
@@ -1005,30 +1005,30 @@ static void check_stmt(checker_t *w, ast$Stmt *stmt) {
 
     case ast$STMT_SWITCH:
         {
-            ast$Expr *type1 = check_expr(w, stmt->switch_.tag);
+            ast$Expr *type1 = Checker_checkExpr(c, stmt->switch_.tag);
             for (int i = 0; stmt->switch_.stmts[i]; i++) {
                 ast$Stmt *clause = stmt->switch_.stmts[i];
                 assert(clause->type == ast$STMT_CASE);
                 for (int j = 0; clause->case_.exprs && clause->case_.exprs[j]; j++) {
-                    ast$Expr *type2 = check_expr(w, clause->case_.exprs[j]);
+                    ast$Expr *type2 = Checker_checkExpr(c, clause->case_.exprs[j]);
                     if (!types$areComparable(type1, type2)) {
-                        checker_error(w, stmt->pos, sys$sprintf(
-                                    "check_stmt: not comparable: %s and %s: %s",
+                        Checker_error(c, stmt->pos, sys$sprintf(
+                                    "Checker_checkStmt: not comparable: %s and %s: %s",
                                     types$typeString(type1),
                                     types$typeString(type2),
                                     types$stmtString(stmt)));
                     }
                 }
                 for (int j = 0; clause->case_.stmts[j]; j++) {
-                    check_stmt(w, clause->case_.stmts[j]);
+                    Checker_checkStmt(c, clause->case_.stmts[j]);
                 }
             }
         }
         break;
 
     default:
-        checker_error(w, stmt->pos,
-                sys$sprintf("check_stmt: unknown stmt: %s",
+        Checker_error(c, stmt->pos,
+                sys$sprintf("Checker_checkStmt: unknown stmt: %s",
                     types$stmtString(stmt)));
     }
 }
@@ -1045,9 +1045,9 @@ static char *constant_stringVal(ast$Expr *x) {
     return val;
 }
 
-static void check_file(checker_t *w, ast$File *file);
+static void Checker_checkFile(Checker *c, ast$File *file);
 
-static void check_import(checker_t *w, ast$Decl *imp) {
+static void Checker_checkImport(Checker *c, ast$Decl *imp) {
     char *path = constant_stringVal(imp->imp.path);
     if (imp->imp.name == NULL) {
         char *base = paths$base(path);
@@ -1055,64 +1055,64 @@ static void check_import(checker_t *w, ast$Decl *imp) {
     }
 
     ast$Scope *oldScope = NULL;
-    utils$Map_get(&w->scopes, path, &oldScope);
+    utils$Map_get(&c->scopes, path, &oldScope);
     if (oldScope) {
         imp->imp.scope = oldScope;
-        types$Scope_declare(w->pkg.scope, imp);
+        types$Scope_declare(c->pkg.scope, imp);
         free(path);
         return;
     }
 
     imp->imp.scope = ast$Scope_new(types$universe());
-    utils$Map_set(&w->scopes, path, &imp->imp.scope);
+    utils$Map_set(&c->scopes, path, &imp->imp.scope);
 
-    types$Scope_declare(w->pkg.scope, imp);
+    types$Scope_declare(c->pkg.scope, imp);
 
-    oldScope = w->pkg.scope;
-    w->pkg.scope = imp->imp.scope;
+    oldScope = c->pkg.scope;
+    c->pkg.scope = imp->imp.scope;
 
     utils$Error *err = NULL;
     token$FileSet *fset = token$newFileSet();
     ast$File **files = parser$parseDir(fset, path, &err);
     if (err) {
-        checker_error(w, imp->pos, sys$sprintf("%s: %s", path, err->error));
+        Checker_error(c, imp->pos, sys$sprintf("%s: %s", path, err->error));
     }
     for (int i = 0; files[i]; i++) {
-        check_file(w, files[i]);
+        Checker_checkFile(c, files[i]);
     }
 
-    w->pkg.scope = oldScope;
+    c->pkg.scope = oldScope;
 }
 
-static void check_decl(checker_t *w, ast$Decl *decl) {
+static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
     switch (decl->type) {
     case ast$DECL_FUNC:
-        check_type(w, decl->func.type);
-        types$Scope_declare(w->pkg.scope, decl);
+        Checker_checkType(c, decl->func.type);
+        types$Scope_declare(c->pkg.scope, decl);
         break;
     case ast$DECL_PRAGMA:
         break;
     case ast$DECL_TYPEDEF:
-        w->typedefName = decl->typedef_.name;
-        check_type(w, decl->typedef_.type);
-        w->typedefName = NULL;
-        types$Scope_declare(w->pkg.scope, decl);
+        c->typedefName = decl->typedef_.name;
+        Checker_checkType(c, decl->typedef_.type);
+        c->typedefName = NULL;
+        types$Scope_declare(c->pkg.scope, decl);
         break;
     case ast$DECL_VALUE:
         {
             ast$Expr *valType = NULL;
             if (decl->value.type != NULL) {
-                check_type(w, decl->value.type);
+                Checker_checkType(c, decl->value.type);
             }
             if (decl->value.value != NULL) {
                 if (decl->value.value->type == ast$EXPR_COMPOUND) {
                     if (decl->value.type == NULL) {
                         // TODO resolve this restriction by enforcing T{}.
-                        checker_error(w, decl->pos, "cannot assign short var decls with composite type");
+                        Checker_error(c, decl->pos, "cannot assign short var decls with composite type");
                     }
                     decl->value.value->compound.type = decl->value.type;
                 }
-                valType = check_expr(w, decl->value.value);
+                valType = Checker_checkExpr(c, decl->value.value);
             }
             if (decl->value.type == NULL) {
                 decl->value.type = valType;
@@ -1120,58 +1120,58 @@ static void check_decl(checker_t *w, ast$Decl *decl) {
             if (valType != NULL) {
                 ast$Expr *varType = decl->value.type;
                 if (!types$areAssignable(varType, valType)) {
-                    checker_error(w, decl->pos,
-                            sys$sprintf("check_decl: not assignable %s and %s: %s",
+                    Checker_error(c, decl->pos,
+                            sys$sprintf("Checker_checkDecl: not assignable %s and %s: %s",
                                 types$typeString(varType),
                                 types$typeString(valType),
                                 types$declString(decl)));
                 }
             }
-            types$Scope_declare(w->pkg.scope, decl);
+            types$Scope_declare(c->pkg.scope, decl);
             break;
         }
     default:
-        checker_error(w, decl->pos,
-                sys$sprintf("check_decl: not implemented: %s",
+        Checker_error(c, decl->pos,
+                sys$sprintf("Checker_checkDecl: not implemented: %s",
                     types$declString(decl)));
     }
 }
 
-static void check_func(checker_t *w, ast$Decl *decl) {
+static void Checker_checkFunc(Checker *c, ast$Decl *decl) {
     if (decl->type == ast$DECL_FUNC && decl->func.body) {
-        checker_openScope(w);
+        Checker_openScope(c);
         ast$Expr *type = decl->func.type;
         for (int i = 0; type->func.params && type->func.params[i]; i++) {
             ast$Decl *param = type->func.params[i];
             assert(param->type == ast$DECL_FIELD);
             if (param->field.name) {
-                types$Scope_declare(w->pkg.scope, param);
+                types$Scope_declare(c->pkg.scope, param);
             }
         }
-        w->result = decl->func.type->func.result;
+        c->result = decl->func.type->func.result;
         // walk the block manually to avoid opening a new scope
         for (int i = 0; decl->func.body->block.stmts[i]; i++) {
-            check_stmt(w, decl->func.body->block.stmts[i]);
+            Checker_checkStmt(c, decl->func.body->block.stmts[i]);
         }
-        w->result = NULL;
-        checker_closeScope(w);
+        c->result = NULL;
+        Checker_closeScope(c);
     }
 }
 
-static void check_file(checker_t *w, ast$File *file) {
+static void Checker_checkFile(Checker *c, ast$File *file) {
     if (file->name) {
-        w->pkg.scope->pkg = file->name->ident.name;
+        c->pkg.scope->pkg = file->name->ident.name;
     }
     for (int i = 0; file->imports[i] != NULL; i++) {
-        check_import(w, file->imports[i]);
+        Checker_checkImport(c, file->imports[i]);
     }
-    utils$Slice_append(&w->files, &file);
-    if (w->conf->strict) {
+    utils$Slice_append(&c->files, &file);
+    if (c->conf->strict) {
         for (int i = 0; file->decls[i] != NULL; i++) {
-            check_decl(w, file->decls[i]);
+            Checker_checkDecl(c, file->decls[i]);
         }
         for (int i = 0; file->decls[i] != NULL; i++) {
-            check_func(w, file->decls[i]);
+            Checker_checkFunc(c, file->decls[i]);
         }
     }
 }
@@ -1181,7 +1181,7 @@ extern ast$Package types$checkFile(types$Config *conf, token$FileSet *fset,
     if (file->scope == NULL) {
         file->scope = ast$Scope_new(types$universe());
     }
-    checker_t w = {
+    Checker c = {
         .fset = fset,
         .conf = conf,
         .pkg = {
@@ -1190,7 +1190,7 @@ extern ast$Package types$checkFile(types$Config *conf, token$FileSet *fset,
         .files = utils$Slice_init(sizeof(ast$File *)),
         .scopes = utils$Map_init(sizeof(ast$Scope *)),
     };
-    check_file(&w, file);
-    w.pkg.files = utils$Slice_to_nil_array(w.files);
-    return w.pkg;
+    Checker_checkFile(&c, file);
+    c.pkg.files = utils$Slice_to_nil_array(c.files);
+    return c.pkg;
 }
