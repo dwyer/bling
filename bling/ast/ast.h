@@ -368,8 +368,9 @@ typedef struct {
     ast$File **files;
 } ast$Package;
 
-extern void ast$Scope_resolve(ast$Scope *s, ast$Expr *x);
 extern void ast$Scope_free(ast$Scope *s);
+extern void ast$Scope_print(ast$Scope *s);
+extern bool ast$resolve(ast$Scope *scope, ast$Expr *ident);
 
 extern bool ast$isIdent(ast$Expr *x);
 extern bool ast$isIdentNamed(ast$Expr *x, const char *name);
@@ -377,4 +378,3 @@ extern bool ast$isNil(ast$Expr *x);
 extern bool ast$isVoid(ast$Expr *x);
 extern bool ast$isVoidPtr(ast$Expr *x);
 
-extern void ast$Scope_print(ast$Scope *s);

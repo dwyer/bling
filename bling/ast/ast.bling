@@ -369,9 +369,11 @@ typedef Package struct {
     files **File
 }
 
-fun Scope_resolve(s *Scope, x *Expr)
-
 fun Scope_free(s *Scope)
+
+fun Scope_print(s *Scope)
+
+fun resolve(scope *Scope, ident *Expr) bool
 
 fun isIdent(x *Expr) bool
 
@@ -382,8 +384,6 @@ fun isNil(x *Expr) bool
 fun isVoid(x *Expr) bool
 
 fun isVoidPtr(x *Expr) bool
-
-fun Scope_print(s *Scope)
 
 #include "bling/ast/ast.h"
 
@@ -445,37 +445,15 @@ fun Scope_print(s *Scope) {
     }
 }
 
-fun Scope_resolve(s *Scope, x *Expr) {
-    if x.type != EXPR_IDENT {
-        return
-    }
-    assert(x.ident.obj == NULL)
-    if x.ident.pkg {
-        var pkg *Expr = x.ident.pkg
-        Scope_resolve(s, pkg)
-        if pkg.ident.obj.kind != ObjKind_PKG {
-            Scope_print(s)
-            panic("not a pkg: %s", pkg.ident.name)
-        }
-        var decl *Decl = pkg.ident.obj.decl
-        assert(decl.type == DECL_IMPORT)
-        var t *Scope = decl.imp.scope
-        if !t {
-            Scope_print(s)
-            panic("%s $ %s", pkg.ident.name, x.ident.name)
-        }
-        assert(t)
-        s = t
-    }
-    for var t *Scope = s; t != NULL; t = t.outer {
-        var obj *Object = Scope_lookup(t, x.ident.name)
+fun resolve(scope *Scope, ident *Expr) bool {
+    for ; scope != NULL; scope = scope.outer {
+        var obj *Object = Scope_lookup(scope, ident.ident.name)
         if obj != NULL {
-            x.ident.obj = obj
-            return
+            ident.ident.obj = obj
+            return true
         }
     }
-    Scope_print(s)
-    panic("ast$Scope_resolve: unresolved: %s", x.ident.name)
+    return false
 }
 
 fun Scope_free(s *Scope) {

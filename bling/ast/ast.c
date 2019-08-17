@@ -56,37 +56,15 @@ extern void ast$Scope_print(ast$Scope *s) {
     }
 }
 
-extern void ast$Scope_resolve(ast$Scope *s, ast$Expr *x) {
-    if (x->type != ast$EXPR_IDENT) {
-        return;
-    }
-    assert(x->ident.obj == NULL);
-    if (x->ident.pkg) {
-        ast$Expr *pkg = x->ident.pkg;
-        ast$Scope_resolve(s, pkg);
-        if (pkg->ident.obj->kind != ast$ObjKind_PKG) {
-            ast$Scope_print(s);
-            panic("not a pkg: %s", pkg->ident.name);
-        }
-        ast$Decl *decl = pkg->ident.obj->decl;
-        assert(decl->type == ast$DECL_IMPORT);
-        ast$Scope *t = decl->imp.scope;
-        if (!t) {
-            ast$Scope_print(s);
-            panic("%s $ %s", pkg->ident.name, x->ident.name);
-        }
-        assert(t);
-        s = t;
-    }
-    for (ast$Scope *t = s; t != NULL; t = t->outer) {
-        ast$Object *obj = ast$Scope_lookup(t, x->ident.name);
+extern bool ast$resolve(ast$Scope *scope, ast$Expr *ident) {
+    for (; scope != NULL; scope = scope->outer) {
+        ast$Object *obj = ast$Scope_lookup(scope, ident->ident.name);
         if (obj != NULL) {
-            x->ident.obj = obj;
-            return;
+            ident->ident.obj = obj;
+            return true;
         }
     }
-    ast$Scope_print(s);
-    panic("ast$Scope_resolve: unresolved: %s", x->ident.name);
+    return false;
 }
 
 extern void ast$Scope_free(ast$Scope *s) {

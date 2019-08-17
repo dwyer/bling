@@ -449,16 +449,41 @@ static void Checker_error(Checker *c, token$Pos pos, const char *msg) {
                 token$File_lineString(file, position.line)));
 }
 
+static void Checker_resolve(Checker *c, ast$Scope *s, ast$Expr *x) {
+    assert(x->type == ast$EXPR_IDENT);
+    assert(x->ident.obj == NULL);
+    if (x->ident.pkg) {
+        ast$Expr *pkg = x->ident.pkg;
+        Checker_resolve(c, s, pkg);
+        if (pkg->ident.obj->kind != ast$ObjKind_PKG) {
+            Checker_error(c, pkg->pos,
+                    sys$sprintf("not a pkg: %s", pkg->ident.name));
+        }
+        ast$Decl *decl = pkg->ident.obj->decl;
+        assert(decl->type == ast$DECL_IMPORT);
+        ast$Scope *t = decl->imp.scope;
+        if (!t) {
+            Checker_error(c, x->pos,
+                    sys$sprintf("%s $ %s", pkg->ident.name, x->ident.name));
+        }
+        assert(t);
+        s = t;
+    }
+    if (ast$resolve(s, x)) {
+        return;
+    }
+    Checker_error(c, x->pos, sys$sprintf("unresolved: %s", x->ident.name));
+}
+
 static void Checker_declare(Checker *c, ast$Scope *s, ast$Decl *decl) {
     ast$Expr *ident = getDeclName(decl);
     if (ident->ident.obj != NULL) {
-        ast$Scope_print(s);
         Checker_error(c, decl->pos,
                 sys$sprintf("already declared: %s", ident->ident.name));
     }
     if (ident->ident.pkg != NULL) {
         ast$Expr *pkg = ident->ident.pkg;
-        ast$Scope_resolve(s, pkg);
+        Checker_resolve(c, s, pkg);
         ast$Object *pkgObj = pkg->ident.obj;
         ast$Decl *decl = pkgObj->decl;
         assert(decl->type == ast$DECL_IMPORT);
@@ -527,7 +552,7 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
     switch (t->type) {
 
     case ast$EXPR_IDENT:
-        ast$Scope_resolve(c->pkg.scope, t);
+        Checker_resolve(c, c->pkg.scope, t);
         break;
 
     case ast$EXPR_SELECTOR:
@@ -813,7 +838,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
         return expr->cast.type;
 
     case ast$EXPR_IDENT:
-        ast$Scope_resolve(c->pkg.scope, expr);
+        Checker_resolve(c, c->pkg.scope, expr);
         return Checker_checkIdent(c, expr);
 
     case ast$EXPR_INDEX:
@@ -878,7 +903,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
         {
             Checker_checkType(c, expr->sizeof_.x);
             ast$Expr *ident = types$makeIdent("size_t");
-            ast$Scope_resolve(c->pkg.scope, ident);
+            Checker_resolve(c, c->pkg.scope, ident);
             return ident;
         }
 

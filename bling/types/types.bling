@@ -531,15 +531,38 @@ fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
     panic(sys.sprintf("%s: %s\n%s", token.Position_string(&position), msg, token.File_lineString(file, position.line)))
 }
 
+fun Checker_resolve(c *Checker, s *ast.Scope, x *ast.Expr) {
+    assert(x.type == ast.EXPR_IDENT)
+    assert(x.ident.obj == NULL)
+    if x.ident.pkg {
+        var pkg *ast.Expr = x.ident.pkg
+        Checker_resolve(c, s, pkg)
+        if pkg.ident.obj.kind != ast.ObjKind_PKG {
+            Checker_error(c, pkg.pos, sys.sprintf("not a pkg: %s", pkg.ident.name))
+        }
+        var decl *ast.Decl = pkg.ident.obj.decl
+        assert(decl.type == ast.DECL_IMPORT)
+        var t *ast.Scope = decl.imp.scope
+        if !t {
+            Checker_error(c, x.pos, sys.sprintf("%s $ %s", pkg.ident.name, x.ident.name))
+        }
+        assert(t)
+        s = t
+    }
+    if ast.resolve(s, x) {
+        return
+    }
+    Checker_error(c, x.pos, sys.sprintf("unresolved: %s", x.ident.name))
+}
+
 fun Checker_declare(c *Checker, s *ast.Scope, decl *ast.Decl) {
     var ident *ast.Expr = getDeclName(decl)
     if ident.ident.obj != NULL {
-        ast.Scope_print(s)
         Checker_error(c, decl.pos, sys.sprintf("already declared: %s", ident.ident.name))
     }
     if ident.ident.pkg != NULL {
         var pkg *ast.Expr = ident.ident.pkg
-        ast.Scope_resolve(s, pkg)
+        Checker_resolve(c, s, pkg)
         var pkgObj *ast.Object = pkg.ident.obj
         var decl *ast.Decl = pkgObj.decl
         assert(decl.type == ast.DECL_IMPORT)
@@ -597,7 +620,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
     assert(t)
     switch t.type {
     case ast.EXPR_IDENT:
-        ast.Scope_resolve(c.pkg.scope, t)
+        Checker_resolve(c, c.pkg.scope, t)
         break
     case ast.EXPR_SELECTOR:
         {
@@ -846,7 +869,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         Checker_checkExpr(c, expr.cast.expr)
         return expr.cast.type
     case ast.EXPR_IDENT:
-        ast.Scope_resolve(c.pkg.scope, expr)
+        Checker_resolve(c, c.pkg.scope, expr)
         return Checker_checkIdent(c, expr)
     case ast.EXPR_INDEX:
         {
@@ -901,7 +924,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         {
             Checker_checkType(c, expr.sizeof_.x)
             var ident *ast.Expr = makeIdent("size_t")
-            ast.Scope_resolve(c.pkg.scope, ident)
+            Checker_resolve(c, c.pkg.scope, ident)
             return ident
         }
     case ast.EXPR_STAR:
