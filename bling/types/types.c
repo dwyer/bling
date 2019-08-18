@@ -8,7 +8,7 @@
 static char *constant_stringVal(ast$Expr *x) {
     // TODO move this to const pkg
     assert(x->kind == ast$EXPR_BASIC_LIT);
-    const char *lit = x->basic_lit.value;
+    const char *lit = x->basic.value;
     int n = strlen(lit) - 2;
     char *val = malloc(n + 1);
     for (int i = 0; i < n; i++) {
@@ -647,9 +647,9 @@ static bool types$isInteger(ast$Expr *x) {
 }
 
 static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
-    ast$Expr *baseT = types$getBaseType(x->compound.type);
-    for (int i = 0; x->compound.list[i]; i++) {
-        ast$Expr *elt = x->compound.list[i];
+    ast$Expr *baseT = types$getBaseType(x->composite.type);
+    for (int i = 0; x->composite.list[i]; i++) {
+        ast$Expr *elt = x->composite.list[i];
         if (elt->kind == ast$EXPR_KEY_VALUE) {
             elt->key_value.isArray = true;
             ast$Expr *indexT = Checker_checkExpr(c, elt->key_value.key);
@@ -660,9 +660,9 @@ static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
             }
             elt = elt->key_value.value;
         }
-        if (elt->kind == ast$EXPR_COMPOUND) {
-            if (elt->compound.type == NULL) {
-                elt->compound.type = baseT->array.elt;
+        if (elt->kind == ast$EXPR_COMPOSITE_LIT) {
+            if (elt->composite.type == NULL) {
+                elt->composite.type = baseT->array.elt;
             }
         }
         ast$Expr *eltT = Checker_checkExpr(c, elt);
@@ -671,10 +671,10 @@ static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
 }
 
 static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
-    assert(x->compound.type);
+    assert(x->composite.type);
     bool expectKV = false;
-    for (int i = 0; x->compound.list[i]; i++) {
-        ast$Expr *elt = x->compound.list[i];
+    for (int i = 0; x->composite.list[i]; i++) {
+        ast$Expr *elt = x->composite.list[i];
         ast$Expr *fieldT = NULL;
         if (elt->kind == ast$EXPR_KEY_VALUE) {
             elt->key_value.isArray = false;
@@ -683,12 +683,12 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
             if (!ast$isIdent(key)) {
                 Checker_error(c, x->pos, "key must be an identifier");
             }
-            ast$Decl *field = getStructFieldByName(x->compound.type, key);
+            ast$Decl *field = getStructFieldByName(x->composite.type, key);
             if (field == NULL) {
                 Checker_error(c, key->pos,
                         sys$sprintf("no member named '%s' in '%s'",
                             types$exprString(key),
-                            types$typeString(x->compound.type)));
+                            types$typeString(x->composite.type)));
             }
             key->ident.obj = field->field.name->ident.obj;
             fieldT = field->field.type;
@@ -697,12 +697,12 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
             if (expectKV) {
                 Checker_error(c, x->pos, "expected a key/value expr");
             }
-            ast$Decl *field = getStructField(x->compound.type, i);
+            ast$Decl *field = getStructField(x->composite.type, i);
             fieldT = field->field.type;
         }
-        if (elt->kind == ast$EXPR_COMPOUND) {
-            if (elt->compound.type == NULL) {
-                elt->compound.type = fieldT;
+        if (elt->kind == ast$EXPR_COMPOSITE_LIT) {
+            if (elt->composite.type == NULL) {
+                elt->composite.type = fieldT;
             }
         }
         ast$Expr *eltT = Checker_checkExpr(c, elt);
@@ -716,7 +716,7 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
 }
 
 static void Checker_checkCompositeLit(Checker *c, ast$Expr *x) {
-    ast$Expr *t = x->compound.type;
+    ast$Expr *t = x->composite.type;
     assert(t);
     ast$Expr *baseT = types$getBaseType(t);
     switch (baseT->kind) {
@@ -764,7 +764,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
 
     case ast$EXPR_BASIC_LIT:
         {
-            token$Token kind = expr->basic_lit.kind;
+            token$Token kind = expr->basic.kind;
             ast$Expr *type = NULL;
             switch (kind) {
             case token$CHAR:
@@ -825,17 +825,15 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
 
         }
 
-    case ast$EXPR_COMPOUND:
-        if (expr->compound.type == NULL) {
-            Checker_error(c, expr->pos, "untyped compound expr");
-        }
+    case ast$EXPR_COMPOSITE_LIT:
+        assert(expr->composite.type != NULL);
         Checker_checkCompositeLit(c, expr);
-        return expr->compound.type;
+        return expr->composite.type;
 
     case ast$EXPR_CAST:
         Checker_checkType(c, expr->cast.type);
-        if (expr->cast.expr->kind == ast$EXPR_COMPOUND) {
-            expr->cast.expr->compound.type = expr->cast.type;
+        if (expr->cast.expr->kind == ast$EXPR_COMPOSITE_LIT) {
+            expr->cast.expr->composite.type = expr->cast.type;
         }
         Checker_checkExpr(c, expr->cast.expr);
         return expr->cast.type;
@@ -1140,12 +1138,13 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
                 Checker_checkType(c, decl->value.type);
             }
             if (decl->value.value != NULL) {
-                if (decl->value.value->kind == ast$EXPR_COMPOUND) {
+                if (decl->value.value->kind == ast$EXPR_COMPOSITE_LIT) {
                     if (decl->value.type == NULL) {
                         // TODO resolve this restriction by enforcing T{}.
-                        Checker_error(c, decl->pos, "cannot assign short var decls with composite type");
+                        Checker_error(c, decl->pos,
+                                "cannot assign short var decls with composite type");
                     }
-                    decl->value.value->compound.type = decl->value.type;
+                    decl->value.value->composite.type = decl->value.type;
                 }
                 valType = Checker_checkExpr(c, decl->value.value);
             }

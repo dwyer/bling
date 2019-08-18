@@ -574,8 +574,8 @@ fun initializer(p *parser.Parser) *ast.Expr {
     }
     parser.expect(p, token.RBRACE)
     var expr ast.Expr = {
-        kind: ast.EXPR_COMPOUND,
-        compound: {
+        kind: ast.EXPR_COMPOSITE_LIT,
+        composite: {
             list: utils.Slice_to_nil_array(list),
         },
     }

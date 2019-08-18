@@ -149,7 +149,7 @@ fun parseBasicLit(p *Parser, kind token.Token) *ast.Expr {
     var x ast.Expr = {
         kind: ast.EXPR_BASIC_LIT,
         pos: pos,
-        basic_lit: {
+        basic: {
             kind: kind,
             value: value,
         },
@@ -665,9 +665,9 @@ fun parseInitExpr(p *Parser) *ast.Expr {
         }
         expect(p, token.RBRACE)
         var expr ast.Expr = {
-            kind: ast.EXPR_COMPOUND,
+            kind: ast.EXPR_COMPOSITE_LIT,
             pos: pos,
-            compound: {
+            composite: {
                 list: utils.Slice_to_nil_array(list),
             },
         }

@@ -26,7 +26,7 @@ typedef NodeKind enum {
     EXPR_BINARY,
     EXPR_CALL,
     EXPR_CAST,
-    EXPR_COMPOUND,
+    EXPR_COMPOSITE_LIT,
     EXPR_IDENT,
     EXPR_INDEX,
     EXPR_INIT_DECL,
@@ -195,11 +195,11 @@ typedef Expr struct Expr {
     is_const bool
     union {
         array Array
-        basic_lit BasicLit
+        basic BasicLit
         binary BinaryExpr
         call CallExpr
         cast CastExpr
-        compound CompositeLit
+        composite CompositeLit
         enum_ Enum
         func FuncExpr
         ident Ident

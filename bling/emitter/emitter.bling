@@ -90,7 +90,7 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
     }
     switch expr.kind {
     case ast.EXPR_BASIC_LIT:
-        emitString(e, expr.basic_lit.value)
+        emitString(e, expr.basic.value)
         break
     case ast.EXPR_BINARY:
         emitExpr(e, expr.binary.x)
@@ -119,12 +119,12 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         emitSpace(e)
         emitExpr(e, expr.cast.expr)
         break
-    case ast.EXPR_COMPOUND:
+    case ast.EXPR_COMPOSITE_LIT:
         emitToken(e, token.LBRACE)
-        if expr.compound.list && *expr.compound.list {
+        if expr.composite.list && *expr.composite.list {
             emitNewline(e)
             e.indent++
-            for var exprs **ast.Expr = expr.compound.list; *exprs; exprs++ {
+            for var exprs **ast.Expr = expr.composite.list; *exprs; exprs++ {
                 emitTabs(e)
                 emitExpr(e, *exprs)
                 emitToken(e, token.COMMA)

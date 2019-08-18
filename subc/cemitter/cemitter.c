@@ -12,7 +12,7 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
     switch (expr->kind) {
 
     case ast$EXPR_BASIC_LIT:
-        emitter$emitString(e, expr->basic_lit.value);
+        emitter$emitString(e, expr->basic.value);
         break;
 
     case ast$EXPR_BINARY:
@@ -44,11 +44,11 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         cemitter$emitExpr(e, expr->cast.expr);
         break;
 
-    case ast$EXPR_COMPOUND:
+    case ast$EXPR_COMPOSITE_LIT:
         emitter$emitToken(e, token$LBRACE);
         emitter$emitNewline(e);
         e->indent++;
-        for (ast$Expr **exprs = expr->compound.list; exprs && *exprs; exprs++) {
+        for (ast$Expr **exprs = expr->composite.list; exprs && *exprs; exprs++) {
             emitter$emitTabs(e);
             cemitter$emitExpr(e, *exprs);
             emitter$emitToken(e, token$COMMA);

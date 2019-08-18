@@ -92,7 +92,7 @@ extern ast$Expr *parser$parseBasicLit(parser$Parser *p, token$Token kind) {
     ast$Expr x = {
         .kind = ast$EXPR_BASIC_LIT,
         .pos = pos,
-        .basic_lit = {
+        .basic = {
             .kind = kind,
             .value = value,
         },
@@ -647,9 +647,9 @@ static ast$Expr *parseInitExpr(parser$Parser *p) {
         }
         parser$expect(p, token$RBRACE);
         ast$Expr expr = {
-            .kind = ast$EXPR_COMPOUND,
+            .kind = ast$EXPR_COMPOSITE_LIT,
             .pos = pos,
-            .compound = {
+            .composite = {
                 .list = utils$Slice_to_nil_array(list),
             },
         };

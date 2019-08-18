@@ -651,8 +651,8 @@ static ast$Expr *initializer(parser$Parser *p) {
     }
     parser$expect(p, token$RBRACE);
     ast$Expr expr = {
-        .kind = ast$EXPR_COMPOUND,
-        .compound = {
+        .kind = ast$EXPR_COMPOSITE_LIT,
+        .composite = {
             .list = utils$Slice_to_nil_array(list),
         },
     };

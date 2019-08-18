@@ -45,7 +45,7 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package
 
 fun constant_stringVal(x *ast.Expr) *char {
     assert(x.kind == ast.EXPR_BASIC_LIT)
-    var lit *const char = x.basic_lit.value
+    var lit *const char = x.basic.value
     var n int = strlen(lit) - 2
     var val *char = malloc(n + 1)
     for var i int = 0; i < n; i++ {
@@ -707,9 +707,9 @@ fun isInteger(x *ast.Expr) bool {
 }
 
 fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
-    var baseT *ast.Expr = getBaseType(x.compound.type)
-    for var i int = 0; x.compound.list[i]; i++ {
-        var elt *ast.Expr = x.compound.list[i]
+    var baseT *ast.Expr = getBaseType(x.composite.type)
+    for var i int = 0; x.composite.list[i]; i++ {
+        var elt *ast.Expr = x.composite.list[i]
         if elt.kind == ast.EXPR_KEY_VALUE {
             elt.key_value.isArray = true
             var indexT *ast.Expr = Checker_checkExpr(c, elt.key_value.key)
@@ -718,9 +718,9 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
             }
             elt = elt.key_value.value
         }
-        if elt.kind == ast.EXPR_COMPOUND {
-            if elt.compound.type == NULL {
-                elt.compound.type = baseT.array.elt
+        if elt.kind == ast.EXPR_COMPOSITE_LIT {
+            if elt.composite.type == NULL {
+                elt.composite.type = baseT.array.elt
             }
         }
         var eltT *ast.Expr = Checker_checkExpr(c, elt)
@@ -729,10 +729,10 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
 }
 
 fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
-    assert(x.compound.type)
+    assert(x.composite.type)
     var expectKV bool = false
-    for var i int = 0; x.compound.list[i]; i++ {
-        var elt *ast.Expr = x.compound.list[i]
+    for var i int = 0; x.composite.list[i]; i++ {
+        var elt *ast.Expr = x.composite.list[i]
         var fieldT *ast.Expr = NULL
         if elt.kind == ast.EXPR_KEY_VALUE {
             elt.key_value.isArray = false
@@ -741,9 +741,9 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             if !ast.isIdent(key) {
                 Checker_error(c, x.pos, "key must be an identifier")
             }
-            var field *ast.Decl = getStructFieldByName(x.compound.type, key)
+            var field *ast.Decl = getStructFieldByName(x.composite.type, key)
             if field == NULL {
-                Checker_error(c, key.pos, sys.sprintf("no member named '%s' in '%s'", exprString(key), typeString(x.compound.type)))
+                Checker_error(c, key.pos, sys.sprintf("no member named '%s' in '%s'", exprString(key), typeString(x.composite.type)))
             }
             key.ident.obj = field.field.name.ident.obj
             fieldT = field.field.type
@@ -752,12 +752,12 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             if expectKV {
                 Checker_error(c, x.pos, "expected a key/value expr")
             }
-            var field *ast.Decl = getStructField(x.compound.type, i)
+            var field *ast.Decl = getStructField(x.composite.type, i)
             fieldT = field.field.type
         }
-        if elt.kind == ast.EXPR_COMPOUND {
-            if elt.compound.type == NULL {
-                elt.compound.type = fieldT
+        if elt.kind == ast.EXPR_COMPOSITE_LIT {
+            if elt.composite.type == NULL {
+                elt.composite.type = fieldT
             }
         }
         var eltT *ast.Expr = Checker_checkExpr(c, elt)
@@ -768,7 +768,7 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
 }
 
 fun Checker_checkCompositeLit(c *Checker, x *ast.Expr) {
-    var t *ast.Expr = x.compound.type
+    var t *ast.Expr = x.composite.type
     assert(t)
     var baseT *ast.Expr = getBaseType(t)
     switch baseT.kind {
@@ -804,7 +804,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         }
     case ast.EXPR_BASIC_LIT:
         {
-            var kind token.Token = expr.basic_lit.kind
+            var kind token.Token = expr.basic.kind
             var type *ast.Expr = NULL
             switch kind {
             case token.CHAR:
@@ -858,16 +858,14 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             }
             return type.func.result
         }
-    case ast.EXPR_COMPOUND:
-        if expr.compound.type == NULL {
-            Checker_error(c, expr.pos, "untyped compound expr")
-        }
+    case ast.EXPR_COMPOSITE_LIT:
+        assert(expr.composite.type != NULL)
         Checker_checkCompositeLit(c, expr)
-        return expr.compound.type
+        return expr.composite.type
     case ast.EXPR_CAST:
         Checker_checkType(c, expr.cast.type)
-        if expr.cast.expr.kind == ast.EXPR_COMPOUND {
-            expr.cast.expr.compound.type = expr.cast.type
+        if expr.cast.expr.kind == ast.EXPR_COMPOSITE_LIT {
+            expr.cast.expr.composite.type = expr.cast.type
         }
         Checker_checkExpr(c, expr.cast.expr)
         return expr.cast.type
@@ -1123,11 +1121,11 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
                 Checker_checkType(c, decl.value.type)
             }
             if decl.value.value != NULL {
-                if decl.value.value.kind == ast.EXPR_COMPOUND {
+                if decl.value.value.kind == ast.EXPR_COMPOSITE_LIT {
                     if decl.value.type == NULL {
                         Checker_error(c, decl.pos, "cannot assign short var decls with composite type")
                     }
-                    decl.value.value.compound.type = decl.value.type
+                    decl.value.value.composite.type = decl.value.type
                 }
                 valType = Checker_checkExpr(c, decl.value.value)
             }

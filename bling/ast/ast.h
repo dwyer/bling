@@ -28,7 +28,7 @@ typedef enum {
     ast$EXPR_BINARY,
     ast$EXPR_CALL,
     ast$EXPR_CAST,
-    ast$EXPR_COMPOUND,
+    ast$EXPR_COMPOSITE_LIT,
     ast$EXPR_IDENT,
     ast$EXPR_INDEX,
     ast$EXPR_INIT_DECL,
@@ -198,11 +198,11 @@ typedef struct ast$Expr {
     bool is_const;
     union {
         ast$Array array;
-        ast$BasicLit basic_lit;
+        ast$BasicLit basic;
         ast$BinaryExpr binary;
         ast$CallExpr call;
         ast$CastExpr cast;
-        ast$CompositeLit compound;
+        ast$CompositeLit composite;
         ast$Enum enum_;
         ast$FuncExpr func;
         ast$Ident ident;
