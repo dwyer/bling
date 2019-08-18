@@ -43,14 +43,14 @@ static ast$Expr *parse_const_expr(parser$Parser *p);
 static ast$Expr *parse_init_expr(parser$Parser *p);
 
 static ast$Expr *parseType(parser$Parser *p);
-static ast$Expr *parse_enum_spec(parser$Parser *p);
-static ast$Expr *parse_pointer(parser$Parser *p);
+static ast$Expr *parseEnumType(parser$Parser *p);
+static ast$Expr *parsePointerType(parser$Parser *p);
 static ast$Decl **parse_param_type_list(parser$Parser *p, bool anon);
 
 static ast$Stmt *parse_stmt(parser$Parser *p);
 static ast$Stmt *parse_block_stmt(parser$Parser *p);
 
-static ast$Decl *parse_decl(parser$Parser *p, bool is_external);
+static ast$Decl *parseDecl(parser$Parser *p);
 static ast$Decl *parse_field(parser$Parser *p, bool anon);
 
 extern void parser$error(parser$Parser *p, token$Pos pos, char *msg) {
@@ -452,7 +452,7 @@ static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
     return esc(x);
 }
 
-static ast$Expr *parse_enum_spec(parser$Parser *p) {
+static ast$Expr *parseEnumType(parser$Parser *p) {
     // enum_specifier
     //         : ENUM '{' enumerator_list '}'
     //         | ENUM IDENTIFIER '{' enumerator_list '}'
@@ -500,7 +500,7 @@ static ast$Expr *parse_enum_spec(parser$Parser *p) {
     return esc(x);
 }
 
-static ast$Expr *parse_pointer(parser$Parser *p) {
+static ast$Expr *parsePointerType(parser$Parser *p) {
     token$Pos pos = p->pos;
     parser$expect(p, token$MUL);
     ast$Expr x = {
@@ -860,7 +860,7 @@ static ast$Stmt *parse_decl_stmt(parser$Parser *p) {
         .type = ast$STMT_DECL,
         .pos = p->pos,
         .decl = {
-            .decl = parse_decl(p, false),
+            .decl = parseDecl(p),
         },
     };
     return esc(stmt);
@@ -944,7 +944,7 @@ static ast$Decl *parse_field(parser$Parser *p, bool anon) {
     return esc(decl);
 }
 
-static ast$Expr *parse_func_type(parser$Parser *p) {
+static ast$Expr *parseFuncType(parser$Parser *p) {
     token$Pos pos = parser$expect(p, token$FUNC);
     parser$expect(p, token$LPAREN);
     ast$Decl **params = parse_param_type_list(p, false);
@@ -971,74 +971,79 @@ static ast$Expr *parse_func_type(parser$Parser *p) {
     return esc(ptr);
 }
 
-static ast$Expr *parse_type_qualifier(parser$Parser *p, token$Token tok) {
+static ast$Expr *parseQualifiedType(parser$Parser *p, token$Token tok) {
     parser$expect(p, tok);
     ast$Expr *type = parseType(p);
     type->is_const = true;
     return type;
 }
 
-static ast$Expr *parseType(parser$Parser *p) {
-    ast$Expr *x = NULL;
-    switch (p->tok) {
-    case token$CONST:
-        x = parse_type_qualifier(p, p->tok);
-        break;
-    case token$IDENT:
-        x = parser$parseIdent(p);
-        if (parser$accept(p, token$PERIOD)) {
-            ast$Expr y = {
-                .type = ast$EXPR_SELECTOR,
-                .pos = x->pos,
-                .selector = {
-                    .x = x,
-                    .tok = token$DOLLAR,
-                    .sel = parser$parseIdent(p),
-                },
-            };
-            x = esc(y);
-        }
-        break;
-    case token$MUL:
-        x = parse_pointer(p);
-        break;
-    case token$STRUCT:
-    case token$UNION:
-        x = parseStructOrUnionType(p, p->tok);
-        break;
-    case token$ENUM:
-        x = parse_enum_spec(p);
-        break;
-    case token$FUNC:
-        x = parse_func_type(p);
-        break;
-    case token$LBRACK:
-        {
-            token$Pos pos = parser$expect(p, token$LBRACK);
-            ast$Expr *len = NULL;
-            if (p->tok != token$RBRACK) {
-                len = parse_const_expr(p);
-            }
-            parser$expect(p, token$RBRACK);
-            ast$Expr type = {
-                .type = ast$TYPE_ARRAY,
-                .pos = pos,
-                .array = {
-                    .elt = parseType(p),
-                    .len = len,
-                },
-            };
-            x = esc(type);
-        }
-        break;
-    default:
-        parser$errorExpected(p, p->pos, "type");
-        break;
+static ast$Expr *parseTypeName(parser$Parser *p) {
+    ast$Expr *x = parser$parseIdent(p);
+    if (parser$accept(p, token$PERIOD)) {
+        ast$Expr y = {
+            .type = ast$EXPR_SELECTOR,
+            .pos = x->pos,
+            .selector = {
+                .x = x,
+                .tok = token$DOLLAR,
+                .sel = parser$parseIdent(p),
+            },
+        };
+        x = esc(y);
     }
     return x;
 }
 
-static ast$Decl *parse_decl(parser$Parser *p, bool is_external) {
+static ast$Expr *parseArrayType(parser$Parser *p) {
+    token$Pos pos = parser$expect(p, token$LBRACK);
+    ast$Expr *len = NULL;
+    if (p->tok != token$RBRACK) {
+        len = parse_const_expr(p);
+    }
+    parser$expect(p, token$RBRACK);
+    ast$Expr type = {
+        .type = ast$TYPE_ARRAY,
+        .pos = pos,
+        .array = {
+            .elt = parseType(p),
+            .len = len,
+        },
+    };
+    return esc(type);
+}
+
+static ast$Expr *tryType(parser$Parser *p) {
+    switch (p->tok) {
+    case token$IDENT:
+        return parseTypeName(p);
+    case token$LBRACK:
+        return parseArrayType(p);
+    case token$STRUCT:
+    case token$UNION:
+        return parseStructOrUnionType(p, p->tok);
+    case token$MUL:
+        return parsePointerType(p);
+    case token$FUNC:
+        return parseFuncType(p);
+    case token$ENUM:
+        return parseEnumType(p);
+    case token$CONST:
+        return parseQualifiedType(p, p->tok);
+    default:
+        return NULL;
+    }
+}
+
+static ast$Expr *parseType(parser$Parser *p) {
+    ast$Expr *t = tryType(p);
+    if (t == NULL) {
+        parser$errorExpected(p, p->pos, "type");
+    }
+    return t;
+}
+
+static ast$Decl *parseDecl(parser$Parser *p) {
     switch (p->tok) {
     case token$HASH:
         return parser$parsePragma(p);
@@ -1062,8 +1067,8 @@ static ast$Decl *parse_decl(parser$Parser *p, bool is_external) {
     case token$CONST:
     case token$VAR:
         {
-            token$Token tok = p->tok;
-            token$Pos pos = parser$expect(p, tok);
+            token$Token keyword = p->tok;
+            token$Pos pos = parser$expect(p, keyword);
             ast$Expr *ident = parser$parseIdent(p);
             ast$Expr *type = NULL;
             if (p->tok != token$ASSIGN) {
@@ -1081,7 +1086,7 @@ static ast$Decl *parse_decl(parser$Parser *p, bool is_external) {
                     .name = ident,
                     .type = type,
                     .value = value,
-                    .kind = tok,
+                    .kind = keyword,
                 },
             };
             return esc(decl);
@@ -1177,7 +1182,7 @@ static ast$File *_parse_file(parser$Parser *p) {
         utils$Slice_append(&imports, &declp);
     }
     while (p->tok != token$EOF) {
-        ast$Decl *decl = parse_decl(p, true);
+        ast$Decl *decl = parseDecl(p);
         utils$Slice_append(&decls, &decl);
     }
     ast$File file = {

@@ -104,9 +104,9 @@ fun parse_init_expr(p *Parser) *ast.Expr
 
 fun parseType(p *Parser) *ast.Expr
 
-fun parse_enum_spec(p *Parser) *ast.Expr
+fun parseEnumType(p *Parser) *ast.Expr
 
-fun parse_pointer(p *Parser) *ast.Expr
+fun parsePointerType(p *Parser) *ast.Expr
 
 fun parse_param_type_list(p *Parser, anon bool) **ast.Decl
 
@@ -114,7 +114,7 @@ fun parse_stmt(p *Parser) *ast.Stmt
 
 fun parse_block_stmt(p *Parser) *ast.Stmt
 
-fun parse_decl(p *Parser, is_external bool) *ast.Decl
+fun parseDecl(p *Parser) *ast.Decl
 
 fun parse_field(p *Parser, anon bool) *ast.Decl
 
@@ -467,7 +467,7 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
     return esc(x)
 }
 
-fun parse_enum_spec(p *Parser) *ast.Expr {
+fun parseEnumType(p *Parser) *ast.Expr {
     var name *ast.Expr = NULL
     var pos token.Pos = p.pos
     expect(p, token.ENUM)
@@ -510,7 +510,7 @@ fun parse_enum_spec(p *Parser) *ast.Expr {
     return esc(x)
 }
 
-fun parse_pointer(p *Parser) *ast.Expr {
+fun parsePointerType(p *Parser) *ast.Expr {
     var pos token.Pos = p.pos
     expect(p, token.MUL)
     var x ast.Expr = {
@@ -824,7 +824,7 @@ fun parse_decl_stmt(p *Parser) *ast.Stmt {
         type: ast.STMT_DECL,
         pos: p.pos,
         decl: {
-            decl: parse_decl(p, false),
+            decl: parseDecl(p),
         },
     }
     return esc(stmt)
@@ -904,7 +904,7 @@ fun parse_field(p *Parser, anon bool) *ast.Decl {
     return esc(decl)
 }
 
-fun parse_func_type(p *Parser) *ast.Expr {
+fun parseFuncType(p *Parser) *ast.Expr {
     var pos token.Pos = expect(p, token.FUNC)
     expect(p, token.LPAREN)
     var params **ast.Decl = parse_param_type_list(p, false)
@@ -931,73 +931,78 @@ fun parse_func_type(p *Parser) *ast.Expr {
     return esc(ptr)
 }
 
-fun parse_type_qualifier(p *Parser, tok token.Token) *ast.Expr {
+fun parseQualifiedType(p *Parser, tok token.Token) *ast.Expr {
     expect(p, tok)
     var type *ast.Expr = parseType(p)
     type.is_const = true
     return type
 }
 
-fun parseType(p *Parser) *ast.Expr {
-    var x *ast.Expr = NULL
-    switch p.tok {
-    case token.CONST:
-        x = parse_type_qualifier(p, p.tok)
-        break
-    case token.IDENT:
-        x = parseIdent(p)
-        if accept(p, token.PERIOD) {
-            var y ast.Expr = {
-                type: ast.EXPR_SELECTOR,
-                pos: x.pos,
-                selector: {
-                    x: x,
-                    tok: token.DOLLAR,
-                    sel: parseIdent(p),
-                },
-            }
-            x = esc(y)
+fun parseTypeName(p *Parser) *ast.Expr {
+    var x *ast.Expr = parseIdent(p)
+    if accept(p, token.PERIOD) {
+        var y ast.Expr = {
+            type: ast.EXPR_SELECTOR,
+            pos: x.pos,
+            selector: {
+                x: x,
+                tok: token.DOLLAR,
+                sel: parseIdent(p),
+            },
         }
-        break
-    case token.MUL:
-        x = parse_pointer(p)
-        break
-    case token.STRUCT, token.UNION:
-        x = parseStructOrUnionType(p, p.tok)
-        break
-    case token.ENUM:
-        x = parse_enum_spec(p)
-        break
-    case token.FUNC:
-        x = parse_func_type(p)
-        break
-    case token.LBRACK:
-        {
-            var pos token.Pos = expect(p, token.LBRACK)
-            var len *ast.Expr = NULL
-            if p.tok != token.RBRACK {
-                len = parse_const_expr(p)
-            }
-            expect(p, token.RBRACK)
-            var type ast.Expr = {
-                type: ast.TYPE_ARRAY,
-                pos: pos,
-                array: {
-                    elt: parseType(p),
-                    len: len,
-                },
-            }
-            x = esc(type)
-        }
-        break
-    default:
-        errorExpected(p, p.pos, "type")
-        break
+        x = esc(y)
     }
     return x
 }
 
-fun parse_decl(p *Parser, is_external bool) *ast.Decl {
+fun parseArrayType(p *Parser) *ast.Expr {
+    var pos token.Pos = expect(p, token.LBRACK)
+    var len *ast.Expr = NULL
+    if p.tok != token.RBRACK {
+        len = parse_const_expr(p)
+    }
+    expect(p, token.RBRACK)
+    var type ast.Expr = {
+        type: ast.TYPE_ARRAY,
+        pos: pos,
+        array: {
+            elt: parseType(p),
+            len: len,
+        },
+    }
+    return esc(type)
+}
+
+fun tryType(p *Parser) *ast.Expr {
+    switch p.tok {
+    case token.IDENT:
+        return parseTypeName(p)
+    case token.LBRACK:
+        return parseArrayType(p)
+    case token.STRUCT, token.UNION:
+        return parseStructOrUnionType(p, p.tok)
+    case token.MUL:
+        return parsePointerType(p)
+    case token.FUNC:
+        return parseFuncType(p)
+    case token.ENUM:
+        return parseEnumType(p)
+    case token.CONST:
+        return parseQualifiedType(p, p.tok)
+    default:
+        return NULL
+    }
+}
+
+fun parseType(p *Parser) *ast.Expr {
+    var t *ast.Expr = tryType(p)
+    if t == NULL {
+        errorExpected(p, p.pos, "type")
+    }
+    return t
+}
+
+fun parseDecl(p *Parser) *ast.Decl {
     switch p.tok {
     case token.HASH:
         return parsePragma(p)
@@ -1020,8 +1025,8 @@ fun parse_decl(p *Parser, is_external bool) *ast.Decl {
         }
     case token.CONST, token.VAR:
         {
-            var tok token.Token = p.tok
-            var pos token.Pos = expect(p, tok)
+            var keyword token.Token = p.tok
+            var pos token.Pos = expect(p, keyword)
             var ident *ast.Expr = parseIdent(p)
             var type *ast.Expr = NULL
             if p.tok != token.ASSIGN {
@@ -1039,7 +1044,7 @@ fun parse_decl(p *Parser, is_external bool) *ast.Decl {
                     name: ident,
                     type: type,
                     value: value,
-                    kind: tok,
+                    kind: keyword,
                 },
             }
             return esc(decl)
@@ -1134,7 +1139,7 @@ fun _parse_file(p *Parser) *ast.File {
         utils.Slice_append(&imports, &declp)
     }
     while p.tok != token.EOF {
-        var decl *ast.Decl = parse_decl(p, true)
+        var decl *ast.Decl = parseDecl(p)
         utils.Slice_append(&decls, &decl)
     }
     var file ast.File = {
