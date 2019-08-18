@@ -184,9 +184,6 @@ static bool types$areIdentical(ast$Expr *a, ast$Expr *b) {
     case ast$EXPR_IDENT:
         return b->kind == ast$EXPR_IDENT && a->ident.obj == a->ident.obj;
     case ast$EXPR_STAR:
-        if (ast$isVoidPtr(a) || ast$isVoidPtr(b)) {
-            return true;
-        }
         return types$areIdentical(a->star.x, b->star.x);
     case ast$TYPE_ARRAY:
         // TODO check lengths
@@ -441,18 +438,8 @@ typedef struct {
     utils$Map scopes;
 } Checker;
 
-extern void FileSet_print(token$FileSet *fset) {
-    for (int i = 0; i < utils$Slice_len(&fset->files); i++) {
-        token$File *f;
-        utils$Slice_get(&fset->files, i, &f);
-        char *s = sys$sprintf("%d: %s (base=%d, size=%d)", i, f->name, f->base, f->size);
-        print(s);
-        free(s);
-    }
-}
-
 static void Checker_error(Checker *c, token$Pos pos, const char *msg) {
-    FileSet_print(c->fset);
+    token$FileSet_print(c->fset);
     token$Position position = {};
     token$File *file = token$FileSet_file(c->fset, pos);
     if (file) {
@@ -685,7 +672,6 @@ static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
 
 static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
     assert(x->compound.type);
-    ast$Expr *baseT = types$getBaseType(x->compound.type);
     bool expectKV = false;
     for (int i = 0; x->compound.list[i]; i++) {
         ast$Expr *elt = x->compound.list[i];
@@ -697,12 +683,12 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
             if (!ast$isIdent(key)) {
                 Checker_error(c, x->pos, "key must be an identifier");
             }
-            ast$Decl *field = getStructFieldByName(baseT, key);
+            ast$Decl *field = getStructFieldByName(x->compound.type, key);
             if (field == NULL) {
                 Checker_error(c, key->pos,
-                        sys$sprintf("struct `%s` has no field `%s`",
-                            types$typeString(x->compound.type),
-                            types$exprString(key)));
+                        sys$sprintf("no member named '%s' in '%s'",
+                            types$exprString(key),
+                            types$typeString(x->compound.type)));
             }
             key->ident.obj = field->field.name->ident.obj;
             fieldT = field->field.type;
@@ -711,7 +697,7 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
             if (expectKV) {
                 Checker_error(c, x->pos, "expected a key/value expr");
             }
-            ast$Decl *field = getStructField(baseT, i);
+            ast$Decl *field = getStructField(x->compound.type, i);
             fieldT = field->field.type;
         }
         if (elt->kind == ast$EXPR_COMPOUND) {
@@ -903,14 +889,12 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             } else {
                 assert(expr->selector.tok != token$ARROW);
             }
-            type = types$getBaseType(type);
             ast$Decl *field = getStructFieldByName(type, expr->selector.sel);
             if (field == NULL) {
                 Checker_error(c, expr->pos,
-                        sys$sprintf("struct `%s` (`%s`) has no field `%s`",
-                            types$exprString(expr->selector.x),
-                            types$typeString(type),
-                            expr->selector.sel->ident.name));
+                        sys$sprintf("no member named '%s' in '%s'",
+                            types$exprString(expr->selector.sel),
+                            types$typeString(type)));
             }
             expr->selector.sel->ident.obj = field->field.name->ident.obj;
             return field->field.type;
@@ -938,6 +922,16 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                             types$typeString(type)));
                 return NULL;
             }
+        }
+
+    case ast$EXPR_TERNARY:
+        {
+            ast$Expr *t1 = Checker_checkExpr(c, expr->ternary.cond);
+            assert(types$isArithmetic(t1));
+            ast$Expr *t2 = Checker_checkExpr(c, expr->ternary.x);
+            ast$Expr *t3 = Checker_checkExpr(c, expr->ternary.y);
+            assert(types$areIdentical(t2, t3));
+            return t2;
         }
 
     case ast$EXPR_UNARY:

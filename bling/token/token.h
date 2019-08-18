@@ -141,6 +141,7 @@ extern void             token$File_addLine(token$File *f, int offset);
 extern token$Pos        token$File_pos(token$File *f, int offset);
 extern token$Position   token$File_position(token$File *f, token$Pos p);
 extern char            *token$File_lineString(token$File *f, int line);
+extern void             token$FileSet_print(token$FileSet *fset);
 
 extern token$FileSet *token$newFileSet();
 extern token$File    *token$FileSet_addFile(token$FileSet *s,

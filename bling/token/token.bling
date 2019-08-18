@@ -141,6 +141,8 @@ fun File_position(f *File, p Pos) Position
 
 fun File_lineString(f *File, line int) *char
 
+fun FileSet_print(fset *FileSet)
+
 fun newFileSet() *FileSet
 
 fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File
@@ -421,4 +423,14 @@ fun FileSet_file(s *FileSet, p Pos) *File {
         }
     }
     return NULL
+}
+
+fun FileSet_print(fset *FileSet) {
+    for var i int = 0; i < utils.Slice_len(&fset.files); i++ {
+        var f *File
+        utils.Slice_get(&fset.files, i, &f)
+        var s *char = sys.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
+        print(s)
+        free(s)
+    }
 }

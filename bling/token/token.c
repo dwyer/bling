@@ -286,3 +286,13 @@ extern token$File *token$FileSet_file(token$FileSet *s, token$Pos p) {
     }
     return NULL;
 }
+
+extern void token$FileSet_print(token$FileSet *fset) {
+    for (int i = 0; i < utils$Slice_len(&fset->files); i++) {
+        token$File *f;
+        utils$Slice_get(&fset->files, i, &f);
+        char *s = sys$sprintf("%d: %s (base=%d, size=%d)", i, f->name, f->base, f->size);
+        print(s);
+        free(s);
+    }
+}

@@ -271,9 +271,6 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
     case ast.EXPR_IDENT:
         return b.kind == ast.EXPR_IDENT && a.ident.obj == a.ident.obj
     case ast.EXPR_STAR:
-        if ast.isVoidPtr(a) || ast.isVoidPtr(b) {
-            return true
-        }
         return areIdentical(a.star.x, b.star.x)
     case ast.TYPE_ARRAY:
         return areIdentical(a.array.elt, b.array.elt)
@@ -526,18 +523,8 @@ typedef Checker struct {
     scopes utils.Map
 }
 
-fun FileSet_print(fset *token.FileSet) {
-    for var i int = 0; i < utils.Slice_len(&fset.files); i++ {
-        var f *token.File
-        utils.Slice_get(&fset.files, i, &f)
-        var s *char = sys.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
-        print(s)
-        free(s)
-    }
-}
-
 fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
-    FileSet_print(c.fset)
+    token.FileSet_print(c.fset)
     var position token.Position = {}
     var file *token.File = token.FileSet_file(c.fset, pos)
     if file {
@@ -743,7 +730,6 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
 
 fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
     assert(x.compound.type)
-    var baseT *ast.Expr = getBaseType(x.compound.type)
     var expectKV bool = false
     for var i int = 0; x.compound.list[i]; i++ {
         var elt *ast.Expr = x.compound.list[i]
@@ -755,9 +741,9 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             if !ast.isIdent(key) {
                 Checker_error(c, x.pos, "key must be an identifier")
             }
-            var field *ast.Decl = getStructFieldByName(baseT, key)
+            var field *ast.Decl = getStructFieldByName(x.compound.type, key)
             if field == NULL {
-                Checker_error(c, key.pos, sys.sprintf("struct `%s` has no field `%s`", typeString(x.compound.type), exprString(key)))
+                Checker_error(c, key.pos, sys.sprintf("no member named '%s' in '%s'", exprString(key), typeString(x.compound.type)))
             }
             key.ident.obj = field.field.name.ident.obj
             fieldT = field.field.type
@@ -766,7 +752,7 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             if expectKV {
                 Checker_error(c, x.pos, "expected a key/value expr")
             }
-            var field *ast.Decl = getStructField(baseT, i)
+            var field *ast.Decl = getStructField(x.compound.type, i)
             fieldT = field.field.type
         }
         if elt.kind == ast.EXPR_COMPOUND {
@@ -929,10 +915,9 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             } else {
                 assert(expr.selector.tok != token.ARROW)
             }
-            type = getBaseType(type)
             var field *ast.Decl = getStructFieldByName(type, expr.selector.sel)
             if field == NULL {
-                Checker_error(c, expr.pos, sys.sprintf("struct `%s` (`%s`) has no field `%s`", exprString(expr.selector.x), typeString(type), expr.selector.sel.ident.name))
+                Checker_error(c, expr.pos, sys.sprintf("no member named '%s' in '%s'", exprString(expr.selector.sel), typeString(type)))
             }
             expr.selector.sel.ident.obj = field.field.name.ident.obj
             return field.field.type
@@ -956,6 +941,15 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 Checker_error(c, expr.pos, sys.sprintf("derefencing a non-pointer `%s`", typeString(type)))
                 return NULL
             }
+        }
+    case ast.EXPR_TERNARY:
+        {
+            var t1 *ast.Expr = Checker_checkExpr(c, expr.ternary.cond)
+            assert(isArithmetic(t1))
+            var t2 *ast.Expr = Checker_checkExpr(c, expr.ternary.x)
+            var t3 *ast.Expr = Checker_checkExpr(c, expr.ternary.y)
+            assert(areIdentical(t2, t3))
+            return t2
         }
     case ast.EXPR_UNARY:
         {
