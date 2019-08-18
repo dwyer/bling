@@ -62,13 +62,18 @@ typedef NodeType enum {
     _TYPE_END,
 }
 
+typedef Node struct {
+    type NodeType
+    pos token.Pos
+}
+
 typedef Decl struct Decl
 
 typedef Expr struct Expr
 
-typedef Scope struct Scope
-
 typedef Stmt struct Stmt
+
+typedef Scope struct Scope
 
 typedef ObjKind enum {
     ObjKind_BAD,
@@ -186,8 +191,7 @@ typedef UnaryExpr struct {
 }
 
 typedef Expr struct Expr {
-    type NodeType
-    pos token.Pos
+    Node
     is_const bool
     union {
         array Array

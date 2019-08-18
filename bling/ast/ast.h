@@ -67,10 +67,16 @@ typedef enum {
 
 } ast$NodeType;
 
+typedef struct {
+    ast$NodeType type;
+    token$Pos pos;
+} ast$Node;
+
 typedef struct ast$Decl ast$Decl;
 typedef struct ast$Expr ast$Expr;
-typedef struct ast$Scope ast$Scope;
 typedef struct ast$Stmt ast$Stmt;
+
+typedef struct ast$Scope ast$Scope;
 
 typedef enum {
     ast$ObjKind_BAD,
@@ -188,8 +194,7 @@ typedef struct {
 } ast$UnaryExpr;
 
 typedef struct ast$Expr {
-    ast$NodeType type;
-    token$Pos pos;
+    ast$Node;
     bool is_const;
     union {
         ast$Array array;

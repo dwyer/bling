@@ -84,7 +84,6 @@ static ast$Stmt *parse_stmt(parser$Parser *p);
 static ast$Stmt *parse_block_stmt(parser$Parser *p);
 
 static ast$Decl *parseDecl(parser$Parser *p);
-static ast$Decl *parse_field(parser$Parser *p, bool anon);
 
 extern ast$Expr *parser$parseBasicLit(parser$Parser *p, token$Token kind) {
     char *value = p->lit;
@@ -391,13 +390,28 @@ static ast$Expr *parseArrayType(parser$Parser *p) {
     return esc(type);
 }
 
+static ast$Decl *parseFieldDecl(parser$Parser *p) {
+    ast$Decl decl = {
+        .type = ast$DECL_FIELD,
+        .pos = p->pos,
+    };
+    if (p->tok == token$UNION) {
+        // anonymous union
+        decl.field.type = parseType(p);
+    } else {
+        decl.field.name = parser$parseIdent(p);
+        if (p->tok == token$SEMICOLON) {
+            decl.field.type = decl.field.name;
+            decl.field.name = NULL;
+        } else {
+            decl.field.type = parseType(p);
+        }
+    }
+    parser$expect(p, token$SEMICOLON);
+    return esc(decl);
+}
+
 static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
-    // struct_or_union_specifier
-    //         : struct_or_union IDENTIFIER
-    //         | struct_or_union IDENTIFIER '{' struct_declaration_list '}'
-    //         | struct_or_union '{' struct_declaration_list '}'
-    //         ;
-    // struct_or_union : STRUCT | UNION ;
     token$Pos pos = p->pos;
     ast$Expr *name = NULL;
     parser$expect(p, keyword);
@@ -406,28 +420,9 @@ static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
     }
     ast$Decl **fields = NULL;
     if (parser$accept(p, token$LBRACE)) {
-        // struct_declaration_list
-        //         : struct_declaration
-        //         | struct_declaration_list struct_declaration
-        //         ;
-        // struct_declaration
-        //         : specifier_qualifier_list struct_declarator_list ';'
-        //         ;
         utils$Slice fieldSlice = {.size = sizeof(ast$Decl *)};
         for (;;) {
-            ast$Decl decl = {
-                .type = ast$DECL_FIELD,
-                .pos = p->pos,
-            };
-            if (p->tok == token$UNION) {
-                // anonymous union
-                decl.field.type = parseType(p);
-            } else {
-                decl.field.name = parser$parseIdent(p);
-                decl.field.type = parseType(p);
-            }
-            parser$expect(p, token$SEMICOLON);
-            ast$Decl *field = esc(decl);
+            ast$Decl *field = parseFieldDecl(p);
             utils$Slice_append(&fieldSlice, &field);
             if (p->tok == token$RBRACE) {
                 break;
@@ -462,10 +457,27 @@ static ast$Expr *parsePointerType(parser$Parser *p) {
     return esc(x);
 }
 
+static ast$Decl *parseParam(parser$Parser *p, bool anon) {
+    ast$Decl decl = {
+        .type = ast$DECL_FIELD,
+        .pos = p->pos,
+    };
+    if (p->tok == token$IDENT) {
+        decl.field.name = parser$parseIdent(p);
+    }
+    if (decl.field.name != NULL && (p->tok == token$COMMA || p->tok == token$RPAREN)) {
+        decl.field.type = decl.field.name;
+        decl.field.name = NULL;
+    } else {
+        decl.field.type = parseType(p);
+    }
+    return esc(decl);
+}
+
 static ast$Decl **parseParameterList(parser$Parser *p, bool anon) {
     utils$Slice params = utils$Slice_init(sizeof(ast$Decl *));
     for (;;) {
-        ast$Decl *param = parse_field(p, false);
+        ast$Decl *param = parseParam(p, false);
         utils$Slice_append(&params, &param);
         if (!parser$accept(p, token$COMMA)) {
             break;
@@ -993,23 +1005,6 @@ static ast$Stmt *parse_block_stmt(parser$Parser *p) {
         }
     };
     return esc(stmt);
-}
-
-static ast$Decl *parse_field(parser$Parser *p, bool anon) {
-    ast$Decl decl = {
-        .type = ast$DECL_FIELD,
-        .pos = p->pos,
-    };
-    if (p->tok == token$IDENT) {
-        decl.field.name = parser$parseIdent(p);
-    }
-    if (decl.field.name != NULL && (p->tok == token$COMMA || p->tok == token$RPAREN)) {
-        decl.field.type = decl.field.name;
-        decl.field.name = NULL;
-    } else {
-        decl.field.type = parseType(p);
-    }
-    return esc(decl);
 }
 
 extern ast$Decl *parser$parsePragma(parser$Parser *p) {

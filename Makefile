@@ -1,4 +1,4 @@
-CFLAGS=-I.
+CFLAGS=-fms-extensions -Wno-microsoft-anon-tag
 
 BLINGC=bazel-bin/cmd/blingc/blingc
 
@@ -53,7 +53,9 @@ CFILES=utils/error.c \
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
-	cc all.c bazel-bin/bootstrap/libbootstrap.a bazel-bin/os/libos.a bazel-bin/sys/libsys.a
+	$(CC) $(CFLAGS) all.c \
+	    bazel-bin/bootstrap/libbootstrap.a \
+	    bazel-bin/os/libos.a bazel-bin/sys/libsys.a
 
 hello: $(BLINGC) all.bling
 	$(BLINGC) -o /dev/null -w cmd/blingc/blingc.bling
@@ -66,7 +68,8 @@ all.bling: $(BLINGC)
 	./splitall.py
 
 debug:
-	cc -g -I. $(CFILES) bootstrap/bootstrap.c os/os.c sys/fmt.c sys/sys.c
+	$(CC) -g $(CFLAGS) $(CFILES) \
+	    bootstrap/bootstrap.c os/os.c sys/fmt.c sys/sys.c
 	lldb a.out
 
 $(BLINGC):

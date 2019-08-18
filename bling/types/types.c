@@ -397,6 +397,7 @@ static ast$Expr *getDeclType(ast$Decl *decl) {
 }
 
 static ast$Decl *getStructFieldByName(ast$Expr *type, ast$Expr *name) {
+    type = types$getBaseType(type);
     assert(type->type == ast$TYPE_STRUCT);
     assert(name->type == ast$EXPR_IDENT);
     for (int i = 0; type->struct_.fields && type->struct_.fields[i]; i++) {
@@ -408,7 +409,10 @@ static ast$Decl *getStructFieldByName(ast$Expr *type, ast$Expr *name) {
                 return field;
             }
         } else {
-            return getStructFieldByName(field->field.type, name);
+            ast$Decl *subField = getStructFieldByName(field->field.type, name);
+            if (subField) {
+                return subField;
+            }
         }
     }
     return NULL;
@@ -1099,8 +1103,7 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
     c->pkg.scope = imp->imp.scope;
 
     utils$Error *err = NULL;
-    token$FileSet *fset = token$newFileSet();
-    ast$File **files = parser$parseDir(fset, path, &err);
+    ast$File **files = parser$parseDir(c->fset, path, &err);
     if (err) {
         Checker_error(c, imp->pos, sys$sprintf("%s: %s", path, err->error));
     }

@@ -142,8 +142,6 @@ fun parse_block_stmt(p *Parser) *ast.Stmt
 
 fun parseDecl(p *Parser) *ast.Decl
 
-fun parse_field(p *Parser, anon bool) *ast.Decl
-
 fun parseBasicLit(p *Parser, kind token.Token) *ast.Expr {
     var value *char = p.lit
     p.lit = NULL
@@ -422,6 +420,26 @@ fun parseArrayType(p *Parser) *ast.Expr {
     return esc(type)
 }
 
+fun parseFieldDecl(p *Parser) *ast.Decl {
+    var decl ast.Decl = {
+        type: ast.DECL_FIELD,
+        pos: p.pos,
+    }
+    if p.tok == token.UNION {
+        decl.field.type = parseType(p)
+    } else {
+        decl.field.name = parseIdent(p)
+        if p.tok == token.SEMICOLON {
+            decl.field.type = decl.field.name
+            decl.field.name = NULL
+        } else {
+            decl.field.type = parseType(p)
+        }
+    }
+    expect(p, token.SEMICOLON)
+    return esc(decl)
+}
+
 fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
     var pos token.Pos = p.pos
     var name *ast.Expr = NULL
@@ -435,18 +453,7 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
             size: sizeof(*ast.Decl),
         }
         for ;; {
-            var decl ast.Decl = {
-                type: ast.DECL_FIELD,
-                pos: p.pos,
-            }
-            if p.tok == token.UNION {
-                decl.field.type = parseType(p)
-            } else {
-                decl.field.name = parseIdent(p)
-                decl.field.type = parseType(p)
-            }
-            expect(p, token.SEMICOLON)
-            var field *ast.Decl = esc(decl)
+            var field *ast.Decl = parseFieldDecl(p)
             utils.Slice_append(&fieldSlice, &field)
             if p.tok == token.RBRACE {
                 break
@@ -480,10 +487,27 @@ fun parsePointerType(p *Parser) *ast.Expr {
     return esc(x)
 }
 
+fun parseParam(p *Parser, anon bool) *ast.Decl {
+    var decl ast.Decl = {
+        type: ast.DECL_FIELD,
+        pos: p.pos,
+    }
+    if p.tok == token.IDENT {
+        decl.field.name = parseIdent(p)
+    }
+    if decl.field.name != NULL && (p.tok == token.COMMA || p.tok == token.RPAREN) {
+        decl.field.type = decl.field.name
+        decl.field.name = NULL
+    } else {
+        decl.field.type = parseType(p)
+    }
+    return esc(decl)
+}
+
 fun parseParameterList(p *Parser, anon bool) **ast.Decl {
     var params utils.Slice = utils.Slice_init(sizeof(*ast.Decl))
     for ;; {
-        var param *ast.Decl = parse_field(p, false)
+        var param *ast.Decl = parseParam(p, false)
         utils.Slice_append(&params, &param)
         if !accept(p, token.COMMA) {
             break
@@ -954,23 +978,6 @@ fun parse_block_stmt(p *Parser) *ast.Stmt {
         },
     }
     return esc(stmt)
-}
-
-fun parse_field(p *Parser, anon bool) *ast.Decl {
-    var decl ast.Decl = {
-        type: ast.DECL_FIELD,
-        pos: p.pos,
-    }
-    if p.tok == token.IDENT {
-        decl.field.name = parseIdent(p)
-    }
-    if decl.field.name != NULL && (p.tok == token.COMMA || p.tok == token.RPAREN) {
-        decl.field.type = decl.field.name
-        decl.field.name = NULL
-    } else {
-        decl.field.type = parseType(p)
-    }
-    return esc(decl)
 }
 
 fun parsePragma(p *Parser) *ast.Decl {

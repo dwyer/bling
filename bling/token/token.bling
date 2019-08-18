@@ -367,6 +367,7 @@ fun File_lineString(f *File, line int) *char {
 fun newFileSet() *FileSet {
     var fset FileSet = {
         base: 1,
+        files: utils.Slice_init(sizeof(*File)),
     }
     return esc(fset)
 }
@@ -389,7 +390,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     }
     var f *File = esc(file)
     s.base = base
-    utils.Slice_append(&s.files, f)
+    utils.Slice_append(&s.files, &f)
     s.last = f
     return f
 }

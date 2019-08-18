@@ -482,6 +482,7 @@ fun getDeclType(decl *ast.Decl) *ast.Expr {
 }
 
 fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
+    type = getBaseType(type)
     assert(type.type == ast.TYPE_STRUCT)
     assert(name.type == ast.EXPR_IDENT)
     for var i int = 0; type.struct_.fields && type.struct_.fields[i]; i++ {
@@ -493,7 +494,10 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
                 return field
             }
         } else {
-            return getStructFieldByName(field.field.type, name)
+            var subField *ast.Decl = getStructFieldByName(field.field.type, name)
+            if subField {
+                return subField
+            }
         }
     }
     return NULL
@@ -1083,8 +1087,7 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
     oldScope = c.pkg.scope
     c.pkg.scope = imp.imp.scope
     var err *utils.Error = NULL
-    var fset *token.FileSet = token.newFileSet()
-    var files **ast.File = parser.parseDir(fset, path, &err)
+    var files **ast.File = parser.parseDir(c.fset, path, &err)
     if err {
         Checker_error(c, imp.pos, sys.sprintf("%s: %s", path, err.error))
     }
