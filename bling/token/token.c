@@ -253,6 +253,7 @@ extern token$File *token$FileSet_addFile(token$FileSet *s,
         .lines = lines,
     };
     token$File *f = esc(file);
+    base += size + 1;
     s->base = base;
     utils$Slice_append(&s->files, &f);
     s->last = f;

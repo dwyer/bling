@@ -526,7 +526,18 @@ typedef Checker struct {
     scopes utils.Map
 }
 
+fun FileSet_print(fset *token.FileSet) {
+    for var i int = 0; i < utils.Slice_len(&fset.files); i++ {
+        var f *token.File
+        utils.Slice_get(&fset.files, i, &f)
+        var s *char = sys.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
+        print(s)
+        free(s)
+    }
+}
+
 fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
+    FileSet_print(c.fset)
     var position token.Position = {}
     var file *token.File = token.FileSet_file(c.fset, pos)
     if file {

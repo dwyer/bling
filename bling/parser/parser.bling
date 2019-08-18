@@ -362,7 +362,7 @@ fun parseBinaryExpr(p *Parser, prec1 int) *ast.Expr {
 fun parseTernaryExpr(p *Parser) *ast.Expr {
     var x *ast.Expr = parseBinaryExpr(p, token.lowest_prec + 1)
     if accept(p, token.QUESTION_MARK) {
-        var consequence *ast.Expr = parseTernaryExpr(p)
+        var consequence *ast.Expr = parseExpr(p)
         expect(p, token.COLON)
         var alternative *ast.Expr = parseTernaryExpr(p)
         var y ast.Expr = {
@@ -442,11 +442,8 @@ fun parseFieldDecl(p *Parser) *ast.Decl {
 
 fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
     var pos token.Pos = p.pos
-    var name *ast.Expr = NULL
     expect(p, keyword)
-    if p.tok == token.IDENT {
-        name = parseIdent(p)
-    }
+    var name *ast.Expr = p.tok == token.IDENT ? parseIdent(p) : NULL
     var fields **ast.Decl = NULL
     if accept(p, token.LBRACE) {
         var fieldSlice utils.Slice = {

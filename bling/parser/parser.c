@@ -332,7 +332,7 @@ static ast$Expr *parseTernaryExpr(parser$Parser *p) {
     //         ;
     ast$Expr *x = parseBinaryExpr(p, token$lowest_prec + 1);
     if (parser$accept(p, token$QUESTION_MARK)) {
-        ast$Expr *consequence = parseTernaryExpr(p);
+        ast$Expr *consequence = parseExpr(p);
         parser$expect(p, token$COLON);
         ast$Expr *alternative = parseTernaryExpr(p);
         ast$Expr y = {
@@ -413,11 +413,8 @@ static ast$Decl *parseFieldDecl(parser$Parser *p) {
 
 static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
     token$Pos pos = p->pos;
-    ast$Expr *name = NULL;
     parser$expect(p, keyword);
-    if (p->tok == token$IDENT) {
-        name = parser$parseIdent(p);
-    }
+    ast$Expr *name = p->tok == token$IDENT ? parser$parseIdent(p) : NULL;
     ast$Decl **fields = NULL;
     if (parser$accept(p, token$LBRACE)) {
         utils$Slice fieldSlice = {.size = sizeof(ast$Decl *)};

@@ -389,6 +389,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
         lines: lines,
     }
     var f *File = esc(file)
+    base += size + 1
     s.base = base
     utils.Slice_append(&s.files, &f)
     s.last = f

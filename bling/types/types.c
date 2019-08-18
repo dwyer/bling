@@ -441,7 +441,18 @@ typedef struct {
     utils$Map scopes;
 } Checker;
 
+extern void FileSet_print(token$FileSet *fset) {
+    for (int i = 0; i < utils$Slice_len(&fset->files); i++) {
+        token$File *f;
+        utils$Slice_get(&fset->files, i, &f);
+        char *s = sys$sprintf("%d: %s (base=%d, size=%d)", i, f->name, f->base, f->size);
+        print(s);
+        free(s);
+    }
+}
+
 static void Checker_error(Checker *c, token$Pos pos, const char *msg) {
+    FileSet_print(c->fset);
     token$Position position = {};
     token$File *file = token$FileSet_file(c->fset, pos);
     if (file) {
