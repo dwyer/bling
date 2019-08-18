@@ -4,19 +4,9 @@ Allow types where exprs are expected, for instance:
     - var x []T = []T{...}
     - etc.
 
+Make `sizeof` a builtin func.
+
 Implement a way to define a value with no address, such as #define and C's enum.
-
-Allow extending structs:
-
-    typedef vec2 struct {
-        x int;
-        y int;
-    };
-
-    typedef vec3 struct {
-        vec2;
-        z int;
-    }
 
 Eventually we want to have switch cases to have an implicit break and to open a
 new scope by default. So the above example would be converted to:
