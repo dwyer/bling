@@ -42,8 +42,7 @@ static ast$Expr *parse_expr(parser$Parser *p);
 static ast$Expr *parse_const_expr(parser$Parser *p);
 static ast$Expr *parse_init_expr(parser$Parser *p);
 
-static ast$Expr *parse_type_spec(parser$Parser *p);
-static ast$Expr *parse_struct_or_union_spec(parser$Parser *p);
+static ast$Expr *parseType(parser$Parser *p);
 static ast$Expr *parse_enum_spec(parser$Parser *p);
 static ast$Expr *parse_pointer(parser$Parser *p);
 static ast$Decl **parse_param_type_list(parser$Parser *p, bool anon);
@@ -303,7 +302,7 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
                 .type = ast$EXPR_SIZEOF,
                 .pos = pos,
                 .sizeof_ = {
-                    .x = parse_type_spec(p),
+                    .x = parseType(p),
                 },
             };
             parser$expect(p, token$RPAREN);
@@ -313,7 +312,7 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
         {
             token$Pos pos = p->pos;
             parser$expect(p, token$LT);
-            ast$Expr *type = parse_type_spec(p);
+            ast$Expr *type = parseType(p);
             parser$expect(p, token$GT);
             ast$Expr *expr = NULL;
             if (p->tok == token$LBRACE) {
@@ -395,7 +394,7 @@ static ast$Expr *parse_const_expr(parser$Parser *p) {
     return parseExpr(p);
 }
 
-static ast$Expr *parse_struct_or_union_spec(parser$Parser *p) {
+static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
     // struct_or_union_specifier
     //         : struct_or_union IDENTIFIER
     //         | struct_or_union IDENTIFIER '{' struct_declaration_list '}'
@@ -403,7 +402,6 @@ static ast$Expr *parse_struct_or_union_spec(parser$Parser *p) {
     //         ;
     // struct_or_union : STRUCT | UNION ;
     token$Pos pos = p->pos;
-    token$Token keyword = p->tok;
     ast$Expr *name = NULL;
     parser$expect(p, keyword);
     if (p->tok == token$IDENT) {
@@ -426,10 +424,10 @@ static ast$Expr *parse_struct_or_union_spec(parser$Parser *p) {
             };
             if (p->tok == token$UNION) {
                 // anonymous union
-                decl.field.type = parse_type_spec(p);
+                decl.field.type = parseType(p);
             } else {
                 decl.field.name = parser$parseIdent(p);
-                decl.field.type = parse_type_spec(p);
+                decl.field.type = parseType(p);
             }
             parser$expect(p, token$SEMICOLON);
             ast$Decl *field = esc(decl);
@@ -509,7 +507,7 @@ static ast$Expr *parse_pointer(parser$Parser *p) {
         .type = ast$EXPR_STAR,
         .pos = pos,
         .star = {
-            .x = parse_type_spec(p),
+            .x = parseType(p),
         },
     };
     return esc(x);
@@ -941,7 +939,7 @@ static ast$Decl *parse_field(parser$Parser *p, bool anon) {
         decl.field.type = decl.field.name;
         decl.field.name = NULL;
     } else {
-        decl.field.type = parse_type_spec(p);
+        decl.field.type = parseType(p);
     }
     return esc(decl);
 }
@@ -953,7 +951,7 @@ static ast$Expr *parse_func_type(parser$Parser *p) {
     parser$expect(p, token$RPAREN);
     ast$Expr *result = NULL;
     if (p->tok != token$SEMICOLON) {
-        result = parse_type_spec(p);
+        result = parseType(p);
     }
     ast$Expr type = {
         .type = ast$TYPE_FUNC,
@@ -975,12 +973,12 @@ static ast$Expr *parse_func_type(parser$Parser *p) {
 
 static ast$Expr *parse_type_qualifier(parser$Parser *p, token$Token tok) {
     parser$expect(p, tok);
-    ast$Expr *type = parse_type_spec(p);
+    ast$Expr *type = parseType(p);
     type->is_const = true;
     return type;
 }
 
-static ast$Expr *parse_type_spec(parser$Parser *p) {
+static ast$Expr *parseType(parser$Parser *p) {
     ast$Expr *x = NULL;
     switch (p->tok) {
     case token$CONST:
@@ -1006,7 +1004,7 @@ static ast$Expr *parse_type_spec(parser$Parser *p) {
         break;
     case token$STRUCT:
     case token$UNION:
-        x = parse_struct_or_union_spec(p);
+        x = parseStructOrUnionType(p, p->tok);
         break;
     case token$ENUM:
         x = parse_enum_spec(p);
@@ -1026,7 +1024,7 @@ static ast$Expr *parse_type_spec(parser$Parser *p) {
                 .type = ast$TYPE_ARRAY,
                 .pos = pos,
                 .array = {
-                    .elt = parse_type_spec(p),
+                    .elt = parseType(p),
                     .len = len,
                 },
             };
@@ -1049,7 +1047,7 @@ static ast$Decl *parse_decl(parser$Parser *p, bool is_external) {
             token$Token keyword = p->tok;
             token$Pos pos = parser$expect(p, keyword);
             ast$Expr *ident = parser$parseIdent(p);
-            ast$Expr *type = parse_type_spec(p);
+            ast$Expr *type = parseType(p);
             parser$expect(p, token$SEMICOLON);
             ast$Decl decl = {
                 .type = ast$DECL_TYPEDEF,
@@ -1069,7 +1067,7 @@ static ast$Decl *parse_decl(parser$Parser *p, bool is_external) {
             ast$Expr *ident = parser$parseIdent(p);
             ast$Expr *type = NULL;
             if (p->tok != token$ASSIGN) {
-                type = parse_type_spec(p);
+                type = parseType(p);
             }
             ast$Expr *value = NULL;
             if (parser$accept(p, token$ASSIGN)) {
@@ -1108,7 +1106,7 @@ static ast$Decl *parse_decl(parser$Parser *p, bool is_external) {
             };
             parser$expect(p, token$RPAREN);
             if (p->tok != token$LBRACE && p->tok != token$SEMICOLON) {
-                type.func.result = parse_type_spec(p);
+                type.func.result = parseType(p);
             }
             decl.func.type = esc(type);
             if (p->tok == token$LBRACE) {

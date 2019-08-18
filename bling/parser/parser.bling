@@ -102,9 +102,7 @@ fun parse_const_expr(p *Parser) *ast.Expr
 
 fun parse_init_expr(p *Parser) *ast.Expr
 
-fun parse_type_spec(p *Parser) *ast.Expr
-
-fun parse_struct_or_union_spec(p *Parser) *ast.Expr
+fun parseType(p *Parser) *ast.Expr
 
 fun parse_enum_spec(p *Parser) *ast.Expr
 
@@ -336,7 +334,7 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
                 type: ast.EXPR_SIZEOF,
                 pos: pos,
                 sizeof_: {
-                    x: parse_type_spec(p),
+                    x: parseType(p),
                 },
             }
             expect(p, token.RPAREN)
@@ -346,7 +344,7 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
         {
             var pos token.Pos = p.pos
             expect(p, token.LT)
-            var type *ast.Expr = parse_type_spec(p)
+            var type *ast.Expr = parseType(p)
             expect(p, token.GT)
             var expr *ast.Expr = NULL
             if p.tok == token.LBRACE {
@@ -424,9 +422,8 @@ fun parse_const_expr(p *Parser) *ast.Expr {
     return parseExpr(p)
 }
 
-fun parse_struct_or_union_spec(p *Parser) *ast.Expr {
+fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
     var pos token.Pos = p.pos
-    var keyword token.Token = p.tok
     var name *ast.Expr = NULL
     expect(p, keyword)
     if p.tok == token.IDENT {
@@ -443,10 +440,10 @@ fun parse_struct_or_union_spec(p *Parser) *ast.Expr {
                 pos: p.pos,
             }
             if p.tok == token.UNION {
-                decl.field.type = parse_type_spec(p)
+                decl.field.type = parseType(p)
             } else {
                 decl.field.name = parseIdent(p)
-                decl.field.type = parse_type_spec(p)
+                decl.field.type = parseType(p)
             }
             expect(p, token.SEMICOLON)
             var field *ast.Decl = esc(decl)
@@ -520,7 +517,7 @@ fun parse_pointer(p *Parser) *ast.Expr {
         type: ast.EXPR_STAR,
         pos: pos,
         star: {
-            x: parse_type_spec(p),
+            x: parseType(p),
         },
     }
     return esc(x)
@@ -902,7 +899,7 @@ fun parse_field(p *Parser, anon bool) *ast.Decl {
         decl.field.type = decl.field.name
         decl.field.name = NULL
     } else {
-        decl.field.type = parse_type_spec(p)
+        decl.field.type = parseType(p)
     }
     return esc(decl)
 }
@@ -914,7 +911,7 @@ fun parse_func_type(p *Parser) *ast.Expr {
     expect(p, token.RPAREN)
     var result *ast.Expr = NULL
     if p.tok != token.SEMICOLON {
-        result = parse_type_spec(p)
+        result = parseType(p)
     }
     var type ast.Expr = {
         type: ast.TYPE_FUNC,
@@ -936,12 +933,12 @@ fun parse_func_type(p *Parser) *ast.Expr {
 
 fun parse_type_qualifier(p *Parser, tok token.Token) *ast.Expr {
     expect(p, tok)
-    var type *ast.Expr = parse_type_spec(p)
+    var type *ast.Expr = parseType(p)
     type.is_const = true
     return type
 }
 
-fun parse_type_spec(p *Parser) *ast.Expr {
+fun parseType(p *Parser) *ast.Expr {
     var x *ast.Expr = NULL
     switch p.tok {
     case token.CONST:
@@ -966,7 +963,7 @@ fun parse_type_spec(p *Parser) *ast.Expr {
         x = parse_pointer(p)
         break
     case token.STRUCT, token.UNION:
-        x = parse_struct_or_union_spec(p)
+        x = parseStructOrUnionType(p, p.tok)
         break
     case token.ENUM:
         x = parse_enum_spec(p)
@@ -986,7 +983,7 @@ fun parse_type_spec(p *Parser) *ast.Expr {
                 type: ast.TYPE_ARRAY,
                 pos: pos,
                 array: {
-                    elt: parse_type_spec(p),
+                    elt: parseType(p),
                     len: len,
                 },
             }
@@ -1009,7 +1006,7 @@ fun parse_decl(p *Parser, is_external bool) *ast.Decl {
             var keyword token.Token = p.tok
             var pos token.Pos = expect(p, keyword)
             var ident *ast.Expr = parseIdent(p)
-            var type *ast.Expr = parse_type_spec(p)
+            var type *ast.Expr = parseType(p)
             expect(p, token.SEMICOLON)
             var decl ast.Decl = {
                 type: ast.DECL_TYPEDEF,
@@ -1028,7 +1025,7 @@ fun parse_decl(p *Parser, is_external bool) *ast.Decl {
             var ident *ast.Expr = parseIdent(p)
             var type *ast.Expr = NULL
             if p.tok != token.ASSIGN {
-                type = parse_type_spec(p)
+                type = parseType(p)
             }
             var value *ast.Expr = NULL
             if accept(p, token.ASSIGN) {
@@ -1067,7 +1064,7 @@ fun parse_decl(p *Parser, is_external bool) *ast.Decl {
             }
             expect(p, token.RPAREN)
             if p.tok != token.LBRACE && p.tok != token.SEMICOLON {
-                type.func.result = parse_type_spec(p)
+                type.func.result = parseType(p)
             }
             decl.func.type = esc(type)
             if p.tok == token.LBRACE {
