@@ -23,7 +23,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     if !expr {
         panic("cemitter$emitExpr: expr is NULL")
     }
-    switch expr.type {
+    switch expr.kind {
     case ast.EXPR_BASIC_LIT:
         emitter.emitString(e, expr.basic_lit.value)
         break
@@ -144,13 +144,13 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitExpr(e, expr.unary.x)
         break
     default:
-        panic("Unknown expr: %d", expr.type)
+        panic("Unknown expr: %d", expr.kind)
         break
     }
 }
 
 fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
-    switch stmt.type {
+    switch stmt.kind {
     case ast.STMT_ASSIGN:
         emitExpr(e, stmt.assign.x)
         emitter.emitSpace(e)
@@ -164,7 +164,7 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         emitter.emitNewline(e)
         e.indent++
         for var stmts **ast.Stmt = stmt.block.stmts; stmts && *stmts; stmts++ {
-            switch (*stmts).type {
+            switch (*stmts).kind {
             case ast.STMT_LABEL:
                 break
             default:
@@ -311,11 +311,11 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
     if type == NULL {
         panic("cemitter$emitType: type is nil")
     }
-    if type.is_const && type.type != ast.EXPR_STAR {
+    if type.is_const && type.kind != ast.EXPR_STAR {
         emitter.emitToken(e, token.CONST)
         emitter.emitSpace(e)
     }
-    switch type.type {
+    switch type.kind {
     case ast.TYPE_ARRAY:
         emitType(e, type.array.elt, name)
         emitter.emitToken(e, token.LBRACK)
@@ -376,7 +376,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         break
     case ast.EXPR_STAR:
         type = type.star.x
-        if type.type == ast.TYPE_FUNC {
+        if type.kind == ast.TYPE_FUNC {
             emitType(e, type.func.result, NULL)
             emitter.emitToken(e, token.LPAREN)
             emitter.emitToken(e, token.MUL)
@@ -429,9 +429,9 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         emitExpr(e, type.selector.sel)
         break
     default:
-        panic("Unknown type: %d", type.type)
+        panic("Unknown type: %d", type.kind)
     }
-    if type.is_const && type.type == ast.EXPR_STAR {
+    if type.is_const && type.kind == ast.EXPR_STAR {
         emitter.emitSpace(e)
         emitter.emitToken(e, token.CONST)
     }
@@ -442,7 +442,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
 }
 
 fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
-    switch decl.type {
+    switch decl.kind {
     case ast.DECL_ELLIPSIS:
         emitter.emitToken(e, token.ELLIPSIS)
         break

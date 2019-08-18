@@ -3,7 +3,7 @@
 #include "sys/sys.h"
 
 extern bool ast$isExprType(ast$Expr *x) {
-    return ast$_TYPE_START < x->type && x->type < ast$_DECL_END;
+    return ast$_TYPE_START < x->kind && x->kind < ast$_DECL_END;
 }
 
 extern ast$Object *ast$newObject(ast$ObjKind kind, char *name) {
@@ -73,7 +73,7 @@ extern void ast$Scope_free(ast$Scope *s) {
 }
 
 extern bool ast$isIdent(ast$Expr *x) {
-    return x->type == ast$EXPR_IDENT;
+    return x->kind == ast$EXPR_IDENT;
 }
 
 extern bool ast$isIdentNamed(ast$Expr *x, const char *name) {
@@ -89,7 +89,7 @@ extern bool ast$isVoid(ast$Expr *x) {
 }
 
 extern bool ast$isVoidPtr(ast$Expr *x) {
-    if (x->type == ast$EXPR_STAR) {
+    if (x->kind == ast$EXPR_STAR) {
         return ast$isVoid(x->star.x);
     }
     return false;

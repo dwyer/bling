@@ -44,7 +44,7 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package
 #include "sys/sys.h"
 
 fun constant_stringVal(x *ast.Expr) *char {
-    assert(x.type == ast.EXPR_BASIC_LIT)
+    assert(x.kind == ast.EXPR_BASIC_LIT)
     var lit *const char = x.basic_lit.value
     var n int = strlen(lit) - 2
     var val *char = malloc(n + 1)
@@ -164,12 +164,12 @@ fun typeString(expr *ast.Expr) *char {
 }
 
 fun isType(expr *ast.Expr) bool {
-    switch expr.type {
+    switch expr.kind {
     case ast.EXPR_IDENT:
         if expr.ident.obj == NULL {
             panic("types$isType: unresolved identifier %s", expr.ident.name)
         }
-        return expr.ident.obj.decl.type == ast.DECL_TYPEDEF
+        return expr.ident.obj.decl.kind == ast.DECL_TYPEDEF
     case ast.EXPR_STAR:
         return isType(expr.star.x)
     case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_FUNC, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
@@ -181,7 +181,7 @@ fun isType(expr *ast.Expr) bool {
 
 fun makeIdent(name *const char) *ast.Expr {
     var x ast.Expr = {
-        type: ast.EXPR_IDENT,
+        kind: ast.EXPR_IDENT,
         ident: {
             name: strdup(name),
         },
@@ -191,7 +191,7 @@ fun makeIdent(name *const char) *ast.Expr {
 
 fun makePtr(type *ast.Expr) *ast.Expr {
     var x ast.Expr = {
-        type: ast.EXPR_STAR,
+        kind: ast.EXPR_STAR,
         pos: type.pos,
         star: {
             x: type,
@@ -202,7 +202,7 @@ fun makePtr(type *ast.Expr) *ast.Expr {
 
 fun getUnderlyingType(ident *ast.Expr) *ast.Expr {
     var decl *ast.Decl = ident.ident.obj.decl
-    if decl.type != ast.DECL_TYPEDEF {
+    if decl.kind != ast.DECL_TYPEDEF {
         panic("not a type: %s", typeString(ident))
     }
     return decl.typedef_.type
@@ -210,7 +210,7 @@ fun getUnderlyingType(ident *ast.Expr) *ast.Expr {
 
 fun getBaseType(type *ast.Expr) *ast.Expr {
     for ;; {
-        switch type.type {
+        switch type.kind {
         case ast.EXPR_IDENT:
             type = getUnderlyingType(type)
             break
@@ -226,7 +226,7 @@ fun getBaseType(type *ast.Expr) *ast.Expr {
 }
 
 fun isArithmetic(type *ast.Expr) bool {
-    switch type.type {
+    switch type.kind {
     case ast.EXPR_IDENT:
         return isArithmetic(getBaseType(type))
     case ast.EXPR_STAR, ast.TYPE_ENUM:
@@ -239,7 +239,7 @@ fun isArithmetic(type *ast.Expr) bool {
 }
 
 fun isNative(type *ast.Expr, name *const char) bool {
-    switch type.type {
+    switch type.kind {
     case ast.EXPR_IDENT:
         return streq(type.ident.name, name)
     case ast.TYPE_NATIVE:
@@ -258,18 +258,18 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
     }
     assert(a)
     assert(b)
-    if a.type == ast.EXPR_SELECTOR {
+    if a.kind == ast.EXPR_SELECTOR {
         a = a.selector.sel
     }
-    if b.type == ast.EXPR_SELECTOR {
+    if b.kind == ast.EXPR_SELECTOR {
         b = b.selector.sel
     }
-    if a.type != b.type {
+    if a.kind != b.kind {
         return false
     }
-    switch a.type {
+    switch a.kind {
     case ast.EXPR_IDENT:
-        return b.type == ast.EXPR_IDENT && a.ident.obj == a.ident.obj
+        return b.kind == ast.EXPR_IDENT && a.ident.obj == a.ident.obj
     case ast.EXPR_STAR:
         if ast.isVoidPtr(a) || ast.isVoidPtr(b) {
             return true
@@ -307,11 +307,11 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
 }
 
 fun isPointer(t *ast.Expr) bool {
-    return t.type == ast.EXPR_STAR || t.type == ast.TYPE_ARRAY
+    return t.kind == ast.EXPR_STAR || t.kind == ast.TYPE_ARRAY
 }
 
 fun pointerBase(t *ast.Expr) *ast.Expr {
-    switch t.type {
+    switch t.kind {
     case ast.EXPR_STAR:
         return t.star.x
     case ast.TYPE_ARRAY:
@@ -332,19 +332,19 @@ fun areAssignable(a *ast.Expr, b *ast.Expr) bool {
     if isPointer(a) && isPointer(b) {
         return areAssignable(pointerBase(a), pointerBase(b))
     }
-    while a.type == ast.EXPR_IDENT {
+    while a.kind == ast.EXPR_IDENT {
         a = getUnderlyingType(a)
     }
-    while b.type == ast.EXPR_IDENT {
+    while b.kind == ast.EXPR_IDENT {
         b = getUnderlyingType(b)
     }
     if isNative(a, "bool") && isArithmetic(b) {
         return true
     }
-    if b.type == ast.TYPE_ENUM && isArithmetic(a) {
+    if b.kind == ast.TYPE_ENUM && isArithmetic(a) {
         return true
     }
-    if a.type == ast.TYPE_ENUM && isArithmetic(a) {
+    if a.kind == ast.TYPE_ENUM && isArithmetic(a) {
         return true
     }
     return areIdentical(a, b)
@@ -357,14 +357,14 @@ fun areComparable(a *ast.Expr, b *ast.Expr) bool {
     if isArithmetic(a) && isArithmetic(b) {
         return true
     }
-    if a.type == ast.EXPR_STAR && isNative(b, "int") {
+    if a.kind == ast.EXPR_STAR && isNative(b, "int") {
         return true
     }
     return areIdentical(a, b)
 }
 
 fun getDeclKind(decl *ast.Decl) ast.ObjKind {
-    switch decl.type {
+    switch decl.kind {
     case ast.DECL_FIELD, ast.DECL_VALUE:
         return ast.ObjKind_VALUE
     case ast.DECL_FUNC:
@@ -379,7 +379,7 @@ fun getDeclKind(decl *ast.Decl) ast.ObjKind {
 }
 
 fun getDeclName(decl *ast.Decl) *ast.Expr {
-    switch decl.type {
+    switch decl.kind {
     case ast.DECL_FIELD:
         return decl.field.name
     case ast.DECL_FUNC:
@@ -399,21 +399,21 @@ fun getDeclName(decl *ast.Decl) *ast.Expr {
 fun declareBuiltins(s *ast.Scope) {
     for var i int = 0; natives[i].name != NULL; i++ {
         var _name ast.Expr = {
-            type: ast.EXPR_IDENT,
+            kind: ast.EXPR_IDENT,
             ident: {
                 name: strdup(natives[i].name),
             },
         }
         var name *ast.Expr = esc(_name)
         var type ast.Expr = {
-            type: ast.TYPE_NATIVE,
+            kind: ast.TYPE_NATIVE,
             native: {
                 name: strdup(natives[i].name),
                 size: natives[i].size,
             },
         }
         var decl ast.Decl = {
-            type: ast.DECL_TYPEDEF,
+            kind: ast.DECL_TYPEDEF,
             typedef_: {
                 name: name,
                 type: esc(type),
@@ -446,7 +446,7 @@ fun universe() *ast.Scope {
 }
 
 fun isLhs(expr *ast.Expr) bool {
-    switch expr.type {
+    switch expr.kind {
     case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
         return true
     case ast.EXPR_CAST:
@@ -464,7 +464,7 @@ fun isLhs(expr *ast.Expr) bool {
 
 fun getDeclType(decl *ast.Decl) *ast.Expr {
     assert(decl)
-    switch decl.type {
+    switch decl.kind {
     case ast.DECL_FIELD:
         return decl.field.type
     case ast.DECL_FUNC:
@@ -483,8 +483,8 @@ fun getDeclType(decl *ast.Decl) *ast.Expr {
 
 fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
     type = getBaseType(type)
-    assert(type.type == ast.TYPE_STRUCT)
-    assert(name.type == ast.EXPR_IDENT)
+    assert(type.kind == ast.TYPE_STRUCT)
+    assert(name.kind == ast.EXPR_IDENT)
     for var i int = 0; type.struct_.fields && type.struct_.fields[i]; i++ {
         var field *ast.Decl = type.struct_.fields[i]
         var fieldName *ast.Expr = field.field.name
@@ -504,7 +504,7 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
 }
 
 fun getStructField(type *ast.Expr, index int) *ast.Decl {
-    assert(type.type == ast.TYPE_STRUCT)
+    assert(type.kind == ast.TYPE_STRUCT)
     if type.struct_.fields == NULL {
         panic("incomplete field defn: %s", typeString(type))
     }
@@ -536,7 +536,7 @@ fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
 }
 
 fun Checker_resolve(c *Checker, s *ast.Scope, x *ast.Expr) {
-    assert(x.type == ast.EXPR_IDENT)
+    assert(x.kind == ast.EXPR_IDENT)
     assert(x.ident.obj == NULL)
     if x.ident.pkg {
         var pkg *ast.Expr = x.ident.pkg
@@ -545,7 +545,7 @@ fun Checker_resolve(c *Checker, s *ast.Scope, x *ast.Expr) {
             Checker_error(c, pkg.pos, sys.sprintf("not a pkg: %s", pkg.ident.name))
         }
         var decl *ast.Decl = pkg.ident.obj.decl
-        assert(decl.type == ast.DECL_IMPORT)
+        assert(decl.kind == ast.DECL_IMPORT)
         var t *ast.Scope = decl.imp.scope
         if !t {
             Checker_error(c, x.pos, sys.sprintf("%s $ %s", pkg.ident.name, x.ident.name))
@@ -569,7 +569,7 @@ fun Checker_declare(c *Checker, s *ast.Scope, decl *ast.Decl) {
         Checker_resolve(c, s, pkg)
         var pkgObj *ast.Object = pkg.ident.obj
         var decl *ast.Decl = pkgObj.decl
-        assert(decl.type == ast.DECL_IMPORT)
+        assert(decl.kind == ast.DECL_IMPORT)
         s = decl.imp.scope
     }
     var kind ast.ObjKind = getDeclKind(decl)
@@ -595,7 +595,7 @@ fun Checker_declare(c *Checker, s *ast.Scope, decl *ast.Decl) {
             redecl = true
             break
         case ast.ObjKind_TYPE:
-            if alt.decl.typedef_.type.type == ast.TYPE_STRUCT {
+            if alt.decl.typedef_.type.kind == ast.TYPE_STRUCT {
                 redecl = alt.decl.typedef_.type.struct_.fields == NULL
             }
             break
@@ -622,7 +622,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr
 
 fun Checker_checkType(c *Checker, t *ast.Expr) {
     assert(t)
-    switch t.type {
+    switch t.kind {
     case ast.EXPR_IDENT:
         Checker_resolve(c, c.pkg.scope, t)
         break
@@ -657,10 +657,10 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
     case ast.TYPE_FUNC:
         for var i int = 0; t.func.params && t.func.params[i]; i++ {
             var param *ast.Decl = t.func.params[i]
-            if param.type == ast.DECL_ELLIPSIS {
+            if param.kind == ast.DECL_ELLIPSIS {
                 continue
             }
-            assert(param.type == ast.DECL_FIELD)
+            assert(param.kind == ast.DECL_FIELD)
             Checker_checkType(c, param.field.type)
         }
         if t.func.result {
@@ -690,7 +690,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
 }
 
 fun Checker_checkIdent(c *Checker, expr *ast.Expr) *ast.Expr {
-    assert(expr.type == ast.EXPR_IDENT)
+    assert(expr.kind == ast.EXPR_IDENT)
     if expr.ident.obj == NULL {
         Checker_error(c, expr.pos, "unresolved identifier")
     }
@@ -698,7 +698,7 @@ fun Checker_checkIdent(c *Checker, expr *ast.Expr) *ast.Expr {
 }
 
 fun isInteger(x *ast.Expr) bool {
-    switch x.type {
+    switch x.kind {
     case ast.EXPR_IDENT:
         return isInteger(x.ident.obj.decl.typedef_.type)
     case ast.TYPE_ENUM, ast.TYPE_NATIVE:
@@ -712,7 +712,7 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
     var baseT *ast.Expr = getBaseType(x.compound.type)
     for var i int = 0; x.compound.list[i]; i++ {
         var elt *ast.Expr = x.compound.list[i]
-        if elt.type == ast.EXPR_KEY_VALUE {
+        if elt.kind == ast.EXPR_KEY_VALUE {
             elt.key_value.isArray = true
             var indexT *ast.Expr = Checker_checkExpr(c, elt.key_value.key)
             if !isInteger(indexT) {
@@ -720,7 +720,7 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
             }
             elt = elt.key_value.value
         }
-        if elt.type == ast.EXPR_COMPOUND {
+        if elt.kind == ast.EXPR_COMPOUND {
             if elt.compound.type == NULL {
                 elt.compound.type = baseT.array.elt
             }
@@ -737,7 +737,7 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
     for var i int = 0; x.compound.list[i]; i++ {
         var elt *ast.Expr = x.compound.list[i]
         var fieldT *ast.Expr = NULL
-        if elt.type == ast.EXPR_KEY_VALUE {
+        if elt.kind == ast.EXPR_KEY_VALUE {
             elt.key_value.isArray = false
             expectKV = true
             var key *ast.Expr = elt.key_value.key
@@ -758,7 +758,7 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             var field *ast.Decl = getStructField(baseT, i)
             fieldT = field.field.type
         }
-        if elt.type == ast.EXPR_COMPOUND {
+        if elt.kind == ast.EXPR_COMPOUND {
             if elt.compound.type == NULL {
                 elt.compound.type = fieldT
             }
@@ -774,7 +774,7 @@ fun Checker_checkCompositeLit(c *Checker, x *ast.Expr) {
     var t *ast.Expr = x.compound.type
     assert(t)
     var baseT *ast.Expr = getBaseType(t)
-    switch baseT.type {
+    switch baseT.kind {
     case ast.TYPE_ARRAY:
         Checker_checkArrayLit(c, x)
         break
@@ -789,7 +789,7 @@ fun Checker_checkCompositeLit(c *Checker, x *ast.Expr) {
 
 fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     assert(expr)
-    switch expr.type {
+    switch expr.kind {
     case ast.EXPR_BINARY:
         {
             var typ1 *ast.Expr = Checker_checkExpr(c, expr.binary.x)
@@ -833,30 +833,30 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         {
             var func *ast.Expr = expr.call.func
             var type *ast.Expr = Checker_checkExpr(c, func)
-            if func.type == ast.EXPR_IDENT {
+            if func.kind == ast.EXPR_IDENT {
                 if streq(func.ident.name, "esc") {
                     assert(expr.call.args[0] && !expr.call.args[1])
                     var type *ast.Expr = Checker_checkExpr(c, expr.call.args[0])
                     return makePtr(type)
                 }
             }
-            if type.type == ast.EXPR_STAR {
+            if type.kind == ast.EXPR_STAR {
                 type = type.star.x
             }
-            if type.type != ast.TYPE_FUNC {
+            if type.kind != ast.TYPE_FUNC {
                 Checker_error(c, expr.pos, sys.sprintf("`%s` is not a func", exprString(expr.call.func)))
             }
             var j int = 0
             for var i int = 0; expr.call.args[i]; i++ {
                 var param *ast.Decl = type.func.params[j]
                 var type *ast.Expr = Checker_checkExpr(c, expr.call.args[i])
-                if param.type == ast.DECL_FIELD {
+                if param.kind == ast.DECL_FIELD {
                     if !areAssignable(param.field.type, type) {
                         Checker_error(c, expr.pos, sys.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
                     }
                     j++
                 } else {
-                    assert(param.type == ast.DECL_ELLIPSIS)
+                    assert(param.kind == ast.DECL_ELLIPSIS)
                 }
             }
             return type.func.result
@@ -869,7 +869,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         return expr.compound.type
     case ast.EXPR_CAST:
         Checker_checkType(c, expr.cast.type)
-        if expr.cast.expr.type == ast.EXPR_COMPOUND {
+        if expr.cast.expr.kind == ast.EXPR_COMPOUND {
             expr.cast.expr.compound.type = expr.cast.type
         }
         Checker_checkExpr(c, expr.cast.expr)
@@ -880,7 +880,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     case ast.EXPR_INDEX:
         {
             var type *ast.Expr = Checker_checkExpr(c, expr.index.x)
-            switch type.type {
+            switch type.kind {
             case ast.TYPE_ARRAY:
                 type = type.array.elt
                 break
@@ -902,9 +902,9 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             var type *ast.Expr = Checker_checkExpr(c, expr.selector.x)
             if type == NULL {
                 var x *ast.Expr = expr.selector.x
-                assert(x.type == ast.EXPR_IDENT)
+                assert(x.kind == ast.EXPR_IDENT)
                 var decl *ast.Decl = x.ident.obj.decl
-                assert(decl.type == ast.DECL_IMPORT)
+                assert(decl.kind == ast.DECL_IMPORT)
                 var oldScope *ast.Scope = c.pkg.scope
                 c.pkg.scope = decl.imp.scope
                 type = Checker_checkExpr(c, expr.selector.sel)
@@ -912,7 +912,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 expr.selector.tok = token.DOLLAR
                 return type
             }
-            if type.type == ast.EXPR_STAR {
+            if type.kind == ast.EXPR_STAR {
                 expr.selector.tok = token.ARROW
                 type = type.star.x
             } else {
@@ -936,7 +936,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     case ast.EXPR_STAR:
         {
             var type *ast.Expr = Checker_checkExpr(c, expr.star.x)
-            switch type.type {
+            switch type.kind {
             case ast.EXPR_STAR:
                 return type.star.x
             case ast.TYPE_ARRAY:
@@ -966,7 +966,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
 fun Checker_checkDecl(c *Checker, decl *ast.Decl)
 
 fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
-    switch stmt.type {
+    switch stmt.kind {
     case ast.STMT_ASSIGN:
         {
             if !isLhs(stmt.assign.x) {
@@ -1047,7 +1047,7 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
             var type1 *ast.Expr = Checker_checkExpr(c, stmt.switch_.tag)
             for var i int = 0; stmt.switch_.stmts[i]; i++ {
                 var clause *ast.Stmt = stmt.switch_.stmts[i]
-                assert(clause.type == ast.STMT_CASE)
+                assert(clause.kind == ast.STMT_CASE)
                 for var j int = 0; clause.case_.exprs && clause.case_.exprs[j]; j++ {
                     var type2 *ast.Expr = Checker_checkExpr(c, clause.case_.exprs[j])
                     if !areComparable(type1, type2) {
@@ -1098,7 +1098,7 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
 }
 
 fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
-    switch decl.type {
+    switch decl.kind {
     case ast.DECL_FUNC:
         Checker_checkType(c, decl.func.type)
         Checker_declare(c, c.pkg.scope, decl)
@@ -1118,7 +1118,7 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
                 Checker_checkType(c, decl.value.type)
             }
             if decl.value.value != NULL {
-                if decl.value.value.type == ast.EXPR_COMPOUND {
+                if decl.value.value.kind == ast.EXPR_COMPOUND {
                     if decl.value.type == NULL {
                         Checker_error(c, decl.pos, "cannot assign short var decls with composite type")
                     }
@@ -1144,12 +1144,12 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
 }
 
 fun Checker_checkFunc(c *Checker, decl *ast.Decl) {
-    if decl.type == ast.DECL_FUNC && decl.func.body {
+    if decl.kind == ast.DECL_FUNC && decl.func.body {
         Checker_openScope(c)
         var type *ast.Expr = decl.func.type
         for var i int = 0; type.func.params && type.func.params[i]; i++ {
             var param *ast.Decl = type.func.params[i]
-            assert(param.type == ast.DECL_FIELD)
+            assert(param.kind == ast.DECL_FIELD)
             if param.field.name {
                 Checker_declare(c, c.pkg.scope, param)
             }

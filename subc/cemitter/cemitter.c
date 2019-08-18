@@ -9,7 +9,7 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
     if (!expr) {
         panic("cemitter$emitExpr: expr is NULL");
     }
-    switch (expr->type) {
+    switch (expr->kind) {
 
     case ast$EXPR_BASIC_LIT:
         emitter$emitString(e, expr->basic_lit.value);
@@ -145,13 +145,13 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     default:
-        panic("Unknown expr: %d", expr->type);
+        panic("Unknown expr: %d", expr->kind);
         break;
     }
 }
 
 static void cemitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
-    switch (stmt->type) {
+    switch (stmt->kind) {
 
     case ast$STMT_ASSIGN:
         cemitter$emitExpr(e, stmt->assign.x);
@@ -167,7 +167,7 @@ static void cemitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
         emitter$emitNewline(e);
         e->indent++;
         for (ast$Stmt **stmts = stmt->block.stmts; stmts && *stmts; stmts++) {
-            switch ((*stmts)->type) {
+            switch ((*stmts)->kind) {
             case ast$STMT_LABEL:
                 break;
             default:
@@ -326,11 +326,11 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
     if (type == NULL) {
         panic("cemitter$emitType: type is nil");
     }
-    if (type->is_const && type->type != ast$EXPR_STAR) {
+    if (type->is_const && type->kind != ast$EXPR_STAR) {
         emitter$emitToken(e, token$CONST);
         emitter$emitSpace(e);
     }
-    switch (type->type) {
+    switch (type->kind) {
     case ast$TYPE_ARRAY:
         cemitter$emitType(e, type->array.elt, name);
         emitter$emitToken(e, token$LBRACK);
@@ -394,7 +394,7 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
 
     case ast$EXPR_STAR:
         type = type->star.x;
-        if (type->type == ast$TYPE_FUNC) {
+        if (type->kind == ast$TYPE_FUNC) {
             cemitter$emitType(e, type->func.result, NULL);
             emitter$emitToken(e, token$LPAREN);
             emitter$emitToken(e, token$MUL);
@@ -452,10 +452,10 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
         break;
 
     default:
-        panic("Unknown type: %d", type->type);
+        panic("Unknown type: %d", type->kind);
     }
 
-    if (type->is_const && type->type == ast$EXPR_STAR) {
+    if (type->is_const && type->kind == ast$EXPR_STAR) {
         emitter$emitSpace(e);
         emitter$emitToken(e, token$CONST);
     }
@@ -467,7 +467,7 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
 }
 
 static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
-    switch (decl->type) {
+    switch (decl->kind) {
 
     case ast$DECL_ELLIPSIS:
         emitter$emitToken(e, token$ELLIPSIS);

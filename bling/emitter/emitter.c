@@ -47,7 +47,7 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
     if (!expr) {
         panic("emitter$emitExpr: expr is NULL");
     }
-    switch (expr->type) {
+    switch (expr->kind) {
 
     case ast$EXPR_BASIC_LIT:
         emitter$emitString(e, expr->basic_lit.value);
@@ -179,7 +179,7 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
 }
 
 extern void emitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
-    switch (stmt->type) {
+    switch (stmt->kind) {
 
     case ast$STMT_ASSIGN:
         emitter$emitExpr(e, stmt->assign.x);
@@ -194,7 +194,7 @@ extern void emitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
         emitter$emitNewline(e);
         e->indent++;
         for (ast$Stmt **stmts = stmt->block.stmts; stmts && *stmts; stmts++) {
-            switch ((*stmts)->type) {
+            switch ((*stmts)->kind) {
             case ast$STMT_LABEL:
                 break;
             default:
@@ -337,7 +337,7 @@ extern void emitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
 }
 
 static bool is_void(ast$Expr *type) {
-    return type == NULL || (type->type == ast$EXPR_IDENT && streq(type->ident.name, "void"));
+    return type == NULL || (type->kind == ast$EXPR_IDENT && streq(type->ident.name, "void"));
 }
 
 extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
@@ -345,7 +345,7 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         emitter$emitToken(e, token$CONST);
         emitter$emitSpace(e);
     }
-    switch (type->type) {
+    switch (type->kind) {
     case ast$EXPR_IDENT:
     case ast$EXPR_SELECTOR:
         emitter$emitExpr(e, type);
@@ -409,7 +409,7 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
 
     case ast$EXPR_STAR:
         type = type->star.x;
-        if (type->type == ast$TYPE_FUNC) {
+        if (type->kind == ast$TYPE_FUNC) {
             emitter$emitToken(e, token$FUNC);
             emitter$emitToken(e, token$LPAREN);
             for (ast$Decl **params = type->func.params; params && *params; ) {
@@ -455,12 +455,12 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         break;
 
     default:
-        panic("Unknown type: %d", type->type);
+        panic("Unknown type: %d", type->kind);
     }
 }
 
 extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
-    switch (decl->type) {
+    switch (decl->kind) {
 
     case ast$DECL_ELLIPSIS:
         emitter$emitToken(e, token$ELLIPSIS);

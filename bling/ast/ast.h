@@ -65,10 +65,10 @@ typedef enum {
     ast$TYPE_STRUCT,
     ast$_TYPE_END,
 
-} ast$NodeType;
+} ast$NodeKind;
 
 typedef struct {
-    ast$NodeType type;
+    ast$NodeKind kind;
     token$Pos pos;
 } ast$Node;
 
@@ -253,8 +253,7 @@ typedef struct {
 } ast$Field;
 
 typedef struct ast$Decl {
-    ast$NodeType type;
-    token$Pos pos;
+    ast$Node;
     union {
         ast$ImportDecl imp;
         ast$PragmaDecl pragma;
@@ -327,8 +326,7 @@ typedef struct {
 } ast$SwitchStmt;
 
 typedef struct ast$Stmt {
-    ast$NodeType type;
-    token$Pos pos;
+    ast$Node;
     union {
         ast$AssignStmt assign;
         ast$BlockStmt block;
