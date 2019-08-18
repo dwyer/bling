@@ -38,7 +38,6 @@ extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,
     ast$Scope_insert(s, obj);
 }
 
-static ast$Expr *parse_cast_expr(parser$Parser *p);
 static ast$Expr *parse_expr(parser$Parser *p);
 static ast$Expr *parse_const_expr(parser$Parser *p);
 static ast$Expr *parse_init_expr(parser$Parser *p);
@@ -135,13 +134,7 @@ extern ast$Expr *parser$parseBasicLit(parser$Parser *p, token$Token kind) {
     return esc(x);
 }
 
-extern ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
-    // parser$parsePrimaryExpr
-    //         : IDENTIFIER
-    //         | CONSTANT
-    //         | STRING_LITERAL
-    //         | '(' expression ')'
-    //         ;
+extern ast$Expr *parser$parseOperand(parser$Parser *p) {
     switch (p->tok) {
     case token$IDENT:
         return parser$parseIdent(p);
@@ -167,9 +160,13 @@ extern ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
             return esc(x);
         }
     default:
-        parser$error(p, p->pos, sys$sprintf("bad expr: %s: %s", token$string(p->tok), p->lit));
+        parser$errorExpected(p, p->pos, "operand");
         return NULL;
     }
+}
+
+extern ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
+    return parser$parseOperand(p);
 }
 
 static ast$Expr *parse_postfix_expr(parser$Parser *p) {
@@ -249,7 +246,7 @@ done:
     return x;
 }
 
-static ast$Expr *parse_unary_expr(parser$Parser *p) {
+static ast$Expr *parseUnaryExpr(parser$Parser *p) {
     // unary_expression
     //         : postfix_expression
     //         | unary_operator cast$expression
@@ -279,7 +276,7 @@ static ast$Expr *parse_unary_expr(parser$Parser *p) {
                 .pos = pos,
                 .unary = {
                     .op = op,
-                    .x = parse_cast_expr(p),
+                    .x = parseUnaryExpr(p),
                 },
             };
             return esc(x);
@@ -292,7 +289,7 @@ static ast$Expr *parse_unary_expr(parser$Parser *p) {
                 .type = ast$EXPR_STAR,
                 .pos = pos,
                 .star = {
-                    .x = parse_cast_expr(p),
+                    .x = parseUnaryExpr(p),
                 },
             };
             return esc(x);
@@ -312,42 +309,35 @@ static ast$Expr *parse_unary_expr(parser$Parser *p) {
             parser$expect(p, token$RPAREN);
             return esc(x);
         }
+    case token$LT:
+        {
+            token$Pos pos = p->pos;
+            parser$expect(p, token$LT);
+            ast$Expr *type = parse_type_spec(p);
+            parser$expect(p, token$GT);
+            ast$Expr *expr = NULL;
+            if (p->tok == token$LBRACE) {
+                expr = parse_init_expr(p);
+            } else {
+                expr = parseUnaryExpr(p);
+            }
+            ast$Expr y = {
+                .type = ast$EXPR_CAST,
+                .pos = pos,
+                .cast = {
+                    .type = type,
+                    .expr = expr,
+                },
+            };
+            return esc(y);
+        }
     default:
         return parse_postfix_expr(p);
     }
 }
 
-static ast$Expr *parse_cast_expr(parser$Parser *p) {
-    // cast$expression
-    //         : unary_expression
-    //         | '<' type_name '>' cast$expression
-    //         | '<' type_name '>' initializer
-    //         ;
-    token$Pos pos = p->pos;
-    if (parser$accept(p, token$LT)) {
-        ast$Expr *type = parse_type_spec(p);
-        parser$expect(p, token$GT);
-        ast$Expr *expr = NULL;
-        if (p->tok == token$LBRACE) {
-            expr = parse_init_expr(p);
-        } else {
-            expr = parse_cast_expr(p);
-        }
-        ast$Expr y = {
-            .type = ast$EXPR_CAST,
-            .pos = pos,
-            .cast = {
-                .type = type,
-                .expr = expr,
-            },
-        };
-        return esc(y);
-    }
-    return parse_unary_expr(p);
-}
-
-static ast$Expr *parse_binary_expr(parser$Parser *p, int prec1) {
-    ast$Expr *x = parse_cast_expr(p);
+static ast$Expr *parseBinaryExpr(parser$Parser *p, int prec1) {
+    ast$Expr *x = parseUnaryExpr(p);
     for (;;) {
         token$Token op = p->tok;
         int oprec = token$precedence(op);
@@ -355,7 +345,7 @@ static ast$Expr *parse_binary_expr(parser$Parser *p, int prec1) {
             return x;
         }
         parser$expect(p, op);
-        ast$Expr *y = parse_binary_expr(p, oprec + 1);
+        ast$Expr *y = parseBinaryExpr(p, oprec + 1);
         ast$Expr z = {
             .type = ast$EXPR_BINARY,
             .pos = x->pos,
@@ -369,16 +359,16 @@ static ast$Expr *parse_binary_expr(parser$Parser *p, int prec1) {
     }
 }
 
-static ast$Expr *parse_ternary_expr(parser$Parser *p) {
+static ast$Expr *parseTernaryExpr(parser$Parser *p) {
     // ternary_expression
     //         : binary_expression
     //         | binary_expression '?' expression ':' ternary_expression
     //         ;
-    ast$Expr *x = parse_binary_expr(p, token$lowest_prec + 1);
+    ast$Expr *x = parseBinaryExpr(p, token$lowest_prec + 1);
     if (parser$accept(p, token$QUESTION_MARK)) {
         ast$Expr *consequence = parse_expr(p);
         parser$expect(p, token$COLON);
-        ast$Expr *alternative = parse_ternary_expr(p);
+        ast$Expr *alternative = parseTernaryExpr(p);
         ast$Expr conditional = {
             .type = ast$EXPR_COND,
             .pos = x->pos,
@@ -393,14 +383,16 @@ static ast$Expr *parse_ternary_expr(parser$Parser *p) {
     return x;
 }
 
+static ast$Expr *parseExpr(parser$Parser *p) {
+    return parseTernaryExpr(p);
+}
+
 static ast$Expr *parse_expr(parser$Parser *p) {
-    // expression : ternary_expression ;
-    return parse_ternary_expr(p);
+    return parseExpr(p);
 }
 
 static ast$Expr *parse_const_expr(parser$Parser *p) {
-    // constant_expression : ternary_expression ;
-    return parse_ternary_expr(p);
+    return parseExpr(p);
 }
 
 static ast$Expr *parse_struct_or_union_spec(parser$Parser *p) {

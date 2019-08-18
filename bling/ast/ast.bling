@@ -13,6 +13,7 @@ import "utils"
 typedef NodeType enum {
     NODE_ILLEGAL = 0,
     _DECL_START,
+    DECL_ELLIPSIS,
     DECL_FIELD,
     DECL_FUNC,
     DECL_IMPORT,

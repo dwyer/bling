@@ -96,8 +96,6 @@ fun declare(p *Parser, s *ast.Scope, decl *ast.Decl, kind ast.ObjKind, name *ast
     ast.Scope_insert(s, obj)
 }
 
-fun parse_cast_expr(p *Parser) *ast.Expr
-
 fun parse_expr(p *Parser) *ast.Expr
 
 fun parse_const_expr(p *Parser) *ast.Expr
@@ -199,7 +197,7 @@ fun parseBasicLit(p *Parser, kind token.Token) *ast.Expr {
     return esc(x)
 }
 
-fun parsePrimaryExpr(p *Parser) *ast.Expr {
+fun parseOperand(p *Parser) *ast.Expr {
     switch p.tok {
     case token.IDENT:
         return parseIdent(p)
@@ -222,9 +220,13 @@ fun parsePrimaryExpr(p *Parser) *ast.Expr {
             return esc(x)
         }
     default:
-        error(p, p.pos, sys.sprintf("bad expr: %s: %s", token.string(p.tok), p.lit))
+        errorExpected(p, p.pos, "operand")
         return NULL
     }
+}
+
+fun parsePrimaryExpr(p *Parser) *ast.Expr {
+    return parseOperand(p)
 }
 
 fun parse_postfix_expr(p *Parser) *ast.Expr {
@@ -295,7 +297,7 @@ done:
     return x
 }
 
-fun parse_unary_expr(p *Parser) *ast.Expr {
+fun parseUnaryExpr(p *Parser) *ast.Expr {
     switch p.tok {
     case token.ADD, token.AND, token.BITWISE_NOT, token.NOT, token.SUB:
         {
@@ -307,7 +309,7 @@ fun parse_unary_expr(p *Parser) *ast.Expr {
                 pos: pos,
                 unary: {
                     op: op,
-                    x: parse_cast_expr(p),
+                    x: parseUnaryExpr(p),
                 },
             }
             return esc(x)
@@ -320,7 +322,7 @@ fun parse_unary_expr(p *Parser) *ast.Expr {
                 type: ast.EXPR_STAR,
                 pos: pos,
                 star: {
-                    x: parse_cast_expr(p),
+                    x: parseUnaryExpr(p),
                 },
             }
             return esc(x)
@@ -340,37 +342,35 @@ fun parse_unary_expr(p *Parser) *ast.Expr {
             expect(p, token.RPAREN)
             return esc(x)
         }
+    case token.LT:
+        {
+            var pos token.Pos = p.pos
+            expect(p, token.LT)
+            var type *ast.Expr = parse_type_spec(p)
+            expect(p, token.GT)
+            var expr *ast.Expr = NULL
+            if p.tok == token.LBRACE {
+                expr = parse_init_expr(p)
+            } else {
+                expr = parseUnaryExpr(p)
+            }
+            var y ast.Expr = {
+                type: ast.EXPR_CAST,
+                pos: pos,
+                cast: {
+                    type: type,
+                    expr: expr,
+                },
+            }
+            return esc(y)
+        }
     default:
         return parse_postfix_expr(p)
     }
 }
 
-fun parse_cast_expr(p *Parser) *ast.Expr {
-    var pos token.Pos = p.pos
-    if accept(p, token.LT) {
-        var type *ast.Expr = parse_type_spec(p)
-        expect(p, token.GT)
-        var expr *ast.Expr = NULL
-        if p.tok == token.LBRACE {
-            expr = parse_init_expr(p)
-        } else {
-            expr = parse_cast_expr(p)
-        }
-        var y ast.Expr = {
-            type: ast.EXPR_CAST,
-            pos: pos,
-            cast: {
-                type: type,
-                expr: expr,
-            },
-        }
-        return esc(y)
-    }
-    return parse_unary_expr(p)
-}
-
-fun parse_binary_expr(p *Parser, prec1 int) *ast.Expr {
-    var x *ast.Expr = parse_cast_expr(p)
+fun parseBinaryExpr(p *Parser, prec1 int) *ast.Expr {
+    var x *ast.Expr = parseUnaryExpr(p)
     for ;; {
         var op token.Token = p.tok
         var oprec int = token.precedence(op)
@@ -378,7 +378,7 @@ fun parse_binary_expr(p *Parser, prec1 int) *ast.Expr {
             return x
         }
         expect(p, op)
-        var y *ast.Expr = parse_binary_expr(p, oprec + 1)
+        var y *ast.Expr = parseBinaryExpr(p, oprec + 1)
         var z ast.Expr = {
             type: ast.EXPR_BINARY,
             pos: x.pos,
@@ -392,12 +392,12 @@ fun parse_binary_expr(p *Parser, prec1 int) *ast.Expr {
     }
 }
 
-fun parse_ternary_expr(p *Parser) *ast.Expr {
-    var x *ast.Expr = parse_binary_expr(p, token.lowest_prec + 1)
+fun parseTernaryExpr(p *Parser) *ast.Expr {
+    var x *ast.Expr = parseBinaryExpr(p, token.lowest_prec + 1)
     if accept(p, token.QUESTION_MARK) {
         var consequence *ast.Expr = parse_expr(p)
         expect(p, token.COLON)
-        var alternative *ast.Expr = parse_ternary_expr(p)
+        var alternative *ast.Expr = parseTernaryExpr(p)
         var conditional ast.Expr = {
             type: ast.EXPR_COND,
             pos: x.pos,
@@ -412,12 +412,16 @@ fun parse_ternary_expr(p *Parser) *ast.Expr {
     return x
 }
 
+fun parseExpr(p *Parser) *ast.Expr {
+    return parseTernaryExpr(p)
+}
+
 fun parse_expr(p *Parser) *ast.Expr {
-    return parse_ternary_expr(p)
+    return parseExpr(p)
 }
 
 fun parse_const_expr(p *Parser) *ast.Expr {
-    return parse_ternary_expr(p)
+    return parseExpr(p)
 }
 
 fun parse_struct_or_union_spec(p *Parser) *ast.Expr {

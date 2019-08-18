@@ -14,6 +14,7 @@ typedef enum {
     ast$NODE_ILLEGAL = 0,
 
     ast$_DECL_START,
+    ast$DECL_ELLIPSIS,
     ast$DECL_FIELD,
     ast$DECL_FUNC,
     ast$DECL_IMPORT,
