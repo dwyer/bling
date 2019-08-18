@@ -29,7 +29,6 @@ typedef enum {
     ast$EXPR_CALL,
     ast$EXPR_CAST,
     ast$EXPR_COMPOUND,
-    ast$EXPR_COND,
     ast$EXPR_IDENT,
     ast$EXPR_INDEX,
     ast$EXPR_INIT_DECL,
@@ -38,6 +37,7 @@ typedef enum {
     ast$EXPR_SELECTOR,
     ast$EXPR_SIZEOF,
     ast$EXPR_STAR,
+    ast$EXPR_TERNARY,
     ast$EXPR_UNARY,
     ast$_EXPR_END,
 
@@ -126,12 +126,6 @@ typedef struct {
 } ast$CompositeLit;
 
 typedef struct {
-    ast$Expr *condition;
-    ast$Expr *consequence;
-    ast$Expr *alternative;
-} ast$ConditionalExpr;
-
-typedef struct {
     ast$Expr *name;
     ast$Decl **enums;
 } ast$Enum;
@@ -189,6 +183,12 @@ typedef struct {
 } ast$Struct;
 
 typedef struct {
+    ast$Expr *cond;
+    ast$Expr *x;
+    ast$Expr *y;
+} ast$TernaryExpr;
+
+typedef struct {
     token$Token op;
     ast$Expr *x;
 } ast$UnaryExpr;
@@ -203,7 +203,6 @@ typedef struct ast$Expr {
         ast$CallExpr call;
         ast$CastExpr cast;
         ast$CompositeLit compound;
-        ast$ConditionalExpr conditional;
         ast$Enum enum_;
         ast$FuncExpr func;
         ast$Ident ident;
@@ -215,6 +214,7 @@ typedef struct ast$Expr {
         ast$SizeofExpr sizeof_;
         ast$StarExpr star;
         ast$Struct struct_;
+        ast$TernaryExpr ternary;
         ast$UnaryExpr unary;
     };
 } ast$Expr;

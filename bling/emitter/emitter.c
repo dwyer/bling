@@ -100,18 +100,6 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         emitter$emitToken(e, token$RBRACE);
         break;
 
-    case ast$EXPR_COND:
-        emitter$emitExpr(e, expr->conditional.condition);
-        emitter$emitSpace(e);
-        emitter$emitToken(e, token$QUESTION_MARK);
-        emitter$emitSpace(e);
-        emitter$emitExpr(e, expr->conditional.consequence);
-        emitter$emitSpace(e);
-        emitter$emitToken(e, token$COLON);
-        emitter$emitSpace(e);
-        emitter$emitExpr(e, expr->conditional.alternative);
-        break;
-
     case ast$EXPR_IDENT:
         if (e->pkg
                 && hasPrefix(expr->ident.name, e->pkg)
@@ -165,6 +153,18 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
     case ast$EXPR_STAR:
         emitter$emitToken(e, token$MUL);
         emitter$emitExpr(e, expr->star.x);
+        break;
+
+    case ast$EXPR_TERNARY:
+        emitter$emitExpr(e, expr->ternary.cond);
+        emitter$emitSpace(e);
+        emitter$emitToken(e, token$QUESTION_MARK);
+        emitter$emitSpace(e);
+        emitter$emitExpr(e, expr->ternary.x);
+        emitter$emitSpace(e);
+        emitter$emitToken(e, token$COLON);
+        emitter$emitSpace(e);
+        emitter$emitExpr(e, expr->ternary.y);
         break;
 
     case ast$EXPR_UNARY:

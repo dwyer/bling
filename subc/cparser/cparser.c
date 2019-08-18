@@ -269,15 +269,15 @@ static ast$Expr *ternary_expression(parser$Parser *p) {
         ast$Expr *consequence = expression(p);
         parser$expect(p, token$COLON);
         ast$Expr *alternative = ternary_expression(p);
-        ast$Expr conditional = {
-            .kind = ast$EXPR_COND,
-            .conditional = {
-                .condition = x,
-                .consequence = consequence,
-                .alternative = alternative,
+        ast$Expr y = {
+            .kind = ast$EXPR_TERNARY,
+            .ternary = {
+                .cond = x,
+                .x = consequence,
+                .y = alternative,
             },
         };
-        x = esc(conditional);
+        x = esc(y);
     }
     return x;
 }

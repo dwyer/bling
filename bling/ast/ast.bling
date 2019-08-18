@@ -27,7 +27,6 @@ typedef NodeKind enum {
     EXPR_CALL,
     EXPR_CAST,
     EXPR_COMPOUND,
-    EXPR_COND,
     EXPR_IDENT,
     EXPR_INDEX,
     EXPR_INIT_DECL,
@@ -36,6 +35,7 @@ typedef NodeKind enum {
     EXPR_SELECTOR,
     EXPR_SIZEOF,
     EXPR_STAR,
+    EXPR_TERNARY,
     EXPR_UNARY,
     _EXPR_END,
     _STMT_START,
@@ -122,12 +122,6 @@ typedef CompositeLit struct {
     list **Expr
 }
 
-typedef ConditionalExpr struct {
-    condition *Expr
-    consequence *Expr
-    alternative *Expr
-}
-
 typedef Enum struct {
     name *Expr
     enums **Decl
@@ -185,6 +179,12 @@ typedef Struct struct {
     scope *Scope
 }
 
+typedef TernaryExpr struct {
+    cond *Expr
+    x *Expr
+    y *Expr
+}
+
 typedef UnaryExpr struct {
     op token.Token
     x *Expr
@@ -200,7 +200,6 @@ typedef Expr struct Expr {
         call CallExpr
         cast CastExpr
         compound CompositeLit
-        conditional ConditionalExpr
         enum_ Enum
         func FuncExpr
         ident Ident
@@ -212,6 +211,7 @@ typedef Expr struct Expr {
         sizeof_ SizeofExpr
         star StarExpr
         struct_ Struct
+        ternary TernaryExpr
         unary UnaryExpr
     }
 }

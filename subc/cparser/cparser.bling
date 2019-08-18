@@ -259,15 +259,15 @@ fun ternary_expression(p *parser.Parser) *ast.Expr {
         var consequence *ast.Expr = expression(p)
         parser.expect(p, token.COLON)
         var alternative *ast.Expr = ternary_expression(p)
-        var conditional ast.Expr = {
-            kind: ast.EXPR_COND,
-            conditional: {
-                condition: x,
-                consequence: consequence,
-                alternative: alternative,
+        var y ast.Expr = {
+            kind: ast.EXPR_TERNARY,
+            ternary: {
+                cond: x,
+                x: consequence,
+                y: alternative,
             },
         }
-        x = esc(conditional)
+        x = esc(y)
     }
     return x
 }

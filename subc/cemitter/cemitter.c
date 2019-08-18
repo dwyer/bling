@@ -44,18 +44,6 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         cemitter$emitExpr(e, expr->cast.expr);
         break;
 
-    case ast$EXPR_COND:
-        cemitter$emitExpr(e, expr->conditional.condition);
-        emitter$emitSpace(e);
-        emitter$emitToken(e, token$QUESTION_MARK);
-        emitter$emitSpace(e);
-        cemitter$emitExpr(e, expr->conditional.consequence);
-        emitter$emitSpace(e);
-        emitter$emitToken(e, token$COLON);
-        emitter$emitSpace(e);
-        cemitter$emitExpr(e, expr->conditional.alternative);
-        break;
-
     case ast$EXPR_COMPOUND:
         emitter$emitToken(e, token$LBRACE);
         emitter$emitNewline(e);
@@ -137,6 +125,18 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
     case ast$EXPR_STAR:
         emitter$emitToken(e, token$MUL);
         cemitter$emitExpr(e, expr->star.x);
+        break;
+
+    case ast$EXPR_TERNARY:
+        cemitter$emitExpr(e, expr->ternary.cond);
+        emitter$emitSpace(e);
+        emitter$emitToken(e, token$QUESTION_MARK);
+        emitter$emitSpace(e);
+        cemitter$emitExpr(e, expr->ternary.x);
+        emitter$emitSpace(e);
+        emitter$emitToken(e, token$COLON);
+        emitter$emitSpace(e);
+        cemitter$emitExpr(e, expr->ternary.y);
         break;
 
     case ast$EXPR_UNARY:

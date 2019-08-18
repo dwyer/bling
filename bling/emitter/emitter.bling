@@ -135,17 +135,6 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         }
         emitToken(e, token.RBRACE)
         break
-    case ast.EXPR_COND:
-        emitExpr(e, expr.conditional.condition)
-        emitSpace(e)
-        emitToken(e, token.QUESTION_MARK)
-        emitSpace(e)
-        emitExpr(e, expr.conditional.consequence)
-        emitSpace(e)
-        emitToken(e, token.COLON)
-        emitSpace(e)
-        emitExpr(e, expr.conditional.alternative)
-        break
     case ast.EXPR_IDENT:
         if e.pkg && hasPrefix(expr.ident.name, e.pkg) && expr.ident.name[strlen(e.pkg)] == '$' {
             emitString(e, &expr.ident.name[strlen(e.pkg) + 1])
@@ -191,6 +180,17 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
     case ast.EXPR_STAR:
         emitToken(e, token.MUL)
         emitExpr(e, expr.star.x)
+        break
+    case ast.EXPR_TERNARY:
+        emitExpr(e, expr.ternary.cond)
+        emitSpace(e)
+        emitToken(e, token.QUESTION_MARK)
+        emitSpace(e)
+        emitExpr(e, expr.ternary.x)
+        emitSpace(e)
+        emitToken(e, token.COLON)
+        emitSpace(e)
+        emitExpr(e, expr.ternary.y)
         break
     case ast.EXPR_UNARY:
         emitToken(e, expr.unary.op)

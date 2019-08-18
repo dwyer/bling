@@ -365,16 +365,16 @@ fun parseTernaryExpr(p *Parser) *ast.Expr {
         var consequence *ast.Expr = parseTernaryExpr(p)
         expect(p, token.COLON)
         var alternative *ast.Expr = parseTernaryExpr(p)
-        var conditional ast.Expr = {
-            kind: ast.EXPR_COND,
+        var y ast.Expr = {
+            kind: ast.EXPR_TERNARY,
             pos: x.pos,
-            conditional: {
-                condition: x,
-                consequence: consequence,
-                alternative: alternative,
+            ternary: {
+                cond: x,
+                x: consequence,
+                y: alternative,
             },
         }
-        x = esc(conditional)
+        x = esc(y)
     }
     return x
 }

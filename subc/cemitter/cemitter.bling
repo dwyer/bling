@@ -53,17 +53,6 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitter.emitToken(e, token.RPAREN)
         emitExpr(e, expr.cast.expr)
         break
-    case ast.EXPR_COND:
-        emitExpr(e, expr.conditional.condition)
-        emitter.emitSpace(e)
-        emitter.emitToken(e, token.QUESTION_MARK)
-        emitter.emitSpace(e)
-        emitExpr(e, expr.conditional.consequence)
-        emitter.emitSpace(e)
-        emitter.emitToken(e, token.COLON)
-        emitter.emitSpace(e)
-        emitExpr(e, expr.conditional.alternative)
-        break
     case ast.EXPR_COMPOUND:
         emitter.emitToken(e, token.LBRACE)
         emitter.emitNewline(e)
@@ -138,6 +127,17 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     case ast.EXPR_STAR:
         emitter.emitToken(e, token.MUL)
         emitExpr(e, expr.star.x)
+        break
+    case ast.EXPR_TERNARY:
+        emitExpr(e, expr.ternary.cond)
+        emitter.emitSpace(e)
+        emitter.emitToken(e, token.QUESTION_MARK)
+        emitter.emitSpace(e)
+        emitExpr(e, expr.ternary.x)
+        emitter.emitSpace(e)
+        emitter.emitToken(e, token.COLON)
+        emitter.emitSpace(e)
+        emitExpr(e, expr.ternary.y)
         break
     case ast.EXPR_UNARY:
         emitter.emitToken(e, expr.unary.op)
