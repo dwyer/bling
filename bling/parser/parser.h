@@ -44,5 +44,5 @@ extern bool parser$accept(parser$Parser *p, token$Token tok);
 extern token$Pos parser$expect(parser$Parser *p, token$Token tok);
 extern ast$Expr *parser$parseBasicLit(parser$Parser *p, token$Token kind);
 extern ast$Expr *parser$parseIdent(parser$Parser *p);
-extern ast$Expr *parser$parsePrimaryExpr(parser$Parser *p);
+extern ast$Expr *parser$parseOperand(parser$Parser *p);
 extern ast$Decl *parser$parsePragma(parser$Parser *p);
