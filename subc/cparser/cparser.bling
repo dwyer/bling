@@ -459,7 +459,7 @@ fun parameter_type_list(p *parser.Parser) **ast.Decl {
         }
         if parser.accept(p, token.ELLIPSIS) {
             var decl ast.Decl = {
-                type: ast.DECL_FIELD,
+                type: ast.DECL_ELLIPSIS,
             }
             var param *ast.Decl = esc(decl)
             utils.Slice_append(&params, &param)

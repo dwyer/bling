@@ -527,7 +527,7 @@ static ast$Decl **parse_param_type_list(parser$Parser *p, bool anon) {
         if (parser$accept(p, token$ELLIPSIS)) {
             // TODO make this a type
             ast$Decl decl = {
-                .type = ast$DECL_FIELD,
+                .type = ast$DECL_ELLIPSIS,
                 .pos = pos,
             };
             ast$Decl *param = esc(decl);

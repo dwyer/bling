@@ -589,10 +589,11 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
     case ast$TYPE_FUNC:
         for (int i = 0; t->func.params && t->func.params[i]; i++) {
             ast$Decl *param = t->func.params[i];
-            assert(param->type == ast$DECL_FIELD);
-            if (param->field.type) {
-                Checker_checkType(c, param->field.type);
+            if (param->type == ast$DECL_ELLIPSIS) {
+                continue;
             }
+            assert(param->type == ast$DECL_FIELD);
+            Checker_checkType(c, param->field.type);
         }
         if (t->func.result) {
             Checker_checkType(c, t->func.result);
@@ -806,9 +807,8 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             int j = 0;
             for (int i = 0; expr->call.args[i]; i++) {
                 ast$Decl *param = type->func.params[j];
-                assert(param->type == ast$DECL_FIELD);
                 ast$Expr *type = Checker_checkExpr(c, expr->call.args[i]);
-                if (param->field.type) {
+                if (param->type == ast$DECL_FIELD) {
                     if (!types$areAssignable(param->field.type, type)) {
                         Checker_error(c, expr->pos, sys$sprintf(
                                     "not assignable: %s and %s",
@@ -816,6 +816,8 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                                     types$typeString(type)));
                     }
                     j++;
+                } else {
+                    assert(param->type == ast$DECL_ELLIPSIS);
                 }
             }
             return type->func.result;

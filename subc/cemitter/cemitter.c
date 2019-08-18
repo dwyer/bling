@@ -469,12 +469,12 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
 static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
     switch (decl->type) {
 
+    case ast$DECL_ELLIPSIS:
+        emitter$emitToken(e, token$ELLIPSIS);
+        break;
+
     case ast$DECL_FIELD:
-        if (decl->field.type == NULL && decl->field.name == NULL) {
-            emitter$emitString(e, "...");
-        } else {
-            cemitter$emitType(e, decl->field.type, decl->field.name);
-        }
+        cemitter$emitType(e, decl->field.type, decl->field.name);
         break;
 
     case ast$DECL_FUNC:

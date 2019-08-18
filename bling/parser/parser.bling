@@ -539,7 +539,7 @@ fun parse_param_type_list(p *Parser, anon bool) **ast.Decl {
         var pos token.Pos = p.pos
         if accept(p, token.ELLIPSIS) {
             var decl ast.Decl = {
-                type: ast.DECL_FIELD,
+                type: ast.DECL_ELLIPSIS,
                 pos: pos,
             }
             var param *ast.Decl = esc(decl)

@@ -515,7 +515,7 @@ static ast$Decl **parameter_type_list(parser$Parser *p) {
         }
         if (parser$accept(p, token$ELLIPSIS)) {
             ast$Decl decl = {
-                .type = ast$DECL_FIELD,
+                .type = ast$DECL_ELLIPSIS,
             };
             ast$Decl *param = esc(decl);
             utils$Slice_append(&params, &param);

@@ -443,12 +443,11 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
 
 fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
     switch decl.type {
+    case ast.DECL_ELLIPSIS:
+        emitter.emitToken(e, token.ELLIPSIS)
+        break
     case ast.DECL_FIELD:
-        if decl.field.type == NULL && decl.field.name == NULL {
-            emitter.emitString(e, "...")
-        } else {
-            emitType(e, decl.field.type, decl.field.name)
-        }
+        emitType(e, decl.field.type, decl.field.name)
         break
     case ast.DECL_FUNC:
         emitType(e, decl.func.type, decl.func.name)

@@ -462,16 +462,16 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
 extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
     switch (decl->type) {
 
+    case ast$DECL_ELLIPSIS:
+        emitter$emitToken(e, token$ELLIPSIS);
+        break;
+
     case ast$DECL_FIELD:
-        if (decl->field.type == NULL && decl->field.name == NULL) {
-            emitter$emitString(e, "...");
-        } else {
-            if (decl->field.name != NULL) {
-                emitter$emitExpr(e, decl->field.name);
-                emitter$emitSpace(e);
-            }
-            emitter$emitType(e, decl->field.type);
+        if (decl->field.name != NULL) {
+            emitter$emitExpr(e, decl->field.name);
+            emitter$emitSpace(e);
         }
+        emitter$emitType(e, decl->field.type);
         break;
 
     case ast$DECL_FUNC:
