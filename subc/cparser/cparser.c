@@ -56,7 +56,7 @@ static ast$Expr *postfix_expression(parser$Parser *p, ast$Expr *x) {
     //         | postfix_expression '->' IDENTIFIER
     //         ;
     if (x == NULL) {
-        x = parser$parseOperand(p);
+        x = parser$parseOperand(p, true);
     }
     for (;;) {
         switch (p->tok) {

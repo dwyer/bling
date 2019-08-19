@@ -74,7 +74,7 @@ fun is_type(p *parser.Parser) bool {
 
 fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
     if x == NULL {
-        x = parser.parseOperand(p)
+        x = parser.parseOperand(p, true)
     }
     for ;; {
         switch p.tok {

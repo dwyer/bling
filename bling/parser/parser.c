@@ -137,7 +137,9 @@ extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,
 }
 
 static ast$Expr *parseLiteralValue(parser$Parser *p, ast$Expr *type);
-static ast$Expr *parseExpr(parser$Parser *p);
+static ast$Expr *parseExpr(parser$Parser *p, bool lhs);
+
+const bool LHS = false;
 
 static ast$Expr *tryIdentOrType(parser$Parser *p);
 static ast$Expr *tryType(parser$Parser *p);
@@ -147,6 +149,22 @@ static ast$Stmt *parse_stmt(parser$Parser *p);
 static ast$Stmt *parse_block_stmt(parser$Parser *p);
 
 static ast$Decl *parseDecl(parser$Parser *p);
+
+static ast$Expr *parseRhs(parser$Parser *p) {
+    bool old = p->inRhs;
+    p->inRhs = true;
+    ast$Expr *x = Parser_checkExpr(p, parseExpr(p, false));
+    p->inRhs = old;
+    return x;
+}
+
+static ast$Expr *parseRhsOrType(parser$Parser *p) {
+    bool old = p->inRhs;
+    p->inRhs = true;
+    ast$Expr *x = Parser_checkExprOrType(p, parseExpr(p, false));
+    p->inRhs = old;
+    return x;
+}
 
 extern ast$Expr *parser$parseBasicLit(parser$Parser *p, token$Token kind) {
     char *value = p->lit;
@@ -178,7 +196,7 @@ extern ast$Expr *parser$parseIdent(parser$Parser *p) {
     return esc(x);
 }
 
-extern ast$Expr *parser$parseOperand(parser$Parser *p) {
+extern ast$Expr *parser$parseOperand(parser$Parser *p, bool lhs) {
     switch (p->tok) {
     case token$IDENT:
         return parser$parseIdent(p);
@@ -198,7 +216,7 @@ extern ast$Expr *parser$parseOperand(parser$Parser *p) {
                 .kind = ast$EXPR_PAREN,
                 .paren = {
                     .pos = pos,
-                    .x = parseExpr(p),
+                    .x = parseRhsOrType(p),
                 },
             };
             p->exprLev--;
@@ -217,7 +235,7 @@ extern ast$Expr *parser$parseOperand(parser$Parser *p) {
     return NULL;
 }
 
-static ast$Expr *parseValue(parser$Parser *p) {
+static ast$Expr *parseValue(parser$Parser *p, bool keyOk) {
     // initializer
     //         : expression
     //         | '{' initializer_list ','? '}'
@@ -229,18 +247,18 @@ static ast$Expr *parseValue(parser$Parser *p) {
         //         ;
         return parseLiteralValue(p, NULL);
     }
-    return Parser_checkExpr(p, parseExpr(p));
+    return Parser_checkExpr(p, parseExpr(p, keyOk));
 }
 
 static ast$Expr *parseElement(parser$Parser *p) {
-    ast$Expr *value = parseValue(p);
+    ast$Expr *value = parseValue(p, true);
     if (value->kind == ast$EXPR_IDENT && parser$accept(p, token$COLON)) {
         ast$Expr *key = value;
         ast$Expr x = {
             .kind = ast$EXPR_KEY_VALUE,
             .key_value = {
                 .key = key,
-                .value = parseValue(p),
+                .value = parseValue(p, false),
             },
         };
         value = esc(x);
@@ -287,7 +305,7 @@ static ast$Expr *parseIndexExpr(parser$Parser *p, ast$Expr *x) {
         .kind = ast$EXPR_INDEX,
         .index = {
             .x = x,
-            .index = parseExpr(p),
+            .index = parseRhs(p),
         },
     };
     p->exprLev--;
@@ -304,7 +322,7 @@ static ast$Expr *parseCallExpr(parser$Parser *p, ast$Expr *x) {
     //         | argument_expression_list ',' expression
     //         ;
     while (p->tok != token$RPAREN) {
-        ast$Expr *x = parseExpr(p);
+        ast$Expr *x = parseRhsOrType(p);
         utils$Slice_append(&args, &x);
         if (!parser$accept(p, token$COMMA)) {
             break;
@@ -334,8 +352,8 @@ static ast$Expr *parser$parseSelector(parser$Parser *p, ast$Expr *x) {
     return esc(y);
 }
 
-static ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
-    ast$Expr *x = parser$parseOperand(p);
+static ast$Expr *parser$parsePrimaryExpr(parser$Parser *p, bool lhs) {
+    ast$Expr *x = parser$parseOperand(p, lhs);
     for (;;) {
         switch (p->tok) {
         case token$PERIOD:
@@ -361,7 +379,7 @@ static ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
     }
 }
 
-static ast$Expr *parseUnaryExpr(parser$Parser *p) {
+static ast$Expr *parseUnaryExpr(parser$Parser *p, bool lhs) {
     // unary_expression
     //         : postfix_expression
     //         | unary_operator cast$expression
@@ -391,7 +409,7 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
                 .unary = {
                     .pos = pos,
                     .op = op,
-                    .x = Parser_checkExpr(p, parseUnaryExpr(p)),
+                    .x = Parser_checkExpr(p, parseUnaryExpr(p, false)),
                 },
             };
             return esc(x);
@@ -404,7 +422,7 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
                 .kind = ast$EXPR_STAR,
                 .star = {
                     .pos = pos,
-                    .x = Parser_checkExprOrType(p, parseUnaryExpr(p)),
+                    .x = Parser_checkExprOrType(p, parseUnaryExpr(p, false)),
                 },
             };
             return esc(x);
@@ -438,18 +456,18 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
                 .cast = {
                     .pos = pos,
                     .type = type,
-                    .expr = parseUnaryExpr(p),
+                    .expr = parseUnaryExpr(p, false),
                 },
             };
             return esc(y);
         }
     default:
-        return parser$parsePrimaryExpr(p);
+        return parser$parsePrimaryExpr(p, lhs);
     }
 }
 
-static ast$Expr *parseBinaryExpr(parser$Parser *p, int prec1) {
-    ast$Expr *x = parseUnaryExpr(p);
+static ast$Expr *parseBinaryExpr(parser$Parser *p, bool lhs, int prec1) {
+    ast$Expr *x = parseUnaryExpr(p, lhs);
     for (;;) {
         token$Token op = p->tok;
         int oprec = token$precedence(op);
@@ -457,7 +475,7 @@ static ast$Expr *parseBinaryExpr(parser$Parser *p, int prec1) {
             return x;
         }
         parser$expect(p, op);
-        ast$Expr *y = parseBinaryExpr(p, oprec + 1);
+        ast$Expr *y = parseBinaryExpr(p, false, oprec + 1);
         ast$Expr z = {
             .kind = ast$EXPR_BINARY,
             .binary = {
@@ -470,16 +488,16 @@ static ast$Expr *parseBinaryExpr(parser$Parser *p, int prec1) {
     }
 }
 
-static ast$Expr *parseTernaryExpr(parser$Parser *p) {
+static ast$Expr *parseTernaryExpr(parser$Parser *p, bool lhs) {
     // ternary_expression
     //         : binary_expression
     //         | binary_expression '?' expression ':' ternary_expression
     //         ;
-    ast$Expr *x = parseBinaryExpr(p, token$lowest_prec + 1);
+    ast$Expr *x = parseBinaryExpr(p, lhs, token$lowest_prec + 1);
     if (parser$accept(p, token$QUESTION_MARK)) {
-        ast$Expr *consequence = parseExpr(p);
+        ast$Expr *consequence = parseExpr(p, false);
         parser$expect(p, token$COLON);
-        ast$Expr *alternative = parseTernaryExpr(p);
+        ast$Expr *alternative = parseTernaryExpr(p, false);
         ast$Expr y = {
             .kind = ast$EXPR_TERNARY,
             .ternary = {
@@ -493,8 +511,8 @@ static ast$Expr *parseTernaryExpr(parser$Parser *p) {
     return x;
 }
 
-static ast$Expr *parseExpr(parser$Parser *p) {
-    return parseTernaryExpr(p);
+static ast$Expr *parseExpr(parser$Parser *p, bool lhs) {
+    return parseTernaryExpr(p, lhs);
 }
 
 #pragma mark - types
@@ -520,7 +538,7 @@ static ast$Expr *parseArrayType(parser$Parser *p) {
     p->exprLev++;
     ast$Expr *len = NULL;
     if (p->tok != token$RBRACK) {
-        len = parseExpr(p);
+        len = parseRhs(p);
     }
     p->exprLev--;
     parser$expect(p, token$RBRACK);
@@ -699,7 +717,7 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
                 },
             };
             if (parser$accept(p, token$ASSIGN)) {
-                decl.value.value = parseExpr(p);
+                decl.value.value = parseRhs(p);
             }
             ast$Decl *enumerator = esc(decl);
             utils$Slice_append(&list, &enumerator);
@@ -767,7 +785,7 @@ static ast$Stmt *parse_simple_stmt(parser$Parser *p, bool labelOk) {
     //         : labeled_statement
     //         | expression_statement
     //         ;
-    ast$Expr *x = parseExpr(p);
+    ast$Expr *x = parseExpr(p, true);
     // assignment_statement
     //         : expression
     //         | expression assignment_operator expression
@@ -787,7 +805,7 @@ static ast$Stmt *parse_simple_stmt(parser$Parser *p, bool labelOk) {
     case token$XOR_ASSIGN:
         {
             parser$next(p);
-            ast$Expr *y = parseExpr(p);
+            ast$Expr *y = parseRhs(p);
             ast$Stmt stmt = {
                 .kind = ast$STMT_ASSIGN,
                 .assign = {
@@ -852,7 +870,7 @@ static ast$Stmt *parse_for_stmt(parser$Parser *p) {
     }
     ast$Expr *cond = NULL;
     if (p->tok != token$SEMICOLON) {
-        cond = parseExpr(p);
+        cond = parseRhs(p);
     }
     parser$expect(p, token$SEMICOLON);
     ast$Stmt *post = NULL;
@@ -884,7 +902,7 @@ static ast$Stmt *parse_if_stmt(parser$Parser *p) {
     token$Pos pos = parser$expect(p, token$IF);
     int outer = p->exprLev;
     p->exprLev = -1;
-    ast$Expr *cond = parseExpr(p);
+    ast$Expr *cond = parseExpr(p, true);
     p->exprLev = outer;
     if (p->tok != token$LBRACE) {
         parser$error(p, p->pos, "`if` must be followed by a compound_statement");
@@ -919,7 +937,7 @@ static ast$Stmt *parse_return_stmt(parser$Parser *p) {
     token$Pos pos = parser$expect(p, token$RETURN);
     ast$Expr *x = NULL;
     if (p->tok != token$SEMICOLON) {
-        x = parseExpr(p);
+        x = parseRhs(p);
     }
     parser$expect(p, token$SEMICOLON);
     ast$Stmt stmt = {
@@ -937,7 +955,7 @@ static ast$Stmt *parse_switch_stmt(parser$Parser *p) {
     token$Pos pos = parser$expect(p, token$SWITCH);
     int prevLev = p->exprLev;
     p->exprLev = -1;
-    ast$Expr *tag = parseExpr(p);
+    ast$Expr *tag = parseExpr(p, true);
     p->exprLev = prevLev;
     parser$expect(p, token$LBRACE);
     utils$Slice clauses = {.size = sizeof(ast$Stmt *)};
@@ -950,7 +968,7 @@ static ast$Stmt *parse_switch_stmt(parser$Parser *p) {
         token$Pos pos = p->pos;
         if (parser$accept(p, token$CASE)) {
             for (;;) {
-                ast$Expr *expr = parseExpr(p);
+                ast$Expr *expr = parseRhs(p);
                 utils$Slice_append(&exprs, &expr);
                 if (!parser$accept(p, token$COMMA)) {
                     break;
@@ -1006,7 +1024,7 @@ static ast$Stmt *parse_while_stmt(parser$Parser *p) {
     token$Pos pos = parser$expect(p, token$WHILE);
     int prevLev = p->exprLev;
     p->exprLev = -1;
-    ast$Expr *cond = parseExpr(p);
+    ast$Expr *cond = parseExpr(p, true);
     p->exprLev = prevLev;
     ast$Stmt *body = parse_block_stmt(p);
     ast$Stmt stmt = {
@@ -1165,7 +1183,11 @@ static ast$Decl *parseDecl(parser$Parser *p) {
             }
             ast$Expr *value = NULL;
             if (parser$accept(p, token$ASSIGN)) {
-                value = parseValue(p);
+                if (p->tok == token$LBRACE) {
+                    value = parseLiteralValue(p, NULL);
+                } else {
+                    value = parseRhs(p);
+                }
             }
             parser$expect(p, token$SEMICOLON);
             ast$Decl decl = {
