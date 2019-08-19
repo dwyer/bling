@@ -3,9 +3,15 @@
 
 #define __BOOTSTRAP_H__
 
+#include <stdbool.h>
+
 #include <stddef.h>
 
 #include <stdint.h>
+
+#include <stdlib.h>
+
+#include <strings.h>
 
 #define import(_)
 
@@ -15,34 +21,10 @@
 
 #define esc(x) memcpy(malloc(sizeof(x)), &(x), sizeof(x))
 
-typedef bool char
-
-var false const bool = <bool> 0
-
-var true const bool = !false
-
 fun print(s *const char)
 
 fun panic(s *const char, ...)
 
 fun streq(a *const char, b *const char) bool
-
-fun memcmp(*const void, *const void, size_t) int
-
-fun memcpy(*void, *const void, size_t) *void
-
-fun memset(*void, int, size_t) *void
-
-fun strdup(*const char) *char
-
-fun strlcpy(*char, *const char, size_t) size_t
-
-fun strlen(*const char) size_t
-
-fun malloc(size_t) *void
-
-fun free(*void)
-
-fun realloc(*void, size_t) *void
 
 #endif
