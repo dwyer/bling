@@ -91,8 +91,8 @@ extern ast$Expr *parser$parseBasicLit(parser$Parser *p, token$Token kind) {
     token$Pos pos = parser$expect(p, kind);
     ast$Expr x = {
         .kind = ast$EXPR_BASIC_LIT,
-        .pos = pos,
         .basic = {
+            .pos = pos,
             .kind = kind,
             .value = value,
         },
@@ -103,7 +103,9 @@ extern ast$Expr *parser$parseBasicLit(parser$Parser *p, token$Token kind) {
 extern ast$Expr *parser$parseIdent(parser$Parser *p) {
     ast$Expr x = {
         .kind = ast$EXPR_IDENT,
-        .pos = p->pos,
+        .ident = {
+            .pos = p->pos,
+        },
     };
     if (p->tok == token$IDENT) {
         x.ident.name = p->lit;
@@ -130,8 +132,8 @@ extern ast$Expr *parser$parseOperand(parser$Parser *p) {
             parser$expect(p, token$LPAREN);
             ast$Expr x = {
                 .kind = ast$EXPR_PAREN,
-                .pos = pos,
                 .paren = {
+                    .pos = pos,
                     .x = parseExpr(p),
                 },
             };
@@ -154,7 +156,6 @@ static ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
                 parser$next(p);
                 ast$Expr y = {
                     .kind = ast$EXPR_SELECTOR,
-                    .pos = x->pos,
                     .selector = {
                         .x = x,
                         .tok = tok,
@@ -169,7 +170,6 @@ static ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
                 parser$expect(p, token$LBRACK);
                 ast$Expr y = {
                     .kind = ast$EXPR_INDEX,
-                    .pos = x->pos,
                     .index = {
                         .x = x,
                         .index = parseExpr(p),
@@ -197,7 +197,6 @@ static ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
                 parser$expect(p, token$RPAREN);
                 ast$Expr call = {
                     .kind = ast$EXPR_CALL,
-                    .pos = x->pos,
                     .call = {
                         .func = x,
                         .args = utils$Slice_to_nil_array(args),
@@ -239,8 +238,8 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
             parser$next(p);
             ast$Expr x = {
                 .kind = ast$EXPR_UNARY,
-                .pos = pos,
                 .unary = {
+                    .pos = pos,
                     .op = op,
                     .x = parseUnaryExpr(p),
                 },
@@ -253,8 +252,8 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
             parser$next(p);
             ast$Expr x = {
                 .kind = ast$EXPR_STAR,
-                .pos = pos,
                 .star = {
+                    .pos = pos,
                     .x = parseUnaryExpr(p),
                 },
             };
@@ -267,8 +266,8 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
             parser$expect(p, token$LPAREN);
             ast$Expr x = {
                 .kind = ast$EXPR_SIZEOF,
-                .pos = pos,
                 .sizeof_ = {
+                    .pos = pos,
                     .x = parseType(p),
                 },
             };
@@ -289,8 +288,8 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
             }
             ast$Expr y = {
                 .kind = ast$EXPR_CAST,
-                .pos = pos,
                 .cast = {
+                    .pos = pos,
                     .type = type,
                     .expr = expr,
                 },
@@ -314,7 +313,6 @@ static ast$Expr *parseBinaryExpr(parser$Parser *p, int prec1) {
         ast$Expr *y = parseBinaryExpr(p, oprec + 1);
         ast$Expr z = {
             .kind = ast$EXPR_BINARY,
-            .pos = x->pos,
             .binary = {
                 .x = x,
                 .op = op,
@@ -337,7 +335,6 @@ static ast$Expr *parseTernaryExpr(parser$Parser *p) {
         ast$Expr *alternative = parseTernaryExpr(p);
         ast$Expr y = {
             .kind = ast$EXPR_TERNARY,
-            .pos = x->pos,
             .ternary = {
                 .cond = x,
                 .x = consequence,
@@ -360,7 +357,6 @@ static ast$Expr *parseTypeName(parser$Parser *p) {
     if (parser$accept(p, token$PERIOD)) {
         ast$Expr y = {
             .kind = ast$EXPR_SELECTOR,
-            .pos = x->pos,
             .selector = {
                 .x = x,
                 .tok = token$DOLLAR,
@@ -381,8 +377,8 @@ static ast$Expr *parseArrayType(parser$Parser *p) {
     parser$expect(p, token$RBRACK);
     ast$Expr type = {
         .kind = ast$TYPE_ARRAY,
-        .pos = pos,
         .array = {
+            .pos = pos,
             .elt = parseType(p),
             .len = len,
         },
@@ -431,8 +427,8 @@ static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
     // TODO assert(name || fields)
     ast$Expr x = {
         .kind = ast$TYPE_STRUCT,
-        .pos = pos,
         .struct_ = {
+            .pos = pos,
             .tok = keyword,
             .name = name,
             .fields = fields,
@@ -446,8 +442,8 @@ static ast$Expr *parsePointerType(parser$Parser *p) {
     parser$expect(p, token$MUL);
     ast$Expr x = {
         .kind = ast$EXPR_STAR,
-        .pos = pos,
         .star = {
+            .pos = pos,
             .x = parseType(p),
         },
     };
@@ -512,16 +508,16 @@ static ast$Expr *parseFuncType(parser$Parser *p) {
     }
     ast$Expr type = {
         .kind = ast$TYPE_FUNC,
-        .pos = pos,
         .func = {
+            .pos = pos,
             .params = params,
             .result = result,
         },
     };
     ast$Expr ptr = {
         .kind = ast$EXPR_STAR,
-        .pos = type.pos,
         .star = {
+            .pos = pos,
             .x = esc(type),
         },
     };
@@ -567,8 +563,8 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
     }
     ast$Expr x = {
         .kind = ast$TYPE_ENUM,
-        .pos = pos,
         .enum_ = {
+            .pos = pos,
             .name = name,
             .enums = enums,
         },
@@ -632,7 +628,6 @@ static ast$Expr *parseInitExpr(parser$Parser *p) {
                 ast$Expr *key = value;
                 ast$Expr x = {
                     .kind = ast$EXPR_KEY_VALUE,
-                    .pos = key->pos,
                     .key_value = {
                         .key = key,
                         .value = parseInitExpr(p),
@@ -648,8 +643,8 @@ static ast$Expr *parseInitExpr(parser$Parser *p) {
         parser$expect(p, token$RBRACE);
         ast$Expr expr = {
             .kind = ast$EXPR_COMPOSITE_LIT,
-            .pos = pos,
             .composite = {
+                .pos = pos,
                 .list = utils$Slice_to_nil_array(list),
             },
         };
@@ -686,7 +681,6 @@ static ast$Stmt *parse_simple_stmt(parser$Parser *p, bool labelOk) {
             ast$Expr *y = parseExpr(p);
             ast$Stmt stmt = {
                 .kind = ast$STMT_ASSIGN,
-                .pos = x->pos,
                 .assign = {
                     .x = x,
                     .op = op,
@@ -701,7 +695,6 @@ static ast$Stmt *parse_simple_stmt(parser$Parser *p, bool labelOk) {
             parser$next(p);
             ast$Stmt stmt = {
                 .kind = ast$STMT_POSTFIX,
-                .pos = x->pos,
                 .postfix = {
                     .x = x,
                     .op = op,
@@ -721,7 +714,6 @@ static ast$Stmt *parse_simple_stmt(parser$Parser *p, bool labelOk) {
         if (parser$accept(p, token$COLON)) {
             ast$Stmt stmt = {
                 .kind = ast$STMT_LABEL,
-                .pos = x->pos,
                 .label = {
                     .label = x,
                     .stmt = parse_stmt(p),
@@ -733,7 +725,6 @@ static ast$Stmt *parse_simple_stmt(parser$Parser *p, bool labelOk) {
     // expression_statement : expression? ';' ;
     ast$Stmt stmt = {
         .kind = ast$STMT_EXPR,
-        .pos = x->pos,
         .expr = {.x = x},
     };
     return esc(stmt);
@@ -760,8 +751,8 @@ static ast$Stmt *parse_for_stmt(parser$Parser *p) {
     ast$Stmt *body = parse_block_stmt(p);
     ast$Stmt stmt = {
         .kind = ast$STMT_ITER,
-        .pos = pos,
         .iter = {
+            .pos = pos,
             .kind = token$FOR,
             .init = init,
             .cond = cond,
@@ -796,8 +787,8 @@ static ast$Stmt *parse_if_stmt(parser$Parser *p) {
     }
     ast$Stmt stmt = {
         .kind = ast$STMT_IF,
-        .pos = pos,
         .if_ = {
+            .pos = pos,
             .cond = cond,
             .body = body,
             .else_ = else_,
@@ -818,8 +809,8 @@ static ast$Stmt *parse_return_stmt(parser$Parser *p) {
     parser$expect(p, token$SEMICOLON);
     ast$Stmt stmt = {
         .kind = ast$STMT_RETURN,
-        .pos = pos,
         .return_ = {
+            .pos = pos,
             .x = x,
         },
     };
@@ -870,8 +861,8 @@ static ast$Stmt *parse_switch_stmt(parser$Parser *p) {
         }
         ast$Stmt stmt = {
             .kind = ast$STMT_CASE,
-            .pos = pos,
             .case_ = {
+                .pos = pos,
                 .exprs = utils$Slice_to_nil_array(exprs),
                 .stmts = utils$Slice_to_nil_array(stmts),
             },
@@ -883,8 +874,8 @@ static ast$Stmt *parse_switch_stmt(parser$Parser *p) {
     parser$accept(p, token$SEMICOLON);
     ast$Stmt stmt = {
         .kind = ast$STMT_SWITCH,
-        .pos = pos,
         .switch_ = {
+            .pos = pos,
             .tag = tag,
             .stmts = utils$Slice_to_nil_array(clauses),
         },
@@ -899,8 +890,8 @@ static ast$Stmt *parse_while_stmt(parser$Parser *p) {
     ast$Stmt *body = parse_block_stmt(p);
     ast$Stmt stmt = {
         .kind = ast$STMT_ITER,
-        .pos = pos,
         .iter = {
+            .pos = pos,
             .kind = token$WHILE,
             .cond = cond,
             .body = body,
@@ -923,8 +914,8 @@ static ast$Stmt *parse_jump_stmt(parser$Parser *p, token$Token keyword) {
     parser$expect(p, token$SEMICOLON);
     ast$Stmt stmt = {
         .kind = ast$STMT_JUMP,
-        .pos = pos,
         .jump = {
+            .pos = pos,
             .keyword = keyword,
             .label = label,
         },
@@ -935,7 +926,6 @@ static ast$Stmt *parse_jump_stmt(parser$Parser *p, token$Token keyword) {
 static ast$Stmt *parse_decl_stmt(parser$Parser *p) {
     ast$Stmt stmt = {
         .kind = ast$STMT_DECL,
-        .pos = p->pos,
         .decl = {
             .decl = parseDecl(p),
         },
@@ -971,8 +961,10 @@ static ast$Stmt *parse_stmt(parser$Parser *p) {
     token$Pos pos = p->pos;
     if (parser$accept(p, token$SEMICOLON)) {
         ast$Stmt stmt = {
-            .kind = ast$STMT_EXPR,
-            .pos = pos,
+            .kind = ast$STMT_EMPTY,
+            .empty = {
+                .pos = pos,
+            },
         };
         return esc(stmt);
     }
@@ -996,8 +988,8 @@ static ast$Stmt *parse_block_stmt(parser$Parser *p) {
     parser$accept(p, token$SEMICOLON);
     ast$Stmt stmt = {
         .kind = ast$STMT_BLOCK,
-        .pos = pos,
         .block = {
+            .pos = pos,
             .stmts = utils$Slice_to_nil_array(stmts),
         }
     };
@@ -1079,8 +1071,8 @@ static ast$Decl *parseDecl(parser$Parser *p) {
             };
             ast$Expr type = {
                 .kind = ast$TYPE_FUNC,
-                .pos = pos,
                 .func = {
+                    .pos = pos,
                     .params = parseParameters(p, false),
                 },
             };

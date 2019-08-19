@@ -94,3 +94,51 @@ extern bool ast$isVoidPtr(ast$Expr *x) {
     }
     return false;
 }
+
+extern token$Pos ast$Decl_pos(ast$Decl *d) {
+    return d->pos;
+}
+
+extern token$Pos ast$Expr_pos(ast$Expr *x) {
+    switch (x->kind) {
+    case ast$EXPR_BASIC_LIT: return x->basic.pos;
+    case ast$EXPR_BINARY: return ast$Expr_pos(x->binary.x);
+    case ast$EXPR_CALL: return ast$Expr_pos(x->call.func);
+    case ast$EXPR_CAST: return x->cast.pos;
+    case ast$EXPR_COMPOSITE_LIT: return x->composite.pos;
+    case ast$EXPR_IDENT: return x->ident.pos;
+    case ast$EXPR_INDEX: return ast$Expr_pos(x->index.x);
+    case ast$EXPR_KEY_VALUE: return ast$Expr_pos(x->key_value.key);
+    case ast$EXPR_PAREN: return x->paren.pos;
+    case ast$EXPR_SELECTOR: return ast$Expr_pos(x->selector.x);
+    case ast$EXPR_SIZEOF: return x->sizeof_.pos;
+    case ast$EXPR_STAR: return x->star.pos;
+    case ast$EXPR_TERNARY: return ast$Expr_pos(x->ternary.cond);
+    case ast$EXPR_UNARY: return x->unary.pos;
+    case ast$TYPE_ARRAY: return x->array.pos;
+    case ast$TYPE_ENUM: return x->enum_.pos;
+    case ast$TYPE_NATIVE: return 0;
+    case ast$TYPE_FUNC: return x->func.pos;
+    case ast$TYPE_STRUCT: return x->struct_.pos;
+    default: return 0;
+    }
+}
+
+extern token$Pos ast$Stmt_pos(ast$Stmt *s) {
+    switch (s->kind) {
+    case ast$STMT_ASSIGN: return ast$Expr_pos(s->assign.x);
+    case ast$STMT_BLOCK: return s->block.pos;
+    case ast$STMT_CASE: return s->case_.pos;
+    case ast$STMT_DECL: return ast$Decl_pos(s->decl.decl);
+    case ast$STMT_EMPTY: return s->empty.pos;
+    case ast$STMT_EXPR: return ast$Expr_pos(s->expr.x);
+    case ast$STMT_IF: return s->if_.pos;
+    case ast$STMT_ITER: return s->iter.pos;
+    case ast$STMT_JUMP: return s->jump.pos;
+    case ast$STMT_LABEL: return ast$Expr_pos(s->label.label);
+    case ast$STMT_POSTFIX: return ast$Expr_pos(s->postfix.x);
+    case ast$STMT_RETURN: return s->return_.pos;
+    case ast$STMT_SWITCH: return s->switch_.pos;
+    default: return 0;
+    }
+}

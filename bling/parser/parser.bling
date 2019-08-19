@@ -148,8 +148,8 @@ fun parseBasicLit(p *Parser, kind token.Token) *ast.Expr {
     var pos token.Pos = expect(p, kind)
     var x ast.Expr = {
         kind: ast.EXPR_BASIC_LIT,
-        pos: pos,
         basic: {
+            pos: pos,
             kind: kind,
             value: value,
         },
@@ -160,7 +160,9 @@ fun parseBasicLit(p *Parser, kind token.Token) *ast.Expr {
 fun parseIdent(p *Parser) *ast.Expr {
     var x ast.Expr = {
         kind: ast.EXPR_IDENT,
-        pos: p.pos,
+        ident: {
+            pos: p.pos,
+        },
     }
     if p.tok == token.IDENT {
         x.ident.name = p.lit
@@ -184,8 +186,8 @@ fun parseOperand(p *Parser) *ast.Expr {
             expect(p, token.LPAREN)
             var x ast.Expr = {
                 kind: ast.EXPR_PAREN,
-                pos: pos,
                 paren: {
+                    pos: pos,
                     x: parseExpr(p),
                 },
             }
@@ -208,7 +210,6 @@ fun parsePrimaryExpr(p *Parser) *ast.Expr {
                 next(p)
                 var y ast.Expr = {
                     kind: ast.EXPR_SELECTOR,
-                    pos: x.pos,
                     selector: {
                         x: x,
                         tok: tok,
@@ -223,7 +224,6 @@ fun parsePrimaryExpr(p *Parser) *ast.Expr {
                 expect(p, token.LBRACK)
                 var y ast.Expr = {
                     kind: ast.EXPR_INDEX,
-                    pos: x.pos,
                     index: {
                         x: x,
                         index: parseExpr(p),
@@ -249,7 +249,6 @@ fun parsePrimaryExpr(p *Parser) *ast.Expr {
                 expect(p, token.RPAREN)
                 var call ast.Expr = {
                     kind: ast.EXPR_CALL,
-                    pos: x.pos,
                     call: {
                         func: x,
                         args: utils.Slice_to_nil_array(args),
@@ -273,8 +272,8 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
             next(p)
             var x ast.Expr = {
                 kind: ast.EXPR_UNARY,
-                pos: pos,
                 unary: {
+                    pos: pos,
                     op: op,
                     x: parseUnaryExpr(p),
                 },
@@ -287,8 +286,8 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
             next(p)
             var x ast.Expr = {
                 kind: ast.EXPR_STAR,
-                pos: pos,
                 star: {
+                    pos: pos,
                     x: parseUnaryExpr(p),
                 },
             }
@@ -301,8 +300,8 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
             expect(p, token.LPAREN)
             var x ast.Expr = {
                 kind: ast.EXPR_SIZEOF,
-                pos: pos,
                 sizeof_: {
+                    pos: pos,
                     x: parseType(p),
                 },
             }
@@ -323,8 +322,8 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
             }
             var y ast.Expr = {
                 kind: ast.EXPR_CAST,
-                pos: pos,
                 cast: {
+                    pos: pos,
                     type: type,
                     expr: expr,
                 },
@@ -348,7 +347,6 @@ fun parseBinaryExpr(p *Parser, prec1 int) *ast.Expr {
         var y *ast.Expr = parseBinaryExpr(p, oprec + 1)
         var z ast.Expr = {
             kind: ast.EXPR_BINARY,
-            pos: x.pos,
             binary: {
                 x: x,
                 op: op,
@@ -367,7 +365,6 @@ fun parseTernaryExpr(p *Parser) *ast.Expr {
         var alternative *ast.Expr = parseTernaryExpr(p)
         var y ast.Expr = {
             kind: ast.EXPR_TERNARY,
-            pos: x.pos,
             ternary: {
                 cond: x,
                 x: consequence,
@@ -390,7 +387,6 @@ fun parseTypeName(p *Parser) *ast.Expr {
     if accept(p, token.PERIOD) {
         var y ast.Expr = {
             kind: ast.EXPR_SELECTOR,
-            pos: x.pos,
             selector: {
                 x: x,
                 tok: token.DOLLAR,
@@ -411,8 +407,8 @@ fun parseArrayType(p *Parser) *ast.Expr {
     expect(p, token.RBRACK)
     var type ast.Expr = {
         kind: ast.TYPE_ARRAY,
-        pos: pos,
         array: {
+            pos: pos,
             elt: parseType(p),
             len: len,
         },
@@ -461,8 +457,8 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
     }
     var x ast.Expr = {
         kind: ast.TYPE_STRUCT,
-        pos: pos,
         struct_: {
+            pos: pos,
             tok: keyword,
             name: name,
             fields: fields,
@@ -476,8 +472,8 @@ fun parsePointerType(p *Parser) *ast.Expr {
     expect(p, token.MUL)
     var x ast.Expr = {
         kind: ast.EXPR_STAR,
-        pos: pos,
         star: {
+            pos: pos,
             x: parseType(p),
         },
     }
@@ -542,16 +538,16 @@ fun parseFuncType(p *Parser) *ast.Expr {
     }
     var type ast.Expr = {
         kind: ast.TYPE_FUNC,
-        pos: pos,
         func: {
+            pos: pos,
             params: params,
             result: result,
         },
     }
     var ptr ast.Expr = {
         kind: ast.EXPR_STAR,
-        pos: type.pos,
         star: {
+            pos: pos,
             x: esc(type),
         },
     }
@@ -592,8 +588,8 @@ fun parseEnumType(p *Parser) *ast.Expr {
     }
     var x ast.Expr = {
         kind: ast.TYPE_ENUM,
-        pos: pos,
         enum_: {
+            pos: pos,
             name: name,
             enums: enums,
         },
@@ -650,7 +646,6 @@ fun parseInitExpr(p *Parser) *ast.Expr {
                 var key *ast.Expr = value
                 var x ast.Expr = {
                     kind: ast.EXPR_KEY_VALUE,
-                    pos: key.pos,
                     key_value: {
                         key: key,
                         value: parseInitExpr(p),
@@ -666,8 +661,8 @@ fun parseInitExpr(p *Parser) *ast.Expr {
         expect(p, token.RBRACE)
         var expr ast.Expr = {
             kind: ast.EXPR_COMPOSITE_LIT,
-            pos: pos,
             composite: {
+                pos: pos,
                 list: utils.Slice_to_nil_array(list),
             },
         }
@@ -686,7 +681,6 @@ fun parse_simple_stmt(p *Parser, labelOk bool) *ast.Stmt {
             var y *ast.Expr = parseExpr(p)
             var stmt ast.Stmt = {
                 kind: ast.STMT_ASSIGN,
-                pos: x.pos,
                 assign: {
                     x: x,
                     op: op,
@@ -700,7 +694,6 @@ fun parse_simple_stmt(p *Parser, labelOk bool) *ast.Stmt {
             next(p)
             var stmt ast.Stmt = {
                 kind: ast.STMT_POSTFIX,
-                pos: x.pos,
                 postfix: {
                     x: x,
                     op: op,
@@ -715,7 +708,6 @@ fun parse_simple_stmt(p *Parser, labelOk bool) *ast.Stmt {
         if accept(p, token.COLON) {
             var stmt ast.Stmt = {
                 kind: ast.STMT_LABEL,
-                pos: x.pos,
                 label: {
                     label: x,
                     stmt: parse_stmt(p),
@@ -726,7 +718,6 @@ fun parse_simple_stmt(p *Parser, labelOk bool) *ast.Stmt {
     }
     var stmt ast.Stmt = {
         kind: ast.STMT_EXPR,
-        pos: x.pos,
         expr: {
             x: x,
         },
@@ -752,8 +743,8 @@ fun parse_for_stmt(p *Parser) *ast.Stmt {
     var body *ast.Stmt = parse_block_stmt(p)
     var stmt ast.Stmt = {
         kind: ast.STMT_ITER,
-        pos: pos,
         iter: {
+            pos: pos,
             kind: token.FOR,
             init: init,
             cond: cond,
@@ -783,8 +774,8 @@ fun parse_if_stmt(p *Parser) *ast.Stmt {
     }
     var stmt ast.Stmt = {
         kind: ast.STMT_IF,
-        pos: pos,
         if_: {
+            pos: pos,
             cond: cond,
             body: body,
             else_: else_,
@@ -802,8 +793,8 @@ fun parse_return_stmt(p *Parser) *ast.Stmt {
     expect(p, token.SEMICOLON)
     var stmt ast.Stmt = {
         kind: ast.STMT_RETURN,
-        pos: pos,
         return_: {
+            pos: pos,
             x: x,
         },
     }
@@ -853,8 +844,8 @@ fun parse_switch_stmt(p *Parser) *ast.Stmt {
         }
         var stmt ast.Stmt = {
             kind: ast.STMT_CASE,
-            pos: pos,
             case_: {
+                pos: pos,
                 exprs: utils.Slice_to_nil_array(exprs),
                 stmts: utils.Slice_to_nil_array(stmts),
             },
@@ -866,8 +857,8 @@ fun parse_switch_stmt(p *Parser) *ast.Stmt {
     accept(p, token.SEMICOLON)
     var stmt ast.Stmt = {
         kind: ast.STMT_SWITCH,
-        pos: pos,
         switch_: {
+            pos: pos,
             tag: tag,
             stmts: utils.Slice_to_nil_array(clauses),
         },
@@ -881,8 +872,8 @@ fun parse_while_stmt(p *Parser) *ast.Stmt {
     var body *ast.Stmt = parse_block_stmt(p)
     var stmt ast.Stmt = {
         kind: ast.STMT_ITER,
-        pos: pos,
         iter: {
+            pos: pos,
             kind: token.WHILE,
             cond: cond,
             body: body,
@@ -900,8 +891,8 @@ fun parse_jump_stmt(p *Parser, keyword token.Token) *ast.Stmt {
     expect(p, token.SEMICOLON)
     var stmt ast.Stmt = {
         kind: ast.STMT_JUMP,
-        pos: pos,
         jump: {
+            pos: pos,
             keyword: keyword,
             label: label,
         },
@@ -912,7 +903,6 @@ fun parse_jump_stmt(p *Parser, keyword token.Token) *ast.Stmt {
 fun parse_decl_stmt(p *Parser) *ast.Stmt {
     var stmt ast.Stmt = {
         kind: ast.STMT_DECL,
-        pos: p.pos,
         decl: {
             decl: parseDecl(p),
         },
@@ -944,8 +934,10 @@ fun parse_stmt(p *Parser) *ast.Stmt {
     var pos token.Pos = p.pos
     if accept(p, token.SEMICOLON) {
         var stmt ast.Stmt = {
-            kind: ast.STMT_EXPR,
-            pos: pos,
+            kind: ast.STMT_EMPTY,
+            empty: {
+                pos: pos,
+            },
         }
         return esc(stmt)
     }
@@ -969,8 +961,8 @@ fun parse_block_stmt(p *Parser) *ast.Stmt {
     accept(p, token.SEMICOLON)
     var stmt ast.Stmt = {
         kind: ast.STMT_BLOCK,
-        pos: pos,
         block: {
+            pos: pos,
             stmts: utils.Slice_to_nil_array(stmts),
         },
     }
@@ -1051,8 +1043,8 @@ fun parseDecl(p *Parser) *ast.Decl {
             }
             var type ast.Expr = {
                 kind: ast.TYPE_FUNC,
-                pos: pos,
                 func: {
+                    pos: pos,
                     params: parseParameters(p, false),
                 },
             }

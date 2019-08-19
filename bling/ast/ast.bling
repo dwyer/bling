@@ -29,7 +29,6 @@ typedef NodeKind enum {
     EXPR_COMPOSITE_LIT,
     EXPR_IDENT,
     EXPR_INDEX,
-    EXPR_INIT_DECL,
     EXPR_KEY_VALUE,
     EXPR_PAREN,
     EXPR_SELECTOR,
@@ -64,7 +63,6 @@ typedef NodeKind enum {
 
 typedef Node struct {
     kind NodeKind
-    pos token.Pos
 }
 
 typedef Decl struct Decl
@@ -92,11 +90,13 @@ typedef Object struct {
 }
 
 typedef Array struct {
+    pos token.Pos
     len *Expr
     elt *Expr
 }
 
 typedef BasicLit struct {
+    pos token.Pos
     kind token.Token
     value *char
 }
@@ -113,26 +113,31 @@ typedef CallExpr struct {
 }
 
 typedef CastExpr struct {
+    pos token.Pos
     type *Expr
     expr *Expr
 }
 
 typedef CompositeLit struct {
+    pos token.Pos
     type *Expr
     list **Expr
 }
 
 typedef Enum struct {
+    pos token.Pos
     name *Expr
     enums **Decl
 }
 
 typedef FuncExpr struct {
+    pos token.Pos
     result *Expr
     params **Decl
 }
 
 typedef Ident struct {
+    pos token.Pos
     name *char
     obj *Object
     pkg *Expr
@@ -155,6 +160,7 @@ typedef NativeType struct {
 }
 
 typedef ParenExpr struct {
+    pos token.Pos
     x *Expr
 }
 
@@ -165,14 +171,17 @@ typedef SelectorExpr struct {
 }
 
 typedef SizeofExpr struct {
+    pos token.Pos
     x *Expr
 }
 
 typedef StarExpr struct {
+    pos token.Pos
     x *Expr
 }
 
 typedef Struct struct {
+    pos token.Pos
     tok token.Token
     name *Expr
     fields **Decl
@@ -186,6 +195,7 @@ typedef TernaryExpr struct {
 }
 
 typedef UnaryExpr struct {
+    pos token.Pos
     op token.Token
     x *Expr
 }
@@ -251,6 +261,7 @@ typedef Field struct {
 
 typedef Decl struct Decl {
     Node
+    pos token.Pos
     union {
         imp ImportDecl
         pragma PragmaDecl
@@ -268,12 +279,18 @@ typedef AssignStmt struct {
 }
 
 typedef BlockStmt struct {
+    pos token.Pos
     stmts **Stmt
 }
 
 typedef CaseStmt struct {
+    pos token.Pos
     exprs **Expr
     stmts **Stmt
+}
+
+typedef EmptyStmt struct {
+    pos token.Pos
 }
 
 typedef ExprStmt struct {
@@ -284,7 +301,15 @@ typedef DeclStmt struct {
     decl *Decl
 }
 
+typedef IfStmt struct {
+    pos token.Pos
+    cond *Expr
+    body *Stmt
+    else_ *Stmt
+}
+
 typedef IterStmt struct {
+    pos token.Pos
     kind token.Token
     init *Stmt
     cond *Expr
@@ -292,13 +317,8 @@ typedef IterStmt struct {
     body *Stmt
 }
 
-typedef IfStmt struct {
-    cond *Expr
-    body *Stmt
-    else_ *Stmt
-}
-
 typedef JumpStmt struct {
+    pos token.Pos
     keyword token.Token
     label *Expr
 }
@@ -314,10 +334,12 @@ typedef PostfixStmt struct {
 }
 
 typedef ReturnStmt struct {
+    pos token.Pos
     x *Expr
 }
 
 typedef SwitchStmt struct {
+    pos token.Pos
     tag *Expr
     stmts **Stmt
 }
@@ -329,6 +351,7 @@ typedef Stmt struct Stmt {
         block BlockStmt
         case_ CaseStmt
         decl DeclStmt
+        empty EmptyStmt
         expr ExprStmt
         iter IterStmt
         if_ IfStmt
@@ -387,6 +410,12 @@ fun isNil(x *Expr) bool
 fun isVoid(x *Expr) bool
 
 fun isVoidPtr(x *Expr) bool
+
+fun Decl_pos(x *Decl) token.Pos
+
+fun Expr_pos(x *Expr) token.Pos
+
+fun Stmt_pos(x *Stmt) token.Pos
 
 #include "bling/ast/ast.h"
 
@@ -485,4 +514,90 @@ fun isVoidPtr(x *Expr) bool {
         return isVoid(x.star.x)
     }
     return false
+}
+
+fun Decl_pos(d *Decl) token.Pos {
+    switch d.kind {
+    case DECL_FIELD, DECL_ELLIPSIS, DECL_FUNC, DECL_IMPORT, DECL_PRAGMA, DECL_TYPEDEF, DECL_VALUE:
+    default:
+        return d.pos
+    }
+}
+
+fun Expr_pos(x *Expr) token.Pos {
+    switch x.kind {
+    case EXPR_BASIC_LIT:
+        return x.basic.pos
+    case EXPR_BINARY:
+        return Expr_pos(x.binary.x)
+    case EXPR_CALL:
+        return Expr_pos(x.call.func)
+    case EXPR_CAST:
+        return x.cast.pos
+    case EXPR_COMPOSITE_LIT:
+        return x.composite.pos
+    case EXPR_IDENT:
+        return x.ident.pos
+    case EXPR_INDEX:
+        return Expr_pos(x.index.x)
+    case EXPR_KEY_VALUE:
+        return Expr_pos(x.key_value.key)
+    case EXPR_PAREN:
+        return x.paren.pos
+    case EXPR_SELECTOR:
+        return Expr_pos(x.selector.x)
+    case EXPR_SIZEOF:
+        return x.sizeof_.pos
+    case EXPR_STAR:
+        return x.star.pos
+    case EXPR_TERNARY:
+        return Expr_pos(x.ternary.cond)
+    case EXPR_UNARY:
+        return x.unary.pos
+    case TYPE_ARRAY:
+        return x.array.pos
+    case TYPE_ENUM:
+        return x.enum_.pos
+    case TYPE_NATIVE:
+        return 0
+    case TYPE_FUNC:
+        return x.func.pos
+    case TYPE_STRUCT:
+        return x.struct_.pos
+    default:
+        return 0
+    }
+}
+
+fun Stmt_pos(s *Stmt) token.Pos {
+    switch s.kind {
+    case STMT_ASSIGN:
+        return Expr_pos(s.assign.x)
+    case STMT_BLOCK:
+        return s.block.pos
+    case STMT_CASE:
+        return s.case_.pos
+    case STMT_DECL:
+        return Decl_pos(s.decl.decl)
+    case STMT_EMPTY:
+        return s.empty.pos
+    case STMT_EXPR:
+        return Expr_pos(s.expr.x)
+    case STMT_IF:
+        return s.if_.pos
+    case STMT_ITER:
+        return s.iter.pos
+    case STMT_JUMP:
+        return s.jump.pos
+    case STMT_LABEL:
+        return Expr_pos(s.label.label)
+    case STMT_POSTFIX:
+        return Expr_pos(s.postfix.x)
+    case STMT_RETURN:
+        return s.return_.pos
+    case STMT_SWITCH:
+        return s.switch_.pos
+    default:
+        return 0
+    }
 }

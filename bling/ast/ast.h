@@ -31,7 +31,6 @@ typedef enum {
     ast$EXPR_COMPOSITE_LIT,
     ast$EXPR_IDENT,
     ast$EXPR_INDEX,
-    ast$EXPR_INIT_DECL,
     ast$EXPR_KEY_VALUE,
     ast$EXPR_PAREN,
     ast$EXPR_SELECTOR,
@@ -69,7 +68,6 @@ typedef enum {
 
 typedef struct {
     ast$NodeKind kind;
-    token$Pos pos;
 } ast$Node;
 
 typedef struct ast$Decl ast$Decl;
@@ -95,11 +93,13 @@ typedef struct {
 } ast$Object;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr *len;
     ast$Expr *elt;
 } ast$Array;
 
 typedef struct {
+    token$Pos pos;
     token$Token kind;
     char *value;
 } ast$BasicLit;
@@ -116,26 +116,31 @@ typedef struct {
 } ast$CallExpr;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr *type;
     ast$Expr *expr;
 } ast$CastExpr;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr *type;
     ast$Expr **list;
 } ast$CompositeLit;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr *name;
     ast$Decl **enums;
 } ast$Enum;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr *result;
     ast$Decl **params;
 } ast$FuncExpr;
 
 typedef struct {
+    token$Pos pos;
     char *name;
     ast$Object *obj;
     ast$Expr *pkg;
@@ -158,6 +163,7 @@ typedef struct {
 } ast$NativeType;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr *x;
 } ast$ParenExpr;
 
@@ -168,14 +174,17 @@ typedef struct {
 } ast$SelectorExpr;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr *x;
 } ast$SizeofExpr;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr *x;
 } ast$StarExpr;
 
 typedef struct {
+    token$Pos pos;
     token$Token tok;
     ast$Expr *name;
     ast$Decl **fields;
@@ -189,6 +198,7 @@ typedef struct {
 } ast$TernaryExpr;
 
 typedef struct {
+    token$Pos pos;
     token$Token op;
     ast$Expr *x;
 } ast$UnaryExpr;
@@ -254,6 +264,7 @@ typedef struct {
 
 typedef struct ast$Decl {
     ast$Node;
+    token$Pos pos;
     union {
         ast$ImportDecl imp;
         ast$PragmaDecl pragma;
@@ -271,13 +282,19 @@ typedef struct {
 } ast$AssignStmt;
 
 typedef struct {
+    token$Pos pos;
     ast$Stmt **stmts;
 } ast$BlockStmt;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr **exprs;
     ast$Stmt **stmts;
 } ast$CaseStmt;
+
+typedef struct {
+    token$Pos pos;
+} ast$EmptyStmt;
 
 typedef struct {
     ast$Expr *x;
@@ -288,6 +305,14 @@ typedef struct {
 } ast$DeclStmt;
 
 typedef struct {
+    token$Pos pos;
+    ast$Expr *cond;
+    ast$Stmt *body;
+    ast$Stmt *else_;
+} ast$IfStmt;
+
+typedef struct {
+    token$Pos pos;
     token$Token kind;
     ast$Stmt *init;
     ast$Expr *cond;
@@ -296,12 +321,7 @@ typedef struct {
 } ast$IterStmt;
 
 typedef struct {
-    ast$Expr *cond;
-    ast$Stmt *body;
-    ast$Stmt *else_;
-} ast$IfStmt;
-
-typedef struct {
+    token$Pos pos;
     token$Token keyword;
     ast$Expr *label;
 } ast$JumpStmt;
@@ -317,10 +337,12 @@ typedef struct {
 } ast$PostfixStmt;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr *x;
 } ast$ReturnStmt;
 
 typedef struct {
+    token$Pos pos;
     ast$Expr *tag;
     ast$Stmt **stmts;
 } ast$SwitchStmt;
@@ -332,6 +354,7 @@ typedef struct ast$Stmt {
         ast$BlockStmt block;
         ast$CaseStmt case_;
         ast$DeclStmt decl;
+        ast$EmptyStmt empty;
         ast$ExprStmt expr;
         ast$IterStmt iter;
         ast$IfStmt if_;
@@ -382,3 +405,6 @@ extern bool ast$isNil(ast$Expr *x);
 extern bool ast$isVoid(ast$Expr *x);
 extern bool ast$isVoidPtr(ast$Expr *x);
 
+extern token$Pos ast$Decl_pos(ast$Decl *x);
+extern token$Pos ast$Expr_pos(ast$Expr *x);
+extern token$Pos ast$Stmt_pos(ast$Stmt *x);
