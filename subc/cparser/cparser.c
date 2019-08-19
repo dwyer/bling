@@ -230,15 +230,19 @@ static ast$Expr *cast_expression(parser$Parser *p) {
             };
             return esc(y);
         } else {
-            ast$Expr x = {
-                .kind = ast$EXPR_PAREN,
-                .paren = {
-                    .pos = pos,
-                    .x = expression(p),
-                },
-            };
+            ast$Expr *x = expression(p);
+            if (x->kind != ast$EXPR_COMPOSITE_LIT) {
+                ast$Expr y = {
+                    .kind = ast$EXPR_PAREN,
+                    .paren = {
+                        .pos = pos,
+                        .x = x,
+                    },
+                };
+                x = esc(y);
+            }
             parser$expect(p, token$RPAREN);
-            return postfix_expression(p, esc(x));
+            return postfix_expression(p, x);
         }
     }
     return unary_expression(p);

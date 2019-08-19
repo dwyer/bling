@@ -244,7 +244,7 @@ fun string(tok Token) *char {
     return tokens[tok]
 }
 
-var keywords = utils.Map{}
+var keywords utils.Map = {}
 
 fun lookup(ident *char) Token {
     if keywords.val_size == 0 {
@@ -313,7 +313,7 @@ fun searchInts(a *utils.Slice, x int) int {
 fun _File_position(f *File, p Pos, adjusted bool) Position {
     var offset int = p - f.base
     var i int = searchInts(&f.lines, offset)
-    var pos = Position{
+    var pos Position = {
         filename: f.name,
         offset: offset,
         line: i + 1,
@@ -325,7 +325,7 @@ fun _File_position(f *File, p Pos, adjusted bool) Position {
 var noPos const Pos = 0
 
 fun File_positionFor(f *File, p Pos, adjusted bool) Position {
-    var pos = Position{}
+    var pos Position = {}
     if p != noPos {
         if p < f.base || p > f.base + f.size {
             panic("illegal Pos value")
@@ -343,7 +343,7 @@ fun File_lineString(f *File, line int) *char {
     if line < 1 {
         return NULL
     }
-    var buf = bytes.Buffer{}
+    var buf bytes.Buffer = {}
     var i int = 0
     utils.Slice_get(&f.lines, line - 1, &i)
     var ch int = f.src[i]
@@ -356,7 +356,7 @@ fun File_lineString(f *File, line int) *char {
 }
 
 fun newFileSet() *FileSet {
-    var fset = FileSet{
+    var fset FileSet = {
         base: 1,
         files: utils.Slice_init(sizeof(*File)),
     }
@@ -373,7 +373,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     var lines utils.Slice = utils.Slice_init(sizeof(int))
     var zero int = 0
     utils.Slice_append(&lines, &zero)
-    var file = File{
+    var file File = {
         name: strdup(filename),
         base: base,
         size: size,

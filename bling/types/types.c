@@ -452,7 +452,9 @@ static void Checker_error(Checker *c, token$Pos pos, const char *msg) {
 
 static void Checker_resolve(Checker *c, ast$Scope *s, ast$Expr *x) {
     assert(x->kind == ast$EXPR_IDENT);
-    assert(x->ident.obj == NULL);
+    if (x->ident.obj) {
+        Checker_error(c, ast$Expr_pos(x), "already resolved");
+    }
     if (x->ident.pkg) {
         ast$Expr *pkg = x->ident.pkg;
         Checker_resolve(c, s, pkg);
@@ -646,6 +648,8 @@ static bool types$isInteger(ast$Expr *x) {
     }
 }
 
+static ast$Expr *Checker_checkCompositeLit(Checker *c, ast$Expr *x);
+
 static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
     ast$Expr *baseT = types$getBaseType(x->composite.type);
     for (int i = 0; x->composite.list[i]; i++) {
@@ -666,9 +670,10 @@ static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
             } else {
                 Checker_checkType(c, elt->composite.type);
             }
+            Checker_checkCompositeLit(c, elt);
+        } else {
+            Checker_checkExpr(c, elt);
         }
-        ast$Expr *eltT = Checker_checkExpr(c, elt);
-        (void)eltT;
     }
 }
 
@@ -702,14 +707,17 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
             ast$Decl *field = getStructField(x->composite.type, i);
             fieldT = field->field.type;
         }
+        ast$Expr *eltT = NULL;
         if (elt->kind == ast$EXPR_COMPOSITE_LIT) {
             if (elt->composite.type == NULL) {
                 elt->composite.type = fieldT;
             } else {
                 Checker_checkType(c, elt->composite.type);
             }
+            eltT = Checker_checkCompositeLit(c, elt);
+        } else {
+            eltT = Checker_checkExpr(c, elt);
         }
-        ast$Expr *eltT = Checker_checkExpr(c, elt);
         if (!types$areAssignable(fieldT, eltT)) {
             Checker_error(c, ast$Expr_pos(elt), sys$sprintf(
                         "cannot init field of type `%s` with value of type `%s`",
@@ -719,10 +727,9 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
     }
 }
 
-static void Checker_checkCompositeLit(Checker *c, ast$Expr *x) {
+static ast$Expr *Checker_checkCompositeLit(Checker *c, ast$Expr *x) {
     ast$Expr *t = x->composite.type;
     assert(t);
-    // Checker_checkType(c, t);
     ast$Expr *baseT = types$getBaseType(t);
     switch (baseT->kind) {
     case ast$TYPE_ARRAY:
@@ -735,6 +742,7 @@ static void Checker_checkCompositeLit(Checker *c, ast$Expr *x) {
         Checker_error(c, ast$Expr_pos(x), "composite type must be an array or a struct");
         break;
     }
+    return t;
 }
 
 static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
@@ -831,6 +839,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
         }
 
     case ast$EXPR_COMPOSITE_LIT:
+        Checker_checkType(c, expr->composite.type);
         Checker_checkCompositeLit(c, expr);
         return expr->composite.type;
 
@@ -1148,8 +1157,10 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
                     } else {
                         Checker_checkType(c, decl->value.value->composite.type);
                     }
+                    valType = Checker_checkCompositeLit(c, decl->value.value);
+                } else {
+                    valType = Checker_checkExpr(c, decl->value.value);
                 }
-                valType = Checker_checkExpr(c, decl->value.value);
             }
             if (decl->value.type == NULL) {
                 decl->value.type = valType;

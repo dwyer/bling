@@ -85,6 +85,9 @@ fun hasPrefix(s *const char, prefix *const char) bool {
 }
 
 fun isSimpleType(t *ast.Expr) bool {
+    if t == NULL {
+        return false
+    }
     if t.kind == ast.TYPE_ARRAY {
         t = t.array.elt
     }

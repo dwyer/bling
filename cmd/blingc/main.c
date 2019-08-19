@@ -52,8 +52,8 @@ void compile_c(char *argv[]) {
     while (*argv) {
         char *filename = *argv;
         ast$File *file = cparser$parseFile(fset, filename, types$universe());
-        types$Config conf = {.strict = true, .cMode = true};
-        types$checkFile(&conf, fset, file);
+        // types$Config conf = {.strict = true, .cMode = true};
+        // types$checkFile(&conf, fset, file);
         emitter$emitFile(&e, file);
         argv++;
     }

@@ -93,7 +93,7 @@ fun MapIter_next(m *MapIter, key **char, val *void) int
 #include "sys/sys.h"
 
 fun NewError(msg *const char) *Error {
-    var err = Error{
+    var err Error = {
         error: strdup(msg),
     }
     return esc(err)
@@ -128,7 +128,7 @@ fun Error_free(e *Error) {
 #include "sys/sys.h"
 
 fun Slice_init(size int) Slice {
-    var s = Slice{
+    var s Slice = {
         size: size,
         len: 0,
         cap: 0,
@@ -251,7 +251,7 @@ typedef pair_t struct {
 }
 
 fun Map_init(val_size int) Map {
-    var m = Map{
+    var m Map = {
         len: 0,
         pairs: Slice_init(sizeof(pair_t)),
         key_size: sizeof(uintptr_t),
@@ -337,7 +337,7 @@ fun Map_set(m *Map, key *const char, val *const void) {
 }
 
 fun NewMapIter(m *const Map) MapIter {
-    var iter = MapIter{
+    var iter MapIter = {
         _map: m,
     }
     return iter

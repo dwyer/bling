@@ -44,6 +44,9 @@ extern bool hasPrefix(const char *s, const char *prefix) {
 }
 
 static bool isSimpleType(ast$Expr *t) {
+    if (t == NULL) {
+        return false;
+    }
     if (t->kind == ast$TYPE_ARRAY) {
         t = t->array.elt;
     }
