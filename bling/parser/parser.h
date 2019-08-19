@@ -31,6 +31,7 @@ typedef struct {
     bool c_mode;
 
     char *pkgName;
+    int exprLev;
 } parser$Parser;
 
 extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,

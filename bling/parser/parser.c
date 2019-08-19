@@ -4,6 +4,30 @@
 #include "paths/paths.h"
 #include "sys/sys.h"
 
+static bool isTypeName(ast$Expr *x) {
+    switch (x->kind) {
+    case ast$EXPR_IDENT:
+        return true;
+    case ast$EXPR_SELECTOR:
+        return x->selector.x->kind == ast$EXPR_IDENT;
+    default:
+        return false;
+    }
+}
+
+static bool isLiteralType(ast$Expr *x) {
+    switch (x->kind) {
+    case ast$EXPR_IDENT:
+    case ast$TYPE_ARRAY:
+    case ast$TYPE_STRUCT:
+        return true;
+    case ast$EXPR_SELECTOR:
+        return x->selector.x->kind == ast$EXPR_IDENT;
+    default:
+        return false;
+    }
+}
+
 extern void parser$next(parser$Parser *p) {
     p->tok = scanner$scan(&p->scanner, &p->pos, &p->lit);
 }
@@ -15,6 +39,7 @@ extern void parser$init(parser$Parser *p, token$FileSet *fset,
     p->lit = NULL;
     scanner$init(&p->scanner, p->file, src);
     p->scanner.dontInsertSemis = !bytes$hasSuffix(filename, ".bling");
+    p->exprLev = 0;
     parser$next(p);
 }
 
@@ -75,9 +100,11 @@ extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,
     ast$Scope_insert(s, obj);
 }
 
+static ast$Expr *parseLiteralValue(parser$Parser *p, ast$Expr *type);
 static ast$Expr *parseExpr(parser$Parser *p);
-static ast$Expr *parseInitExpr(parser$Parser *p);
 
+static ast$Expr *tryIdentOrType(parser$Parser *p);
+static ast$Expr *tryType(parser$Parser *p);
 static ast$Expr *parseType(parser$Parser *p);
 
 static ast$Stmt *parse_stmt(parser$Parser *p);
@@ -130,6 +157,7 @@ extern ast$Expr *parser$parseOperand(parser$Parser *p) {
         } else {
             token$Pos pos = p->pos;
             parser$expect(p, token$LPAREN);
+            p->exprLev++;
             ast$Expr x = {
                 .kind = ast$EXPR_PAREN,
                 .paren = {
@@ -137,13 +165,122 @@ extern ast$Expr *parser$parseOperand(parser$Parser *p) {
                     .x = parseExpr(p),
                 },
             };
+            p->exprLev--;
             parser$expect(p, token$RPAREN);
             return esc(x);
         }
     default:
-        parser$errorExpected(p, p->pos, "operand");
-        return NULL;
+        break;
     }
+    ast$Expr *t = tryIdentOrType(p);
+    if (t) {
+        assert(t->kind != ast$EXPR_IDENT);
+        return t;
+    }
+    parser$errorExpected(p, p->pos, "operand");
+    return NULL;
+}
+
+static ast$Expr *parseValue(parser$Parser *p) {
+    // initializer
+    //         : expression
+    //         | '{' initializer_list ','? '}'
+    //         ;
+    if (p->tok == token$LBRACE) {
+        // initializer_list
+        //         : designation? initializer
+        //         | initializer_list ',' designation? initializer
+        //         ;
+        return parseLiteralValue(p, NULL);
+    }
+    return parseExpr(p);
+}
+
+static ast$Expr *parseElement(parser$Parser *p) {
+    ast$Expr *value = parseValue(p);
+    if (value->kind == ast$EXPR_IDENT && parser$accept(p, token$COLON)) {
+        ast$Expr *key = value;
+        ast$Expr x = {
+            .kind = ast$EXPR_KEY_VALUE,
+            .key_value = {
+                .key = key,
+                .value = parseValue(p),
+            },
+        };
+        value = esc(x);
+    }
+    return value;
+}
+
+static ast$Expr **parseElementList(parser$Parser *p) {
+    utils$Slice list = {.size = sizeof(ast$Expr *)};
+    while (p->tok != token$RBRACE && p->tok != token$EOF) {
+        ast$Expr *value = parseElement(p);
+        utils$Slice_append(&list, &value);
+        if (!parser$accept(p, token$COMMA)) {
+            break;
+        }
+    }
+    return utils$Slice_to_nil_array(list);
+}
+
+static ast$Expr *parseLiteralValue(parser$Parser *p, ast$Expr *type) {
+    token$Pos pos = parser$expect(p, token$LBRACE);
+    p->exprLev++;
+    ast$Expr **list = parseElementList(p);
+    p->exprLev--;
+    parser$expect(p, token$RBRACE);
+    ast$Expr expr = {
+        .kind = ast$EXPR_COMPOSITE_LIT,
+        .composite = {
+            .pos = pos,
+            .type = type,
+            .list = list,
+        },
+    };
+    return esc(expr);
+}
+
+static ast$Expr *parseIndexExpr(parser$Parser *p, ast$Expr *x) {
+    parser$expect(p, token$LBRACK);
+    p->exprLev++;
+    ast$Expr y = {
+        .kind = ast$EXPR_INDEX,
+        .index = {
+            .x = x,
+            .index = parseExpr(p),
+        },
+    };
+    p->exprLev--;
+    parser$expect(p, token$RBRACK);
+    return esc(y);
+}
+
+static ast$Expr *parseCallExpr(parser$Parser *p, ast$Expr *x) {
+    utils$Slice args = {.size = sizeof(ast$Expr *)};
+    parser$expect(p, token$LPAREN);
+    p->exprLev++;
+    // argument_expression_list
+    //         : expression
+    //         | argument_expression_list ',' expression
+    //         ;
+    while (p->tok != token$RPAREN) {
+        ast$Expr *x = parseExpr(p);
+        utils$Slice_append(&args, &x);
+        if (!parser$accept(p, token$COMMA)) {
+            break;
+        }
+    }
+    p->exprLev--;
+    parser$expect(p, token$RPAREN);
+    ast$Expr call = {
+        .kind = ast$EXPR_CALL,
+        .call = {
+            .func = x,
+            .args = utils$Slice_to_nil_array(args),
+        },
+    };
+    return esc(call);
 }
 
 static ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
@@ -166,45 +303,18 @@ static ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
             }
             break;
         case token$LBRACK:
-            {
-                parser$expect(p, token$LBRACK);
-                ast$Expr y = {
-                    .kind = ast$EXPR_INDEX,
-                    .index = {
-                        .x = x,
-                        .index = parseExpr(p),
-                    },
-                };
-                parser$expect(p, token$RBRACK);
-                x = esc(y);
-            }
+            x = parseIndexExpr(p, x);
             break;
         case token$LPAREN:
-            {
-                utils$Slice args = {.size = sizeof(ast$Expr *)};
-                parser$expect(p, token$LPAREN);
-                // argument_expression_list
-                //         : expression
-                //         | argument_expression_list ',' expression
-                //         ;
-                while (p->tok != token$RPAREN) {
-                    ast$Expr *x = parseExpr(p);
-                    utils$Slice_append(&args, &x);
-                    if (!parser$accept(p, token$COMMA)) {
-                        break;
-                    }
-                }
-                parser$expect(p, token$RPAREN);
-                ast$Expr call = {
-                    .kind = ast$EXPR_CALL,
-                    .call = {
-                        .func = x,
-                        .args = utils$Slice_to_nil_array(args),
-                    },
-                };
-                x = esc(call);
-            }
+            x = parseCallExpr(p, x);
             break;
+        case token$LBRACE:
+            if (isLiteralType(x) && (p->exprLev >= 0 || !isTypeName(x))) {
+                x = parseLiteralValue(p, x);
+                break;
+            } else {
+                return x;
+            }
         default:
             return x;
         }
@@ -280,18 +390,15 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
             parser$expect(p, token$LT);
             ast$Expr *type = parseType(p);
             parser$expect(p, token$GT);
-            ast$Expr *expr = NULL;
             if (p->tok == token$LBRACE) {
-                expr = parseInitExpr(p);
-            } else {
-                expr = parseUnaryExpr(p);
+                return parseLiteralValue(p, type);
             }
             ast$Expr y = {
                 .kind = ast$EXPR_CAST,
                 .cast = {
                     .pos = pos,
                     .type = type,
-                    .expr = expr,
+                    .expr = parseUnaryExpr(p),
                 },
             };
             return esc(y);
@@ -370,10 +477,12 @@ static ast$Expr *parseTypeName(parser$Parser *p) {
 
 static ast$Expr *parseArrayType(parser$Parser *p) {
     token$Pos pos = parser$expect(p, token$LBRACK);
+    p->exprLev++;
     ast$Expr *len = NULL;
     if (p->tok != token$RBRACK) {
         len = parseExpr(p);
     }
+    p->exprLev--;
     parser$expect(p, token$RBRACK);
     ast$Expr type = {
         .kind = ast$TYPE_ARRAY,
@@ -579,7 +688,7 @@ static ast$Expr *parseQualifiedType(parser$Parser *p, token$Token tok) {
     return type;
 }
 
-static ast$Expr *tryType(parser$Parser *p) {
+static ast$Expr *tryIdentOrType(parser$Parser *p) {
     switch (p->tok) {
     case token$IDENT:
         return parseTypeName(p);
@@ -601,56 +710,16 @@ static ast$Expr *tryType(parser$Parser *p) {
     }
 }
 
+static ast$Expr *tryType(parser$Parser *p) {
+    return tryIdentOrType(p);
+}
+
 static ast$Expr *parseType(parser$Parser *p) {
     ast$Expr *t = tryType(p);
     if (t == NULL) {
         parser$errorExpected(p, p->pos, "type");
     }
     return t;
-}
-
-static ast$Expr *parseInitExpr(parser$Parser *p) {
-    // initializer
-    //         : expression
-    //         | '{' initializer_list ','? '}'
-    //         ;
-    if (p->tok == token$LBRACE) {
-        // initializer_list
-        //         : designation? initializer
-        //         | initializer_list ',' designation? initializer
-        //         ;
-        token$Pos pos = p->pos;
-        parser$expect(p, token$LBRACE);
-        utils$Slice list = {.size = sizeof(ast$Expr *)};
-        while (p->tok != token$RBRACE && p->tok != token$EOF) {
-            ast$Expr *value = parseInitExpr(p);
-            if (value->kind == ast$EXPR_IDENT && parser$accept(p, token$COLON)) {
-                ast$Expr *key = value;
-                ast$Expr x = {
-                    .kind = ast$EXPR_KEY_VALUE,
-                    .key_value = {
-                        .key = key,
-                        .value = parseInitExpr(p),
-                    },
-                };
-                value = esc(x);
-            }
-            utils$Slice_append(&list, &value);
-            if (!parser$accept(p, token$COMMA)) {
-                break;
-            }
-        }
-        parser$expect(p, token$RBRACE);
-        ast$Expr expr = {
-            .kind = ast$EXPR_COMPOSITE_LIT,
-            .composite = {
-                .pos = pos,
-                .list = utils$Slice_to_nil_array(list),
-            },
-        };
-        return esc(expr);
-    }
-    return parseExpr(p);
 }
 
 static ast$Stmt *parse_simple_stmt(parser$Parser *p, bool labelOk) {
@@ -735,6 +804,8 @@ static ast$Stmt *parse_for_stmt(parser$Parser *p) {
     //         | FOR simple_statement? ';' expression? ';' expression?
     //              compound_statement ;
     token$Pos pos = parser$expect(p, token$FOR);
+    int prevLev = p->exprLev;
+    p->exprLev = -1;
     ast$Stmt *init = NULL;
     if (!parser$accept(p, token$SEMICOLON)) {
         init = parse_stmt(p);
@@ -748,6 +819,7 @@ static ast$Stmt *parse_for_stmt(parser$Parser *p) {
     if (p->tok != token$LBRACE) {
         post = parse_simple_stmt(p, false);
     }
+    p->exprLev = prevLev;
     ast$Stmt *body = parse_block_stmt(p);
     ast$Stmt stmt = {
         .kind = ast$STMT_ITER,
@@ -770,7 +842,10 @@ static ast$Stmt *parse_if_stmt(parser$Parser *p) {
     //         | IF expression compound_statement ELSE if_statement
     //         ;
     token$Pos pos = parser$expect(p, token$IF);
+    int outer = p->exprLev;
+    p->exprLev = -1;
     ast$Expr *cond = parseExpr(p);
+    p->exprLev = outer;
     if (p->tok != token$LBRACE) {
         parser$error(p, p->pos, "`if` must be followed by a compound_statement");
     }
@@ -820,7 +895,10 @@ static ast$Stmt *parse_return_stmt(parser$Parser *p) {
 static ast$Stmt *parse_switch_stmt(parser$Parser *p) {
     // switch_statement | SWITCH expression case_statement* ;
     token$Pos pos = parser$expect(p, token$SWITCH);
+    int prevLev = p->exprLev;
+    p->exprLev = -1;
     ast$Expr *tag = parseExpr(p);
+    p->exprLev = prevLev;
     parser$expect(p, token$LBRACE);
     utils$Slice clauses = {.size = sizeof(ast$Stmt *)};
     while (p->tok == token$CASE || p->tok == token$DEFAULT) {
@@ -886,7 +964,10 @@ static ast$Stmt *parse_switch_stmt(parser$Parser *p) {
 static ast$Stmt *parse_while_stmt(parser$Parser *p) {
     // while_statement : WHILE expression compound_statement ;
     token$Pos pos = parser$expect(p, token$WHILE);
+    int prevLev = p->exprLev;
+    p->exprLev = -1;
     ast$Expr *cond = parseExpr(p);
+    p->exprLev = prevLev;
     ast$Stmt *body = parse_block_stmt(p);
     ast$Stmt stmt = {
         .kind = ast$STMT_ITER,
@@ -1044,7 +1125,7 @@ static ast$Decl *parseDecl(parser$Parser *p) {
             }
             ast$Expr *value = NULL;
             if (parser$accept(p, token$ASSIGN)) {
-                value = parseInitExpr(p);
+                value = parseValue(p);
             }
             parser$expect(p, token$SEMICOLON);
             ast$Decl decl = {

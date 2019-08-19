@@ -32,6 +32,7 @@ typedef Parser struct {
     pkg_scope *ast.Scope
     c_mode bool
     pkgName *char
+    exprLev int
 }
 
 fun declare(p *Parser, s *ast.Scope, decl *ast.Decl, kind ast.ObjKind, name *ast.Expr)
@@ -64,6 +65,22 @@ fun parsePragma(p *Parser) *ast.Decl
 
 #include "sys/sys.h"
 
+fun isTypeName(x *ast.Expr) bool {
+    switch x.kind {
+    case ast.EXPR_IDENT: return true
+    case ast.EXPR_SELECTOR: return x.selector.x.kind == ast.EXPR_IDENT
+    default: return false
+    }
+}
+
+fun isLiteralType(x *ast.Expr) bool {
+    switch x.kind {
+    case ast.EXPR_IDENT, ast.TYPE_ARRAY, ast.TYPE_STRUCT: return true
+    case ast.EXPR_SELECTOR: return x.selector.x.kind == ast.EXPR_IDENT
+    default: return false
+    }
+}
+
 fun next(p *Parser) {
     p.tok = scanner.scan(&p.scanner, &p.pos, &p.lit)
 }
@@ -74,6 +91,7 @@ fun init(p *Parser, fset *token.FileSet, filename *const char, src *char) {
     p.lit = NULL
     scanner.init(&p.scanner, p.file, src)
     p.scanner.dontInsertSemis = !bytes.hasSuffix(filename, ".bling")
+    p.exprLev = 0
     next(p)
 }
 
@@ -130,9 +148,13 @@ fun declare(p *Parser, s *ast.Scope, decl *ast.Decl, kind ast.ObjKind, name *ast
     ast.Scope_insert(s, obj)
 }
 
+fun parseLiteralValue(p *Parser, type *ast.Expr) *ast.Expr
+
 fun parseExpr(p *Parser) *ast.Expr
 
-fun parseInitExpr(p *Parser) *ast.Expr
+fun tryIdentOrType(p *Parser) *ast.Expr
+
+fun tryType(p *Parser) *ast.Expr
 
 fun parseType(p *Parser) *ast.Expr
 
@@ -182,6 +204,7 @@ fun parseOperand(p *Parser) *ast.Expr {
         } else {
             var pos token.Pos = p.pos
             expect(p, token.LPAREN)
+            p.exprLev++
             var x ast.Expr = {
                 kind: ast.EXPR_PAREN,
                 paren: {
@@ -189,13 +212,113 @@ fun parseOperand(p *Parser) *ast.Expr {
                     x: parseExpr(p),
                 },
             }
+            p.exprLev--
             expect(p, token.RPAREN)
             return esc(x)
         }
-    default:
-        errorExpected(p, p.pos, "operand")
-        return NULL
+    default: break
     }
+    var t *ast.Expr = tryIdentOrType(p)
+    if t {
+        assert(t.kind != ast.EXPR_IDENT)
+        return t
+    }
+    errorExpected(p, p.pos, "operand")
+    return NULL
+}
+
+fun parseValue(p *Parser) *ast.Expr {
+    if p.tok == token.LBRACE {
+        return parseLiteralValue(p, NULL)
+    }
+    return parseExpr(p)
+}
+
+fun parseElement(p *Parser) *ast.Expr {
+    var value *ast.Expr = parseValue(p)
+    if value.kind == ast.EXPR_IDENT && accept(p, token.COLON) {
+        var key *ast.Expr = value
+        var x ast.Expr = {
+            kind: ast.EXPR_KEY_VALUE,
+            key_value: {
+                key: key,
+                value: parseValue(p),
+            },
+        }
+        value = esc(x)
+    }
+    return value
+}
+
+fun parseElementList(p *Parser) **ast.Expr {
+    var list utils.Slice = {
+        size: sizeof(*ast.Expr),
+    }
+    while p.tok != token.RBRACE && p.tok != token.EOF {
+        var value *ast.Expr = parseElement(p)
+        utils.Slice_append(&list, &value)
+        if !accept(p, token.COMMA) {
+            break
+        }
+    }
+    return utils.Slice_to_nil_array(list)
+}
+
+fun parseLiteralValue(p *Parser, type *ast.Expr) *ast.Expr {
+    var pos token.Pos = expect(p, token.LBRACE)
+    p.exprLev++
+    var list **ast.Expr = parseElementList(p)
+    p.exprLev--
+    expect(p, token.RBRACE)
+    var expr ast.Expr = {
+        kind: ast.EXPR_COMPOSITE_LIT,
+        composite: {
+            pos: pos,
+            type: type,
+            list: list,
+        },
+    }
+    return esc(expr)
+}
+
+fun parseIndexExpr(p *Parser, x *ast.Expr) *ast.Expr {
+    expect(p, token.LBRACK)
+    p.exprLev++
+    var y ast.Expr = {
+        kind: ast.EXPR_INDEX,
+        index: {
+            x: x,
+            index: parseExpr(p),
+        },
+    }
+    p.exprLev--
+    expect(p, token.RBRACK)
+    return esc(y)
+}
+
+fun parseCallExpr(p *Parser, x *ast.Expr) *ast.Expr {
+    var args utils.Slice = {
+        size: sizeof(*ast.Expr),
+    }
+    expect(p, token.LPAREN)
+    p.exprLev++
+    while p.tok != token.RPAREN {
+        var x *ast.Expr = parseExpr(p)
+        utils.Slice_append(&args, &x)
+        if !accept(p, token.COMMA) {
+            break
+        }
+    }
+    p.exprLev--
+    expect(p, token.RPAREN)
+    var call ast.Expr = {
+        kind: ast.EXPR_CALL,
+        call: {
+            func: x,
+            args: utils.Slice_to_nil_array(args),
+        },
+    }
+    return esc(call)
 }
 
 fun parsePrimaryExpr(p *Parser) *ast.Expr {
@@ -218,43 +341,18 @@ fun parsePrimaryExpr(p *Parser) *ast.Expr {
             }
             break
         case token.LBRACK:
-            {
-                expect(p, token.LBRACK)
-                var y ast.Expr = {
-                    kind: ast.EXPR_INDEX,
-                    index: {
-                        x: x,
-                        index: parseExpr(p),
-                    },
-                }
-                expect(p, token.RBRACK)
-                x = esc(y)
-            }
+            x = parseIndexExpr(p, x)
             break
         case token.LPAREN:
-            {
-                var args utils.Slice = {
-                    size: sizeof(*ast.Expr),
-                }
-                expect(p, token.LPAREN)
-                while p.tok != token.RPAREN {
-                    var x *ast.Expr = parseExpr(p)
-                    utils.Slice_append(&args, &x)
-                    if !accept(p, token.COMMA) {
-                        break
-                    }
-                }
-                expect(p, token.RPAREN)
-                var call ast.Expr = {
-                    kind: ast.EXPR_CALL,
-                    call: {
-                        func: x,
-                        args: utils.Slice_to_nil_array(args),
-                    },
-                }
-                x = esc(call)
-            }
+            x = parseCallExpr(p, x)
             break
+        case token.LBRACE:
+            if isLiteralType(x) && (p.exprLev >= 0 || !isTypeName(x)) {
+                x = parseLiteralValue(p, x)
+                break
+            } else {
+                return x
+            }
         default: return x
         }
     }
@@ -307,18 +405,15 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
         expect(p, token.LT)
         var type *ast.Expr = parseType(p)
         expect(p, token.GT)
-        var expr *ast.Expr = NULL
         if p.tok == token.LBRACE {
-            expr = parseInitExpr(p)
-        } else {
-            expr = parseUnaryExpr(p)
+            return parseLiteralValue(p, type)
         }
         var y ast.Expr = {
             kind: ast.EXPR_CAST,
             cast: {
                 pos: pos,
                 type: type,
-                expr: expr,
+                expr: parseUnaryExpr(p),
             },
         }
         return esc(y)
@@ -392,10 +487,12 @@ fun parseTypeName(p *Parser) *ast.Expr {
 
 fun parseArrayType(p *Parser) *ast.Expr {
     var pos token.Pos = expect(p, token.LBRACK)
+    p.exprLev++
     var len *ast.Expr = NULL
     if p.tok != token.RBRACK {
         len = parseExpr(p)
     }
+    p.exprLev--
     expect(p, token.RBRACK)
     var type ast.Expr = {
         kind: ast.TYPE_ARRAY,
@@ -596,7 +693,7 @@ fun parseQualifiedType(p *Parser, tok token.Token) *ast.Expr {
     return type
 }
 
-fun tryType(p *Parser) *ast.Expr {
+fun tryIdentOrType(p *Parser) *ast.Expr {
     switch p.tok {
     case token.IDENT: return parseTypeName(p)
     case token.LBRACK: return parseArrayType(p)
@@ -609,50 +706,16 @@ fun tryType(p *Parser) *ast.Expr {
     }
 }
 
+fun tryType(p *Parser) *ast.Expr {
+    return tryIdentOrType(p)
+}
+
 fun parseType(p *Parser) *ast.Expr {
     var t *ast.Expr = tryType(p)
     if t == NULL {
         errorExpected(p, p.pos, "type")
     }
     return t
-}
-
-fun parseInitExpr(p *Parser) *ast.Expr {
-    if p.tok == token.LBRACE {
-        var pos token.Pos = p.pos
-        expect(p, token.LBRACE)
-        var list utils.Slice = {
-            size: sizeof(*ast.Expr),
-        }
-        while p.tok != token.RBRACE && p.tok != token.EOF {
-            var value *ast.Expr = parseInitExpr(p)
-            if value.kind == ast.EXPR_IDENT && accept(p, token.COLON) {
-                var key *ast.Expr = value
-                var x ast.Expr = {
-                    kind: ast.EXPR_KEY_VALUE,
-                    key_value: {
-                        key: key,
-                        value: parseInitExpr(p),
-                    },
-                }
-                value = esc(x)
-            }
-            utils.Slice_append(&list, &value)
-            if !accept(p, token.COMMA) {
-                break
-            }
-        }
-        expect(p, token.RBRACE)
-        var expr ast.Expr = {
-            kind: ast.EXPR_COMPOSITE_LIT,
-            composite: {
-                pos: pos,
-                list: utils.Slice_to_nil_array(list),
-            },
-        }
-        return esc(expr)
-    }
-    return parseExpr(p)
 }
 
 fun parse_simple_stmt(p *Parser, labelOk bool) *ast.Stmt {
@@ -708,6 +771,8 @@ fun parse_simple_stmt(p *Parser, labelOk bool) *ast.Stmt {
 
 fun parse_for_stmt(p *Parser) *ast.Stmt {
     var pos token.Pos = expect(p, token.FOR)
+    var prevLev int = p.exprLev
+    p.exprLev = -1
     var init *ast.Stmt = NULL
     if !accept(p, token.SEMICOLON) {
         init = parse_stmt(p)
@@ -721,6 +786,7 @@ fun parse_for_stmt(p *Parser) *ast.Stmt {
     if p.tok != token.LBRACE {
         post = parse_simple_stmt(p, false)
     }
+    p.exprLev = prevLev
     var body *ast.Stmt = parse_block_stmt(p)
     var stmt ast.Stmt = {
         kind: ast.STMT_ITER,
@@ -738,7 +804,10 @@ fun parse_for_stmt(p *Parser) *ast.Stmt {
 
 fun parse_if_stmt(p *Parser) *ast.Stmt {
     var pos token.Pos = expect(p, token.IF)
+    var outer int = p.exprLev
+    p.exprLev = -1
     var cond *ast.Expr = parseExpr(p)
+    p.exprLev = outer
     if p.tok != token.LBRACE {
         error(p, p.pos, "`if` must be followed by a compound_statement")
     }
@@ -784,7 +853,10 @@ fun parse_return_stmt(p *Parser) *ast.Stmt {
 
 fun parse_switch_stmt(p *Parser) *ast.Stmt {
     var pos token.Pos = expect(p, token.SWITCH)
+    var prevLev int = p.exprLev
+    p.exprLev = -1
     var tag *ast.Expr = parseExpr(p)
+    p.exprLev = prevLev
     expect(p, token.LBRACE)
     var clauses utils.Slice = {
         size: sizeof(*ast.Stmt),
@@ -848,7 +920,10 @@ fun parse_switch_stmt(p *Parser) *ast.Stmt {
 
 fun parse_while_stmt(p *Parser) *ast.Stmt {
     var pos token.Pos = expect(p, token.WHILE)
+    var prevLev int = p.exprLev
+    p.exprLev = -1
     var cond *ast.Expr = parseExpr(p)
+    p.exprLev = prevLev
     var body *ast.Stmt = parse_block_stmt(p)
     var stmt ast.Stmt = {
         kind: ast.STMT_ITER,
@@ -984,7 +1059,7 @@ fun parseDecl(p *Parser) *ast.Decl {
         }
         var value *ast.Expr = NULL
         if accept(p, token.ASSIGN) {
-            value = parseInitExpr(p)
+            value = parseValue(p)
         }
         expect(p, token.SEMICOLON)
         var decl ast.Decl = {
