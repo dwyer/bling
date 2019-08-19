@@ -24,3 +24,39 @@ extern int sys$execve(const char *path, char *const argv[], char *envp[]) {
 extern char *sys$getenv(const char *key) {
     return getenv(key);
 }
+
+extern int sys$memcmp(const void *dst, const void *src, size_t n) {
+    return memcmp(dst, src, n);
+}
+
+extern void *sys$memcpy(void *dst, const void *src, size_t n) {
+    return memcpy(dst, src, n);
+}
+
+extern void *sys$memset(void *dst, int c, size_t n) {
+    return memset(dst, c, n);
+}
+
+extern char *sys$strdup(const char *s) {
+    return strdup(s);
+}
+
+extern size_t sys$strlcpy(char *dst, const char *src, size_t n) {
+    return strlcpy(dst, src, n);
+}
+
+extern size_t sys$strlen(const char *s) {
+    return strlen(s);
+}
+
+extern void *sys$malloc(size_t n) {
+    return malloc(n);
+}
+
+extern void sys$free(void *ptr) {
+    free(ptr);
+}
+
+extern void *sys$realloc(void *ptr, size_t n) {
+    return realloc(ptr, n);
+}

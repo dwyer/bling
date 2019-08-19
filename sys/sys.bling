@@ -17,3 +17,21 @@ fun getenv(key *const char) *char
 fun printf(s *const char, ...)
 
 fun sprintf(s *const char, ...) *char
+
+fun malloc(n size_t) *void
+
+fun free(ptr *void)
+
+fun realloc(ptr *void, n size_t) *void
+
+fun memcmp(dst *const void, src *const void, n size_t) int
+
+fun memcpy(dst *void, src *const void, n size_t) *void
+
+fun memset(dst *void, c int, n size_t) *void
+
+fun strdup(s *const char) *char
+
+fun strlcpy(dst *char, src *const char, n size_t) size_t
+
+fun strlen(s *const char) size_t

@@ -148,7 +148,7 @@ fun Slice_cap(s *const Slice) int {
 }
 
 fun Slice_ref(s *const Slice, i int) *void {
-    return <*void> &(<*char> s.array)[i * s.size]
+    return &(<*char> s.array)[i * s.size]
 }
 
 fun Slice_get(s *const Slice, i int, dst *void) {

@@ -23,7 +23,7 @@ extern int utils$Slice_cap(const utils$Slice *s) {
 }
 
 extern void *utils$Slice_ref(const utils$Slice *s, int i) {
-    return (void *)&((char *)s->array)[i * s->size];
+    return &((char *)s->array)[i * s->size];
 }
 
 extern void utils$Slice_get(const utils$Slice *s, int i, void *dst) {
