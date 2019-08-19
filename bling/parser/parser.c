@@ -226,6 +226,9 @@ static ast$Expr **parseElementList(parser$Parser *p) {
 
 static ast$Expr *parseLiteralValue(parser$Parser *p, ast$Expr *type) {
     token$Pos pos = parser$expect(p, token$LBRACE);
+    if (type) {
+        pos = ast$Expr_pos(type);
+    }
     p->exprLev++;
     ast$Expr **list = parseElementList(p);
     p->exprLev--;

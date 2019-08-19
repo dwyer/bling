@@ -52,12 +52,12 @@ fun compile_c(argv []*char) {
         }
         argv++
     }
-    var e emitter.Emitter = emitter.Emitter{}
+    var e = emitter.Emitter{}
     var fset *token.FileSet = token.newFileSet()
     while *argv {
         var filename *char = *argv
         var file *ast.File = cparser.parseFile(fset, filename, types.universe())
-        var conf types.Config = types.Config{
+        var conf = types.Config{
             strict: true,
             cMode: true,
         }
@@ -88,7 +88,7 @@ fun compile_c(argv []*char) {
 
 fun compile_bling(argv []*char) {
     var emit_as_bling bool = false
-    var conf types.Config = types.Config{
+    var conf = types.Config{
         strict: true,
     }
     var dst *char = NULL
@@ -104,7 +104,7 @@ fun compile_bling(argv []*char) {
     if dst {
         emit_as_bling = bytes.hasSuffix(dst, ".bling")
     }
-    var e emitter.Emitter = emitter.Emitter{}
+    var e = emitter.Emitter{}
     var err *utils.Error = NULL
     if !emit_as_bling {
         emit_rawfile(&e, "bootstrap/bootstrap.h")

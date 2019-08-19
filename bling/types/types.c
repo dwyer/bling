@@ -831,7 +831,6 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
         }
 
     case ast$EXPR_COMPOSITE_LIT:
-        assert(expr->composite.type != NULL);
         Checker_checkCompositeLit(c, expr);
         return expr->composite.type;
 

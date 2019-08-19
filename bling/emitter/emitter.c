@@ -43,6 +43,19 @@ extern bool hasPrefix(const char *s, const char *prefix) {
     return true;
 }
 
+static bool isSimpleType(ast$Expr *t) {
+    if (t->kind == ast$TYPE_ARRAY) {
+        t = t->array.elt;
+    }
+    switch (t->kind) {
+    case ast$EXPR_IDENT:
+    case ast$EXPR_SELECTOR:
+        return true;
+    default:
+        return false;
+    }
+}
+
 extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
     if (!expr) {
         panic("emitter$emitExpr: expr is NULL");
@@ -84,19 +97,8 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_COMPOSITE_LIT:
-        {
-            ast$Expr *t = expr->composite.type;
-            if (t->kind == ast$TYPE_ARRAY) {
-                t = t->array.elt;
-            }
-            switch (t->kind) {
-            case ast$EXPR_IDENT:
-            case ast$EXPR_SELECTOR:
-                emitter$emitType(e, expr->composite.type);
-                break;
-            default:
-                break;
-            }
+        if (isSimpleType(expr->composite.type)) {
+            emitter$emitType(e, expr->composite.type);
         }
         emitter$emitToken(e, token$LBRACE);
         if (expr->composite.list && *expr->composite.list) {
@@ -547,14 +549,20 @@ extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
                 emitter$emitSpace(e);
                 emitter$emitExpr(e, decl->value.name);
             }
-            // TODO:
-            // if (decl->value.value == NULL
-            //         || ast$isNil(decl->value.value)
-            //         || ast$isVoidPtr(decl->value.value)
-            //         || decl->value.value->type == ast$EXPR_COMPOUND) {
-            emitter$emitSpace(e);
-            emitter$emitType(e, decl->value.type);
-            // }
+            bool omitType = false;
+            if (decl->value.value) {
+                switch (decl->value.value->kind) {
+                case ast$EXPR_COMPOSITE_LIT:
+                    omitType = isSimpleType(decl->value.value->composite.type);
+                    break;
+                default:
+                    break;
+                }
+            }
+            if (!omitType) {
+                emitter$emitSpace(e);
+                emitter$emitType(e, decl->value.type);
+            }
             if (decl->value.value) {
                 emitter$emitSpace(e);
                 emitter$emitToken(e, token$ASSIGN);

@@ -428,7 +428,7 @@ fun isExprType(x *Expr) bool {
 }
 
 fun newObject(kind ObjKind, name *char) *Object {
-    var obj Object = Object{
+    var obj = Object{
         kind: kind,
         name: name,
     }
@@ -436,7 +436,7 @@ fun newObject(kind ObjKind, name *char) *Object {
 }
 
 fun Scope_new(outer *Scope) *Scope {
-    var s Scope = Scope{
+    var s = Scope{
         outer: outer,
         objects: utils.Map_init(sizeof(*Object)),
     }
@@ -463,7 +463,7 @@ fun Scope_lookup(s *Scope, name *char) *Object {
 }
 
 fun Scope_print(s *Scope) {
-    var buf bytes.Buffer = bytes.Buffer{}
+    var buf = bytes.Buffer{}
     while s {
         var iter utils.MapIter = utils.NewMapIter(&s.objects)
         var key *char = NULL

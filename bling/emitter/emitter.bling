@@ -84,6 +84,16 @@ fun hasPrefix(s *const char, prefix *const char) bool {
     return true
 }
 
+fun isSimpleType(t *ast.Expr) bool {
+    if t.kind == ast.TYPE_ARRAY {
+        t = t.array.elt
+    }
+    switch t.kind {
+    case ast.EXPR_IDENT, ast.EXPR_SELECTOR: return true
+    default: return false
+    }
+}
+
 fun emitExpr(e *Emitter, expr *ast.Expr) {
     if !expr {
         panic("emitter$emitExpr: expr is NULL")
@@ -120,17 +130,8 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         emitExpr(e, expr.cast.expr)
         break
     case ast.EXPR_COMPOSITE_LIT:
-        {
-            var t *ast.Expr = expr.composite.type
-            if t.kind == ast.TYPE_ARRAY {
-                t = t.array.elt
-            }
-            switch t.kind {
-            case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
-                emitType(e, expr.composite.type)
-                break
-            default: break
-            }
+        if isSimpleType(expr.composite.type) {
+            emitType(e, expr.composite.type)
         }
         emitToken(e, token.LBRACE)
         if expr.composite.list && *expr.composite.list {
@@ -536,8 +537,19 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
                 emitSpace(e)
                 emitExpr(e, decl.value.name)
             }
-            emitSpace(e)
-            emitType(e, decl.value.type)
+            var omitType bool = false
+            if decl.value.value {
+                switch decl.value.value.kind {
+                case ast.EXPR_COMPOSITE_LIT:
+                    omitType = isSimpleType(decl.value.value.composite.type)
+                    break
+                default: break
+                }
+            }
+            if !omitType {
+                emitSpace(e)
+                emitType(e, decl.value.type)
+            }
             if decl.value.value {
                 emitSpace(e)
                 emitToken(e, token.ASSIGN)
