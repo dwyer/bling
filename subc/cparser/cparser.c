@@ -217,15 +217,15 @@ static ast$Expr *cast_expression(parser$Parser *p) {
             ast$Expr *x;
             if (p->tok == token$LBRACE) {
                 x = initializer(p);
-            } else {
-                x = cast_expression(p);
+                x->composite.type = type;
+                return x;
             }
             ast$Expr y = {
                 .kind = ast$EXPR_CAST,
                 .cast = {
                     .pos = pos,
                     .type = type,
-                    .expr = x,
+                    .expr = cast_expression(p),
                 },
             };
             return esc(y);

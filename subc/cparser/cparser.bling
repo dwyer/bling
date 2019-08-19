@@ -203,15 +203,15 @@ fun cast_expression(p *parser.Parser) *ast.Expr {
             var x *ast.Expr
             if p.tok == token.LBRACE {
                 x = initializer(p)
-            } else {
-                x = cast_expression(p)
+                x.composite.type = type
+                return x
             }
             var y ast.Expr = {
                 kind: ast.EXPR_CAST,
                 cast: {
                     pos: pos,
                     type: type,
-                    expr: x,
+                    expr: cast_expression(p),
                 },
             }
             return esc(y)
