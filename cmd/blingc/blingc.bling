@@ -109,7 +109,7 @@ fun compile_bling(argv []*char) {
         var filename *char = *argv
         var file *ast.File = NULL
         if bytes.hasSuffix(filename, ".bling") {
-            file = parser.parseFile(fset, filename)
+            file = parser.parseFile(fset, filename, types.universe())
         } else if bytes.hasSuffix(filename, ".c") {
             file = cparser.parseFile(fset, filename, types.universe())
         } else {

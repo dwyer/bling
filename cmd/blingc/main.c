@@ -104,7 +104,7 @@ void compile_bling(char *argv[]) {
         char *filename = *argv;
         ast$File *file = NULL;
         if (bytes$hasSuffix(filename, ".bling")) {
-            file = parser$parseFile(fset, filename);
+            file = parser$parseFile(fset, filename, types$universe());
         } else if (bytes$hasSuffix(filename, ".c")) {
             file = cparser$parseFile(fset, filename, types$universe());
         } else {

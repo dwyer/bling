@@ -16,9 +16,9 @@ import("paths");
 import("utils");
 import("sys");
 
-extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename);
+extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename, ast$Scope *scope);
 extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
-        utils$Error **first);
+        ast$Scope *scope, utils$Error **first);
 
 typedef struct {
     token$File *file;
@@ -27,12 +27,15 @@ typedef struct {
     token$Pos pos;
     token$Token tok;
     char *lit;
-    ast$Scope *pkg_scope;
+    ast$Scope *pkgScope;
+    ast$Scope *topScope;
     bool c_mode;
 
     char *pkgName;
     int exprLev;
     bool inRhs;
+    utils$Slice unresolved;
+    int numIdents;
 } parser$Parser;
 
 extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,

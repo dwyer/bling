@@ -65,8 +65,13 @@ fun is_type(p *parser.Parser) bool {
     switch p.tok {
     case token.CONST, token.ENUM, token.EXTERN, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED: return true
     case token.IDENT: {
-        var obj *ast.Object = ast.Scope_lookup(p.pkg_scope, p.lit)
-        return obj && obj.kind == ast.ObjKind_TYPE
+        for var s *ast.Scope = p.topScope; s; s = s.outer {
+            var obj *ast.Object = ast.Scope_lookup(s, p.lit)
+            if obj && obj.kind == ast.ObjKind_TYPE {
+                return true
+            }
+        }
+        return false
     }
     default: return false
     }
@@ -947,7 +952,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
             },
         }
         var decl *ast.Decl = esc(declref)
-        parser.declare(p, p.pkg_scope, decl, ast.ObjKind_TYPE, name)
+        parser.declare(p, p.topScope, decl, ast.ObjKind_TYPE, name)
         return decl
     }
     var type *ast.Expr = declaration_specifiers(p, true)
@@ -1006,7 +1011,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
     }
 }
 
-fun parse_cfile(p *parser.Parser) *ast.File {
+fun parse_cfile(p *parser.Parser, scope *ast.Scope) *ast.File {
     var decls utils.Slice = {
         size: sizeof(*ast.Decl),
     }
@@ -1024,6 +1029,8 @@ fun parse_cfile(p *parser.Parser) *ast.File {
         parser.expect(p, token.RPAREN)
         parser.expect(p, token.SEMICOLON)
     }
+    p.topScope = scope
+    p.pkgScope = p.topScope
     while p.tok == token.IMPORT {
         parser.expect(p, token.IMPORT)
         parser.expect(p, token.LPAREN)
@@ -1048,18 +1055,18 @@ fun parse_cfile(p *parser.Parser) *ast.File {
         name: name,
         decls: utils.Slice_to_nil_array(decls),
         imports: utils.Slice_to_nil_array(imports),
+        scope: p.pkgScope,
     }
     return esc(file)
 }
 
-fun parseFile(fset *token.FileSet, filename *const char, pkg_scope *ast.Scope) *ast.File {
+fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.File {
     var src *char = ioutil.readFile(filename, NULL)
     var p parser.Parser = {}
     parser.init(&p, fset, filename, src)
-    p.pkg_scope = pkg_scope
     p.c_mode = true
-    var file *ast.File = parse_cfile(&p)
-    file.scope = p.pkg_scope
+    assert(scope)
+    var file *ast.File = parse_cfile(&p, scope)
     free(src)
     return file
 }

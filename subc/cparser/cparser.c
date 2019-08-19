@@ -39,8 +39,13 @@ static bool is_type(parser$Parser *p) {
         return true;
     case token$IDENT:
         {
-            ast$Object *obj = ast$Scope_lookup(p->pkg_scope, p->lit);
-            return obj && obj->kind == ast$ObjKind_TYPE;
+            for (ast$Scope *s = p->topScope; s; s = s->outer) {
+                ast$Object *obj = ast$Scope_lookup(s, p->lit);
+                if (obj && obj->kind == ast$ObjKind_TYPE) {
+                    return true;
+                }
+            }
+            return false;
         }
     default:
         return false;
@@ -1129,7 +1134,7 @@ static ast$Decl *declaration(parser$Parser *p, bool is_external) {
             },
         };
         ast$Decl *decl = esc(declref);
-        parser$declare(p, p->pkg_scope, decl, ast$ObjKind_TYPE, name);
+        parser$declare(p, p->topScope, decl, ast$ObjKind_TYPE, name);
         return decl;
     }
     ast$Expr *type = declaration_specifiers(p, true);
@@ -1198,7 +1203,7 @@ static ast$Decl *declaration(parser$Parser *p, bool is_external) {
     }
 }
 
-static ast$File *parse_cfile(parser$Parser *p) {
+static ast$File *parse_cfile(parser$Parser *p, ast$Scope *scope) {
     utils$Slice decls = {.size = sizeof(ast$Decl *)};
     utils$Slice imports = {.size = sizeof(ast$Decl *)};
     ast$Expr *name = NULL;
@@ -1212,6 +1217,8 @@ static ast$File *parse_cfile(parser$Parser *p) {
         parser$expect(p, token$RPAREN);
         parser$expect(p, token$SEMICOLON);
     }
+    p->topScope = scope;
+    p->pkgScope = p->topScope;
     while (p->tok == token$IMPORT) {
         parser$expect(p, token$IMPORT);
         parser$expect(p, token$LPAREN);
@@ -1239,19 +1246,19 @@ static ast$File *parse_cfile(parser$Parser *p) {
         .name = name,
         .decls = utils$Slice_to_nil_array(decls),
         .imports = utils$Slice_to_nil_array(imports),
+        .scope = p->pkgScope,
     };
     return esc(file);
 }
 
 extern ast$File *cparser$parseFile(token$FileSet *fset, const char *filename,
-        ast$Scope *pkg_scope) {
+        ast$Scope *scope) {
     char *src = ioutil$readFile(filename, NULL);
     parser$Parser p = {};
     parser$init(&p, fset, filename, src);
-    p.pkg_scope = pkg_scope;
     p.c_mode = true;
-    ast$File *file = parse_cfile(&p);
-    file->scope = p.pkg_scope;
+    assert(scope);
+    ast$File *file = parse_cfile(&p, scope);
     free(src);
     return file;
 }

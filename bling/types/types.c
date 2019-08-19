@@ -345,8 +345,8 @@ extern ast$Scope *types$universe() {
         _universe = ast$Scope_new(NULL);
         declareBuiltins(_universe);
         token$FileSet *fset = token$newFileSet();
-        ast$File *file = parser$parseFile(fset, "builtin/builtin.bling");
-        file->scope = _universe;
+        ast$File *file = parser$parseFile(fset, "builtin/builtin.bling", _universe);
+        _universe = file->scope;
         types$Config conf = {.strict = true};
         types$checkFile(&conf, fset, file);
         free(file->decls);
@@ -1070,15 +1070,11 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
         return;
     }
     char *path = constant_stringVal(imp->imp.path);
-    if (imp->imp.name == NULL) {
-        char *base = paths$base(path);
-        imp->imp.name = types$makeIdent(base);
-    }
-
     ast$Scope *oldScope = NULL;
     utils$Map_get(&c->scopes, path, &oldScope);
     if (oldScope) {
         imp->imp.scope = oldScope;
+        imp->imp.name = types$makeIdent(imp->imp.scope->pkg);
         Checker_declare(c, c->pkg.scope, imp);
         free(path);
         return;
@@ -1087,21 +1083,19 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
     imp->imp.scope = ast$Scope_new(types$universe());
     utils$Map_set(&c->scopes, path, &imp->imp.scope);
 
-    Checker_declare(c, c->pkg.scope, imp);
-
     oldScope = c->pkg.scope;
     c->pkg.scope = imp->imp.scope;
 
     utils$Error *err = NULL;
-    ast$File **files = parser$parseDir(c->fset, path, &err);
+    ast$File **files = parser$parseDir(c->fset, path, c->pkg.scope, &err);
     if (err) {
         Checker_error(c, imp->pos, sys$sprintf("%s: %s", path, err->error));
     }
-    for (int i = 0; files[i]; i++) {
-        Checker_checkFile(c, files[i]);
-    }
-
+    assert(files[0] && !files[1]);
+    Checker_checkFile(c, files[0]);
     c->pkg.scope = oldScope;
+    imp->imp.name = types$makeIdent(imp->imp.scope->pkg);
+    Checker_declare(c, c->pkg.scope, imp);
 }
 
 static void Checker_checkDecl(Checker *c, ast$Decl *decl) {

@@ -404,8 +404,8 @@ fun universe() *ast.Scope {
         _universe = ast.Scope_new(NULL)
         declareBuiltins(_universe)
         var fset *token.FileSet = token.newFileSet()
-        var file *ast.File = parser.parseFile(fset, "builtin/builtin.bling")
-        file.scope = _universe
+        var file *ast.File = parser.parseFile(fset, "builtin/builtin.bling", _universe)
+        _universe = file.scope
         var conf Config = {
             strict: true,
         }
@@ -1009,32 +1009,29 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
         return
     }
     var path *char = constant_stringVal(imp.imp.path)
-    if imp.imp.name == NULL {
-        var base *char = paths.base(path)
-        imp.imp.name = makeIdent(base)
-    }
     var oldScope *ast.Scope = NULL
     utils.Map_get(&c.scopes, path, &oldScope)
     if oldScope {
         imp.imp.scope = oldScope
+        imp.imp.name = makeIdent(imp.imp.scope.pkg)
         Checker_declare(c, c.pkg.scope, imp)
         free(path)
         return
     }
     imp.imp.scope = ast.Scope_new(universe())
     utils.Map_set(&c.scopes, path, &imp.imp.scope)
-    Checker_declare(c, c.pkg.scope, imp)
     oldScope = c.pkg.scope
     c.pkg.scope = imp.imp.scope
     var err *utils.Error = NULL
-    var files **ast.File = parser.parseDir(c.fset, path, &err)
+    var files **ast.File = parser.parseDir(c.fset, path, c.pkg.scope, &err)
     if err {
         Checker_error(c, imp.pos, sys.sprintf("%s: %s", path, err.error))
     }
-    for var i int = 0; files[i]; i++ {
-        Checker_checkFile(c, files[i])
-    }
+    assert(files[0] && !files[1])
+    Checker_checkFile(c, files[0])
     c.pkg.scope = oldScope
+    imp.imp.name = makeIdent(imp.imp.scope.pkg)
+    Checker_declare(c, c.pkg.scope, imp)
 }
 
 fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
