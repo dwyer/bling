@@ -1,5 +1,7 @@
 #include "bytes/bytes.h"
 
+#include "sys/sys.h"
+
 extern bool bytes$hasSuffix(const char *b, const char *suffix) {
     for (int i = 0; b[i]; i++) {
         if (streq(&b[i], suffix)) {
@@ -62,7 +64,7 @@ extern char *bytes$Buffer_bytes(bytes$Buffer *b) {
 extern char *bytes$Buffer_string(bytes$Buffer *b) {
     bytes$Buffer_init(b);
     char *s = malloc(bytes$Buffer_len(b) + 1);
-    memcpy(s, b->array, bytes$Buffer_len(b));
+    sys$memcpy(s, b->array, bytes$Buffer_len(b));
     s[bytes$Buffer_len(b)] = '\0';
     return s;
 }

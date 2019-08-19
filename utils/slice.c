@@ -1,5 +1,7 @@
 #include "utils/utils.h"
 
+#include "sys/sys.h"
+
 extern utils$Slice utils$Slice_init(int size) {
     utils$Slice s = {
         .size = size,
@@ -33,13 +35,13 @@ extern void utils$Slice_get(const utils$Slice *s, int i, void *dst) {
     if (s->size == 1) {
          *(char *)dst = ((char *)s->array)[i];
     } else {
-        memcpy(dst, utils$Slice_ref(s, i), s->size);
+        sys$memcpy(dst, utils$Slice_ref(s, i), s->size);
     }
 }
 
 static void utils$Slice_set_cap(utils$Slice *s, int cap) {
     s->cap = cap;
-    s->array = realloc(s->array, s->cap * s->size);
+    s->array = sys$realloc(s->array, s->cap * s->size);
 }
 
 static void _set_len(utils$Slice *s, int len) {
@@ -64,7 +66,7 @@ extern void utils$Slice_set_len(utils$Slice *s, int len) {
     _set_len(s, len);
     int diff = len - old;
     if (diff > 0) {
-        memset(utils$Slice_ref(s, old), 0, diff * s->size);
+        sys$memset(utils$Slice_ref(s, old), 0, diff * s->size);
     }
 }
 
@@ -72,7 +74,7 @@ extern void utils$Slice_set(utils$Slice *s, int i, const void *x) {
     if (s->size == 1) {
         ((char *)s->array)[i] = *(char *)x;
     } else {
-        memcpy(utils$Slice_ref(s, i), x, s->size);
+        sys$memcpy(utils$Slice_ref(s, i), x, s->size);
     }
 }
 

@@ -16,20 +16,10 @@ fun streq(a *const char, b *const char) bool
 
 fun assert(bool)
 
-fun memcmp(*const void, *const void, size_t) int
-
-fun memcpy(*void, *const void, size_t) *void
-
-fun memset(*void, int, size_t) *void
-
 fun strdup(*const char) *char
-
-fun strlcpy(*char, *const char, size_t) size_t
 
 fun strlen(*const char) size_t
 
 fun malloc(size_t) *void
 
 fun free(*void)
-
-fun realloc(*void, size_t) *void

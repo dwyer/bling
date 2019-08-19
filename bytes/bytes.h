@@ -3,6 +3,7 @@
 
 package(bytes);
 
+import("sys");
 import("utils");
 
 extern bool bytes$hasSuffix(const char *b, const char *suffix);

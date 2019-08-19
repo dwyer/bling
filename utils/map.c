@@ -1,5 +1,7 @@
 #include "utils/utils.h"
 
+#include "sys/sys.h"
+
 static const float max_load_factor = 0.65;
 static const int default_cap = 8;
 
@@ -21,7 +23,7 @@ static uintptr_t djb2(const char *s) {
 }
 
 static void *memdup(const void *src, size_t size) {
-    return memcpy(malloc(size), src, size);
+    return sys$memcpy(malloc(size), src, size);
 }
 
 typedef struct {
@@ -81,7 +83,7 @@ static void set_unsafe(utils$Map *m, const char *key, const void *val) {
         p->val = memdup(val, m->val_size);
         m->len++;
     } else {
-        memcpy(p->val, val, m->val_size);
+        sys$memcpy(p->val, val, m->val_size);
     }
 }
 
@@ -93,7 +95,7 @@ extern bool utils$Map_has_key(utils$Map *m, const char *key) {
 extern int utils$Map_get(const utils$Map *m, const char *key, void *val) {
     pair_t *p = pair_ref(m, key);
     if (p->val) {
-        memcpy(val, p->val, m->val_size);
+        sys$memcpy(val, p->val, m->val_size);
         return 1;
     }
     return 0;
@@ -132,7 +134,7 @@ extern int utils$MapIter_next(utils$MapIter *m, char **key, void *val) {
                 *(void **)key = p->key;
             }
             if (val) {
-                memcpy(val, p->val, m->_map->val_size);
+                sys$memcpy(val, p->val, m->_map->val_size);
             }
             return 1;
         }

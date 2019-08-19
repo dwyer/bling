@@ -125,6 +125,8 @@ fun Error_free(e *Error) {
 
 #include "utils/utils.h"
 
+#include "sys/sys.h"
+
 fun Slice_init(size int) Slice {
     var s Slice = Slice{
         size: size,
@@ -158,13 +160,13 @@ fun Slice_get(s *const Slice, i int, dst *void) {
     if s.size == 1 {
         *<*char> dst = (<*char> s.array)[i]
     } else {
-        memcpy(dst, Slice_ref(s, i), s.size)
+        sys.memcpy(dst, Slice_ref(s, i), s.size)
     }
 }
 
 fun Slice_set_cap(s *Slice, cap int) {
     s.cap = cap
-    s.array = realloc(s.array, s.cap * s.size)
+    s.array = sys.realloc(s.array, s.cap * s.size)
 }
 
 fun _set_len(s *Slice, len int) {
@@ -189,7 +191,7 @@ fun Slice_set_len(s *Slice, len int) {
     _set_len(s, len)
     var diff int = len - old
     if diff > 0 {
-        memset(Slice_ref(s, old), 0, diff * s.size)
+        sys.memset(Slice_ref(s, old), 0, diff * s.size)
     }
 }
 
@@ -197,7 +199,7 @@ fun Slice_set(s *Slice, i int, x *const void) {
     if s.size == 1 {
         (<*char> s.array)[i] = *<*char> x
     } else {
-        memcpy(Slice_ref(s, i), x, s.size)
+        sys.memcpy(Slice_ref(s, i), x, s.size)
     }
 }
 
@@ -213,6 +215,8 @@ fun Slice_to_nil_array(s Slice) *void {
 }
 
 #include "utils/utils.h"
+
+#include "sys/sys.h"
 
 var max_load_factor const float = 0.65
 
@@ -238,7 +242,7 @@ fun djb2(s *const char) uintptr_t {
 }
 
 fun memdup(src *const void, size size_t) *void {
-    return memcpy(malloc(size), src, size)
+    return sys.memcpy(malloc(size), src, size)
 }
 
 typedef pair_t struct {
@@ -295,7 +299,7 @@ fun set_unsafe(m *Map, key *const char, val *const void) {
         p.val = memdup(val, m.val_size)
         m.len++
     } else {
-        memcpy(p.val, val, m.val_size)
+        sys.memcpy(p.val, val, m.val_size)
     }
 }
 
@@ -307,7 +311,7 @@ fun Map_has_key(m *Map, key *const char) bool {
 fun Map_get(m *const Map, key *const char, val *void) int {
     var p *pair_t = pair_ref(m, key)
     if p.val {
-        memcpy(val, p.val, m.val_size)
+        sys.memcpy(val, p.val, m.val_size)
         return 1
     }
     return 0
@@ -348,7 +352,7 @@ fun MapIter_next(m *MapIter, key **char, val *void) int {
                 *<**void> key = p.key
             }
             if val {
-                memcpy(val, p.val, m._map.val_size)
+                sys.memcpy(val, p.val, m._map.val_size)
             }
             return 1
         }

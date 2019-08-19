@@ -1,5 +1,6 @@
 package scanner
 import "bling/token"
+import "sys"
 
 #pragma once
 
@@ -20,6 +21,8 @@ fun scan(s *Scanner, pos *token.Pos, lit **char) token.Token
 fun init(s *Scanner, file *token.File, src *char)
 
 #include "bling/scanner/scanner.h"
+
+#include "sys/sys.h"
 
 fun next0(s *Scanner) {
     s.offset = s.rd_offset
@@ -76,8 +79,8 @@ fun switch2(s *Scanner, tok0 token.Token, tok1 token.Token) token.Token {
 
 fun make_string_slice(s *Scanner, start int, end int) *char {
     var len size_t = end - start + 1
-    var lit *char = <*char> malloc(len)
-    strlcpy(lit, &s.src[start], len)
+    var lit *char = malloc(len)
+    sys.strlcpy(lit, &s.src[start], len)
     return lit
 }
 

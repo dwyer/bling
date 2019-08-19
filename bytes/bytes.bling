@@ -1,4 +1,5 @@
 package bytes
+import "sys"
 import "utils"
 
 #pragma once
@@ -26,6 +27,8 @@ fun Buffer_write(b *Buffer, p *const char, size int, error **utils.Error) int
 fun Buffer_writeByte(b *Buffer, p char, error **utils.Error)
 
 #include "bytes/bytes.h"
+
+#include "sys/sys.h"
 
 fun hasSuffix(b *const char, suffix *const char) bool {
     for var i int = 0; b[i]; i++ {
@@ -87,7 +90,7 @@ fun Buffer_bytes(b *Buffer) *char {
 fun Buffer_string(b *Buffer) *char {
     Buffer_init(b)
     var s *char = malloc(Buffer_len(b) + 1)
-    memcpy(s, b.array, Buffer_len(b))
+    sys.memcpy(s, b.array, Buffer_len(b))
     s[Buffer_len(b)] = '\0'
     return s
 }

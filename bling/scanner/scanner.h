@@ -4,6 +4,7 @@
 package(scanner);
 
 import("bling/token");
+import("sys");
 
 typedef struct {
     token$File *file;

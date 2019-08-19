@@ -1,4 +1,5 @@
 #include "bling/scanner/scanner.h"
+#include "sys/sys.h"
 
 static void next0(scanner$Scanner *s) {
     s->offset = s->rd_offset;
@@ -58,8 +59,8 @@ static token$Token switch2(scanner$Scanner *s, token$Token tok0,
 
 static char *make_string_slice(scanner$Scanner *s, int start, int end) {
     size_t len = end - start + 1;
-    char *lit = (char *)malloc(len);
-    strlcpy(lit, &s->src[start], len);
+    char *lit = malloc(len);
+    sys$strlcpy(lit, &s->src[start], len);
     return lit;
 }
 
