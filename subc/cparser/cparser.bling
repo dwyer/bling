@@ -63,15 +63,12 @@ fun parameter_declaration(p *parser.Parser) *ast.Decl
 
 fun is_type(p *parser.Parser) bool {
     switch p.tok {
-    case token.CONST, token.ENUM, token.EXTERN, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED:
-        return true
-    case token.IDENT:
-        {
-            var obj *ast.Object = ast.Scope_lookup(p.pkg_scope, p.lit)
-            return obj && obj.kind == ast.ObjKind_TYPE
-        }
-    default:
-        return false
+    case token.CONST, token.ENUM, token.EXTERN, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED: return true
+    case token.IDENT: {
+        var obj *ast.Object = ast.Scope_lookup(p.pkg_scope, p.lit)
+        return obj && obj.kind == ast.ObjKind_TYPE
+    }
+    default: return false
     }
 }
 
@@ -134,8 +131,7 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
                 x = esc(y)
             }
             break
-        default:
-            goto done
+        default: goto done
         }
     }
 done:
@@ -144,57 +140,53 @@ done:
 
 fun unary_expression(p *parser.Parser) *ast.Expr {
     switch p.tok {
-    case token.ADD, token.AND, token.BITWISE_NOT, token.NOT, token.SUB:
-        {
-            var op token.Token = p.tok
-            parser.next(p)
-            var x ast.Expr = {
-                kind: ast.EXPR_UNARY,
-                unary: {
-                    op: op,
-                    x: cast_expression(p),
-                },
-            }
-            return esc(x)
+    case token.ADD, token.AND, token.BITWISE_NOT, token.NOT, token.SUB: {
+        var op token.Token = p.tok
+        parser.next(p)
+        var x ast.Expr = {
+            kind: ast.EXPR_UNARY,
+            unary: {
+                op: op,
+                x: cast_expression(p),
+            },
         }
-    case token.MUL:
-        {
-            parser.next(p)
-            var x ast.Expr = {
-                kind: ast.EXPR_STAR,
-                star: {
-                    x: cast_expression(p),
-                },
-            }
-            return esc(x)
+        return esc(x)
+    }
+    case token.MUL: {
+        parser.next(p)
+        var x ast.Expr = {
+            kind: ast.EXPR_STAR,
+            star: {
+                x: cast_expression(p),
+            },
         }
-    case token.SIZEOF:
-        {
-            parser.next(p)
-            parser.expect(p, token.LPAREN)
-            var x *ast.Expr = NULL
-            if is_type(p) {
-                x = type_name(p)
-                if p.tok == token.MUL {
-                    declarator(p, &x)
-                }
-            } else {
-                x = unary_expression(p)
+        return esc(x)
+    }
+    case token.SIZEOF: {
+        parser.next(p)
+        parser.expect(p, token.LPAREN)
+        var x *ast.Expr = NULL
+        if is_type(p) {
+            x = type_name(p)
+            if p.tok == token.MUL {
+                declarator(p, &x)
             }
-            parser.expect(p, token.RPAREN)
-            var y ast.Expr = {
-                kind: ast.EXPR_SIZEOF,
-                sizeof_: {
-                    x: x,
-                },
-            }
-            return esc(y)
+        } else {
+            x = unary_expression(p)
         }
+        parser.expect(p, token.RPAREN)
+        var y ast.Expr = {
+            kind: ast.EXPR_SIZEOF,
+            sizeof_: {
+                x: x,
+            },
+        }
+        return esc(y)
+    }
     case token.DEC, token.INC:
         parser.error(p, p.pos, sys.sprintf("unary `%s` not supported in subc", token.string(p.tok)))
         return NULL
-    default:
-        return postfix_expression(p, NULL)
+    default: return postfix_expression(p, NULL)
     }
 }
 
@@ -382,8 +374,7 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
         }
         parser.expect(p, token.RPAREN)
         break
-    default:
-        break
+    default: break
     }
     if parser.accept(p, token.LBRACK) {
         var len *ast.Expr = NULL
@@ -586,34 +577,31 @@ fun simple_statement(p *parser.Parser, labelOk bool) *ast.Stmt {
     var x *ast.Expr = expression(p)
     var op token.Token = p.tok
     switch op {
-    case token.ADD_ASSIGN, token.ASSIGN, token.DIV_ASSIGN, token.MOD_ASSIGN, token.MUL_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.SUB_ASSIGN, token.XOR_ASSIGN:
-        {
-            parser.next(p)
-            var y *ast.Expr = expression(p)
-            var stmt ast.Stmt = {
-                kind: ast.STMT_ASSIGN,
-                assign: {
-                    x: x,
-                    op: op,
-                    y: y,
-                },
-            }
-            return esc(stmt)
+    case token.ADD_ASSIGN, token.ASSIGN, token.DIV_ASSIGN, token.MOD_ASSIGN, token.MUL_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.SUB_ASSIGN, token.XOR_ASSIGN: {
+        parser.next(p)
+        var y *ast.Expr = expression(p)
+        var stmt ast.Stmt = {
+            kind: ast.STMT_ASSIGN,
+            assign: {
+                x: x,
+                op: op,
+                y: y,
+            },
         }
-    case token.INC, token.DEC:
-        {
-            parser.next(p)
-            var stmt ast.Stmt = {
-                kind: ast.STMT_POSTFIX,
-                postfix: {
-                    x: x,
-                    op: op,
-                },
-            }
-            return esc(stmt)
+        return esc(stmt)
+    }
+    case token.INC, token.DEC: {
+        parser.next(p)
+        var stmt ast.Stmt = {
+            kind: ast.STMT_POSTFIX,
+            postfix: {
+                x: x,
+                op: op,
+            },
         }
-    default:
-        break
+        return esc(stmt)
+    }
+    default: break
     }
     if labelOk && x.kind == ast.EXPR_IDENT {
         if parser.accept(p, token.COLON) {
@@ -742,8 +730,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 case token.CASE, token.DEFAULT, token.RBRACE:
                     loop = false
                     break
-                default:
-                    break
+                default: break
                 }
                 if loop {
                     var stmt *ast.Stmt = statement(p)
@@ -786,28 +773,25 @@ fun statement(p *parser.Parser) *ast.Stmt {
         return esc(stmt)
     }
     switch p.tok {
-    case token.BREAK, token.CONTINUE, token.GOTO:
-        {
-            var keyword token.Token = p.tok
-            parser.next(p)
-            var label *ast.Expr = NULL
-            if keyword == token.GOTO {
-                label = parser.parseIdent(p)
-            }
-            parser.expect(p, token.SEMICOLON)
-            var stmt ast.Stmt = {
-                kind: ast.STMT_JUMP,
-                jump: {
-                    keyword: keyword,
-                    label: label,
-                },
-            }
-            return esc(stmt)
+    case token.BREAK, token.CONTINUE, token.GOTO: {
+        var keyword token.Token = p.tok
+        parser.next(p)
+        var label *ast.Expr = NULL
+        if keyword == token.GOTO {
+            label = parser.parseIdent(p)
         }
-    case token.LBRACE:
-        return compound_statement(p, false)
-    default:
-        break
+        parser.expect(p, token.SEMICOLON)
+        var stmt ast.Stmt = {
+            kind: ast.STMT_JUMP,
+            jump: {
+                keyword: keyword,
+                label: label,
+            },
+        }
+        return esc(stmt)
+    }
+    case token.LBRACE: return compound_statement(p, false)
+    default: break
     }
     if parser.accept(p, token.SEMICOLON) {
         var stmt ast.Stmt = {
@@ -885,8 +869,7 @@ fun declaration_specifiers(p *parser.Parser, is_top bool) *ast.Expr {
         case token.EXTERN, token.STATIC:
             parser.next(p)
             break
-        default:
-            break
+        default: break
         }
     }
     var is_const bool = parser.accept(p, token.CONST)

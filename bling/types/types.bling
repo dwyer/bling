@@ -170,12 +170,9 @@ fun isType(expr *ast.Expr) bool {
             panic("types$isType: unresolved identifier %s", expr.ident.name)
         }
         return expr.ident.obj.decl.kind == ast.DECL_TYPEDEF
-    case ast.EXPR_STAR:
-        return isType(expr.star.x)
-    case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_FUNC, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
-        return true
-    default:
-        return false
+    case ast.EXPR_STAR: return isType(expr.star.x)
+    case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_FUNC, ast.TYPE_NATIVE, ast.TYPE_STRUCT: return true
+    default: return false
     }
 }
 
@@ -217,8 +214,7 @@ fun getBaseType(type *ast.Expr) *ast.Expr {
         case ast.EXPR_SELECTOR:
             type = type.selector.sel
             break
-        case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
-            return type
+        case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_NATIVE, ast.TYPE_STRUCT: return type
         default:
             panic("not a type: %s", typeString(type))
         }
@@ -227,25 +223,18 @@ fun getBaseType(type *ast.Expr) *ast.Expr {
 
 fun isArithmetic(type *ast.Expr) bool {
     switch type.kind {
-    case ast.EXPR_IDENT:
-        return isArithmetic(getBaseType(type))
-    case ast.EXPR_STAR, ast.TYPE_ENUM:
-        return true
-    case ast.TYPE_NATIVE:
-        return !streq(type.native.name, "void")
-    default:
-        return false
+    case ast.EXPR_IDENT: return isArithmetic(getBaseType(type))
+    case ast.EXPR_STAR, ast.TYPE_ENUM: return true
+    case ast.TYPE_NATIVE: return !streq(type.native.name, "void")
+    default: return false
     }
 }
 
 fun isNative(type *ast.Expr, name *const char) bool {
     switch type.kind {
-    case ast.EXPR_IDENT:
-        return streq(type.ident.name, name)
-    case ast.TYPE_NATIVE:
-        return true
-    default:
-        return false
+    case ast.EXPR_IDENT: return streq(type.ident.name, name)
+    case ast.TYPE_NATIVE: return true
+    default: return false
     }
 }
 
@@ -268,12 +257,9 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
         return false
     }
     switch a.kind {
-    case ast.EXPR_IDENT:
-        return b.kind == ast.EXPR_IDENT && a.ident.obj == a.ident.obj
-    case ast.EXPR_STAR:
-        return areIdentical(a.star.x, b.star.x)
-    case ast.TYPE_ARRAY:
-        return areIdentical(a.array.elt, b.array.elt)
+    case ast.EXPR_IDENT: return b.kind == ast.EXPR_IDENT && a.ident.obj == a.ident.obj
+    case ast.EXPR_STAR: return areIdentical(a.star.x, b.star.x)
+    case ast.TYPE_ARRAY: return areIdentical(a.array.elt, b.array.elt)
     case ast.TYPE_FUNC:
         {
             if !areIdentical(a.func.result, b.func.result) {
@@ -309,10 +295,8 @@ fun isPointer(t *ast.Expr) bool {
 
 fun pointerBase(t *ast.Expr) *ast.Expr {
     switch t.kind {
-    case ast.EXPR_STAR:
-        return t.star.x
-    case ast.TYPE_ARRAY:
-        return t.array.elt
+    case ast.EXPR_STAR: return t.star.x
+    case ast.TYPE_ARRAY: return t.array.elt
     default:
         panic("not a pointer: %s", typeString(t))
         return NULL
@@ -362,31 +346,21 @@ fun areComparable(a *ast.Expr, b *ast.Expr) bool {
 
 fun getDeclKind(decl *ast.Decl) ast.ObjKind {
     switch decl.kind {
-    case ast.DECL_FIELD, ast.DECL_VALUE:
-        return ast.ObjKind_VALUE
-    case ast.DECL_FUNC:
-        return ast.ObjKind_FUNC
-    case ast.DECL_IMPORT:
-        return ast.ObjKind_PKG
-    case ast.DECL_TYPEDEF:
-        return ast.ObjKind_TYPE
-    default:
-        return ast.ObjKind_BAD
+    case ast.DECL_FIELD, ast.DECL_VALUE: return ast.ObjKind_VALUE
+    case ast.DECL_FUNC: return ast.ObjKind_FUNC
+    case ast.DECL_IMPORT: return ast.ObjKind_PKG
+    case ast.DECL_TYPEDEF: return ast.ObjKind_TYPE
+    default: return ast.ObjKind_BAD
     }
 }
 
 fun getDeclName(decl *ast.Decl) *ast.Expr {
     switch decl.kind {
-    case ast.DECL_FIELD:
-        return decl.field.name
-    case ast.DECL_FUNC:
-        return decl.func.name
-    case ast.DECL_IMPORT:
-        return decl.imp.name
-    case ast.DECL_TYPEDEF:
-        return decl.typedef_.name
-    case ast.DECL_VALUE:
-        return decl.value.name
+    case ast.DECL_FIELD: return decl.field.name
+    case ast.DECL_FUNC: return decl.func.name
+    case ast.DECL_IMPORT: return decl.imp.name
+    case ast.DECL_TYPEDEF: return decl.typedef_.name
+    case ast.DECL_VALUE: return decl.value.name
     default:
         panic("bad decl: %s", declString(decl))
         return NULL
@@ -444,34 +418,23 @@ fun universe() *ast.Scope {
 
 fun isLhs(expr *ast.Expr) bool {
     switch expr.kind {
-    case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
-        return true
-    case ast.EXPR_CAST:
-        return isLhs(expr.cast.expr)
-    case ast.EXPR_INDEX:
-        return isLhs(expr.index.x)
-    case ast.EXPR_PAREN:
-        return isLhs(expr.paren.x)
-    case ast.EXPR_STAR:
-        return isLhs(expr.star.x)
-    default:
-        return false
+    case ast.EXPR_IDENT, ast.EXPR_SELECTOR: return true
+    case ast.EXPR_CAST: return isLhs(expr.cast.expr)
+    case ast.EXPR_INDEX: return isLhs(expr.index.x)
+    case ast.EXPR_PAREN: return isLhs(expr.paren.x)
+    case ast.EXPR_STAR: return isLhs(expr.star.x)
+    default: return false
     }
 }
 
 fun getDeclType(decl *ast.Decl) *ast.Expr {
     assert(decl)
     switch decl.kind {
-    case ast.DECL_FIELD:
-        return decl.field.type
-    case ast.DECL_FUNC:
-        return decl.func.type
-    case ast.DECL_IMPORT:
-        return NULL
-    case ast.DECL_TYPEDEF:
-        return decl.typedef_.type
-    case ast.DECL_VALUE:
-        return decl.value.type
+    case ast.DECL_FIELD: return decl.field.type
+    case ast.DECL_FUNC: return decl.func.type
+    case ast.DECL_IMPORT: return NULL
+    case ast.DECL_TYPEDEF: return decl.typedef_.type
+    case ast.DECL_VALUE: return decl.value.type
     default:
         panic("unhandled decl: %s", declString(decl))
         return NULL
@@ -697,12 +660,9 @@ fun Checker_checkIdent(c *Checker, expr *ast.Expr) *ast.Expr {
 
 fun isInteger(x *ast.Expr) bool {
     switch x.kind {
-    case ast.EXPR_IDENT:
-        return isInteger(x.ident.obj.decl.typedef_.type)
-    case ast.TYPE_ENUM, ast.TYPE_NATIVE:
-        return true
-    default:
-        return false
+    case ast.EXPR_IDENT: return isInteger(x.ident.obj.decl.typedef_.type)
+    case ast.TYPE_ENUM, ast.TYPE_NATIVE: return true
+    default: return false
     }
 }
 
@@ -788,77 +748,73 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     assert(expr)
     assert(ast.Expr_pos(expr))
     switch expr.kind {
-    case ast.EXPR_BINARY:
-        {
-            var typ1 *ast.Expr = Checker_checkExpr(c, expr.binary.x)
-            var typ2 *ast.Expr = Checker_checkExpr(c, expr.binary.y)
-            if !areComparable(typ1, typ2) {
-                Checker_error(c, ast.Expr_pos(expr), sys.sprintf("not compariable: %s and %s", typeString(typ1), typeString(typ2)))
-            }
-            switch expr.binary.op {
-            case token.EQUAL, token.GT, token.GT_EQUAL, token.LAND, token.LOR, token.LT, token.LT_EQUAL, token.NOT_EQUAL:
-                typ1 = makeIdent("bool")
-                Checker_checkType(c, typ1)
-            default:
-                return typ1
+    case ast.EXPR_BINARY: {
+        var typ1 *ast.Expr = Checker_checkExpr(c, expr.binary.x)
+        var typ2 *ast.Expr = Checker_checkExpr(c, expr.binary.y)
+        if !areComparable(typ1, typ2) {
+            Checker_error(c, ast.Expr_pos(expr), sys.sprintf("not compariable: %s and %s", typeString(typ1), typeString(typ2)))
+        }
+        switch expr.binary.op {
+        case token.EQUAL, token.GT, token.GT_EQUAL, token.LAND, token.LOR, token.LT, token.LT_EQUAL, token.NOT_EQUAL:
+            typ1 = makeIdent("bool")
+            Checker_checkType(c, typ1)
+        default: return typ1
+        }
+    }
+    case ast.EXPR_BASIC_LIT: {
+        var kind token.Token = expr.basic.kind
+        var type *ast.Expr = NULL
+        switch kind {
+        case token.CHAR:
+            type = makeIdent("char")
+            break
+        case token.FLOAT:
+            type = makeIdent("float")
+            break
+        case token.INT:
+            type = makeIdent("int")
+            break
+        case token.STRING:
+            type = makePtr(makeIdent("char"))
+            break
+        default:
+            Checker_error(c, ast.Expr_pos(expr), "unreachable")
+            break
+        }
+        Checker_checkType(c, type)
+        return type
+    }
+    case ast.EXPR_CALL: {
+        var func *ast.Expr = expr.call.func
+        var type *ast.Expr = Checker_checkExpr(c, func)
+        if func.kind == ast.EXPR_IDENT {
+            if streq(func.ident.name, "esc") {
+                assert(expr.call.args[0] && !expr.call.args[1])
+                var type *ast.Expr = Checker_checkExpr(c, expr.call.args[0])
+                return makePtr(type)
             }
         }
-    case ast.EXPR_BASIC_LIT:
-        {
-            var kind token.Token = expr.basic.kind
-            var type *ast.Expr = NULL
-            switch kind {
-            case token.CHAR:
-                type = makeIdent("char")
-                break
-            case token.FLOAT:
-                type = makeIdent("float")
-                break
-            case token.INT:
-                type = makeIdent("int")
-                break
-            case token.STRING:
-                type = makePtr(makeIdent("char"))
-                break
-            default:
-                Checker_error(c, ast.Expr_pos(expr), "unreachable")
-                break
-            }
-            Checker_checkType(c, type)
-            return type
+        if type.kind == ast.EXPR_STAR {
+            type = type.star.x
         }
-    case ast.EXPR_CALL:
-        {
-            var func *ast.Expr = expr.call.func
-            var type *ast.Expr = Checker_checkExpr(c, func)
-            if func.kind == ast.EXPR_IDENT {
-                if streq(func.ident.name, "esc") {
-                    assert(expr.call.args[0] && !expr.call.args[1])
-                    var type *ast.Expr = Checker_checkExpr(c, expr.call.args[0])
-                    return makePtr(type)
+        if type.kind != ast.TYPE_FUNC {
+            Checker_error(c, ast.Expr_pos(expr), sys.sprintf("`%s` is not a func", exprString(expr.call.func)))
+        }
+        var j int = 0
+        for var i int = 0; expr.call.args[i]; i++ {
+            var param *ast.Decl = type.func.params[j]
+            var type *ast.Expr = Checker_checkExpr(c, expr.call.args[i])
+            if param.kind == ast.DECL_FIELD {
+                if !areAssignable(param.field.type, type) {
+                    Checker_error(c, ast.Expr_pos(expr), sys.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
                 }
+                j++
+            } else {
+                assert(param.kind == ast.DECL_ELLIPSIS)
             }
-            if type.kind == ast.EXPR_STAR {
-                type = type.star.x
-            }
-            if type.kind != ast.TYPE_FUNC {
-                Checker_error(c, ast.Expr_pos(expr), sys.sprintf("`%s` is not a func", exprString(expr.call.func)))
-            }
-            var j int = 0
-            for var i int = 0; expr.call.args[i]; i++ {
-                var param *ast.Decl = type.func.params[j]
-                var type *ast.Expr = Checker_checkExpr(c, expr.call.args[i])
-                if param.kind == ast.DECL_FIELD {
-                    if !areAssignable(param.field.type, type) {
-                        Checker_error(c, ast.Expr_pos(expr), sys.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
-                    }
-                    j++
-                } else {
-                    assert(param.kind == ast.DECL_ELLIPSIS)
-                }
-            }
-            return type.func.result
         }
+        return type.func.result
+    }
     case ast.EXPR_COMPOSITE_LIT:
         assert(expr.composite.type != NULL)
         Checker_checkCompositeLit(c, expr)
@@ -873,94 +829,85 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     case ast.EXPR_IDENT:
         Checker_resolve(c, c.pkg.scope, expr)
         return Checker_checkIdent(c, expr)
-    case ast.EXPR_INDEX:
-        {
-            var type *ast.Expr = Checker_checkExpr(c, expr.index.x)
-            switch type.kind {
-            case ast.TYPE_ARRAY:
-                type = type.array.elt
-                break
-            case ast.EXPR_STAR:
-                type = type.star.x
-                break
-            default:
-                Checker_error(c, ast.Expr_pos(expr), sys.sprintf("indexing a non-array or pointer `%s`", typeString(type)))
-                break
-            }
-            var typ2 *ast.Expr = Checker_checkExpr(c, expr.index.index)
-            <void> typ2
+    case ast.EXPR_INDEX: {
+        var type *ast.Expr = Checker_checkExpr(c, expr.index.x)
+        switch type.kind {
+        case ast.TYPE_ARRAY:
+            type = type.array.elt
+            break
+        case ast.EXPR_STAR:
+            type = type.star.x
+            break
+        default:
+            Checker_error(c, ast.Expr_pos(expr), sys.sprintf("indexing a non-array or pointer `%s`", typeString(type)))
+            break
+        }
+        var typ2 *ast.Expr = Checker_checkExpr(c, expr.index.index)
+        <void> typ2
+        return type
+    }
+    case ast.EXPR_PAREN: return Checker_checkExpr(c, expr.paren.x)
+    case ast.EXPR_SELECTOR: {
+        var type *ast.Expr = Checker_checkExpr(c, expr.selector.x)
+        if type == NULL {
+            var x *ast.Expr = expr.selector.x
+            assert(x.kind == ast.EXPR_IDENT)
+            var decl *ast.Decl = x.ident.obj.decl
+            assert(decl.kind == ast.DECL_IMPORT)
+            var oldScope *ast.Scope = c.pkg.scope
+            c.pkg.scope = decl.imp.scope
+            type = Checker_checkExpr(c, expr.selector.sel)
+            c.pkg.scope = oldScope
+            expr.selector.tok = token.DOLLAR
             return type
         }
-    case ast.EXPR_PAREN:
-        return Checker_checkExpr(c, expr.paren.x)
-    case ast.EXPR_SELECTOR:
-        {
-            var type *ast.Expr = Checker_checkExpr(c, expr.selector.x)
-            if type == NULL {
-                var x *ast.Expr = expr.selector.x
-                assert(x.kind == ast.EXPR_IDENT)
-                var decl *ast.Decl = x.ident.obj.decl
-                assert(decl.kind == ast.DECL_IMPORT)
-                var oldScope *ast.Scope = c.pkg.scope
-                c.pkg.scope = decl.imp.scope
-                type = Checker_checkExpr(c, expr.selector.sel)
-                c.pkg.scope = oldScope
-                expr.selector.tok = token.DOLLAR
-                return type
-            }
-            if type.kind == ast.EXPR_STAR {
-                expr.selector.tok = token.ARROW
-                type = type.star.x
-            } else {
-                assert(expr.selector.tok != token.ARROW)
-            }
-            var field *ast.Decl = getStructFieldByName(type, expr.selector.sel)
-            if field == NULL {
-                Checker_error(c, ast.Expr_pos(expr), sys.sprintf("no member named '%s' in '%s'", exprString(expr.selector.sel), typeString(type)))
-            }
-            expr.selector.sel.ident.obj = field.field.name.ident.obj
-            return field.field.type
+        if type.kind == ast.EXPR_STAR {
+            expr.selector.tok = token.ARROW
+            type = type.star.x
+        } else {
+            assert(expr.selector.tok != token.ARROW)
         }
-    case ast.EXPR_SIZEOF:
-        {
-            Checker_checkType(c, expr.sizeof_.x)
-            var ident *ast.Expr = makeIdent("size_t")
-            Checker_resolve(c, c.pkg.scope, ident)
-            return ident
+        var field *ast.Decl = getStructFieldByName(type, expr.selector.sel)
+        if field == NULL {
+            Checker_error(c, ast.Expr_pos(expr), sys.sprintf("no member named '%s' in '%s'", exprString(expr.selector.sel), typeString(type)))
         }
-    case ast.EXPR_STAR:
-        {
-            var type *ast.Expr = Checker_checkExpr(c, expr.star.x)
-            switch type.kind {
-            case ast.EXPR_STAR:
-                return type.star.x
-            case ast.TYPE_ARRAY:
-                return type.array.elt
-            default:
-                Checker_error(c, ast.Expr_pos(expr), sys.sprintf("derefencing a non-pointer `%s`", typeString(type)))
-                return NULL
+        expr.selector.sel.ident.obj = field.field.name.ident.obj
+        return field.field.type
+    }
+    case ast.EXPR_SIZEOF: {
+        Checker_checkType(c, expr.sizeof_.x)
+        var ident *ast.Expr = makeIdent("size_t")
+        Checker_resolve(c, c.pkg.scope, ident)
+        return ident
+    }
+    case ast.EXPR_STAR: {
+        var type *ast.Expr = Checker_checkExpr(c, expr.star.x)
+        switch type.kind {
+        case ast.EXPR_STAR: return type.star.x
+        case ast.TYPE_ARRAY: return type.array.elt
+        default:
+            Checker_error(c, ast.Expr_pos(expr), sys.sprintf("derefencing a non-pointer `%s`", typeString(type)))
+            return NULL
+        }
+    }
+    case ast.EXPR_TERNARY: {
+        var t1 *ast.Expr = Checker_checkExpr(c, expr.ternary.cond)
+        assert(isArithmetic(t1))
+        var t2 *ast.Expr = Checker_checkExpr(c, expr.ternary.x)
+        var t3 *ast.Expr = Checker_checkExpr(c, expr.ternary.y)
+        assert(areIdentical(t2, t3))
+        return t2
+    }
+    case ast.EXPR_UNARY: {
+        var type *ast.Expr = Checker_checkExpr(c, expr.unary.x)
+        if expr.unary.op == token.AND {
+            if !isLhs(expr.unary.x) {
+                Checker_error(c, ast.Expr_pos(expr), sys.sprintf("invalid lvalue `%s`", exprString(expr.unary.x)))
             }
+            return makePtr(type)
         }
-    case ast.EXPR_TERNARY:
-        {
-            var t1 *ast.Expr = Checker_checkExpr(c, expr.ternary.cond)
-            assert(isArithmetic(t1))
-            var t2 *ast.Expr = Checker_checkExpr(c, expr.ternary.x)
-            var t3 *ast.Expr = Checker_checkExpr(c, expr.ternary.y)
-            assert(areIdentical(t2, t3))
-            return t2
-        }
-    case ast.EXPR_UNARY:
-        {
-            var type *ast.Expr = Checker_checkExpr(c, expr.unary.x)
-            if expr.unary.op == token.AND {
-                if !isLhs(expr.unary.x) {
-                    Checker_error(c, ast.Expr_pos(expr), sys.sprintf("invalid lvalue `%s`", exprString(expr.unary.x)))
-                }
-                return makePtr(type)
-            }
-            return type
-        }
+        return type
+    }
     default:
         Checker_error(c, ast.Expr_pos(expr), "unknown expr")
         return NULL
@@ -1000,8 +947,7 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
     case ast.STMT_EXPR:
         Checker_checkExpr(c, stmt.expr.x)
         break
-    case ast.STMT_EMPTY:
-        break
+    case ast.STMT_EMPTY: break
     case ast.STMT_IF:
         Checker_checkExpr(c, stmt.if_.cond)
         Checker_checkStmt(c, stmt.if_.body)
@@ -1027,8 +973,7 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
             Checker_closeScope(c)
         }
         break
-    case ast.STMT_JUMP:
-        break
+    case ast.STMT_JUMP: break
     case ast.STMT_LABEL:
         Checker_checkStmt(c, stmt.label.stmt)
         break
@@ -1109,41 +1054,39 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
         Checker_checkType(c, decl.func.type)
         Checker_declare(c, c.pkg.scope, decl)
         break
-    case ast.DECL_PRAGMA:
-        break
+    case ast.DECL_PRAGMA: break
     case ast.DECL_TYPEDEF:
         c.typedefName = decl.typedef_.name
         Checker_checkType(c, decl.typedef_.type)
         c.typedefName = NULL
         Checker_declare(c, c.pkg.scope, decl)
         break
-    case ast.DECL_VALUE:
-        {
-            var valType *ast.Expr = NULL
-            if decl.value.type != NULL {
-                Checker_checkType(c, decl.value.type)
-            }
-            if decl.value.value != NULL {
-                if decl.value.value.kind == ast.EXPR_COMPOSITE_LIT {
-                    if decl.value.type == NULL {
-                        Checker_error(c, decl.pos, "cannot assign short var decls with composite type")
-                    }
-                    decl.value.value.composite.type = decl.value.type
-                }
-                valType = Checker_checkExpr(c, decl.value.value)
-            }
-            if decl.value.type == NULL {
-                decl.value.type = valType
-            }
-            if valType != NULL {
-                var varType *ast.Expr = decl.value.type
-                if !areAssignable(varType, valType) {
-                    Checker_error(c, decl.pos, sys.sprintf("not assignable %s and %s", typeString(varType), typeString(valType)))
-                }
-            }
-            Checker_declare(c, c.pkg.scope, decl)
-            break
+    case ast.DECL_VALUE: {
+        var valType *ast.Expr = NULL
+        if decl.value.type != NULL {
+            Checker_checkType(c, decl.value.type)
         }
+        if decl.value.value != NULL {
+            if decl.value.value.kind == ast.EXPR_COMPOSITE_LIT {
+                if decl.value.type == NULL {
+                    Checker_error(c, decl.pos, "cannot assign short var decls with composite type")
+                }
+                decl.value.value.composite.type = decl.value.type
+            }
+            valType = Checker_checkExpr(c, decl.value.value)
+        }
+        if decl.value.type == NULL {
+            decl.value.type = valType
+        }
+        if valType != NULL {
+            var varType *ast.Expr = decl.value.type
+            if !areAssignable(varType, valType) {
+                Checker_error(c, decl.pos, sys.sprintf("not assignable %s and %s", typeString(varType), typeString(valType)))
+            }
+        }
+        Checker_declare(c, c.pkg.scope, decl)
+        break
+    }
     default:
         Checker_error(c, decl.pos, "unreachable")
     }

@@ -217,8 +217,7 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
         e.indent++
         for var stmts **ast.Stmt = stmt.block.stmts; stmts && *stmts; stmts++ {
             switch (*stmts).kind {
-            case ast.STMT_LABEL:
-                break
+            case ast.STMT_LABEL: break
             default:
                 emitTabs(e)
                 break
@@ -245,14 +244,32 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
             emitToken(e, token.DEFAULT)
         }
         emitToken(e, token.COLON)
-        emitNewline(e)
-        e.indent++
-        for var stmts **ast.Stmt = stmt.case_.stmts; stmts && *stmts; stmts++ {
-            emitTabs(e)
-            emitStmt(e, *stmts)
-            emitNewline(e)
+        if stmt.case_.stmts {
+            var first *ast.Stmt = stmt.case_.stmts[0]
+            var oneline bool = false
+            if first != NULL {
+                switch first.kind {
+                case ast.STMT_BLOCK, ast.STMT_JUMP, ast.STMT_RETURN:
+                    oneline = stmt.case_.stmts[1] == NULL
+                    break
+                default: break
+                }
+            }
+            if oneline {
+                emitSpace(e)
+                emitStmt(e, first)
+                emitNewline(e)
+            } else {
+                emitNewline(e)
+                e.indent++
+                for var i int = 0; stmt.case_.stmts[i]; i++ {
+                    emitTabs(e)
+                    emitStmt(e, stmt.case_.stmts[i])
+                    emitNewline(e)
+                }
+                e.indent--
+            }
         }
-        e.indent--
         break
     case ast.STMT_DECL:
         emitDecl(e, stmt.decl.decl)

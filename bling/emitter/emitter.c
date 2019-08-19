@@ -224,14 +224,35 @@ extern void emitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
             emitter$emitToken(e, token$DEFAULT);
         }
         emitter$emitToken(e, token$COLON);
-        emitter$emitNewline(e);
-        e->indent++;
-        for (ast$Stmt **stmts = stmt->case_.stmts; stmts && *stmts; stmts++) {
-            emitter$emitTabs(e);
-            emitter$emitStmt(e, *stmts);
-            emitter$emitNewline(e);
+        if (stmt->case_.stmts) {
+            ast$Stmt *first = stmt->case_.stmts[0];
+            bool oneline = false;
+            if (first != NULL) {
+                switch (first->kind) {
+                case ast$STMT_BLOCK:
+                case ast$STMT_JUMP:
+                case ast$STMT_RETURN:
+                    oneline = stmt->case_.stmts[1] == NULL;
+                    break;
+                default:
+                    break;
+                }
+            }
+            if (oneline) {
+                emitter$emitSpace(e);
+                emitter$emitStmt(e, first);
+                emitter$emitNewline(e);
+            } else {
+                emitter$emitNewline(e);
+                e->indent++;
+                for (int i = 0; stmt->case_.stmts[i]; i++) {
+                    emitter$emitTabs(e);
+                    emitter$emitStmt(e, stmt->case_.stmts[i]);
+                    emitter$emitNewline(e);
+                }
+                e->indent--;
+            }
         }
-        e->indent--;
         break;
 
     case ast$STMT_DECL:

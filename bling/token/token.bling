@@ -261,28 +261,17 @@ fun lookup(ident *char) Token {
 
 fun precedence(op Token) int {
     switch op {
-    case MUL, DIV, MOD:
-        return 10
-    case ADD, SUB:
-        return 9
-    case SHL, SHR:
-        return 8
-    case GT, GT_EQUAL, LT, LT_EQUAL:
-        return 7
-    case EQUAL, NOT_EQUAL:
-        return 6
-    case AND:
-        return 5
-    case XOR:
-        return 4
-    case OR:
-        return 3
-    case LAND:
-        return 2
-    case LOR:
-        return 1
-    default:
-        return lowest_prec
+    case MUL, DIV, MOD: return 10
+    case ADD, SUB: return 9
+    case SHL, SHR: return 8
+    case GT, GT_EQUAL, LT, LT_EQUAL: return 7
+    case EQUAL, NOT_EQUAL: return 6
+    case AND: return 5
+    case XOR: return 4
+    case OR: return 3
+    case LAND: return 2
+    case LOR: return 1
+    default: return lowest_prec
     }
 }
 
