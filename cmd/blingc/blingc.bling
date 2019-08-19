@@ -57,6 +57,11 @@ fun compile_c(argv []*char) {
     while *argv {
         var filename *char = *argv
         var file *ast.File = cparser.parseFile(fset, filename, types.universe())
+        var conf types.Config = {
+            strict: true,
+            cMode: true,
+        }
+        types.checkFile(&conf, fset, file)
         emitter.emitFile(&e, file)
         argv++
     }

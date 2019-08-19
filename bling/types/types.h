@@ -23,6 +23,7 @@ extern char *types$typeString(ast$Expr *expr);
 
 typedef struct {
     bool strict;
+    bool cMode;
 } types$Config;
 
 extern ast$Package types$checkFile(types$Config *conf, token$FileSet *fset,

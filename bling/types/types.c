@@ -102,7 +102,6 @@ static ast$Expr *types$makePtr(ast$Expr *type) {
     ast$Expr x = {
         .kind = ast$EXPR_STAR,
         .star = {
-            .pos = ast$Expr_pos(type),
             .x = type,
         }
     };
@@ -500,38 +499,39 @@ static void Checker_declare(Checker *c, ast$Scope *s, ast$Decl *decl) {
     ident->ident.obj = obj;
     ast$Object *alt = ast$Scope_insert(s, obj);
     if (alt != NULL) {
-        if (alt->kind != kind) {
+        bool redecl = false;
+        if (alt->kind == kind) {
+            switch (kind) {
+            case ast$ObjKind_BAD:
+                panic("unreachable");
+                break;
+            case ast$ObjKind_FUNC:
+                redecl =
+                    (alt->decl->func.body == NULL || decl->func.body == NULL) &&
+                    types$areIdentical(alt->decl->func.type, decl->func.type);
+                break;
+            case ast$ObjKind_PKG:
+                redecl = true;
+                break;
+            case ast$ObjKind_TYPE:
+                if (alt->decl->typedef_.type->kind == ast$TYPE_STRUCT) {
+                    redecl = alt->decl->typedef_.type->struct_.fields == NULL;
+                }
+                if (c->conf->cMode) {
+                    redecl = true;
+                }
+                break;
+            case ast$ObjKind_VALUE:
+                redecl = alt->decl->value.value == NULL && !types$areIdentical(
+                        alt->decl->value.type, decl->value.value);
+                break;
+            }
+        }
+        if (!redecl) {
             Checker_error(c, decl->pos,
                     sys$sprintf("incompatible redefinition of `%s`: %s",
                         types$declString(obj->decl),
                         types$declString(decl)));
-        }
-        bool redecl = false;
-        switch (kind) {
-        case ast$ObjKind_BAD:
-            panic("unreachable");
-            break;
-        case ast$ObjKind_FUNC:
-            redecl =
-                (alt->decl->func.body == NULL || decl->func.body == NULL) &&
-                types$areIdentical(alt->decl->func.type, decl->func.type);
-            break;
-        case ast$ObjKind_PKG:
-            redecl = true;
-            break;
-        case ast$ObjKind_TYPE:
-            if (alt->decl->typedef_.type->kind == ast$TYPE_STRUCT) {
-                redecl = alt->decl->typedef_.type->struct_.fields == NULL;
-            }
-            break;
-        case ast$ObjKind_VALUE:
-            redecl = alt->decl->value.value == NULL &&
-                !types$areIdentical(alt->decl->value.type, decl->value.value);
-            break;
-        }
-        if (!redecl) {
-            Checker_error(c, decl->pos,
-                    sys$sprintf("already declared: %s", ident->ident.name));
         }
         alt->decl = decl;
     }
@@ -734,7 +734,6 @@ static void Checker_checkCompositeLit(Checker *c, ast$Expr *x) {
 
 static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
     assert(expr);
-    assert(ast$Expr_pos(expr));
     switch (expr->kind) {
 
     case ast$EXPR_BINARY:
@@ -956,7 +955,6 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
 static void Checker_checkDecl(Checker *c, ast$Decl *decl);
 
 static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
-    assert(ast$Stmt_pos(stmt));
     switch (stmt->kind) {
     case ast$STMT_ASSIGN:
         {
@@ -1084,6 +1082,9 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
 static void Checker_checkFile(Checker *c, ast$File *file);
 
 static void Checker_checkImport(Checker *c, ast$Decl *imp) {
+    if (c->conf->cMode) {
+        return;
+    }
     char *path = constant_stringVal(imp->imp.path);
     if (imp->imp.name == NULL) {
         char *base = paths$base(path);
@@ -1120,7 +1121,6 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
 }
 
 static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
-    assert(ast$Decl_pos(decl));
     switch (decl->kind) {
     case ast$DECL_FUNC:
         Checker_checkType(c, decl->func.type);

@@ -27,6 +27,7 @@ fun typeString(expr *ast.Expr) *char
 
 typedef Config struct {
     strict bool
+    cMode bool
 }
 
 fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package
@@ -190,7 +191,6 @@ fun makePtr(type *ast.Expr) *ast.Expr {
     var x ast.Expr = {
         kind: ast.EXPR_STAR,
         star: {
-            pos: ast.Expr_pos(type),
             x: type,
         },
     }
@@ -541,31 +541,33 @@ fun Checker_declare(c *Checker, s *ast.Scope, decl *ast.Decl) {
     ident.ident.obj = obj
     var alt *ast.Object = ast.Scope_insert(s, obj)
     if alt != NULL {
-        if alt.kind != kind {
-            Checker_error(c, decl.pos, sys.sprintf("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl)))
-        }
         var redecl bool = false
-        switch kind {
-        case ast.ObjKind_BAD:
-            panic("unreachable")
-            break
-        case ast.ObjKind_FUNC:
-            redecl = (alt.decl.func.body == NULL || decl.func.body == NULL) && areIdentical(alt.decl.func.type, decl.func.type)
-            break
-        case ast.ObjKind_PKG:
-            redecl = true
-            break
-        case ast.ObjKind_TYPE:
-            if alt.decl.typedef_.type.kind == ast.TYPE_STRUCT {
-                redecl = alt.decl.typedef_.type.struct_.fields == NULL
+        if alt.kind == kind {
+            switch kind {
+            case ast.ObjKind_BAD:
+                panic("unreachable")
+                break
+            case ast.ObjKind_FUNC:
+                redecl = (alt.decl.func.body == NULL || decl.func.body == NULL) && areIdentical(alt.decl.func.type, decl.func.type)
+                break
+            case ast.ObjKind_PKG:
+                redecl = true
+                break
+            case ast.ObjKind_TYPE:
+                if alt.decl.typedef_.type.kind == ast.TYPE_STRUCT {
+                    redecl = alt.decl.typedef_.type.struct_.fields == NULL
+                }
+                if c.conf.cMode {
+                    redecl = true
+                }
+                break
+            case ast.ObjKind_VALUE:
+                redecl = alt.decl.value.value == NULL && !areIdentical(alt.decl.value.type, decl.value.value)
+                break
             }
-            break
-        case ast.ObjKind_VALUE:
-            redecl = alt.decl.value.value == NULL && !areIdentical(alt.decl.value.type, decl.value.value)
-            break
         }
         if !redecl {
-            Checker_error(c, decl.pos, sys.sprintf("already declared: %s", ident.ident.name))
+            Checker_error(c, decl.pos, sys.sprintf("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl)))
         }
         alt.decl = decl
     }
@@ -746,7 +748,6 @@ fun Checker_checkCompositeLit(c *Checker, x *ast.Expr) {
 
 fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     assert(expr)
-    assert(ast.Expr_pos(expr))
     switch expr.kind {
     case ast.EXPR_BINARY: {
         var typ1 *ast.Expr = Checker_checkExpr(c, expr.binary.x)
@@ -917,7 +918,6 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
 fun Checker_checkDecl(c *Checker, decl *ast.Decl)
 
 fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
-    assert(ast.Stmt_pos(stmt))
     switch stmt.kind {
     case ast.STMT_ASSIGN:
         {
@@ -1018,6 +1018,9 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
 fun Checker_checkFile(c *Checker, file *ast.File)
 
 fun Checker_checkImport(c *Checker, imp *ast.Decl) {
+    if c.conf.cMode {
+        return
+    }
     var path *char = constant_stringVal(imp.imp.path)
     if imp.imp.name == NULL {
         var base *char = paths.base(path)
@@ -1048,7 +1051,6 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
 }
 
 fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
-    assert(ast.Decl_pos(decl))
     switch decl.kind {
     case ast.DECL_FUNC:
         Checker_checkType(c, decl.func.type)
