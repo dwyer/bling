@@ -139,6 +139,7 @@ done:
 }
 
 fun unary_expression(p *parser.Parser) *ast.Expr {
+    var pos token.Pos = p.pos
     switch p.tok {
     case token.ADD, token.AND, token.BITWISE_NOT, token.NOT, token.SUB: {
         var op token.Token = p.tok
@@ -146,6 +147,7 @@ fun unary_expression(p *parser.Parser) *ast.Expr {
         var x ast.Expr = {
             kind: ast.EXPR_UNARY,
             unary: {
+                pos: pos,
                 op: op,
                 x: cast_expression(p),
             },
@@ -157,6 +159,7 @@ fun unary_expression(p *parser.Parser) *ast.Expr {
         var x ast.Expr = {
             kind: ast.EXPR_STAR,
             star: {
+                pos: pos,
                 x: cast_expression(p),
             },
         }
@@ -178,6 +181,7 @@ fun unary_expression(p *parser.Parser) *ast.Expr {
         var y ast.Expr = {
             kind: ast.EXPR_SIZEOF,
             sizeof_: {
+                pos: pos,
                 x: x,
             },
         }
@@ -191,7 +195,8 @@ fun unary_expression(p *parser.Parser) *ast.Expr {
 }
 
 fun cast_expression(p *parser.Parser) *ast.Expr {
-    if parser.accept(p, token.LPAREN) {
+    if p.tok == token.LPAREN {
+        var pos token.Pos = parser.expect(p, token.LPAREN)
         if is_type(p) {
             var type *ast.Expr = type_name(p)
             parser.expect(p, token.RPAREN)
@@ -204,6 +209,7 @@ fun cast_expression(p *parser.Parser) *ast.Expr {
             var y ast.Expr = {
                 kind: ast.EXPR_CAST,
                 cast: {
+                    pos: pos,
                     type: type,
                     expr: x,
                 },
@@ -213,6 +219,7 @@ fun cast_expression(p *parser.Parser) *ast.Expr {
             var x ast.Expr = {
                 kind: ast.EXPR_PAREN,
                 paren: {
+                    pos: pos,
                     x: expression(p),
                 },
             }
@@ -274,8 +281,8 @@ fun constant_expression(p *parser.Parser) *ast.Expr {
 
 fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
     var keyword token.Token = p.tok
+    var pos token.Pos = parser.expect(p, keyword)
     var name *ast.Expr = NULL
-    parser.expect(p, keyword)
     if p.tok == token.IDENT {
         name = parser.parseIdent(p)
     }
@@ -285,10 +292,12 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
             size: sizeof(*ast.Decl),
         }
         for ;; {
+            var pos token.Pos = p.pos
             var type *ast.Expr = specifier_qualifier_list(p)
             var name *ast.Expr = declarator(p, &type)
             var f ast.Decl = {
                 kind: ast.DECL_FIELD,
+                pos: pos,
                 field: {
                     type: type,
                     name: name,
@@ -307,6 +316,7 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
     var x ast.Expr = {
         kind: ast.TYPE_STRUCT,
         struct_: {
+            pos: pos,
             tok: keyword,
             name: name,
             fields: fields,
@@ -316,8 +326,8 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
 }
 
 fun enum_specifier(p *parser.Parser) *ast.Expr {
+    var pos token.Pos = parser.expect(p, token.ENUM)
     var name *ast.Expr = NULL
-    parser.expect(p, token.ENUM)
     if p.tok == token.IDENT {
         name = parser.parseIdent(p)
     }
@@ -329,6 +339,7 @@ fun enum_specifier(p *parser.Parser) *ast.Expr {
         for ;; {
             var decl ast.Decl = {
                 kind: ast.DECL_VALUE,
+                pos: p.pos,
                 value: {
                     name: parser.parseIdent(p),
                     kind: token.VAR,
@@ -349,6 +360,7 @@ fun enum_specifier(p *parser.Parser) *ast.Expr {
     var x ast.Expr = {
         kind: ast.TYPE_ENUM,
         enum_: {
+            pos: pos,
             name: name,
             enums: enums,
         },
@@ -376,7 +388,9 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
         break
     default: break
     }
-    if parser.accept(p, token.LBRACK) {
+    if p.tok == token.LBRACK {
+        var pos token.Pos = p.pos
+        parser.next(p)
         var len *ast.Expr = NULL
         if p.tok != token.RBRACK {
             len = constant_expression(p)
@@ -384,6 +398,7 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
         var type ast.Expr = {
             kind: ast.TYPE_ARRAY,
             array: {
+                pos: pos,
                 elt: *type_ptr,
                 len: len,
             },
@@ -398,6 +413,7 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
         var type ast.Expr = {
             kind: ast.TYPE_FUNC,
             func: {
+                pos: ast.Expr_pos(*type_ptr),
                 result: *type_ptr,
                 params: params,
             },
@@ -425,13 +441,15 @@ fun type_qualifier(p *parser.Parser, type *ast.Expr) *ast.Expr {
 }
 
 fun pointer(p *parser.Parser, type *ast.Expr) *ast.Expr {
-    while parser.accept(p, token.MUL) {
+    while p.tok == token.MUL {
         var x ast.Expr = {
             kind: ast.EXPR_STAR,
             star: {
+                pos: p.pos,
                 x: type,
             },
         }
+        parser.next(p)
         type = esc(x)
         type = type_qualifier(p, type)
     }
@@ -448,9 +466,10 @@ fun parameter_type_list(p *parser.Parser) **ast.Decl {
         if !parser.accept(p, token.COMMA) {
             break
         }
-        if parser.accept(p, token.ELLIPSIS) {
+        if p.tok == token.ELLIPSIS {
             var decl ast.Decl = {
                 kind: ast.DECL_ELLIPSIS,
+                pos: parser.expect(p, token.ELLIPSIS),
             }
             var param *ast.Decl = esc(decl)
             utils.Slice_append(&params, &param)
@@ -467,6 +486,7 @@ fun type_name(p *parser.Parser) *ast.Expr {
 }
 
 fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
+    var pos token.Pos = p.pos
     if p.tok == token.MUL {
         type = pointer(p, type)
     }
@@ -485,6 +505,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
             var t ast.Expr = {
                 kind: ast.TYPE_ARRAY,
                 array: {
+                    pos: pos,
                     elt: type,
                     len: len,
                 },
@@ -499,6 +520,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
             var t ast.Expr = {
                 kind: ast.TYPE_FUNC,
                 func: {
+                    pos: pos,
                     result: type,
                     params: params,
                 },
@@ -513,6 +535,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
         var tmp ast.Expr = {
             kind: ast.EXPR_STAR,
             star: {
+                pos: pos,
                 x: type,
             },
         }
@@ -520,6 +543,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
     }
     var declarator ast.Decl = {
         kind: ast.DECL_FIELD,
+        pos: pos,
         field: {
             type: type,
         },
@@ -563,10 +587,10 @@ fun initializer(p *parser.Parser) *ast.Expr {
             break
         }
     }
-    parser.expect(p, token.RBRACE)
     var expr ast.Expr = {
         kind: ast.EXPR_COMPOSITE_LIT,
         composite: {
+            pos: parser.expect(p, token.RBRACE),
             list: utils.Slice_to_nil_array(list),
         },
     }
@@ -634,6 +658,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         }
         return esc(stmt)
     }
+    var pos token.Pos = p.pos
     if parser.accept(p, token.FOR) {
         parser.expect(p, token.LPAREN)
         var init *ast.Stmt = NULL
@@ -654,6 +679,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         var stmt ast.Stmt = {
             kind: ast.STMT_ITER,
             iter: {
+                pos: pos,
                 kind: token.FOR,
                 init: init,
                 cond: cond,
@@ -679,6 +705,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         var stmt ast.Stmt = {
             kind: ast.STMT_IF,
             if_: {
+                pos: pos,
                 cond: cond,
                 body: body,
                 else_: else_,
@@ -695,6 +722,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         var stmt ast.Stmt = {
             kind: ast.STMT_RETURN,
             return_: {
+                pos: pos,
                 x: x,
             },
         }
@@ -740,6 +768,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
             var stmt ast.Stmt = {
                 kind: ast.STMT_CASE,
                 case_: {
+                    pos: pos,
                     exprs: utils.Slice_to_nil_array(exprs),
                     stmts: utils.Slice_to_nil_array(stmts),
                 },
@@ -751,6 +780,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         var stmt ast.Stmt = {
             kind: ast.STMT_SWITCH,
             switch_: {
+                pos: pos,
                 tag: tag,
                 stmts: utils.Slice_to_nil_array(clauses),
             },
@@ -765,6 +795,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         var stmt ast.Stmt = {
             kind: ast.STMT_ITER,
             iter: {
+                pos: pos,
                 kind: token.WHILE,
                 cond: cond,
                 body: body,
@@ -784,6 +815,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         var stmt ast.Stmt = {
             kind: ast.STMT_JUMP,
             jump: {
+                pos: pos,
                 keyword: keyword,
                 label: label,
             },
@@ -796,6 +828,9 @@ fun statement(p *parser.Parser) *ast.Stmt {
     if parser.accept(p, token.SEMICOLON) {
         var stmt ast.Stmt = {
             kind: ast.STMT_EMPTY,
+            empty: {
+                pos: pos,
+            },
         }
         return esc(stmt)
     }
@@ -810,12 +845,14 @@ fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt {
     var stmts utils.Slice = {
         size: sizeof(*ast.Stmt),
     }
+    var pos token.Pos = 0
     if allow_single && p.tok != token.LBRACE {
         var stmt *ast.Stmt = statement(p)
         assert(stmt.kind != ast.STMT_DECL)
         utils.Slice_append(&stmts, &stmt)
+        pos = ast.Stmt_pos(stmt)
     } else {
-        parser.expect(p, token.LBRACE)
+        pos = parser.expect(p, token.LBRACE)
         while p.tok != token.RBRACE {
             var stmt *ast.Stmt = statement(p)
             utils.Slice_append(&stmts, &stmt)
@@ -825,6 +862,7 @@ fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt {
     var stmt ast.Stmt = {
         kind: ast.STMT_BLOCK,
         block: {
+            pos: pos,
             stmts: utils.Slice_to_nil_array(stmts),
         },
     }
@@ -834,6 +872,7 @@ fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt {
 fun parameter_declaration(p *parser.Parser) *ast.Decl {
     var decl ast.Decl = {
         kind: ast.DECL_FIELD,
+        pos: p.pos,
     }
     decl.field.type = declaration_specifiers(p, false)
     decl.field.name = declarator(p, &decl.field.type)
@@ -888,6 +927,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
     if p.tok == token.HASH {
         return parser.parsePragma(p)
     }
+    var pos token.Pos = p.pos
     if p.tok == token.TYPEDEF {
         var keyword token.Token = p.tok
         parser.expect(p, keyword)
@@ -896,6 +936,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
         parser.expect(p, token.SEMICOLON)
         var declref ast.Decl = {
             kind: ast.DECL_TYPEDEF,
+            pos: pos,
             typedef_: {
                 name: name,
                 type: type,
@@ -911,6 +952,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
     if type.kind == ast.TYPE_FUNC {
         var decl ast.Decl = {
             kind: ast.DECL_FUNC,
+            pos: pos,
             func: {
                 type: type,
                 name: name,
@@ -930,6 +972,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
     if name != NULL {
         var decl ast.Decl = {
             kind: ast.DECL_VALUE,
+            pos: pos,
             value: {
                 type: type,
                 name: name,
@@ -949,6 +992,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
         }
         var decl ast.Decl = {
             kind: ast.DECL_TYPEDEF,
+            pos: pos,
             typedef_: {
                 type: type,
                 name: name,
