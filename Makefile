@@ -67,7 +67,7 @@ all.bling: $(BLINGC)
 	./splitall.py
 
 debug:
-	$(CC) -g $(CFLAGS) $(CFILES) \
+	$(CC) -g -I. $(CFLAGS) $(CFILES) \
 	    bootstrap/bootstrap.c os/os.c sys/fmt.c sys/sys.c
 	lldb a.out
 
