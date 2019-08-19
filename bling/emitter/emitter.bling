@@ -120,6 +120,18 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         emitExpr(e, expr.cast.expr)
         break
     case ast.EXPR_COMPOSITE_LIT:
+        {
+            var t *ast.Expr = expr.composite.type
+            if t.kind == ast.TYPE_ARRAY {
+                t = t.array.elt
+            }
+            switch t.kind {
+            case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
+                emitType(e, expr.composite.type)
+                break
+            default: break
+            }
+        }
         emitToken(e, token.LBRACE)
         if expr.composite.list && *expr.composite.list {
             emitNewline(e)

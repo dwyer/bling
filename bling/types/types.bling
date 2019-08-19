@@ -141,25 +141,25 @@ var natives []struct {
 }
 
 fun declString(decl *ast.Decl) *char {
-    var e emitter.Emitter = {}
+    var e emitter.Emitter = emitter.Emitter{}
     emitter.emitDecl(&e, decl)
     return emitter.Emitter_string(&e)
 }
 
 fun exprString(expr *ast.Expr) *char {
-    var e emitter.Emitter = {}
+    var e emitter.Emitter = emitter.Emitter{}
     emitter.emitExpr(&e, expr)
     return emitter.Emitter_string(&e)
 }
 
 fun stmtString(stmt *ast.Stmt) *char {
-    var e emitter.Emitter = {}
+    var e emitter.Emitter = emitter.Emitter{}
     emitter.emitStmt(&e, stmt)
     return emitter.Emitter_string(&e)
 }
 
 fun typeString(expr *ast.Expr) *char {
-    var e emitter.Emitter = {}
+    var e emitter.Emitter = emitter.Emitter{}
     emitter.emitType(&e, expr)
     return emitter.Emitter_string(&e)
 }
@@ -178,9 +178,9 @@ fun isType(expr *ast.Expr) bool {
 }
 
 fun makeIdent(name *const char) *ast.Expr {
-    var x ast.Expr = {
+    var x ast.Expr = ast.Expr{
         kind: ast.EXPR_IDENT,
-        ident: {
+        ident: ast.Ident{
             name: strdup(name),
         },
     }
@@ -188,9 +188,9 @@ fun makeIdent(name *const char) *ast.Expr {
 }
 
 fun makePtr(type *ast.Expr) *ast.Expr {
-    var x ast.Expr = {
+    var x ast.Expr = ast.Expr{
         kind: ast.EXPR_STAR,
-        star: {
+        star: ast.StarExpr{
             x: type,
         },
     }
@@ -369,23 +369,23 @@ fun getDeclName(decl *ast.Decl) *ast.Expr {
 
 fun declareBuiltins(s *ast.Scope) {
     for var i int = 0; natives[i].name != NULL; i++ {
-        var _name ast.Expr = {
+        var _name ast.Expr = ast.Expr{
             kind: ast.EXPR_IDENT,
-            ident: {
+            ident: ast.Ident{
                 name: strdup(natives[i].name),
             },
         }
         var name *ast.Expr = esc(_name)
-        var type ast.Expr = {
+        var type ast.Expr = ast.Expr{
             kind: ast.TYPE_NATIVE,
-            native: {
+            native: ast.NativeType{
                 name: strdup(natives[i].name),
                 size: natives[i].size,
             },
         }
-        var decl ast.Decl = {
+        var decl ast.Decl = ast.Decl{
             kind: ast.DECL_TYPEDEF,
-            typedef_: {
+            typedef_: ast.TypeDecl{
                 name: name,
                 type: esc(type),
             },
@@ -406,7 +406,7 @@ fun universe() *ast.Scope {
         var fset *token.FileSet = token.newFileSet()
         var file *ast.File = parser.parseFile(fset, "builtin/builtin.bling")
         file.scope = _universe
-        var conf Config = {
+        var conf Config = Config{
             strict: true,
         }
         checkFile(&conf, fset, file)
@@ -488,7 +488,7 @@ typedef Checker struct {
 
 fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
     token.FileSet_print(c.fset)
-    var position token.Position = {}
+    var position token.Position = token.Position{}
     var file *token.File = token.FileSet_file(c.fset, pos)
     if file {
         position = token.File_position(file, pos)
@@ -683,6 +683,8 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
         if elt.kind == ast.EXPR_COMPOSITE_LIT {
             if elt.composite.type == NULL {
                 elt.composite.type = baseT.array.elt
+            } else {
+                Checker_checkType(c, elt.composite.type)
             }
         }
         var eltT *ast.Expr = Checker_checkExpr(c, elt)
@@ -720,6 +722,8 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
         if elt.kind == ast.EXPR_COMPOSITE_LIT {
             if elt.composite.type == NULL {
                 elt.composite.type = fieldT
+            } else {
+                Checker_checkType(c, elt.composite.type)
             }
         }
         var eltT *ast.Expr = Checker_checkExpr(c, elt)
@@ -822,9 +826,6 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         return expr.composite.type
     case ast.EXPR_CAST:
         Checker_checkType(c, expr.cast.type)
-        if expr.cast.expr.kind == ast.EXPR_COMPOSITE_LIT {
-            expr.cast.expr.composite.type = expr.cast.type
-        }
         Checker_checkExpr(c, expr.cast.expr)
         return expr.cast.type
     case ast.EXPR_IDENT:
@@ -1070,10 +1071,11 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
         }
         if decl.value.value != NULL {
             if decl.value.value.kind == ast.EXPR_COMPOSITE_LIT {
-                if decl.value.type == NULL {
-                    Checker_error(c, decl.pos, "cannot assign short var decls with composite type")
+                if decl.value.value.composite.type == NULL {
+                    decl.value.value.composite.type = decl.value.type
+                } else {
+                    Checker_checkType(c, decl.value.value.composite.type)
                 }
-                decl.value.value.composite.type = decl.value.type
             }
             valType = Checker_checkExpr(c, decl.value.value)
         }
@@ -1136,10 +1138,10 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package {
     if file.scope == NULL {
         file.scope = ast.Scope_new(universe())
     }
-    var c Checker = {
+    var c Checker = Checker{
         fset: fset,
         conf: conf,
-        pkg: {
+        pkg: ast.Package{
             scope: file.scope,
         },
         files: utils.Slice_init(sizeof(*ast.File)),

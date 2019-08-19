@@ -663,6 +663,8 @@ static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
         if (elt->kind == ast$EXPR_COMPOSITE_LIT) {
             if (elt->composite.type == NULL) {
                 elt->composite.type = baseT->array.elt;
+            } else {
+                Checker_checkType(c, elt->composite.type);
             }
         }
         ast$Expr *eltT = Checker_checkExpr(c, elt);
@@ -703,6 +705,8 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
         if (elt->kind == ast$EXPR_COMPOSITE_LIT) {
             if (elt->composite.type == NULL) {
                 elt->composite.type = fieldT;
+            } else {
+                Checker_checkType(c, elt->composite.type);
             }
         }
         ast$Expr *eltT = Checker_checkExpr(c, elt);
@@ -718,6 +722,7 @@ static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
 static void Checker_checkCompositeLit(Checker *c, ast$Expr *x) {
     ast$Expr *t = x->composite.type;
     assert(t);
+    // Checker_checkType(c, t);
     ast$Expr *baseT = types$getBaseType(t);
     switch (baseT->kind) {
     case ast$TYPE_ARRAY:
@@ -832,9 +837,6 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
 
     case ast$EXPR_CAST:
         Checker_checkType(c, expr->cast.type);
-        if (expr->cast.expr->kind == ast$EXPR_COMPOSITE_LIT) {
-            expr->cast.expr->composite.type = expr->cast.type;
-        }
         Checker_checkExpr(c, expr->cast.expr);
         return expr->cast.type;
 
@@ -1142,12 +1144,11 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
             }
             if (decl->value.value != NULL) {
                 if (decl->value.value->kind == ast$EXPR_COMPOSITE_LIT) {
-                    if (decl->value.type == NULL) {
-                        // TODO resolve this restriction by enforcing T{}.
-                        Checker_error(c, decl->pos,
-                                "cannot assign short var decls with composite type");
+                    if (decl->value.value->composite.type == NULL) {
+                        decl->value.value->composite.type = decl->value.type;
+                    } else {
+                        Checker_checkType(c, decl->value.value->composite.type);
                     }
-                    decl->value.value->composite.type = decl->value.type;
                 }
                 valType = Checker_checkExpr(c, decl->value.value);
             }

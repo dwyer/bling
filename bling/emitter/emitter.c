@@ -84,7 +84,20 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_COMPOSITE_LIT:
-        // emitter$emitType(e, expr->composite.type);
+        {
+            ast$Expr *t = expr->composite.type;
+            if (t->kind == ast$TYPE_ARRAY) {
+                t = t->array.elt;
+            }
+            switch (t->kind) {
+            case ast$EXPR_IDENT:
+            case ast$EXPR_SELECTOR:
+                emitter$emitType(e, expr->composite.type);
+                break;
+            default:
+                break;
+            }
+        }
         emitter$emitToken(e, token$LBRACE);
         if (expr->composite.list && *expr->composite.list) {
             emitter$emitNewline(e);
