@@ -28,6 +28,13 @@ static bool isLiteralType(ast$Expr *x) {
     }
 }
 
+static ast$Expr *unparen(ast$Expr *x) {
+    while (x->kind == ast$EXPR_PAREN) {
+        x = x->paren.x;
+    }
+    return x;
+}
+
 extern void parser$next(parser$Parser *p) {
     p->tok = scanner$scan(&p->scanner, &p->pos, &p->lit);
 }
@@ -89,6 +96,35 @@ extern token$Pos parser$expect(parser$Parser *p, token$Token tok) {
     }
     parser$next(p);
     return pos;
+}
+
+static ast$Expr *Parser_checkExpr(parser$Parser *p, ast$Expr *x) {
+    switch (unparen(x)->kind) {
+    case ast$EXPR_IDENT:
+    case ast$EXPR_BASIC_LIT:
+    case ast$EXPR_BINARY:
+    case ast$EXPR_CALL:
+    case ast$EXPR_CAST:
+    case ast$EXPR_COMPOSITE_LIT:
+    case ast$EXPR_INDEX:
+    case ast$EXPR_SELECTOR:
+    case ast$EXPR_SIZEOF:
+    case ast$EXPR_STAR:
+    case ast$EXPR_TERNARY:
+    case ast$EXPR_UNARY:
+        break;
+    case ast$EXPR_PAREN:
+        panic("unreachable");
+        break;
+    default:
+        parser$errorExpected(p, ast$Expr_pos(x), "expression");
+        break;
+    }
+    return x;
+}
+
+static ast$Expr *Parser_checkExprOrType(parser$Parser *p, ast$Expr *x) {
+    return x;
 }
 
 extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,
@@ -193,7 +229,7 @@ static ast$Expr *parseValue(parser$Parser *p) {
         //         ;
         return parseLiteralValue(p, NULL);
     }
-    return parseExpr(p);
+    return Parser_checkExpr(p, parseExpr(p));
 }
 
 static ast$Expr *parseElement(parser$Parser *p) {
@@ -286,30 +322,31 @@ static ast$Expr *parseCallExpr(parser$Parser *p, ast$Expr *x) {
     return esc(call);
 }
 
+static ast$Expr *parser$parseSelector(parser$Parser *p, ast$Expr *x) {
+    ast$Expr y = {
+        .kind = ast$EXPR_SELECTOR,
+        .selector = {
+            .x = x,
+            .tok = token$PERIOD,
+            .sel = parser$parseIdent(p),
+        },
+    };
+    return esc(y);
+}
+
 static ast$Expr *parser$parsePrimaryExpr(parser$Parser *p) {
     ast$Expr *x = parser$parseOperand(p);
     for (;;) {
         switch (p->tok) {
         case token$PERIOD:
-            {
-                token$Token tok = p->tok;
-                parser$next(p);
-                ast$Expr y = {
-                    .kind = ast$EXPR_SELECTOR,
-                    .selector = {
-                        .x = x,
-                        .tok = tok,
-                        .sel = parser$parseIdent(p),
-                    },
-                };
-                x = esc(y);
-            }
+            parser$next(p);
+            x = parser$parseSelector(p, Parser_checkExprOrType(p, x));
             break;
         case token$LBRACK:
-            x = parseIndexExpr(p, x);
+            x = parseIndexExpr(p, Parser_checkExpr(p, x));
             break;
         case token$LPAREN:
-            x = parseCallExpr(p, x);
+            x = parseCallExpr(p, Parser_checkExprOrType(p, x));
             break;
         case token$LBRACE:
             if (isLiteralType(x) && (p->exprLev >= 0 || !isTypeName(x))) {
@@ -354,7 +391,7 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
                 .unary = {
                     .pos = pos,
                     .op = op,
-                    .x = parseUnaryExpr(p),
+                    .x = Parser_checkExpr(p, parseUnaryExpr(p)),
                 },
             };
             return esc(x);
@@ -367,7 +404,7 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p) {
                 .kind = ast$EXPR_STAR,
                 .star = {
                     .pos = pos,
-                    .x = parseUnaryExpr(p),
+                    .x = Parser_checkExprOrType(p, parseUnaryExpr(p)),
                 },
             };
             return esc(x);
@@ -424,9 +461,9 @@ static ast$Expr *parseBinaryExpr(parser$Parser *p, int prec1) {
         ast$Expr z = {
             .kind = ast$EXPR_BINARY,
             .binary = {
-                .x = x,
+                .x = Parser_checkExpr(p, x),
                 .op = op,
-                .y = y,
+                .y = Parser_checkExpr(p, y),
             },
         };
         x = esc(z);

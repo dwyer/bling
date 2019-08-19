@@ -81,6 +81,13 @@ fun isLiteralType(x *ast.Expr) bool {
     }
 }
 
+fun unparen(x *ast.Expr) *ast.Expr {
+    while x.kind == ast.EXPR_PAREN {
+        x = x.paren.x
+    }
+    return x
+}
+
 fun next(p *Parser) {
     p.tok = scanner.scan(&p.scanner, &p.pos, &p.lit)
 }
@@ -138,6 +145,23 @@ fun expect(p *Parser, tok token.Token) token.Pos {
     }
     next(p)
     return pos
+}
+
+fun Parser_checkExpr(p *Parser, x *ast.Expr) *ast.Expr {
+    switch unparen(x).kind {
+    case ast.EXPR_IDENT, ast.EXPR_BASIC_LIT, ast.EXPR_BINARY, ast.EXPR_CALL, ast.EXPR_CAST, ast.EXPR_COMPOSITE_LIT, ast.EXPR_INDEX, ast.EXPR_SELECTOR, ast.EXPR_SIZEOF, ast.EXPR_STAR, ast.EXPR_TERNARY, ast.EXPR_UNARY: break
+    case ast.EXPR_PAREN:
+        panic("unreachable")
+        break
+    default:
+        errorExpected(p, ast.Expr_pos(x), "expression")
+        break
+    }
+    return x
+}
+
+fun Parser_checkExprOrType(p *Parser, x *ast.Expr) *ast.Expr {
+    return x
 }
 
 fun declare(p *Parser, s *ast.Scope, decl *ast.Decl, kind ast.ObjKind, name *ast.Expr) {
@@ -231,7 +255,7 @@ fun parseValue(p *Parser) *ast.Expr {
     if p.tok == token.LBRACE {
         return parseLiteralValue(p, NULL)
     }
-    return parseExpr(p)
+    return Parser_checkExpr(p, parseExpr(p))
 }
 
 fun parseElement(p *Parser) *ast.Expr {
@@ -324,30 +348,31 @@ fun parseCallExpr(p *Parser, x *ast.Expr) *ast.Expr {
     return esc(call)
 }
 
+fun parseSelector(p *Parser, x *ast.Expr) *ast.Expr {
+    var y ast.Expr = {
+        kind: ast.EXPR_SELECTOR,
+        selector: {
+            x: x,
+            tok: token.PERIOD,
+            sel: parseIdent(p),
+        },
+    }
+    return esc(y)
+}
+
 fun parsePrimaryExpr(p *Parser) *ast.Expr {
     var x *ast.Expr = parseOperand(p)
     for ;; {
         switch p.tok {
         case token.PERIOD:
-            {
-                var tok token.Token = p.tok
-                next(p)
-                var y ast.Expr = {
-                    kind: ast.EXPR_SELECTOR,
-                    selector: {
-                        x: x,
-                        tok: tok,
-                        sel: parseIdent(p),
-                    },
-                }
-                x = esc(y)
-            }
+            next(p)
+            x = parseSelector(p, Parser_checkExprOrType(p, x))
             break
         case token.LBRACK:
-            x = parseIndexExpr(p, x)
+            x = parseIndexExpr(p, Parser_checkExpr(p, x))
             break
         case token.LPAREN:
-            x = parseCallExpr(p, x)
+            x = parseCallExpr(p, Parser_checkExprOrType(p, x))
             break
         case token.LBRACE:
             if isLiteralType(x) && (p.exprLev >= 0 || !isTypeName(x)) {
@@ -372,7 +397,7 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
             unary: {
                 pos: pos,
                 op: op,
-                x: parseUnaryExpr(p),
+                x: Parser_checkExpr(p, parseUnaryExpr(p)),
             },
         }
         return esc(x)
@@ -384,7 +409,7 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
             kind: ast.EXPR_STAR,
             star: {
                 pos: pos,
-                x: parseUnaryExpr(p),
+                x: Parser_checkExprOrType(p, parseUnaryExpr(p)),
             },
         }
         return esc(x)
@@ -438,9 +463,9 @@ fun parseBinaryExpr(p *Parser, prec1 int) *ast.Expr {
         var z ast.Expr = {
             kind: ast.EXPR_BINARY,
             binary: {
-                x: x,
+                x: Parser_checkExpr(p, x),
                 op: op,
-                y: y,
+                y: Parser_checkExpr(p, y),
             },
         }
         x = esc(z)
