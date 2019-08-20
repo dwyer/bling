@@ -25,8 +25,9 @@ extern char *paths$dir(const char *path) {
     if (i > 0) {
         char *p = strdup(path);
         p[i] = '\0';
+        return p;
     }
-    return NULL;
+    return strdup(".");
 }
 
 extern const char *paths$ext(const char *path) {

@@ -25,8 +25,9 @@ fun dir(path *const char) *char {
     if i > 0 {
         var p *char = strdup(path)
         p[i] = '\0'
+        return p
     }
-    return NULL
+    return strdup(".")
 }
 
 fun ext(path *const char) *const char {
