@@ -1,4 +1,5 @@
 package emitter
+
 import "bling/ast"
 import "bling/token"
 import "bytes"
@@ -587,6 +588,7 @@ fun emitFile(e *Emitter, file *ast.File) {
         emitToken(e, token.PACKAGE)
         emitSpace(e)
         emitExpr(e, file.name)
+        emitNewline(e)
         emitNewline(e)
     }
     for var imports **ast.Decl = file.imports; imports && *imports; imports++ {

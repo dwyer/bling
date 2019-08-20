@@ -1,4 +1,5 @@
 package bytes
+
 import "sys"
 import "utils"
 

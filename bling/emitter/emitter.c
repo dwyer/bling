@@ -603,6 +603,7 @@ extern void emitter$emitFile(emitter$Emitter *e, ast$File *file) {
         emitter$emitSpace(e);
         emitter$emitExpr(e, file->name);
         emitter$emitNewline(e);
+        emitter$emitNewline(e);
     }
     for (ast$Decl **imports = file->imports; imports && *imports; imports++) {
         emitter$emitToken(e, token$IMPORT);

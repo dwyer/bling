@@ -1,4 +1,5 @@
 package parser
+
 import "bling/ast"
 import "bling/scanner"
 import "bling/token"

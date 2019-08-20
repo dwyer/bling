@@ -1,4 +1,5 @@
 package cemitter
+
 import "bling/ast"
 import "bling/emitter"
 import "bling/token"

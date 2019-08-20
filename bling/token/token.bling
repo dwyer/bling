@@ -1,4 +1,5 @@
 package token
+
 import "bytes"
 import "sys"
 import "utils"

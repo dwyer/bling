@@ -1,4 +1,5 @@
 package types
+
 import "bling/ast"
 import "bling/emitter"
 import "bling/parser"
