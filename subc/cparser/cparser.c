@@ -41,7 +41,7 @@ static bool is_type(parser$Parser *p) {
         {
             for (ast$Scope *s = p->topScope; s; s = s->outer) {
                 ast$Object *obj = ast$Scope_lookup(s, p->lit);
-                if (obj && obj->kind == ast$ObjKind_TYPE) {
+                if (obj && obj->kind == ast$ObjKind_TYP) {
                     return true;
                 }
             }
@@ -1134,7 +1134,7 @@ static ast$Decl *declaration(parser$Parser *p, bool is_external) {
             },
         };
         ast$Decl *decl = esc(declref);
-        parser$declare(p, p->topScope, decl, ast$ObjKind_TYPE, name);
+        parser$declare(p, p->topScope, decl, ast$ObjKind_TYP, name);
         return decl;
     }
     ast$Expr *type = declaration_specifiers(p, true);

@@ -62,10 +62,10 @@ typedef Node struct {
 
 typedef ObjKind enum {
     ObjKind_BAD
-    ObjKind_FUNC
+    ObjKind_FUN
     ObjKind_PKG
-    ObjKind_TYPE
-    ObjKind_VALUE
+    ObjKind_TYP
+    ObjKind_VAL
 }
 
 typedef Object struct {

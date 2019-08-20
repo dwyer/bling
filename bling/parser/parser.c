@@ -627,7 +627,7 @@ static ast$Decl *parseFieldDecl(parser$Parser *p, ast$Scope *scope) {
     }
     ast$Decl *d = esc(decl);
     if (decl.field.name) {
-        parser$declare(p, scope, d, ast$ObjKind_VALUE, decl.field.name);
+        parser$declare(p, scope, d, ast$ObjKind_VAL, decl.field.name);
     }
     parser$resolve(p, decl.field.type);
     parser$expect(p, token$SEMICOLON);
@@ -693,7 +693,7 @@ static ast$Decl *parseParam(parser$Parser *p, ast$Scope *scope, bool anon) {
     }
     ast$Decl *d = esc(decl);
     if (d->field.name) {
-        parser$declare(p, scope, d, ast$ObjKind_VALUE, d->field.name);
+        parser$declare(p, scope, d, ast$ObjKind_VAL, d->field.name);
     }
     return d;
 }
@@ -1239,7 +1239,7 @@ static ast$Decl *parseValueDecl(parser$Parser *p) {
         },
     };
     ast$Decl *d = esc(decl);
-    parser$declare(p, p->topScope, d, ast$ObjKind_VALUE, d->value.name);
+    parser$declare(p, p->topScope, d, ast$ObjKind_VAL, d->value.name);
     return d;
 }
 
@@ -1258,7 +1258,7 @@ static ast$Decl *parseTypeDecl(parser$Parser *p) {
         },
     };
     ast$Decl *d = esc(decl);
-    parser$declare(p, p->topScope, d, ast$ObjKind_TYPE, ident);
+    parser$declare(p, p->topScope, d, ast$ObjKind_TYP, ident);
     return d;
 }
 
@@ -1289,7 +1289,7 @@ static ast$Decl *parseFuncDecl(parser$Parser *p) {
         parser$expect(p, token$SEMICOLON);
     }
     ast$Decl *d = esc(decl);
-    parser$declare(p, p->topScope, d, ast$ObjKind_FUNC, d->func.name);
+    parser$declare(p, p->topScope, d, ast$ObjKind_FUN, d->func.name);
     return d;
 }
 

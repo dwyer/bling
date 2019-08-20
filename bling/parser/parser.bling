@@ -563,7 +563,7 @@ fun parseFieldDecl(p *Parser, scope *ast.Scope) *ast.Decl {
     }
     var d *ast.Decl = esc(decl)
     if decl.field.name {
-        declare(p, scope, d, ast.ObjKind_VALUE, decl.field.name)
+        declare(p, scope, d, ast.ObjKind_VAL, decl.field.name)
     }
     resolve(p, decl.field.type)
     expect(p, token.SEMICOLON)
@@ -629,7 +629,7 @@ fun parseParam(p *Parser, scope *ast.Scope, anon bool) *ast.Decl {
     }
     var d *ast.Decl = esc(decl)
     if d.field.name {
-        declare(p, scope, d, ast.ObjKind_VALUE, d.field.name)
+        declare(p, scope, d, ast.ObjKind_VAL, d.field.name)
     }
     return d
 }
@@ -1100,7 +1100,7 @@ fun parseValueDecl(p *Parser) *ast.Decl {
         },
     }
     var d *ast.Decl = esc(decl)
-    declare(p, p.topScope, d, ast.ObjKind_VALUE, d.value.name)
+    declare(p, p.topScope, d, ast.ObjKind_VAL, d.value.name)
     return d
 }
 
@@ -1119,7 +1119,7 @@ fun parseTypeDecl(p *Parser) *ast.Decl {
         },
     }
     var d *ast.Decl = esc(decl)
-    declare(p, p.topScope, d, ast.ObjKind_TYPE, ident)
+    declare(p, p.topScope, d, ast.ObjKind_TYP, ident)
     return d
 }
 
@@ -1150,7 +1150,7 @@ fun parseFuncDecl(p *Parser) *ast.Decl {
         expect(p, token.SEMICOLON)
     }
     var d *ast.Decl = esc(decl)
-    declare(p, p.topScope, d, ast.ObjKind_FUNC, d.func.name)
+    declare(p, p.topScope, d, ast.ObjKind_FUN, d.func.name)
     return d
 }
 

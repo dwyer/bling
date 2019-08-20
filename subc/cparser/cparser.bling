@@ -14,7 +14,7 @@ fun is_type(p *parser.Parser) bool {
     case token.IDENT: {
         for var s *ast.Scope = p.topScope; s; s = s.outer {
             var obj *ast.Object = ast.Scope_lookup(s, p.lit)
-            if obj && obj.kind == ast.ObjKind_TYPE {
+            if obj && obj.kind == ast.ObjKind_TYP {
                 return true
             }
         }
@@ -899,7 +899,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
             },
         }
         var decl *ast.Decl = esc(declref)
-        parser.declare(p, p.topScope, decl, ast.ObjKind_TYPE, name)
+        parser.declare(p, p.topScope, decl, ast.ObjKind_TYP, name)
         return decl
     }
     var type *ast.Expr = declaration_specifiers(p, true)

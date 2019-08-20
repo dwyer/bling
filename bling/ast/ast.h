@@ -78,10 +78,12 @@ typedef struct ast$Scope ast$Scope;
 
 typedef enum {
     ast$ObjKind_BAD,
-    ast$ObjKind_FUNC,
+    // ast$ObjKind_CON,
+    ast$ObjKind_FUN,
+    // ast$ObjKind_LBL,
     ast$ObjKind_PKG,
-    ast$ObjKind_TYPE,
-    ast$ObjKind_VALUE,
+    ast$ObjKind_TYP,
+    ast$ObjKind_VAL,
 } ast$ObjKind;
 
 typedef struct {

@@ -277,13 +277,13 @@ static ast$ObjKind getDeclKind(ast$Decl *decl) {
     switch (decl->kind) {
     case ast$DECL_FIELD:
     case ast$DECL_VALUE:
-        return ast$ObjKind_VALUE;
+        return ast$ObjKind_VAL;
     case ast$DECL_FUNC:
-        return ast$ObjKind_FUNC;
+        return ast$ObjKind_FUN;
     case ast$DECL_IMPORT:
         return ast$ObjKind_PKG;
     case ast$DECL_TYPEDEF:
-        return ast$ObjKind_TYPE;
+        return ast$ObjKind_TYP;
     default:
         return ast$ObjKind_BAD;
     }
@@ -330,7 +330,7 @@ static void declareBuiltins(ast$Scope *s) {
                 .type = esc(type),
             },
         };
-        ast$Object *obj = ast$newObject(ast$ObjKind_TYPE, name->ident.name);
+        ast$Object *obj = ast$newObject(ast$ObjKind_TYP, name->ident.name);
         obj->decl = esc(decl);
         name->ident.obj = obj;
         assert(ast$Scope_insert(s, obj) == NULL);
@@ -479,7 +479,7 @@ static void Checker_declare(Checker *c, ast$Scope *s, ast$Decl *decl) {
             case ast$ObjKind_BAD:
                 panic("unreachable");
                 break;
-            case ast$ObjKind_FUNC:
+            case ast$ObjKind_FUN:
                 redecl =
                     (alt->decl->func.body == NULL || decl->func.body == NULL) &&
                     types$areIdentical(alt->decl->func.type, decl->func.type);
@@ -487,7 +487,7 @@ static void Checker_declare(Checker *c, ast$Scope *s, ast$Decl *decl) {
             case ast$ObjKind_PKG:
                 redecl = true;
                 break;
-            case ast$ObjKind_TYPE:
+            case ast$ObjKind_TYP:
                 if (alt->decl->typedef_.type->kind == ast$TYPE_STRUCT) {
                     redecl = alt->decl->typedef_.type->struct_.fields == NULL;
                 }
@@ -495,7 +495,7 @@ static void Checker_declare(Checker *c, ast$Scope *s, ast$Decl *decl) {
                     redecl = true;
                 }
                 break;
-            case ast$ObjKind_VALUE:
+            case ast$ObjKind_VAL:
                 redecl = alt->decl->value.value == NULL && !types$areIdentical(
                         alt->decl->value.type, decl->value.value);
                 break;
