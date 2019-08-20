@@ -1,11 +1,13 @@
-cc_binary(
-    name = "blingc",
+cc_library(
+    name = "build",
     srcs = [
-        "main.c",
+        "build.c",
+    ],
+    hdrs = [
+        "build.h",
     ],
     deps = [
         "//bytes",
-        "//bling/build",
         "//bling/parser",
         "//bling/types",
         "//os",
@@ -13,4 +15,5 @@ cc_binary(
         "//subc/cemitter",
         "//sys",
     ],
+    visibility = ["//visibility:public"],
 )

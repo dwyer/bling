@@ -60,7 +60,7 @@ fun FileInfo_sys(info *FileInfo) *void
 
 fun FileInfo_free(info *FileInfo)
 
-fun stat(filename *const char, error **utils.Error) FileInfo
+fun stat(filename *const char, error **utils.Error) *FileInfo
 
 fun openDir(filename *const char, error **utils.Error) *File
 

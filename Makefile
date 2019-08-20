@@ -33,6 +33,8 @@ SRCS=sys/sys.h \
      subc/cparser/cparser.c \
      subc/cemitter/cemitter.h \
      subc/cemitter/cemitter.c \
+     bling/build/build.h \
+     bling/build/build.c \
      cmd/blingc/main.c
 
 CFILES=utils/error.c \
@@ -50,16 +52,17 @@ CFILES=utils/error.c \
      bling/types/universe.c \
      subc/cparser/cparser.c \
      subc/cemitter/cemitter.c \
+     bling/build/build.c \
      cmd/blingc/main.c
+
+hello: $(BLINGC) all.bling
+	$(BLINGC) build sys
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
 	$(CC) $(CFLAGS) all.c \
 	    bazel-bin/bootstrap/libbootstrap.a \
 	    bazel-bin/os/libos.a bazel-bin/sys/libsys.a
-
-hello: $(BLINGC) all.bling
-	$(BLINGC) -o /dev/null -w cmd/blingc/blingc.bling
 
 test_compiler: $(BLINGC)
 	./test_compiler.sh

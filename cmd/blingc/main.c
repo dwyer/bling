@@ -1,3 +1,4 @@
+#include "bling/build/build.h"
 #include "bling/parser/parser.h"
 #include "bling/types/types.h"
 #include "os/os.h"
@@ -9,6 +10,7 @@
 package(main);
 
 import("bling/ast");
+import("bling/build");
 import("bling/emitter");
 import("bling/parser");
 import("bling/token");
@@ -21,10 +23,6 @@ import("subc/cemitter");
 import("subc/cparser");
 import("sys");
 import("utils");
-
-void usage(const char *progname) {
-    panic("usage: %s -o DST SRCS", progname);
-}
 
 void emit_rawfile(emitter$Emitter *e, const char *filename) {
     utils$Error *err = NULL;
@@ -163,11 +161,9 @@ void compile_bling(char *argv[]) {
                 "bazel-bin/sys/libsys.a",
                 NULL,
             };
-            int code = sys$execve(args[0], args, NULL);
-            if (code) {
-                char *s = sys$sprintf("%s exited with code: %d", argv[0], code);
-                print(s);
-                free(s);
+            int code = sys$run(args);
+            if (code != 0) {
+                panic(sys$sprintf("- failed with code %d", code));
             }
         } else {
             ioutil$writeFile(dst, out, 0644, NULL);
@@ -181,9 +177,12 @@ int main(int argc, char *argv[]) {
     char *progname = *argv;
     argv++;
     if (!*argv) {
-        usage(progname);
+        panic("usage: %s -o DST SRCS", progname);
     }
-    if (streq(*argv, "-c")) {
+    if (streq(*argv, "build")) {
+        argv++;
+        build$buildPackage(argv);
+    } else if (streq(*argv, "-c")) {
         argv++;
         compile_c(argv);
     } else {

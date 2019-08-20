@@ -1,6 +1,7 @@
 package main
 
 import "bling/ast"
+import "bling/build"
 import "bling/emitter"
 import "bling/parser"
 import "bling/token"
@@ -13,10 +14,6 @@ import "subc/cemitter"
 import "subc/cparser"
 import "sys"
 import "utils"
-
-fun usage(progname *const char) {
-    panic("usage: %s -o DST SRCS", progname)
-}
 
 fun emit_rawfile(e *emitter.Emitter, filename *const char) {
     var err *utils.Error = NULL
@@ -146,11 +143,9 @@ fun compile_bling(argv []*char) {
                 "bazel-bin/sys/libsys.a",
                 NULL,
             }
-            var code int = sys.execve(args[0], args, NULL)
-            if code {
-                var s *char = sys.sprintf("%s exited with code: %d", argv[0], code)
-                print(s)
-                free(s)
+            var code int = sys.run(args)
+            if code != 0 {
+                panic(sys.sprintf("- failed with code %d", code))
             }
         } else {
             ioutil.writeFile(dst, out, 0644, NULL)
@@ -164,9 +159,12 @@ fun main(argc int, argv []*char) int {
     var progname *char = *argv
     argv++
     if !*argv {
-        usage(progname)
+        panic("usage: %s -o DST SRCS", progname)
     }
-    if streq(*argv, "-c") {
+    if streq(*argv, "build") {
+        argv++
+        build.buildPackage(argv)
+    } else if streq(*argv, "-c") {
         argv++
         compile_c(argv)
     } else {

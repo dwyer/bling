@@ -48,7 +48,7 @@ extern void *os$FileInfo_sys(os$FileInfo *info);
 
 extern void os$FileInfo_free(os$FileInfo *info);
 
-extern os$FileInfo os$stat(const char *filename, utils$Error **error);
+extern os$FileInfo *os$stat(const char *filename, utils$Error **error);
 
 extern os$File *os$openDir(const char *filename, utils$Error **error);
 extern os$FileInfo **os$readdir(os$File *file, utils$Error **error);

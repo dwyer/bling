@@ -1,0 +1,154 @@
+package build
+
+import "bling/ast"
+import "bling/emitter"
+import "bling/parser"
+import "bling/token"
+import "bling/types"
+import "bytes"
+import "io/ioutil"
+import "os"
+import "paths"
+import "subc/cemitter"
+import "subc/cparser"
+import "sys"
+import "utils"
+
+var AR_PATH *const char = "/usr/bin/ar"
+
+var CC_PATH *const char = "/usr/bin/cc"
+
+var GEN_PATH *const char = "gen"
+
+typedef Builder struct {
+    fset *token.FileSet
+}
+
+fun printStrArray(s **char) {
+    for var i int = 0; s[i]; i++ {
+        if i {
+            sys.printf(" ")
+        }
+        sys.printf("%s", s[i])
+    }
+    sys.printf("\n")
+}
+
+fun execute(args []*char) {
+    printStrArray(args)
+    var code int = sys.run(args)
+    if code != 0 {
+        panic(sys.sprintf("- failed with code %d", code))
+    }
+}
+
+fun Slice_appendStrLit(a *utils.Slice, s *const char) {
+    utils.Slice_append(a, &s)
+}
+
+fun mkdirForFile(path *const char) {
+    var dir *char = paths.dir(path)
+    os.mkdirAll(dir, 0755, NULL)
+    free(dir)
+}
+
+fun buildCFile(cFile *os.FileInfo) *os.FileInfo {
+    var src *char = os.FileInfo_name(cFile)
+    var dst *char = NULL
+    {
+        var i int = bytes.lastIndexByte(src, '.')
+        var base *char = strdup(src)
+        base[i] = '\0'
+        dst = sys.sprintf("%s/%s.o", GEN_PATH, base)
+        free(base)
+    }
+    var err *utils.Error = NULL
+    var objFile *os.FileInfo = os.stat(dst, &err)
+    var doBuild bool = objFile == NULL || os.FileInfo_modTime(cFile) > os.FileInfo_modTime(objFile)
+    if doBuild {
+        var cmd utils.Slice = {
+            size: sizeof(*char),
+        }
+        Slice_appendStrLit(&cmd, CC_PATH)
+        Slice_appendStrLit(&cmd, "-I.")
+        Slice_appendStrLit(&cmd, "-c")
+        Slice_appendStrLit(&cmd, "-o")
+        Slice_appendStrLit(&cmd, dst)
+        Slice_appendStrLit(&cmd, src)
+        mkdirForFile(dst)
+        var args **char = NULL
+        args = utils.Slice_to_nil_array(cmd)
+        execute(args)
+        free(args)
+        os.FileInfo_free(objFile)
+        objFile = os.stat(dst, &err)
+    }
+    return objFile
+}
+
+fun buildCPackage(b *Builder, path *const char) *os.FileInfo {
+    var base *char = paths.base(path)
+    var dst *char = sys.sprintf("%s/%s/lib%s.a", GEN_PATH, path, base)
+    var cmd utils.Slice = {
+        size: sizeof(*char),
+    }
+    var objFiles utils.Slice = {
+        size: sizeof(*os.FileInfo),
+    }
+    var latestUpdate os.Time = 0
+    {
+        var files **os.FileInfo = ioutil.readDir(path, NULL)
+        Slice_appendStrLit(&cmd, "/usr/bin/ar")
+        Slice_appendStrLit(&cmd, "rsc")
+        Slice_appendStrLit(&cmd, dst)
+        for var i int = 0; files[i]; i++ {
+            if bytes.hasSuffix(files[i]._name, ".bling") {
+                var file *ast.File = parser.parseFile(b.fset, files[i]._name, types.universe())
+                <void> file
+                for var i int = 0; file.imports[i]; i++ {
+                }
+            } else if bytes.hasSuffix(files[i]._name, ".c") {
+                var obj *os.FileInfo = buildCFile(files[i])
+                if latestUpdate < os.FileInfo_modTime(obj) {
+                    latestUpdate = os.FileInfo_modTime(obj)
+                }
+                utils.Slice_append(&objFiles, &obj)
+                utils.Slice_append(&cmd, &obj._name)
+            }
+        }
+    }
+    var err *utils.Error = NULL
+    var libFile *os.FileInfo = os.stat(dst, &err)
+    if libFile == NULL || latestUpdate > os.FileInfo_modTime(libFile) {
+        var args **char = utils.Slice_to_nil_array(cmd)
+        mkdirForFile(dst)
+        execute(args)
+        free(args)
+        os.FileInfo_free(libFile)
+        libFile = os.stat(dst, &err)
+    }
+    return libFile
+}
+
+fun buildBlingPackage(b *Builder, path *const char) {
+    var fs **ast.File = parser.parseDir(b.fset, path, types.universe(), NULL)
+    assert(fs[0] && !fs[1])
+    var f *ast.File = fs[0]
+    var e emitter.Emitter = {}
+    emitter.emitFile(&e, f)
+    print(emitter.Emitter_string(&e))
+}
+
+fun buildPackage(argv []*char) {
+    assert(*argv)
+    var path *char = *argv
+    sys.printf("building %s\n", path)
+    var builder Builder = {
+        fset: token.newFileSet(),
+    }
+    if streq(path, "os") || streq(path, "sys") {
+        buildCPackage(&builder, path)
+    } else {
+        buildBlingPackage(&builder, path)
+    }
+}

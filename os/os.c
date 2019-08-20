@@ -79,17 +79,18 @@ extern void os$close(os$File *file, utils$Error **error) {
     PathError_check(file->name, error);
 }
 
-extern os$FileInfo os$stat(const char *name, utils$Error **error) {
+extern os$FileInfo *os$stat(const char *name, utils$Error **error) {
     struct stat st;
-    os$FileInfo info = {};
     utils$clearError();
     if (stat(name, &st) != 0) {
         PathError_check(name, error);
-        return info;
+        return NULL;
     }
-    info._name = strdup(name);
-    info._sys = esc(st);
-    return info;
+    os$FileInfo info = {
+        ._name = strdup(name),
+        ._sys = esc(st),
+    };
+    return esc(info);
 }
 
 extern void os$FileInfo_free(os$FileInfo *info) {
@@ -142,14 +143,13 @@ extern os$FileInfo **os$readdir(os$File *file, utils$Error **error) {
     for (int i = 0; names[i] != NULL; i++) {
         char *path = paths$join2(file->name, names[i]);
         free(names[i]);
-        os$FileInfo info = os$stat(path, &err);
+        os$FileInfo *info = os$stat(path, &err);
         if (err != NULL) {
             os$close(file, NULL);
             utils$Error_move(err, error);
             return NULL;
         }
-        os$FileInfo *ptr = esc(info);
-        utils$Slice_append(&arr, &ptr);
+        utils$Slice_append(&arr, &info);
     }
     free(names);
     const void *nil = NULL;
