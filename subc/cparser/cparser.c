@@ -1134,7 +1134,8 @@ static ast$Decl *declaration(parser$Parser *p, bool is_external) {
             },
         };
         ast$Decl *decl = esc(declref);
-        parser$declare(p, p->topScope, decl, ast$ObjKind_TYP, name);
+        ast$Object *obj = ast$newObject(ast$ObjKind_TYP, name->ident.name);
+        ast$Scope_insert(p->topScope, obj);
         return decl;
     }
     ast$Expr *type = declaration_specifiers(p, true);

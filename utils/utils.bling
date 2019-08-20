@@ -24,14 +24,6 @@ typedef MapStatus enum {
     MapStatus_ok = 1
 }
 
-var Map_hits int
-
-var Map_misses int
-
-var Map_lookups int
-
-var Map_iters int
-
 typedef MapIter struct {
     _map *const Map
     _idx int

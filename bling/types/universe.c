@@ -2,6 +2,46 @@
 
 #include "bling/parser/parser.h"
 
+typedef enum {
+    _assert,
+    _esc,
+    _free,
+    _malloc,
+    _panic,
+    _print,
+    _strdup,
+    _streq,
+    _strlen,
+    numBuiltinIds,
+} builtinId;
+
+typedef enum {
+    expression,
+    statement,
+} exprKind;
+
+struct {
+    char *name;
+    int nargs;
+    bool variadic;
+    exprKind kind;
+} predeclareFuncs[] = {
+    [_assert]   = {"assert", 1, false, statement},
+    [_esc]      = {"esc", 1, false, expression},
+    [_free]     = {"free", 1, false, statement},
+    [_malloc]   = {"malloc", 1, false, expression},
+    [_panic]    = {"panic", 1, true, statement},
+    [_print]    = {"print", 1, false, statement},
+    [_strdup]   = {"strdup", 1, false, expression},
+    [_streq]    = {"strdup", 2, false, expression},
+    [_strlen]   = {"strdup", 1, false, expression},
+};
+
+void defPredeclareFuncs() {
+    for (int i = 0; i < numBuiltinIds; i++) {
+    }
+}
+
 static struct {
     char *name;
     int size;
@@ -51,7 +91,7 @@ static void declareBuiltins(ast$Scope *s) {
                 .type = esc(type),
             },
         };
-        ast$Object *obj = ast$newObject(ast$ObjKind_TYPE, name->ident.name);
+        ast$Object *obj = ast$newObject(ast$ObjKind_TYP, name->ident.name);
         obj->decl = esc(decl);
         name->ident.obj = obj;
         assert(ast$Scope_insert(s, obj) == NULL);

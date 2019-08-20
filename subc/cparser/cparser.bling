@@ -899,7 +899,8 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
             },
         }
         var decl *ast.Decl = esc(declref)
-        parser.declare(p, p.topScope, decl, ast.ObjKind_TYP, name)
+        var obj *ast.Object = ast.newObject(ast.ObjKind_TYP, name.ident.name)
+        ast.Scope_insert(p.topScope, obj)
         return decl
     }
     var type *ast.Expr = declaration_specifiers(p, true)

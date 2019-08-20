@@ -52,6 +52,8 @@ static bool isForwardDecl(ast$Decl *decl) {
                 return false;
             }
         }
+    case ast$DECL_VALUE:
+        return decl->value.value == NULL;
     default:
         return false;
     }

@@ -228,29 +228,6 @@ fun areComparable(a *ast.Expr, b *ast.Expr) bool {
     return areIdentical(a, b)
 }
 
-fun getDeclKind(decl *ast.Decl) ast.ObjKind {
-    switch decl.kind {
-    case ast.DECL_FIELD, ast.DECL_VALUE: return ast.ObjKind_VAL
-    case ast.DECL_FUNC: return ast.ObjKind_FUN
-    case ast.DECL_IMPORT: return ast.ObjKind_PKG
-    case ast.DECL_TYPEDEF: return ast.ObjKind_TYP
-    default: return ast.ObjKind_BAD
-    }
-}
-
-fun getDeclName(decl *ast.Decl) *ast.Expr {
-    switch decl.kind {
-    case ast.DECL_FIELD: return decl.field.name
-    case ast.DECL_FUNC: return decl.func.name
-    case ast.DECL_IMPORT: return decl.imp.name
-    case ast.DECL_TYPEDEF: return decl.typedef_.name
-    case ast.DECL_VALUE: return decl.value.name
-    default:
-        panic("bad decl: %s", declString(decl))
-        return NULL
-    }
-}
-
 fun isLhs(expr *ast.Expr) bool {
     switch expr.kind {
     case ast.EXPR_IDENT, ast.EXPR_SELECTOR: return true
@@ -341,48 +318,18 @@ fun Checker_resolve(c *Checker, s *ast.Scope, x *ast.Expr) {
     Checker_error(c, ast.Expr_pos(x), sys.sprintf("unresolved: %s", x.ident.name))
 }
 
-fun Checker_declare(c *Checker, s *ast.Scope, decl *ast.Decl) {
-    var ident *ast.Expr = getDeclName(decl)
+fun Checker_declare(c *Checker, decl *ast.Decl, data *void, scope *ast.Scope, kind ast.ObjKind, ident *ast.Expr) {
     if ident.ident.obj != NULL {
         Checker_error(c, decl.pos, sys.sprintf("already declared: %s", ident.ident.name))
     }
-    var kind ast.ObjKind = getDeclKind(decl)
     var obj *ast.Object = ast.newObject(kind, ident.ident.name)
     obj.decl = decl
-    obj.scope = s
-    obj.pkg = s.pkg
+    obj.data = data
+    obj.scope = scope
     ident.ident.obj = obj
-    var alt *ast.Object = ast.Scope_insert(s, obj)
+    var alt *ast.Object = ast.Scope_insert(scope, obj)
     if alt != NULL {
-        var redecl bool = false
-        if alt.kind == kind {
-            switch kind {
-            case ast.ObjKind_BAD:
-                panic("unreachable")
-                break
-            case ast.ObjKind_FUN:
-                redecl = (alt.decl.func.body == NULL || decl.func.body == NULL) && areIdentical(alt.decl.func.type, decl.func.type)
-                break
-            case ast.ObjKind_PKG:
-                redecl = true
-                break
-            case ast.ObjKind_TYP:
-                if alt.decl.typedef_.type.kind == ast.TYPE_STRUCT {
-                    redecl = alt.decl.typedef_.type.struct_.fields == NULL
-                }
-                if c.conf.cMode {
-                    redecl = true
-                }
-                break
-            case ast.ObjKind_VAL:
-                redecl = alt.decl.value.value == NULL && !areIdentical(alt.decl.value.type, decl.value.value)
-                break
-            }
-        }
-        if !redecl {
-            Checker_error(c, decl.pos, sys.sprintf("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl)))
-        }
-        alt.decl = decl
+        Checker_error(c, decl.pos, sys.sprintf("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl)))
     }
 }
 
@@ -407,7 +354,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
             assert(ast.isIdent(t.selector.x))
             assert(t.selector.x.ident.obj.kind == ast.ObjKind_PKG)
             var oldScope *ast.Scope = c.pkg.scope
-            c.pkg.scope = t.selector.x.ident.obj.decl.imp.scope
+            c.pkg.scope = t.selector.x.ident.obj.data
             Checker_checkType(c, t.selector.sel)
             c.pkg.scope = oldScope
         }
@@ -425,7 +372,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
             if t.enum_.name {
                 decl.value.type = t.enum_.name
             }
-            Checker_declare(c, c.pkg.scope, decl)
+            Checker_declare(c, decl, NULL, c.pkg.scope, ast.ObjKind_VAL, decl.value.name)
             if decl.value.value {
                 Checker_checkExpr(c, decl.value.value)
             }
@@ -454,7 +401,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
                 var field *ast.Decl = t.struct_.fields[i]
                 Checker_checkType(c, field.field.type)
                 if field.field.name {
-                    Checker_declare(c, c.pkg.scope, field)
+                    Checker_declare(c, field, NULL, c.pkg.scope, ast.ObjKind_VAL, field.field.name)
                 }
             }
             Checker_closeScope(c)
@@ -676,7 +623,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             var decl *ast.Decl = x.ident.obj.decl
             assert(decl.kind == ast.DECL_IMPORT)
             var oldScope *ast.Scope = c.pkg.scope
-            c.pkg.scope = decl.imp.scope
+            c.pkg.scope = x.ident.obj.data
             type = Checker_checkExpr(c, expr.selector.sel)
             c.pkg.scope = oldScope
             expr.selector.tok = token.DOLLAR
@@ -841,26 +788,24 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
     var oldScope *ast.Scope = NULL
     utils.Map_get(&c.scopes, path, &oldScope)
     if oldScope {
-        imp.imp.scope = oldScope
-        imp.imp.name = makeIdent(imp.imp.scope.pkg)
-        Checker_declare(c, c.pkg.scope, imp)
+        imp.imp.name = makeIdent(oldScope.pkg)
+        Checker_declare(c, imp, oldScope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
         free(path)
         return
     }
-    imp.imp.scope = ast.Scope_new(universe())
-    utils.Map_set(&c.scopes, path, &imp.imp.scope)
-    oldScope = c.pkg.scope
-    c.pkg.scope = imp.imp.scope
     var err *utils.Error = NULL
-    var files **ast.File = parser.parseDir(c.fset, path, c.pkg.scope, &err)
+    var files **ast.File = parser.parseDir(c.fset, path, universe(), &err)
     if err {
         Checker_error(c, imp.pos, sys.sprintf("%s: %s", path, err.error))
     }
     assert(files[0] && !files[1])
+    utils.Map_set(&c.scopes, path, &files[0].scope)
+    oldScope = c.pkg.scope
+    c.pkg.scope = files[0].scope
     Checker_checkFile(c, files[0])
     c.pkg.scope = oldScope
-    imp.imp.name = makeIdent(imp.imp.scope.pkg)
-    Checker_declare(c, c.pkg.scope, imp)
+    imp.imp.name = makeIdent(files[0].scope.pkg)
+    Checker_declare(c, imp, files[0].scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
 }
 
 fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
@@ -907,7 +852,7 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
                 Checker_error(c, decl.pos, sys.sprintf("not assignable %s and %s", typeString(varType), typeString(valType)))
             }
         }
-        Checker_declare(c, c.pkg.scope, decl)
+        Checker_declare(c, decl, NULL, c.pkg.scope, ast.ObjKind_VAL, decl.value.name)
         break
     }
     default:
@@ -923,7 +868,7 @@ fun Checker_checkFunc(c *Checker, decl *ast.Decl) {
             var param *ast.Decl = type.func.params[i]
             assert(param.kind == ast.DECL_FIELD)
             if param.field.name {
-                Checker_declare(c, c.pkg.scope, param)
+                Checker_declare(c, param, NULL, c.pkg.scope, ast.ObjKind_VAL, param.field.name)
             }
         }
         c.result = decl.func.type.func.result
@@ -946,12 +891,12 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
     if c.conf.strict {
         for var i int = 0; file.decls[i] != NULL; i++ {
             if file.decls[i].kind == ast.DECL_TYPEDEF {
-                Checker_declare(c, c.pkg.scope, file.decls[i])
+                Checker_declare(c, file.decls[i], NULL, c.pkg.scope, ast.ObjKind_TYP, file.decls[i].typedef_.name)
             }
         }
         for var i int = 0; file.decls[i] != NULL; i++ {
             if file.decls[i].kind == ast.DECL_FUNC {
-                Checker_declare(c, c.pkg.scope, file.decls[i])
+                Checker_declare(c, file.decls[i], NULL, c.pkg.scope, ast.ObjKind_FUN, file.decls[i].func.name)
             }
         }
         for var i int = 0; file.decls[i] != NULL; i++ {
@@ -964,9 +909,6 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
 }
 
 fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package {
-    if file.scope == NULL {
-        file.scope = ast.Scope_new(universe())
-    }
     var c Checker = {
         fset: fset,
         conf: conf,
@@ -979,6 +921,91 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package {
     Checker_checkFile(&c, file)
     c.pkg.files = utils.Slice_to_nil_array(c.files)
     return c.pkg
+}
+
+typedef builtinId enum {
+    _assert
+    _esc
+    _free
+    _malloc
+    _panic
+    _print
+    _strdup
+    _streq
+    _strlen
+    numBuiltinIds
+}
+
+typedef exprKind enum {
+    expression
+    statement
+}
+
+var predeclareFuncs []struct {
+    name *char
+    nargs int
+    variadic bool
+    kind exprKind
+} = {
+    _assert: {
+        "assert",
+        1,
+        false,
+        statement,
+    },
+    _esc: {
+        "esc",
+        1,
+        false,
+        expression,
+    },
+    _free: {
+        "free",
+        1,
+        false,
+        statement,
+    },
+    _malloc: {
+        "malloc",
+        1,
+        false,
+        expression,
+    },
+    _panic: {
+        "panic",
+        1,
+        true,
+        statement,
+    },
+    _print: {
+        "print",
+        1,
+        false,
+        statement,
+    },
+    _strdup: {
+        "strdup",
+        1,
+        false,
+        expression,
+    },
+    _streq: {
+        "strdup",
+        2,
+        false,
+        expression,
+    },
+    _strlen: {
+        "strdup",
+        1,
+        false,
+        expression,
+    },
+}
+
+fun defPredeclareFuncs() {
+    for var i int = 0; i < numBuiltinIds; i++ {
+    }
 }
 
 var natives []struct {
@@ -1088,7 +1115,7 @@ fun declareBuiltins(s *ast.Scope) {
                 type: esc(type),
             },
         }
-        var obj *ast.Object = ast.newObject(ast.ObjKind_TYPE, name.ident.name)
+        var obj *ast.Object = ast.newObject(ast.ObjKind_TYP, name.ident.name)
         obj.decl = esc(decl)
         name.ident.obj = obj
         assert(ast.Scope_insert(s, obj) == NULL)

@@ -39,8 +39,6 @@ typedef struct {
     int numIdents;
 } parser$Parser;
 
-extern void parser$declare(parser$Parser *p, ast$Scope *s, ast$Decl *decl,
-        ast$ObjKind kind, ast$Expr *name);
 extern void parser$next(parser$Parser *p);
 extern void parser$init(parser$Parser *p, token$FileSet *fset,
         const char *filename, char *src);

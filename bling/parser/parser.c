@@ -164,19 +164,24 @@ static ast$Expr *checkExprOrType(parser$Parser *p, ast$Expr *x) {
     return x;
 }
 
-extern void parser$declare(parser$Parser *p, ast$Scope *scope, ast$Decl *decl,
-        ast$ObjKind kind, ast$Expr *ident) {
-    assert(scope);
-    assert(ident);
-    assert(ident->kind == ast$EXPR_IDENT);
-    if (p->c_mode == false) {
-        return;
+static void parser$declare(parser$Parser *p, ast$Decl *decl, void *data,
+        ast$Scope *scope, ast$ObjKind kind, ast$Expr *ident) {
+    return;
+    if (ident->ident.obj != NULL) {
+        parser$error(p, decl->pos, sys$sprintf(
+                    "identifier already declared or resolved: %s",
+                    ident->ident.name));
     }
     ast$Object *obj = ast$newObject(kind, ident->ident.name);
     obj->decl = decl;
+    obj->data = NULL;
     obj->scope = scope;
     ident->ident.obj = obj;
-    ast$Scope_insert(scope, obj);
+    ast$Object *alt = ast$Scope_insert(scope, obj);
+    if (alt != NULL) {
+        parser$error(p, ast$Expr_pos(ident), sys$sprintf(
+                    "%s redeclared in this block", ident->ident.name));
+    }
 }
 
 static ast$Expr *parseLiteralValue(parser$Parser *p, ast$Expr *type);
@@ -412,16 +417,28 @@ static ast$Expr *parser$parsePrimaryExpr(parser$Parser *p, bool lhs) {
         switch (p->tok) {
         case token$PERIOD:
             parser$next(p);
+            if (lhs) {
+                parser$resolve(p, x);
+            }
             x = parser$parseSelector(p, checkExprOrType(p, x));
             break;
         case token$LBRACK:
+            if (lhs) {
+                parser$resolve(p, x);
+            }
             x = parseIndexExpr(p, checkExpr(p, x));
             break;
         case token$LPAREN:
+            if (lhs) {
+                parser$resolve(p, x);
+            }
             x = parseCallExpr(p, checkExprOrType(p, x));
             break;
         case token$LBRACE:
             if (isLiteralType(x) && (p->exprLev >= 0 || !isTypeName(x))) {
+                if (lhs) {
+                    parser$resolve(p, x);
+                }
                 x = parseLiteralValue(p, x);
                 break;
             } else {
@@ -529,6 +546,10 @@ static ast$Expr *parseBinaryExpr(parser$Parser *p, bool lhs, int prec1) {
             return x;
         }
         parser$expect(p, op);
+        if (lhs) {
+            parser$resolve(p, x);
+            lhs = false;
+        }
         ast$Expr *y = parseBinaryExpr(p, false, oprec + 1);
         ast$Expr z = {
             .kind = ast$EXPR_BINARY,
@@ -627,7 +648,7 @@ static ast$Decl *parseFieldDecl(parser$Parser *p, ast$Scope *scope) {
     }
     ast$Decl *d = esc(decl);
     if (decl.field.name) {
-        parser$declare(p, scope, d, ast$ObjKind_VAL, decl.field.name);
+        parser$declare(p, d, NULL, scope, ast$ObjKind_VAL, decl.field.name);
     }
     parser$resolve(p, decl.field.type);
     parser$expect(p, token$SEMICOLON);
@@ -637,6 +658,7 @@ static ast$Decl *parseFieldDecl(parser$Parser *p, ast$Scope *scope) {
 static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
     token$Pos pos = p->pos;
     parser$expect(p, keyword);
+    parser$openScope(p);
     ast$Decl **fields = NULL;
     if (parser$accept(p, token$LBRACE)) {
         ast$Scope *scope = ast$Scope_new(p->topScope);
@@ -660,6 +682,7 @@ static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
             .fields = fields,
         },
     };
+    parser$closeScope(p);
     return esc(x);
 }
 
@@ -693,8 +716,9 @@ static ast$Decl *parseParam(parser$Parser *p, ast$Scope *scope, bool anon) {
     }
     ast$Decl *d = esc(decl);
     if (d->field.name) {
-        parser$declare(p, scope, d, ast$ObjKind_VAL, d->field.name);
+        parser$declare(p, d, NULL, scope, ast$ObjKind_VAL, d->field.name);
     }
+    parser$resolve(p, d->field.type);
     return d;
 }
 
@@ -829,7 +853,11 @@ static ast$Expr *tryIdentOrType(parser$Parser *p) {
 }
 
 static ast$Expr *tryType(parser$Parser *p) {
-    return tryIdentOrType(p);
+    ast$Expr *t = tryIdentOrType(p);
+    if (t != NULL) {
+        parser$resolve(p, t);
+    }
+    return t;
 }
 
 static ast$Expr *parseType(parser$Parser *p) {
@@ -1019,6 +1047,7 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
     ast$Expr *tag = parseExpr(p, true);
     p->exprLev = prevLev;
     parser$expect(p, token$LBRACE);
+    parser$openScope(p);
     utils$Slice clauses = {.size = sizeof(ast$Stmt *)};
     while (p->tok == token$CASE || p->tok == token$DEFAULT) {
         // case_statement
@@ -1067,6 +1096,7 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
         ast$Stmt *clause = esc(stmt);
         utils$Slice_append(&clauses, &clause);
     }
+    parser$closeScope(p);
     parser$expect(p, token$RBRACE);
     parser$accept(p, token$SEMICOLON);
     ast$Stmt stmt = {
@@ -1175,22 +1205,45 @@ static ast$Stmt *parseStmt(parser$Parser *p) {
     return stmt;
 }
 
-static ast$Stmt *parseBlockStmt(parser$Parser *p) {
-    // compound_statement : '{' statement_list? '}' ;
+static ast$Stmt **parseStmtList(parser$Parser *p) {
     utils$Slice stmts = {.size = sizeof(ast$Stmt *)};
-    token$Pos pos = parser$expect(p, token$LBRACE);
-    // statement_list : statement+ ;
     while (p->tok != token$RBRACE) {
         ast$Stmt *stmt = parseStmt(p);
         utils$Slice_append(&stmts, &stmt);
     }
+    return utils$Slice_to_nil_array(stmts);
+}
+
+static ast$Stmt *parseBody(parser$Parser *p, ast$Scope *scope) {
+    token$Pos pos = parser$expect(p, token$LBRACE);
+    assert(p->topScope == scope->outer);
+    p->topScope = scope;
+    ast$Stmt **list = parseStmtList(p);
+    parser$closeScope(p);
     parser$expect(p, token$RBRACE);
     parser$accept(p, token$SEMICOLON);
     ast$Stmt stmt = {
         .kind = ast$STMT_BLOCK,
         .block = {
             .pos = pos,
-            .stmts = utils$Slice_to_nil_array(stmts),
+            .stmts = list,
+        }
+    };
+    return esc(stmt);
+}
+
+static ast$Stmt *parseBlockStmt(parser$Parser *p) {
+    token$Pos pos = parser$expect(p, token$LBRACE);
+    parser$openScope(p);
+    ast$Stmt **list = parseStmtList(p);
+    parser$closeScope(p);
+    parser$expect(p, token$RBRACE);
+    parser$accept(p, token$SEMICOLON);
+    ast$Stmt stmt = {
+        .kind = ast$STMT_BLOCK,
+        .block = {
+            .pos = pos,
+            .stmts = list,
         }
     };
     return esc(stmt);
@@ -1239,7 +1292,7 @@ static ast$Decl *parseValueDecl(parser$Parser *p) {
         },
     };
     ast$Decl *d = esc(decl);
-    parser$declare(p, p->topScope, d, ast$ObjKind_VAL, d->value.name);
+    parser$declare(p, d, NULL, p->topScope, ast$ObjKind_VAL, d->value.name);
     return d;
 }
 
@@ -1258,7 +1311,7 @@ static ast$Decl *parseTypeDecl(parser$Parser *p) {
         },
     };
     ast$Decl *d = esc(decl);
-    parser$declare(p, p->topScope, d, ast$ObjKind_TYP, ident);
+    parser$declare(p, d, NULL, p->topScope, ast$ObjKind_TYP, ident);
     return d;
 }
 
@@ -1284,12 +1337,12 @@ static ast$Decl *parseFuncDecl(parser$Parser *p) {
     }
     decl.func.type = esc(type);
     if (p->tok == token$LBRACE) {
-        decl.func.body = parseBlockStmt(p);
+        decl.func.body = parseBody(p, scope);
     } else {
         parser$expect(p, token$SEMICOLON);
     }
     ast$Decl *d = esc(decl);
-    parser$declare(p, p->topScope, d, ast$ObjKind_FUN, d->func.name);
+    parser$declare(p, d, NULL, p->topScope, ast$ObjKind_FUN, d->func.name);
     return d;
 }
 
@@ -1351,9 +1404,13 @@ static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
         name = parser$parseIdent(p);
         parser$expect(p, token$SEMICOLON);
     }
+    assert(p->topScope == NULL);
     p->topScope = scope;
     parser$openScope(p);
     p->pkgScope = p->topScope;
+    if (name) {
+        p->pkgScope->pkg = name->ident.name;
+    }
     while (p->tok == token$IMPORT) {
         token$Pos pos = parser$expect(p, token$IMPORT);
         ast$Expr *path = parser$parseBasicLit(p, token$STRING);
@@ -1373,6 +1430,7 @@ static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
         utils$Slice_append(&decls, &decl);
     }
     parser$closeScope(p);
+    assert(p->topScope == scope);
     ast$File file = {
         .filename = p->file->name,
         .name = name,
@@ -1392,10 +1450,10 @@ extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename,
     }
     parser$Parser p = {};
     parser$init(&p, fset, filename, src);
-    ast$File *file = _parseFile(&p, scope);
-    print(sys$sprintf("%s: %d/%d unresolved", filename,
-                utils$Slice_len(&p.unresolved),
-                p.numIdents));
     free(src);
+    ast$File *file = _parseFile(&p, scope);
+    // print(sys$sprintf("%s: %d/%d unresolved", filename,
+    //             utils$Slice_len(&p.unresolved),
+    //             p.numIdents));
     return file;
 }

@@ -248,40 +248,6 @@ static bool types$areComparable(ast$Expr *a, ast$Expr *b) {
     return types$areIdentical(a, b);
 }
 
-static ast$ObjKind getDeclKind(ast$Decl *decl) {
-    switch (decl->kind) {
-    case ast$DECL_FIELD:
-    case ast$DECL_VALUE:
-        return ast$ObjKind_VAL;
-    case ast$DECL_FUNC:
-        return ast$ObjKind_FUN;
-    case ast$DECL_IMPORT:
-        return ast$ObjKind_PKG;
-    case ast$DECL_TYPEDEF:
-        return ast$ObjKind_TYP;
-    default:
-        return ast$ObjKind_BAD;
-    }
-}
-
-static ast$Expr *getDeclName(ast$Decl *decl) {
-    switch (decl->kind) {
-    case ast$DECL_FIELD:
-        return decl->field.name;
-    case ast$DECL_FUNC:
-        return decl->func.name;
-    case ast$DECL_IMPORT:
-        return decl->imp.name;
-    case ast$DECL_TYPEDEF:
-        return decl->typedef_.name;
-    case ast$DECL_VALUE:
-        return decl->value.name;
-    default:
-        panic("bad decl: %s", types$declString(decl));
-        return NULL;
-    }
-}
-
 static bool types$isLhs(ast$Expr *expr) {
     switch (expr->kind) {
     case ast$EXPR_IDENT:
@@ -384,58 +350,27 @@ static void Checker_resolve(Checker *c, ast$Scope *s, ast$Expr *x) {
     if (ast$resolve(s, x)) {
         return;
     }
-    Checker_error(c, ast$Expr_pos(x), sys$sprintf("unresolved: %s", x->ident.name));
+    Checker_error(c, ast$Expr_pos(x),
+            sys$sprintf("unresolved: %s", x->ident.name));
 }
 
-static void Checker_declare(Checker *c, ast$Scope *s, ast$Decl *decl) {
-    ast$Expr *ident = getDeclName(decl);
+static void Checker_declare(Checker *c, ast$Decl *decl, void *data,
+        ast$Scope *scope, ast$ObjKind kind, ast$Expr *ident) {
     if (ident->ident.obj != NULL) {
         Checker_error(c, decl->pos,
                 sys$sprintf("already declared: %s", ident->ident.name));
     }
-    ast$ObjKind kind = getDeclKind(decl);
     ast$Object *obj = ast$newObject(kind, ident->ident.name);
     obj->decl = decl;
-    obj->scope = s;
-    obj->pkg = s->pkg;
+    obj->data = data;
+    obj->scope = scope;
     ident->ident.obj = obj;
-    ast$Object *alt = ast$Scope_insert(s, obj);
+    ast$Object *alt = ast$Scope_insert(scope, obj);
     if (alt != NULL) {
-        bool redecl = false;
-        if (alt->kind == kind) {
-            switch (kind) {
-            case ast$ObjKind_BAD:
-                panic("unreachable");
-                break;
-            case ast$ObjKind_FUN:
-                redecl =
-                    (alt->decl->func.body == NULL || decl->func.body == NULL) &&
-                    types$areIdentical(alt->decl->func.type, decl->func.type);
-                break;
-            case ast$ObjKind_PKG:
-                redecl = true;
-                break;
-            case ast$ObjKind_TYP:
-                if (alt->decl->typedef_.type->kind == ast$TYPE_STRUCT) {
-                    redecl = alt->decl->typedef_.type->struct_.fields == NULL;
-                }
-                if (c->conf->cMode) {
-                    redecl = true;
-                }
-                break;
-            case ast$ObjKind_VAL:
-                redecl = alt->decl->value.value == NULL && !types$areIdentical(
-                        alt->decl->value.type, decl->value.value);
-                break;
-            }
-        }
-        if (!redecl) {
-            Checker_error(c, decl->pos,
-                    sys$sprintf("incompatible redefinition of `%s`: %s",
-                        types$declString(obj->decl),
-                        types$declString(decl)));
-        }
-        alt->decl = decl;
+        Checker_error(c, decl->pos,
+                sys$sprintf("incompatible redefinition of `%s`: %s",
+                    types$declString(obj->decl),
+                    types$declString(decl)));
     }
 }
 
@@ -466,7 +401,7 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
             assert(ast$isIdent(t->selector.x));
             assert(t->selector.x->ident.obj->kind == ast$ObjKind_PKG);
             ast$Scope *oldScope = c->pkg.scope;
-            c->pkg.scope = t->selector.x->ident.obj->decl->imp.scope;
+            c->pkg.scope = t->selector.x->ident.obj->data;
             Checker_checkType(c, t->selector.sel);
             c->pkg.scope = oldScope;
         }
@@ -486,7 +421,8 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
             if (t->enum_.name) {
                 decl->value.type = t->enum_.name;
             }
-            Checker_declare(c, c->pkg.scope, decl);
+            Checker_declare(c, decl, NULL, c->pkg.scope, ast$ObjKind_VAL,
+                    decl->value.name);
             if (decl->value.value) {
                 Checker_checkExpr(c, decl->value.value);
             }
@@ -518,7 +454,8 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
                 ast$Decl *field = t->struct_.fields[i];
                 Checker_checkType(c, field->field.type);
                 if (field->field.name) {
-                    Checker_declare(c, c->pkg.scope, field);
+                    Checker_declare(c, field, NULL, c->pkg.scope, ast$ObjKind_VAL,
+                            field->field.name);
                 }
             }
             Checker_closeScope(c);
@@ -788,7 +725,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                 ast$Decl *decl = x->ident.obj->decl;
                 assert(decl->kind == ast$DECL_IMPORT);
                 ast$Scope *oldScope = c->pkg.scope;
-                c->pkg.scope = decl->imp.scope;
+                c->pkg.scope = x->ident.obj->data;
                 type = Checker_checkExpr(c, expr->selector.sel);
                 c->pkg.scope = oldScope;
                 expr->selector.tok = token$DOLLAR;
@@ -1002,29 +939,26 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
     ast$Scope *oldScope = NULL;
     utils$Map_get(&c->scopes, path, &oldScope);
     if (oldScope) {
-        imp->imp.scope = oldScope;
-        imp->imp.name = types$makeIdent(imp->imp.scope->pkg);
-        Checker_declare(c, c->pkg.scope, imp);
+        imp->imp.name = types$makeIdent(oldScope->pkg);
+        Checker_declare(c, imp, oldScope, c->pkg.scope, ast$ObjKind_PKG,
+                imp->imp.name);
         free(path);
         return;
     }
-
-    imp->imp.scope = ast$Scope_new(types$universe());
-    utils$Map_set(&c->scopes, path, &imp->imp.scope);
-
-    oldScope = c->pkg.scope;
-    c->pkg.scope = imp->imp.scope;
-
     utils$Error *err = NULL;
-    ast$File **files = parser$parseDir(c->fset, path, c->pkg.scope, &err);
+    ast$File **files = parser$parseDir(c->fset, path, types$universe(), &err);
     if (err) {
         Checker_error(c, imp->pos, sys$sprintf("%s: %s", path, err->error));
     }
     assert(files[0] && !files[1]);
+    utils$Map_set(&c->scopes, path, &files[0]->scope);
+    oldScope = c->pkg.scope;
+    c->pkg.scope = files[0]->scope;
     Checker_checkFile(c, files[0]);
     c->pkg.scope = oldScope;
-    imp->imp.name = types$makeIdent(imp->imp.scope->pkg);
-    Checker_declare(c, c->pkg.scope, imp);
+    imp->imp.name = types$makeIdent(files[0]->scope->pkg);
+    Checker_declare(c, imp, files[0]->scope, c->pkg.scope, ast$ObjKind_PKG,
+            imp->imp.name);
 }
 
 static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
@@ -1077,7 +1011,8 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
                                 types$typeString(valType)));
                 }
             }
-            Checker_declare(c, c->pkg.scope, decl);
+            Checker_declare(c, decl, NULL, c->pkg.scope, ast$ObjKind_VAL,
+                    decl->value.name);
             break;
         }
     default:
@@ -1093,7 +1028,8 @@ static void Checker_checkFunc(Checker *c, ast$Decl *decl) {
             ast$Decl *param = type->func.params[i];
             assert(param->kind == ast$DECL_FIELD);
             if (param->field.name) {
-                Checker_declare(c, c->pkg.scope, param);
+                Checker_declare(c, param, NULL, c->pkg.scope, ast$ObjKind_VAL,
+                        param->field.name);
             }
         }
         c->result = decl->func.type->func.result;
@@ -1109,6 +1045,8 @@ static void Checker_checkFunc(Checker *c, ast$Decl *decl) {
 static void Checker_checkFile(Checker *c, ast$File *file) {
     if (file->name) {
         c->pkg.scope->pkg = file->name->ident.name;
+        // assert(c->pkg.scope->pkg);
+        // assert(streq(c->pkg.scope->pkg, file->name->ident.name));
     }
     for (int i = 0; file->imports[i] != NULL; i++) {
         Checker_checkImport(c, file->imports[i]);
@@ -1117,12 +1055,14 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
     if (c->conf->strict) {
         for (int i = 0; file->decls[i] != NULL; i++) {
             if (file->decls[i]->kind == ast$DECL_TYPEDEF) {
-                Checker_declare(c, c->pkg.scope, file->decls[i]);
+                Checker_declare(c, file->decls[i], NULL, c->pkg.scope,
+                        ast$ObjKind_TYP, file->decls[i]->typedef_.name);
             }
         }
         for (int i = 0; file->decls[i] != NULL; i++) {
             if (file->decls[i]->kind == ast$DECL_FUNC) {
-                Checker_declare(c, c->pkg.scope, file->decls[i]);
+                Checker_declare(c, file->decls[i], NULL, c->pkg.scope,
+                        ast$ObjKind_FUN, file->decls[i]->func.name);
             }
         }
         for (int i = 0; file->decls[i] != NULL; i++) {
@@ -1136,9 +1076,6 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
 
 extern ast$Package types$checkFile(types$Config *conf, token$FileSet *fset,
         ast$File *file) {
-    if (file->scope == NULL) {
-        file->scope = ast$Scope_new(types$universe());
-    }
     Checker c = {
         .fset = fset,
         .conf = conf,

@@ -58,6 +58,7 @@ typedef enum {
 
     ast$_TYPE_START,
     ast$TYPE_ARRAY,
+    ast$TYPE_BUILTIN_FUNC,
     ast$TYPE_ENUM,
     ast$TYPE_NATIVE,
     ast$TYPE_FUNC,
@@ -90,7 +91,8 @@ typedef struct {
     ast$ObjKind kind;
     char *name;
     ast$Decl *decl;
-    char *pkg;
+    void *data;
+    void *type;
     ast$Scope *scope;
 } ast$Object;
 
@@ -98,7 +100,7 @@ typedef struct {
     token$Pos pos;
     ast$Expr *len;
     ast$Expr *elt;
-} ast$Array;
+} ast$ArrayType;
 
 typedef struct {
     token$Pos pos;
@@ -133,7 +135,7 @@ typedef struct {
     token$Pos pos;
     ast$Expr *name;
     ast$Decl **enums;
-} ast$Enum;
+} ast$EnumType;
 
 typedef struct {
     token$Pos pos;
@@ -156,7 +158,7 @@ typedef struct {
     ast$Expr *key;
     ast$Expr *value;
     bool isArray;
-} ast$KeyValue;
+} ast$KeyValueExpr;
 
 typedef struct {
     char *name;
@@ -190,7 +192,7 @@ typedef struct {
     ast$Expr *name;
     ast$Decl **fields;
     ast$Scope *scope;
-} ast$Struct;
+} ast$StructType;
 
 typedef struct {
     ast$Expr *cond;
@@ -208,23 +210,23 @@ typedef struct ast$Expr {
     ast$Node;
     bool is_const;
     union {
-        ast$Array array;
+        ast$ArrayType array;
         ast$BasicLit basic;
         ast$BinaryExpr binary;
         ast$CallExpr call;
         ast$CastExpr cast;
         ast$CompositeLit composite;
-        ast$Enum enum_;
+        ast$EnumType enum_;
         ast$FuncExpr func;
         ast$Ident ident;
         ast$IndexExpr index;
-        ast$KeyValue key_value;
+        ast$KeyValueExpr key_value;
         ast$NativeType native;
         ast$ParenExpr paren;
         ast$SelectorExpr selector;
         ast$SizeofExpr sizeof_;
         ast$StarExpr star;
-        ast$Struct struct_;
+        ast$StructType struct_;
         ast$TernaryExpr ternary;
         ast$UnaryExpr unary;
     };
@@ -233,7 +235,6 @@ typedef struct ast$Expr {
 typedef struct {
     ast$Expr *name;
     ast$Expr *path;
-    ast$Scope *scope;
 } ast$ImportDecl;
 
 typedef struct {

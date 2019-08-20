@@ -158,18 +158,20 @@ fun checkExprOrType(p *Parser, x *ast.Expr) *ast.Expr {
     return x
 }
 
-fun declare(p *Parser, scope *ast.Scope, decl *ast.Decl, kind ast.ObjKind, ident *ast.Expr) {
-    assert(scope)
-    assert(ident)
-    assert(ident.kind == ast.EXPR_IDENT)
-    if p.c_mode == false {
-        return
+fun declare(p *Parser, decl *ast.Decl, data *void, scope *ast.Scope, kind ast.ObjKind, ident *ast.Expr) {
+    return
+    if ident.ident.obj != NULL {
+        error(p, decl.pos, sys.sprintf("identifier already declared or resolved: %s", ident.ident.name))
     }
     var obj *ast.Object = ast.newObject(kind, ident.ident.name)
     obj.decl = decl
+    obj.data = NULL
     obj.scope = scope
     ident.ident.obj = obj
-    ast.Scope_insert(scope, obj)
+    var alt *ast.Object = ast.Scope_insert(scope, obj)
+    if alt != NULL {
+        error(p, ast.Expr_pos(ident), sys.sprintf("%s redeclared in this block", ident.ident.name))
+    }
 }
 
 var LHS const bool = false
@@ -379,16 +381,28 @@ fun parsePrimaryExpr(p *Parser, lhs bool) *ast.Expr {
         switch p.tok {
         case token.PERIOD:
             next(p)
+            if lhs {
+                resolve(p, x)
+            }
             x = parseSelector(p, checkExprOrType(p, x))
             break
         case token.LBRACK:
+            if lhs {
+                resolve(p, x)
+            }
             x = parseIndexExpr(p, checkExpr(p, x))
             break
         case token.LPAREN:
+            if lhs {
+                resolve(p, x)
+            }
             x = parseCallExpr(p, checkExprOrType(p, x))
             break
         case token.LBRACE:
             if isLiteralType(x) && (p.exprLev >= 0 || !isTypeName(x)) {
+                if lhs {
+                    resolve(p, x)
+                }
                 x = parseLiteralValue(p, x)
                 break
             } else {
@@ -472,6 +486,10 @@ fun parseBinaryExpr(p *Parser, lhs bool, prec1 int) *ast.Expr {
             return x
         }
         expect(p, op)
+        if lhs {
+            resolve(p, x)
+            lhs = false
+        }
         var y *ast.Expr = parseBinaryExpr(p, false, oprec + 1)
         var z ast.Expr = {
             kind: ast.EXPR_BINARY,
@@ -563,7 +581,7 @@ fun parseFieldDecl(p *Parser, scope *ast.Scope) *ast.Decl {
     }
     var d *ast.Decl = esc(decl)
     if decl.field.name {
-        declare(p, scope, d, ast.ObjKind_VAL, decl.field.name)
+        declare(p, d, NULL, scope, ast.ObjKind_VAL, decl.field.name)
     }
     resolve(p, decl.field.type)
     expect(p, token.SEMICOLON)
@@ -573,6 +591,7 @@ fun parseFieldDecl(p *Parser, scope *ast.Scope) *ast.Decl {
 fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
     var pos token.Pos = p.pos
     expect(p, keyword)
+    openScope(p)
     var fields **ast.Decl = NULL
     if accept(p, token.LBRACE) {
         var scope *ast.Scope = ast.Scope_new(p.topScope)
@@ -597,6 +616,7 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
             fields: fields,
         },
     }
+    closeScope(p)
     return esc(x)
 }
 
@@ -629,8 +649,9 @@ fun parseParam(p *Parser, scope *ast.Scope, anon bool) *ast.Decl {
     }
     var d *ast.Decl = esc(decl)
     if d.field.name {
-        declare(p, scope, d, ast.ObjKind_VAL, d.field.name)
+        declare(p, d, NULL, scope, ast.ObjKind_VAL, d.field.name)
     }
+    resolve(p, d.field.type)
     return d
 }
 
@@ -749,7 +770,11 @@ fun tryIdentOrType(p *Parser) *ast.Expr {
 }
 
 fun tryType(p *Parser) *ast.Expr {
-    return tryIdentOrType(p)
+    var t *ast.Expr = tryIdentOrType(p)
+    if t != NULL {
+        resolve(p, t)
+    }
+    return t
 }
 
 fun parseType(p *Parser) *ast.Expr {
@@ -900,6 +925,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
     var tag *ast.Expr = parseExpr(p, true)
     p.exprLev = prevLev
     expect(p, token.LBRACE)
+    openScope(p)
     var clauses utils.Slice = {
         size: sizeof(*ast.Stmt),
     }
@@ -947,6 +973,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
         var clause *ast.Stmt = esc(stmt)
         utils.Slice_append(&clauses, &clause)
     }
+    closeScope(p)
     expect(p, token.RBRACE)
     accept(p, token.SEMICOLON)
     var stmt ast.Stmt = {
@@ -1036,22 +1063,47 @@ fun parseStmt(p *Parser) *ast.Stmt {
     return stmt
 }
 
-fun parseBlockStmt(p *Parser) *ast.Stmt {
+fun parseStmtList(p *Parser) **ast.Stmt {
     var stmts utils.Slice = {
         size: sizeof(*ast.Stmt),
     }
-    var pos token.Pos = expect(p, token.LBRACE)
     while p.tok != token.RBRACE {
         var stmt *ast.Stmt = parseStmt(p)
         utils.Slice_append(&stmts, &stmt)
     }
+    return utils.Slice_to_nil_array(stmts)
+}
+
+fun parseBody(p *Parser, scope *ast.Scope) *ast.Stmt {
+    var pos token.Pos = expect(p, token.LBRACE)
+    assert(p.topScope == scope.outer)
+    p.topScope = scope
+    var list **ast.Stmt = parseStmtList(p)
+    closeScope(p)
     expect(p, token.RBRACE)
     accept(p, token.SEMICOLON)
     var stmt ast.Stmt = {
         kind: ast.STMT_BLOCK,
         block: {
             pos: pos,
-            stmts: utils.Slice_to_nil_array(stmts),
+            stmts: list,
+        },
+    }
+    return esc(stmt)
+}
+
+fun parseBlockStmt(p *Parser) *ast.Stmt {
+    var pos token.Pos = expect(p, token.LBRACE)
+    openScope(p)
+    var list **ast.Stmt = parseStmtList(p)
+    closeScope(p)
+    expect(p, token.RBRACE)
+    accept(p, token.SEMICOLON)
+    var stmt ast.Stmt = {
+        kind: ast.STMT_BLOCK,
+        block: {
+            pos: pos,
+            stmts: list,
         },
     }
     return esc(stmt)
@@ -1100,7 +1152,7 @@ fun parseValueDecl(p *Parser) *ast.Decl {
         },
     }
     var d *ast.Decl = esc(decl)
-    declare(p, p.topScope, d, ast.ObjKind_VAL, d.value.name)
+    declare(p, d, NULL, p.topScope, ast.ObjKind_VAL, d.value.name)
     return d
 }
 
@@ -1119,7 +1171,7 @@ fun parseTypeDecl(p *Parser) *ast.Decl {
         },
     }
     var d *ast.Decl = esc(decl)
-    declare(p, p.topScope, d, ast.ObjKind_TYP, ident)
+    declare(p, d, NULL, p.topScope, ast.ObjKind_TYP, ident)
     return d
 }
 
@@ -1145,12 +1197,12 @@ fun parseFuncDecl(p *Parser) *ast.Decl {
     }
     decl.func.type = esc(type)
     if p.tok == token.LBRACE {
-        decl.func.body = parseBlockStmt(p)
+        decl.func.body = parseBody(p, scope)
     } else {
         expect(p, token.SEMICOLON)
     }
     var d *ast.Decl = esc(decl)
-    declare(p, p.topScope, d, ast.ObjKind_FUN, d.func.name)
+    declare(p, d, NULL, p.topScope, ast.ObjKind_FUN, d.func.name)
     return d
 }
 
@@ -1205,9 +1257,13 @@ fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
         name = parseIdent(p)
         expect(p, token.SEMICOLON)
     }
+    assert(p.topScope == NULL)
     p.topScope = scope
     openScope(p)
     p.pkgScope = p.topScope
+    if name {
+        p.pkgScope.pkg = name.ident.name
+    }
     while p.tok == token.IMPORT {
         var pos token.Pos = expect(p, token.IMPORT)
         var path *ast.Expr = parseBasicLit(p, token.STRING)
@@ -1227,6 +1283,7 @@ fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
         utils.Slice_append(&decls, &decl)
     }
     closeScope(p)
+    assert(p.topScope == scope)
     var file ast.File = {
         filename: p.file.name,
         name: name,
@@ -1245,8 +1302,7 @@ fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.
     }
     var p Parser = {}
     init(&p, fset, filename, src)
-    var file *ast.File = _parseFile(&p, scope)
-    print(sys.sprintf("%s: %d/%d unresolved", filename, utils.Slice_len(&p.unresolved), p.numIdents))
     free(src)
+    var file *ast.File = _parseFile(&p, scope)
     return file
 }

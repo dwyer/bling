@@ -49,6 +49,7 @@ typedef NodeKind enum {
     _STMT_END
     _TYPE_START
     TYPE_ARRAY
+    TYPE_BUILTIN_FUNC
     TYPE_ENUM
     TYPE_NATIVE
     TYPE_FUNC
@@ -72,11 +73,12 @@ typedef Object struct {
     kind ObjKind
     name *char
     decl *Decl
-    pkg *char
+    data *void
+    type *void
     scope *Scope
 }
 
-typedef Array struct {
+typedef ArrayType struct {
     pos token.Pos
     len *Expr
     elt *Expr
@@ -111,7 +113,7 @@ typedef CompositeLit struct {
     list **Expr
 }
 
-typedef Enum struct {
+typedef EnumType struct {
     pos token.Pos
     name *Expr
     enums **Decl
@@ -134,7 +136,7 @@ typedef IndexExpr struct {
     index *Expr
 }
 
-typedef KeyValue struct {
+typedef KeyValueExpr struct {
     key *Expr
     value *Expr
     isArray bool
@@ -166,7 +168,7 @@ typedef StarExpr struct {
     x *Expr
 }
 
-typedef Struct struct {
+typedef StructType struct {
     pos token.Pos
     tok token.Token
     name *Expr
@@ -190,23 +192,23 @@ typedef Expr struct {
     Node
     is_const bool
     union {
-        array Array
+        array ArrayType
         basic BasicLit
         binary BinaryExpr
         call CallExpr
         cast CastExpr
         composite CompositeLit
-        enum_ Enum
+        enum_ EnumType
         func FuncExpr
         ident Ident
         index IndexExpr
-        key_value KeyValue
+        key_value KeyValueExpr
         native NativeType
         paren ParenExpr
         selector SelectorExpr
         sizeof_ SizeofExpr
         star StarExpr
-        struct_ Struct
+        struct_ StructType
         ternary TernaryExpr
         unary UnaryExpr
     }
@@ -215,7 +217,6 @@ typedef Expr struct {
 typedef ImportDecl struct {
     name *Expr
     path *Expr
-    scope *Scope
 }
 
 typedef PragmaDecl struct {
