@@ -16,7 +16,8 @@ import("paths");
 import("utils");
 import("sys");
 
-extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename, ast$Scope *scope);
+extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename,
+        ast$Scope *scope);
 extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
         ast$Scope *scope, utils$Error **first);
 

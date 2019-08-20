@@ -141,7 +141,7 @@ fun expect(p *Parser, tok token.Token) token.Pos {
     return pos
 }
 
-fun Parser_checkExpr(p *Parser, x *ast.Expr) *ast.Expr {
+fun checkExpr(p *Parser, x *ast.Expr) *ast.Expr {
     switch unparen(x).kind {
     case ast.EXPR_IDENT, ast.EXPR_BASIC_LIT, ast.EXPR_BINARY, ast.EXPR_CALL, ast.EXPR_CAST, ast.EXPR_COMPOSITE_LIT, ast.EXPR_INDEX, ast.EXPR_SELECTOR, ast.EXPR_SIZEOF, ast.EXPR_STAR, ast.EXPR_TERNARY, ast.EXPR_UNARY: break
     case ast.EXPR_PAREN:
@@ -154,7 +154,7 @@ fun Parser_checkExpr(p *Parser, x *ast.Expr) *ast.Expr {
     return x
 }
 
-fun Parser_checkExprOrType(p *Parser, x *ast.Expr) *ast.Expr {
+fun checkExprOrType(p *Parser, x *ast.Expr) *ast.Expr {
     return x
 }
 
@@ -177,7 +177,7 @@ var LHS const bool = false
 fun parseRhs(p *Parser) *ast.Expr {
     var old bool = p.inRhs
     p.inRhs = true
-    var x *ast.Expr = Parser_checkExpr(p, parseExpr(p, false))
+    var x *ast.Expr = checkExpr(p, parseExpr(p, false))
     p.inRhs = old
     return x
 }
@@ -185,7 +185,7 @@ fun parseRhs(p *Parser) *ast.Expr {
 fun parseRhsOrType(p *Parser) *ast.Expr {
     var old bool = p.inRhs
     p.inRhs = true
-    var x *ast.Expr = Parser_checkExprOrType(p, parseExpr(p, false))
+    var x *ast.Expr = checkExprOrType(p, parseExpr(p, false))
     p.inRhs = old
     return x
 }
@@ -262,7 +262,7 @@ fun parseValue(p *Parser, keyOk bool) *ast.Expr {
     if p.tok == token.LBRACE {
         return parseLiteralValue(p, NULL)
     }
-    var x *ast.Expr = Parser_checkExpr(p, parseExpr(p, keyOk))
+    var x *ast.Expr = checkExpr(p, parseExpr(p, keyOk))
     if keyOk {
         if p.tok != token.COLON {
             resolve(p, x)
@@ -379,13 +379,13 @@ fun parsePrimaryExpr(p *Parser, lhs bool) *ast.Expr {
         switch p.tok {
         case token.PERIOD:
             next(p)
-            x = parseSelector(p, Parser_checkExprOrType(p, x))
+            x = parseSelector(p, checkExprOrType(p, x))
             break
         case token.LBRACK:
-            x = parseIndexExpr(p, Parser_checkExpr(p, x))
+            x = parseIndexExpr(p, checkExpr(p, x))
             break
         case token.LPAREN:
-            x = parseCallExpr(p, Parser_checkExprOrType(p, x))
+            x = parseCallExpr(p, checkExprOrType(p, x))
             break
         case token.LBRACE:
             if isLiteralType(x) && (p.exprLev >= 0 || !isTypeName(x)) {
@@ -410,7 +410,7 @@ fun parseUnaryExpr(p *Parser, lhs bool) *ast.Expr {
             unary: {
                 pos: pos,
                 op: op,
-                x: Parser_checkExpr(p, parseUnaryExpr(p, false)),
+                x: checkExpr(p, parseUnaryExpr(p, false)),
             },
         }
         return esc(x)
@@ -422,7 +422,7 @@ fun parseUnaryExpr(p *Parser, lhs bool) *ast.Expr {
             kind: ast.EXPR_STAR,
             star: {
                 pos: pos,
-                x: Parser_checkExprOrType(p, parseUnaryExpr(p, false)),
+                x: checkExprOrType(p, parseUnaryExpr(p, false)),
             },
         }
         return esc(x)
@@ -476,9 +476,9 @@ fun parseBinaryExpr(p *Parser, lhs bool, prec1 int) *ast.Expr {
         var z ast.Expr = {
             kind: ast.EXPR_BINARY,
             binary: {
-                x: Parser_checkExpr(p, x),
+                x: checkExpr(p, x),
                 op: op,
-                y: Parser_checkExpr(p, y),
+                y: checkExpr(p, y),
             },
         }
         x = esc(z)
@@ -760,7 +760,7 @@ fun parseType(p *Parser) *ast.Expr {
     return t
 }
 
-fun parse_simple_stmt(p *Parser, labelOk bool) *ast.Stmt {
+fun parseSimpleStmt(p *Parser, labelOk bool) *ast.Stmt {
     var x *ast.Expr = parseExpr(p, true)
     var op token.Token = p.tok
     switch op {
@@ -796,7 +796,7 @@ fun parse_simple_stmt(p *Parser, labelOk bool) *ast.Stmt {
                 kind: ast.STMT_LABEL,
                 label: {
                     label: x,
-                    stmt: parse_stmt(p),
+                    stmt: parseStmt(p),
                 },
             }
             return esc(stmt)
@@ -811,13 +811,13 @@ fun parse_simple_stmt(p *Parser, labelOk bool) *ast.Stmt {
     return esc(stmt)
 }
 
-fun parse_for_stmt(p *Parser) *ast.Stmt {
+fun parseForStmt(p *Parser) *ast.Stmt {
     var pos token.Pos = expect(p, token.FOR)
     var prevLev int = p.exprLev
     p.exprLev = -1
     var init *ast.Stmt = NULL
     if !accept(p, token.SEMICOLON) {
-        init = parse_stmt(p)
+        init = parseStmt(p)
     }
     var cond *ast.Expr = NULL
     if p.tok != token.SEMICOLON {
@@ -826,10 +826,10 @@ fun parse_for_stmt(p *Parser) *ast.Stmt {
     expect(p, token.SEMICOLON)
     var post *ast.Stmt = NULL
     if p.tok != token.LBRACE {
-        post = parse_simple_stmt(p, false)
+        post = parseSimpleStmt(p, false)
     }
     p.exprLev = prevLev
-    var body *ast.Stmt = parse_block_stmt(p)
+    var body *ast.Stmt = parseBlockStmt(p)
     var stmt ast.Stmt = {
         kind: ast.STMT_ITER,
         iter: {
@@ -844,7 +844,7 @@ fun parse_for_stmt(p *Parser) *ast.Stmt {
     return esc(stmt)
 }
 
-fun parse_if_stmt(p *Parser) *ast.Stmt {
+fun parseIfStmt(p *Parser) *ast.Stmt {
     var pos token.Pos = expect(p, token.IF)
     var outer int = p.exprLev
     p.exprLev = -1
@@ -853,13 +853,13 @@ fun parse_if_stmt(p *Parser) *ast.Stmt {
     if p.tok != token.LBRACE {
         error(p, p.pos, "`if` must be followed by a compound_statement")
     }
-    var body *ast.Stmt = parse_block_stmt(p)
+    var body *ast.Stmt = parseBlockStmt(p)
     var else_ *ast.Stmt = NULL
     if accept(p, token.ELSE) {
         if p.tok == token.IF {
-            else_ = parse_stmt(p)
+            else_ = parseStmt(p)
         } else if p.tok == token.LBRACE {
-            else_ = parse_block_stmt(p)
+            else_ = parseBlockStmt(p)
         } else {
             error(p, p.pos, "`else` must be followed by an if_statement or compound_statement")
         }
@@ -876,7 +876,7 @@ fun parse_if_stmt(p *Parser) *ast.Stmt {
     return esc(stmt)
 }
 
-fun parse_return_stmt(p *Parser) *ast.Stmt {
+fun parseReturnStmt(p *Parser) *ast.Stmt {
     var pos token.Pos = expect(p, token.RETURN)
     var x *ast.Expr = NULL
     if p.tok != token.SEMICOLON {
@@ -893,7 +893,7 @@ fun parse_return_stmt(p *Parser) *ast.Stmt {
     return esc(stmt)
 }
 
-fun parse_switch_stmt(p *Parser) *ast.Stmt {
+fun parseSwitchStmt(p *Parser) *ast.Stmt {
     var pos token.Pos = expect(p, token.SWITCH)
     var prevLev int = p.exprLev
     p.exprLev = -1
@@ -932,7 +932,7 @@ fun parse_switch_stmt(p *Parser) *ast.Stmt {
             default: break
             }
             if loop {
-                var stmt *ast.Stmt = parse_stmt(p)
+                var stmt *ast.Stmt = parseStmt(p)
                 utils.Slice_append(&stmts, &stmt)
             }
         }
@@ -960,13 +960,13 @@ fun parse_switch_stmt(p *Parser) *ast.Stmt {
     return esc(stmt)
 }
 
-fun parse_while_stmt(p *Parser) *ast.Stmt {
+fun parseWhileStmt(p *Parser) *ast.Stmt {
     var pos token.Pos = expect(p, token.WHILE)
     var prevLev int = p.exprLev
     p.exprLev = -1
     var cond *ast.Expr = parseExpr(p, true)
     p.exprLev = prevLev
-    var body *ast.Stmt = parse_block_stmt(p)
+    var body *ast.Stmt = parseBlockStmt(p)
     var stmt ast.Stmt = {
         kind: ast.STMT_ITER,
         iter: {
@@ -979,7 +979,7 @@ fun parse_while_stmt(p *Parser) *ast.Stmt {
     return esc(stmt)
 }
 
-fun parse_jump_stmt(p *Parser, keyword token.Token) *ast.Stmt {
+fun parseJumpStmt(p *Parser, keyword token.Token) *ast.Stmt {
     var pos token.Pos = expect(p, keyword)
     var label *ast.Expr = NULL
     if keyword == token.GOTO {
@@ -997,7 +997,7 @@ fun parse_jump_stmt(p *Parser, keyword token.Token) *ast.Stmt {
     return esc(stmt)
 }
 
-fun parse_decl_stmt(p *Parser) *ast.Stmt {
+fun parseDeclStmt(p *Parser) *ast.Stmt {
     var stmt ast.Stmt = {
         kind: ast.STMT_DECL,
         decl: {
@@ -1007,16 +1007,16 @@ fun parse_decl_stmt(p *Parser) *ast.Stmt {
     return esc(stmt)
 }
 
-fun parse_stmt(p *Parser) *ast.Stmt {
+fun parseStmt(p *Parser) *ast.Stmt {
     switch p.tok {
-    case token.VAR: return parse_decl_stmt(p)
-    case token.FOR: return parse_for_stmt(p)
-    case token.IF: return parse_if_stmt(p)
-    case token.RETURN: return parse_return_stmt(p)
-    case token.SWITCH: return parse_switch_stmt(p)
-    case token.WHILE: return parse_while_stmt(p)
-    case token.BREAK, token.CONTINUE, token.GOTO: return parse_jump_stmt(p, p.tok)
-    case token.LBRACE: return parse_block_stmt(p)
+    case token.VAR: return parseDeclStmt(p)
+    case token.FOR: return parseForStmt(p)
+    case token.IF: return parseIfStmt(p)
+    case token.RETURN: return parseReturnStmt(p)
+    case token.SWITCH: return parseSwitchStmt(p)
+    case token.WHILE: return parseWhileStmt(p)
+    case token.BREAK, token.CONTINUE, token.GOTO: return parseJumpStmt(p, p.tok)
+    case token.LBRACE: return parseBlockStmt(p)
     default: break
     }
     var pos token.Pos = p.pos
@@ -1029,20 +1029,20 @@ fun parse_stmt(p *Parser) *ast.Stmt {
         }
         return esc(stmt)
     }
-    var stmt *ast.Stmt = parse_simple_stmt(p, true)
+    var stmt *ast.Stmt = parseSimpleStmt(p, true)
     if stmt.kind != ast.STMT_LABEL {
         expect(p, token.SEMICOLON)
     }
     return stmt
 }
 
-fun parse_block_stmt(p *Parser) *ast.Stmt {
+fun parseBlockStmt(p *Parser) *ast.Stmt {
     var stmts utils.Slice = {
         size: sizeof(*ast.Stmt),
     }
     var pos token.Pos = expect(p, token.LBRACE)
     while p.tok != token.RBRACE {
-        var stmt *ast.Stmt = parse_stmt(p)
+        var stmt *ast.Stmt = parseStmt(p)
         utils.Slice_append(&stmts, &stmt)
     }
     expect(p, token.RBRACE)
@@ -1145,7 +1145,7 @@ fun parseFuncDecl(p *Parser) *ast.Decl {
     }
     decl.func.type = esc(type)
     if p.tok == token.LBRACE {
-        decl.func.body = parse_block_stmt(p)
+        decl.func.body = parseBlockStmt(p)
     } else {
         expect(p, token.SEMICOLON)
     }
@@ -1193,7 +1193,7 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
     return utils.Slice_to_nil_array(files)
 }
 
-fun _parse_file(p *Parser, scope *ast.Scope) *ast.File {
+fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
     var name *ast.Expr = NULL
     var imports utils.Slice = utils.Slice_init(sizeof(uintptr_t))
     var decls utils.Slice = utils.Slice_init(sizeof(*ast.Decl))
@@ -1245,7 +1245,7 @@ fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.
     }
     var p Parser = {}
     init(&p, fset, filename, src)
-    var file *ast.File = _parse_file(&p, scope)
+    var file *ast.File = _parseFile(&p, scope)
     print(sys.sprintf("%s: %d/%d unresolved", filename, utils.Slice_len(&p.unresolved), p.numIdents))
     free(src)
     return file
