@@ -95,7 +95,7 @@ fun compile_c(argv []*char) {
 }
 
 fun compile_bling(argv []*char) {
-    var emit_as_bling bool = false
+    var err *utils.Error = NULL
     var conf types.Config = {
         strict: true,
     }
@@ -109,14 +109,8 @@ fun compile_bling(argv []*char) {
         }
         argv++
     }
-    if dst {
-        emit_as_bling = bytes.hasSuffix(dst, ".bling")
-    }
     var e emitter.Emitter = {}
-    var err *utils.Error = NULL
-    if !emit_as_bling {
-        emit_rawfile(&e, "bootstrap/bootstrap.h")
-    }
+    emit_rawfile(&e, "bootstrap/bootstrap.h")
     var fset *token.FileSet = token.newFileSet()
     while *argv {
         var filename *char = *argv
@@ -131,11 +125,7 @@ fun compile_bling(argv []*char) {
         var pkg ast.Package = types.checkFile(&conf, fset, file)
         for var i int = 0; pkg.files[i]; i++ {
             var file *ast.File = pkg.files[i]
-            if emit_as_bling {
-                emitter.emitFile(&e, file)
-            } else {
-                cemitter.emitFile(&e, file)
-            }
+            cemitter.emitFile(&e, file)
             free(file.decls)
             free(file)
         }
