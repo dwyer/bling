@@ -60,3 +60,18 @@ extern void sys$free(void *ptr) {
 extern void *sys$realloc(void *ptr, size_t n) {
     return realloc(ptr, n);
 }
+
+extern int sys$run(char *const argv[]) {
+    int status = -1;
+    pid_t pid = fork();
+    switch (pid) {
+    case -1:
+        return -1;
+    case 0:
+        execve(argv[0], argv, NULL);
+        return errno;
+    default:
+        waitpid(pid, &status, 0);
+        return status;
+    }
+}

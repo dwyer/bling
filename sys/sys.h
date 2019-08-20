@@ -27,3 +27,5 @@ extern void *sys$memset(void *dst, int c, size_t n);
 extern char *sys$strdup(const char *s);
 extern size_t sys$strlcpy(char *dst, const char *src, size_t n);
 extern size_t sys$strlen(const char *s);
+
+extern int sys$run(char *const argv[]);
