@@ -555,6 +555,9 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         break;
 
     case ast$TYPE_ENUM:
+        if (t->enum_.name == NULL) {
+            t->enum_.name = c->typedefName;
+        }
         for (int i = 0; t->enum_.enums[i]; i++) {
             ast$Decl *decl = t->enum_.enums[i];
             if (c->typedefName) {
@@ -583,6 +586,9 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         break;
 
     case ast$TYPE_STRUCT:
+        if (t->enum_.name == NULL) {
+            t->enum_.name = c->typedefName;
+        }
         if (t->struct_.fields) {
             Checker_openScope(c);
             for (int i = 0; t->struct_.fields[i]; i++) {
@@ -1102,7 +1108,6 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
     switch (decl->kind) {
     case ast$DECL_FUNC:
         Checker_checkType(c, decl->func.type);
-        Checker_declare(c, c->pkg.scope, decl);
         break;
     case ast$DECL_PRAGMA:
         break;
@@ -1110,7 +1115,6 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
         c->typedefName = decl->typedef_.name;
         Checker_checkType(c, decl->typedef_.type);
         c->typedefName = NULL;
-        Checker_declare(c, c->pkg.scope, decl);
         break;
     case ast$DECL_VALUE:
         {
@@ -1180,6 +1184,16 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
     }
     utils$Slice_append(&c->files, &file);
     if (c->conf->strict) {
+        for (int i = 0; file->decls[i] != NULL; i++) {
+            if (file->decls[i]->kind == ast$DECL_TYPEDEF) {
+                Checker_declare(c, c->pkg.scope, file->decls[i]);
+            }
+        }
+        for (int i = 0; file->decls[i] != NULL; i++) {
+            if (file->decls[i]->kind == ast$DECL_FUNC) {
+                Checker_declare(c, c->pkg.scope, file->decls[i]);
+            }
+        }
         for (int i = 0; file->decls[i] != NULL; i++) {
             Checker_checkDecl(c, file->decls[i]);
         }

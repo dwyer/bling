@@ -14,20 +14,6 @@ import "subc/cparser"
 import "sys"
 import "utils"
 
-#include "bling/parser/parser.h"
-
-#include "bling/types/types.h"
-
-#include "os/os.h"
-
-#include "paths/paths.h"
-
-#include "subc/cemitter/cemitter.h"
-
-#include "subc/cparser/cparser.h"
-
-#include "sys/sys.h"
-
 fun usage(progname *const char) {
     panic("usage: %s -o DST SRCS", progname)
 }

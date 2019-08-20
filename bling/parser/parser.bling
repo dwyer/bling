@@ -10,20 +10,6 @@ import "paths"
 import "utils"
 import "sys"
 
-#pragma once
-
-#include "io/ioutil/ioutil.h"
-
-#include "bling/ast/ast.h"
-
-#include "bling/scanner/scanner.h"
-
-#include "bling/token/token.h"
-
-fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.File
-
-fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **utils.Error) **ast.File
-
 typedef Parser struct {
     file *token.File
     scanner scanner.Scanner
@@ -39,36 +25,6 @@ typedef Parser struct {
     unresolved utils.Slice
     numIdents int
 }
-
-fun declare(p *Parser, s *ast.Scope, decl *ast.Decl, kind ast.ObjKind, name *ast.Expr)
-
-fun next(p *Parser)
-
-fun init(p *Parser, fset *token.FileSet, filename *const char, src *char)
-
-fun error(p *Parser, pos token.Pos, msg *char)
-
-fun errorExpected(p *Parser, pos token.Pos, msg *char)
-
-fun accept(p *Parser, tok token.Token) bool
-
-fun expect(p *Parser, tok token.Token) token.Pos
-
-fun parseBasicLit(p *Parser, kind token.Token) *ast.Expr
-
-fun parseIdent(p *Parser) *ast.Expr
-
-fun parseOperand(p *Parser, lhs bool) *ast.Expr
-
-fun parsePragma(p *Parser) *ast.Decl
-
-#include "bling/parser/parser.h"
-
-#include "bytes/bytes.h"
-
-#include "paths/paths.h"
-
-#include "sys/sys.h"
 
 fun isTypeName(x *ast.Expr) bool {
     switch x.kind {
@@ -216,23 +172,7 @@ fun declare(p *Parser, scope *ast.Scope, decl *ast.Decl, kind ast.ObjKind, ident
     ast.Scope_insert(scope, obj)
 }
 
-fun parseLiteralValue(p *Parser, type *ast.Expr) *ast.Expr
-
-fun parseExpr(p *Parser, lhs bool) *ast.Expr
-
 var LHS const bool = false
-
-fun tryIdentOrType(p *Parser) *ast.Expr
-
-fun tryType(p *Parser) *ast.Expr
-
-fun parseType(p *Parser) *ast.Expr
-
-fun parse_stmt(p *Parser) *ast.Stmt
-
-fun parse_block_stmt(p *Parser) *ast.Stmt
-
-fun parseDecl(p *Parser) *ast.Decl
 
 fun parseRhs(p *Parser) *ast.Expr {
     var old bool = p.inRhs
@@ -567,8 +507,6 @@ fun parseTernaryExpr(p *Parser, lhs bool) *ast.Expr {
 fun parseExpr(p *Parser, lhs bool) *ast.Expr {
     return parseTernaryExpr(p, lhs)
 }
-
-#pragma mark - types
 
 fun parseTypeName(p *Parser) *ast.Expr {
     var x *ast.Expr = parseIdent(p)

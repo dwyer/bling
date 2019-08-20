@@ -8,60 +8,6 @@ import "io/ioutil"
 import "utils"
 import "sys"
 
-#pragma once
-
-#include "io/ioutil/ioutil.h"
-
-#include "bling/ast/ast.h"
-
-#include "bling/scanner/scanner.h"
-
-#include "bling/token/token.h"
-
-#include "bling/parser/parser.h"
-
-fun parseFile(fset *token.FileSet, filename *const char, pkg_scope *ast.Scope) *ast.File
-
-#include "subc/cparser/cparser.h"
-
-#include "sys/sys.h"
-
-fun cast_expression(p *parser.Parser) *ast.Expr
-
-fun expression(p *parser.Parser) *ast.Expr
-
-fun constant_expression(p *parser.Parser) *ast.Expr
-
-fun initializer(p *parser.Parser) *ast.Expr
-
-fun type_specifier(p *parser.Parser) *ast.Expr
-
-fun struct_or_union_specifier(p *parser.Parser) *ast.Expr
-
-fun enum_specifier(p *parser.Parser) *ast.Expr
-
-fun pointer(p *parser.Parser, type *ast.Expr) *ast.Expr
-
-fun parameter_type_list(p *parser.Parser) **ast.Decl
-
-fun type_name(p *parser.Parser) *ast.Expr
-
-fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr
-
-fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl
-
-fun statement(p *parser.Parser) *ast.Stmt
-
-fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt
-
-fun specifier_qualifier_list(p *parser.Parser) *ast.Expr
-
-fun declaration_specifiers(p *parser.Parser, is_top bool) *ast.Expr
-
-fun declaration(p *parser.Parser, is_external bool) *ast.Decl
-
-fun parameter_declaration(p *parser.Parser) *ast.Decl
-
 fun is_type(p *parser.Parser) bool {
     switch p.tok {
     case token.CONST, token.ENUM, token.EXTERN, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED: return true

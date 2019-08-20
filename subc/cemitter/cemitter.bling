@@ -4,22 +4,6 @@ import "bling/ast"
 import "bling/emitter"
 import "bling/token"
 
-#pragma once
-
-#include "bling/emitter/emitter.h"
-
-fun emitFile(e *emitter.Emitter, file *ast.File)
-
-#include "subc/cemitter/cemitter.h"
-
-#include "bling/token/token.h"
-
-fun emitDecl(e *emitter.Emitter, decl *ast.Decl)
-
-fun emitExpr(e *emitter.Emitter, expr *ast.Expr)
-
-fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr)
-
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     if !expr {
         panic("cemitter$emitExpr: expr is NULL")
@@ -346,7 +330,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitter.emitSpace(e)
             emitExpr(e, type.enum_.name)
         }
-        if type.enum_.enums {
+        if !e.forwardDecl && type.enum_.enums {
             emitter.emitSpace(e)
             emitter.emitToken(e, token.LBRACE)
             emitter.emitNewline(e)
@@ -401,7 +385,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitter.emitSpace(e)
             emitExpr(e, type.struct_.name)
         }
-        if type.struct_.fields {
+        if !e.forwardDecl && type.struct_.fields {
             emitter.emitSpace(e)
             emitter.emitToken(e, token.LBRACE)
             emitter.emitNewline(e)
@@ -446,7 +430,7 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
         break
     case ast.DECL_FUNC:
         emitType(e, decl.func.type, decl.func.name)
-        if decl.func.body {
+        if !e.forwardDecl && decl.func.body {
             emitter.emitSpace(e)
             emitStmt(e, decl.func.body)
         } else {
@@ -494,6 +478,20 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
         emitter.emitNewline(e)
         emitter.emitNewline(e)
     }
+    e.forwardDecl = true
+    for var i int = 0; file.decls[i]; i++ {
+        if file.decls[i].kind == ast.DECL_TYPEDEF {
+            emitDecl(e, file.decls[i])
+            emitter.emitNewline(e)
+        }
+    }
+    for var i int = 0; file.decls[i]; i++ {
+        if file.decls[i].kind == ast.DECL_FUNC {
+            emitDecl(e, file.decls[i])
+            emitter.emitNewline(e)
+        }
+    }
+    e.forwardDecl = false
     for var decls **ast.Decl = file.decls; decls && *decls; decls++ {
         emitDecl(e, *decls)
         emitter.emitNewline(e)

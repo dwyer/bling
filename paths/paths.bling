@@ -2,32 +2,6 @@ package paths
 
 import "bytes"
 
-#pragma once
-
-#include "bootstrap/bootstrap.h"
-
-fun base(path *const char) *char
-
-fun clean(path *const char) *char
-
-fun dir(path *const char) *char
-
-fun ext(path *const char) *const char
-
-fun isAbs(path *const char) bool
-
-fun join(elems **const char, n int) *char
-
-fun join2(a *const char, b *const char) *char
-
-fun split(path *const char) **char
-
-fun match(pattern *const char, path *const char) bool
-
-#include "paths/paths.h"
-
-#include "bytes/bytes.h"
-
 fun base(path *const char) *char {
     if path == NULL || path[0] == '\0' {
         return strdup(".")

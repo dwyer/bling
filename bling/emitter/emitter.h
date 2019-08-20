@@ -13,6 +13,7 @@ typedef struct {
     int indent;
     bool skipSemi;
     char *pkg;
+    bool forwardDecl;
 } emitter$Emitter;
 
 extern char *emitter$Emitter_string(emitter$Emitter *e);

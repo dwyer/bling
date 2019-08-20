@@ -363,7 +363,7 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
             emitter$emitSpace(e);
             cemitter$emitExpr(e, type->enum_.name);
         }
-        if (type->enum_.enums) {
+        if (!e->forwardDecl && type->enum_.enums) {
             emitter$emitSpace(e);
             emitter$emitToken(e, token$LBRACE);
             emitter$emitNewline(e);
@@ -420,7 +420,7 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
             emitter$emitSpace(e);
             cemitter$emitExpr(e, type->struct_.name);
         }
-        if (type->struct_.fields) {
+        if (!e->forwardDecl && type->struct_.fields) {
             emitter$emitSpace(e);
             emitter$emitToken(e, token$LBRACE);
             emitter$emitNewline(e);
@@ -474,7 +474,7 @@ static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
 
     case ast$DECL_FUNC:
         cemitter$emitType(e, decl->func.type, decl->func.name);
-        if (decl->func.body) {
+        if (!e->forwardDecl && decl->func.body) {
             emitter$emitSpace(e);
             cemitter$emitStmt(e, decl->func.body);
         } else {
@@ -526,6 +526,20 @@ extern void cemitter$emitFile(emitter$Emitter *e, ast$File *file) {
         emitter$emitNewline(e);
         emitter$emitNewline(e);
     }
+    e->forwardDecl = true;
+    for (int i = 0; file->decls[i]; i++) {
+        if (file->decls[i]->kind == ast$DECL_TYPEDEF) {
+            cemitter$emitDecl(e, file->decls[i]);
+            emitter$emitNewline(e);
+        }
+    }
+    for (int i = 0; file->decls[i]; i++) {
+        if (file->decls[i]->kind == ast$DECL_FUNC) {
+            cemitter$emitDecl(e, file->decls[i]);
+            emitter$emitNewline(e);
+        }
+    }
+    e->forwardDecl = false;
     for (ast$Decl **decls = file->decls; decls && *decls; decls++) {
         cemitter$emitDecl(e, *decls);
         emitter$emitNewline(e);

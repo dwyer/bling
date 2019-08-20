@@ -2,23 +2,9 @@ package utils
 
 import "sys"
 
-#pragma once
-
-#include "bootstrap/bootstrap.h"
-
 typedef Error struct {
     error *char
 }
-
-fun NewError(error *const char) *Error
-
-fun Error_move(src *Error, dst **Error)
-
-fun Error_free(e *Error)
-
-fun clearError()
-
-fun Error_check(e **Error)
 
 typedef Slice struct {
     size int
@@ -26,26 +12,6 @@ typedef Slice struct {
     cap int
     array *void
 }
-
-fun Slice_init(size int) Slice
-
-fun Slice_deinit(s *Slice)
-
-fun Slice_len(s *const Slice) int
-
-fun Slice_cap(s *const Slice) int
-
-fun Slice_ref(s *const Slice, i int) *void
-
-fun Slice_get(s *const Slice, i int, dst *void)
-
-fun Slice_set_len(s *Slice, len int)
-
-fun Slice_set(s *Slice, i int, x *const void)
-
-fun Slice_append(s *Slice, x *const void)
-
-fun Slice_to_nil_array(s Slice) *void
 
 typedef Map struct {
     len int
@@ -57,20 +23,6 @@ typedef Map struct {
 typedef MapStatus enum {
     MapStatus_ok = 1,
 }
-
-fun Map_init(val_size int) Map
-
-fun Map_deinit(m *Map)
-
-fun Map_len(m *const Map) int
-
-fun Map_cap(m *const Map) int
-
-fun Map_get(m *const Map, key *const char, val *void) int
-
-fun Map_has_key(m *Map, key *const char) bool
-
-fun Map_set(m *Map, key *const char, val *const void)
 
 var Map_hits int
 
@@ -84,14 +36,6 @@ typedef MapIter struct {
     _map *const Map
     _idx int
 }
-
-fun NewMapIter(m *const Map) MapIter
-
-fun MapIter_next(m *MapIter, key **char, val *void) int
-
-#include "utils/utils.h"
-
-#include "sys/sys.h"
 
 fun NewError(msg *const char) *Error {
     var err Error = {
@@ -123,10 +67,6 @@ fun Error_free(e *Error) {
     free(e.error)
     free(e)
 }
-
-#include "utils/utils.h"
-
-#include "sys/sys.h"
 
 fun Slice_init(size int) Slice {
     var s Slice = {
@@ -214,10 +154,6 @@ fun Slice_to_nil_array(s Slice) *void {
     Slice_append(&s, &nil)
     return s.array
 }
-
-#include "utils/utils.h"
-
-#include "sys/sys.h"
 
 var max_load_factor const float = 0.65
 

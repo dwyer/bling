@@ -5,12 +5,6 @@ import "bytes"
 import "sys"
 import "utils"
 
-#pragma once
-
-#include "bling/token/token.h"
-
-#include "utils/utils.h"
-
 typedef NodeKind enum {
     NODE_ILLEGAL = 0,
     _DECL_START,
@@ -65,14 +59,6 @@ typedef NodeKind enum {
 typedef Node struct {
     kind NodeKind
 }
-
-typedef Decl struct Decl
-
-typedef Expr struct Expr
-
-typedef Stmt struct Stmt
-
-typedef Scope struct Scope
 
 typedef ObjKind enum {
     ObjKind_BAD,
@@ -363,23 +349,11 @@ typedef Stmt struct Stmt {
     }
 }
 
-fun newObject(kind ObjKind, name *char) *Object
-
 typedef Scope struct Scope {
     outer *Scope
     objects utils.Map
     pkg *char
 }
-
-fun isExprType(x *Expr) bool
-
-fun Scope_new(outer *Scope) *Scope
-
-fun Scope_deinit(s *Scope)
-
-fun Scope_insert(s *Scope, obj *Object) *Object
-
-fun Scope_lookup(s *Scope, name *char) *Object
 
 typedef File struct {
     filename *const char
@@ -394,34 +368,6 @@ typedef Package struct {
     scope *Scope
     files **File
 }
-
-fun Scope_free(s *Scope)
-
-fun Scope_print(s *Scope)
-
-fun resolve(scope *Scope, ident *Expr) bool
-
-fun isIdent(x *Expr) bool
-
-fun isIdentNamed(x *Expr, name *const char) bool
-
-fun isNil(x *Expr) bool
-
-fun isVoid(x *Expr) bool
-
-fun isVoidPtr(x *Expr) bool
-
-fun Decl_pos(x *Decl) token.Pos
-
-fun Expr_pos(x *Expr) token.Pos
-
-fun Stmt_pos(x *Stmt) token.Pos
-
-#include "bling/ast/ast.h"
-
-#include "bytes/bytes.h"
-
-#include "sys/sys.h"
 
 fun isExprType(x *Expr) bool {
     return _TYPE_START < x.kind && x.kind < _DECL_END

@@ -591,9 +591,37 @@ extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
     }
 }
 
+static bool isForwardDecl(ast$Decl *decl) {
+    switch (decl->kind) {
+    case ast$DECL_FUNC:
+        return decl->func.body == NULL;
+    case ast$DECL_PRAGMA:
+        return true;
+    case ast$DECL_TYPEDEF:
+        {
+            switch (decl->typedef_.type->kind) {
+            case ast$TYPE_STRUCT:
+                return decl->typedef_.type->struct_.fields == NULL
+                    || decl->typedef_.type->struct_.fields[0] == NULL;
+            default:
+                return false;
+            }
+        }
+    default:
+        return false;
+    }
+}
+
 extern void emitter$emitFile(emitter$Emitter *e, ast$File *file) {
+    bool allowForward = false;
     if (file->name) {
         e->pkg = file->name->ident.name;
+        if (
+                ast$isIdentNamed(file->name, "os") ||
+                ast$isIdentNamed(file->name, "sys")
+                ) {
+            allowForward = true;
+        }
     }
     emitter$emitString(e, "//");
     emitter$emitString(e, file->filename);
@@ -612,8 +640,10 @@ extern void emitter$emitFile(emitter$Emitter *e, ast$File *file) {
         emitter$emitNewline(e);
     }
     for (ast$Decl **decls = file->decls; decls && *decls; decls++) {
-        emitter$emitNewline(e);
-        emitter$emitDecl(e, *decls);
-        emitter$emitNewline(e);
+        if (allowForward || !isForwardDecl(*decls)) {
+            emitter$emitNewline(e);
+            emitter$emitDecl(e, *decls);
+            emitter$emitNewline(e);
+        }
     }
 }

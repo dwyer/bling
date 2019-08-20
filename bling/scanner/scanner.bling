@@ -3,10 +3,6 @@ package scanner
 import "bling/token"
 import "sys"
 
-#pragma once
-
-#include "bling/token/token.h"
-
 typedef Scanner struct {
     file *token.File
     src *char
@@ -16,14 +12,6 @@ typedef Scanner struct {
     insertSemi bool
     dontInsertSemis bool
 }
-
-fun scan(s *Scanner, pos *token.Pos, lit **char) token.Token
-
-fun init(s *Scanner, file *token.File, src *char)
-
-#include "bling/scanner/scanner.h"
-
-#include "sys/sys.h"
 
 fun next0(s *Scanner) {
     s.offset = s.rd_offset

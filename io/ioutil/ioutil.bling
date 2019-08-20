@@ -4,22 +4,6 @@ import "bytes"
 import "utils"
 import "os"
 
-#pragma once
-
-#include "bytes/bytes.h"
-
-#include "os/os.h"
-
-fun readAll(file *os.File, error **utils.Error) *char
-
-fun readDir(filename *const char, error **utils.Error) **os.FileInfo
-
-fun readFile(filename *const char, error **utils.Error) *char
-
-fun writeFile(filename *const char, data *const char, perm int, error **utils.Error)
-
-#include "io/ioutil/ioutil.h"
-
 fun readAll(file *os.File, error **utils.Error) *char {
     var bufsiz const int = 1024
     var ret *char = NULL

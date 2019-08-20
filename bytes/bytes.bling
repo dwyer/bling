@@ -3,33 +3,7 @@ package bytes
 import "sys"
 import "utils"
 
-#pragma once
-
-#include "utils/utils.h"
-
-fun hasSuffix(b *const char, suffix *const char) bool
-
-fun indexByte(b *const char, c char) int
-
-fun join(a []*const char, size int, sep *const char) *char
-
-fun lastIndexByte(b *const char, c char) int
-
 typedef Buffer utils.Slice
-
-fun Buffer_bytes(b *Buffer) *char
-
-fun Buffer_len(b *Buffer) int
-
-fun Buffer_string(b *Buffer) *char
-
-fun Buffer_write(b *Buffer, p *const char, size int, error **utils.Error) int
-
-fun Buffer_writeByte(b *Buffer, p char, error **utils.Error)
-
-#include "bytes/bytes.h"
-
-#include "sys/sys.h"
 
 fun hasSuffix(b *const char, suffix *const char) bool {
     for var i int = 0; b[i]; i++ {

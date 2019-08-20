@@ -4,10 +4,6 @@ import "bytes"
 import "sys"
 import "utils"
 
-#pragma once
-
-#include "utils/utils.h"
-
 typedef Token enum {
     ILLEGAL = 0,
     CHAR,
@@ -95,19 +91,11 @@ typedef Token enum {
 
 typedef Pos int
 
-fun string(tok Token) *char
-
-fun lookup(ident *char) Token
-
 typedef Prec enum {
     lowest_prec = 0,
     unary_prec = 11,
     highest_prec = 12,
 }
-
-fun precedence(op Token) int
-
-typedef FileSet struct FileSet
 
 typedef File struct {
     set *FileSet
@@ -131,32 +119,6 @@ typedef Position struct {
     line int
     column int
 }
-
-fun Position_string(p *Position) *char
-
-fun File_addLine(f *File, offset int)
-
-fun File_pos(f *File, offset int) Pos
-
-fun File_position(f *File, p Pos) Position
-
-fun File_lineString(f *File, line int) *char
-
-fun FileSet_print(fset *FileSet)
-
-fun newFileSet() *FileSet
-
-fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File
-
-fun FileSet_file(s *FileSet, pos Pos) *File
-
-#include "bling/token/token.h"
-
-#include "bytes/bytes.h"
-
-#include "sys/sys.h"
-
-#include "utils/utils.h"
 
 var tokens []*char = {
     ILLEGAL: "ILLEGAL",

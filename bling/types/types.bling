@@ -8,42 +8,10 @@ import "paths"
 import "sys"
 import "utils"
 
-#pragma once
-
-#include "bling/ast/ast.h"
-
-fun universe() *ast.Scope
-
-fun isIdent(expr *ast.Expr) bool
-
-fun isVoid(type *ast.Expr) bool
-
-fun isVoidPtr(type *ast.Expr) bool
-
-fun exprString(expr *ast.Expr) *char
-
-fun stmtString(stmt *ast.Stmt) *char
-
-fun typeString(expr *ast.Expr) *char
-
 typedef Config struct {
     strict bool
     cMode bool
 }
-
-fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package
-
-#include "bling/ast/ast.h"
-
-#include "bling/emitter/emitter.h"
-
-#include "bling/parser/parser.h"
-
-#include "bling/types/types.h"
-
-#include "paths/paths.h"
-
-#include "sys/sys.h"
 
 fun constant_stringVal(x *ast.Expr) *char {
     assert(x.kind == ast.EXPR_BASIC_LIT)
@@ -561,8 +529,6 @@ fun Checker_closeScope(c *Checker) {
     c.pkg.scope = c.pkg.scope.outer
 }
 
-fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr
-
 fun Checker_checkType(c *Checker, t *ast.Expr) {
     assert(t)
     switch t.kind {
@@ -589,6 +555,9 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
         }
         break
     case ast.TYPE_ENUM:
+        if t.enum_.name == NULL {
+            t.enum_.name = c.typedefName
+        }
         for var i int = 0; t.enum_.enums[i]; i++ {
             var decl *ast.Decl = t.enum_.enums[i]
             if c.typedefName {
@@ -614,6 +583,9 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
         Checker_checkType(c, t.star.x)
         break
     case ast.TYPE_STRUCT:
+        if t.enum_.name == NULL {
+            t.enum_.name = c.typedefName
+        }
         if t.struct_.fields {
             Checker_openScope(c)
             for var i int = 0; t.struct_.fields[i]; i++ {
@@ -647,8 +619,6 @@ fun isInteger(x *ast.Expr) bool {
     default: return false
     }
 }
-
-fun Checker_checkCompositeLit(c *Checker, x *ast.Expr) *ast.Expr
 
 fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
     var baseT *ast.Expr = getBaseType(x.composite.type)
@@ -903,8 +873,6 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     }
 }
 
-fun Checker_checkDecl(c *Checker, decl *ast.Decl)
-
 fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
     switch stmt.kind {
     case ast.STMT_ASSIGN:
@@ -1003,8 +971,6 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
     }
 }
 
-fun Checker_checkFile(c *Checker, file *ast.File)
-
 fun Checker_checkImport(c *Checker, imp *ast.Decl) {
     if c.conf.cMode {
         return
@@ -1039,14 +1005,12 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
     switch decl.kind {
     case ast.DECL_FUNC:
         Checker_checkType(c, decl.func.type)
-        Checker_declare(c, c.pkg.scope, decl)
         break
     case ast.DECL_PRAGMA: break
     case ast.DECL_TYPEDEF:
         c.typedefName = decl.typedef_.name
         Checker_checkType(c, decl.typedef_.type)
         c.typedefName = NULL
-        Checker_declare(c, c.pkg.scope, decl)
         break
     case ast.DECL_VALUE: {
         var valType *ast.Expr = NULL
@@ -1111,6 +1075,16 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
     }
     utils.Slice_append(&c.files, &file)
     if c.conf.strict {
+        for var i int = 0; file.decls[i] != NULL; i++ {
+            if file.decls[i].kind == ast.DECL_TYPEDEF {
+                Checker_declare(c, c.pkg.scope, file.decls[i])
+            }
+        }
+        for var i int = 0; file.decls[i] != NULL; i++ {
+            if file.decls[i].kind == ast.DECL_FUNC {
+                Checker_declare(c, c.pkg.scope, file.decls[i])
+            }
+        }
         for var i int = 0; file.decls[i] != NULL; i++ {
             Checker_checkDecl(c, file.decls[i])
         }
