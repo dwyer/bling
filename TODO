@@ -1,9 +1,3 @@
-Allow types where exprs are expected, for instance:
-    - make(T)
-    - var y T = T{...}
-    - var x []T = []T{...}
-    - etc.
-
 Make `sizeof` a builtin func.
 
 Implement a way to define a value with no address, such as #define and C's enum.
