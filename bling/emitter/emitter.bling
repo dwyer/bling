@@ -403,7 +403,6 @@ fun emitType(e *Emitter, type *ast.Expr) {
                     emitSpace(e)
                     emitExpr(e, enumerator.value.value)
                 }
-                emitToken(e, token.COMMA)
                 emitNewline(e)
             }
             e.indent--

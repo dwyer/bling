@@ -5,96 +5,96 @@ import "sys"
 import "utils"
 
 typedef Token enum {
-    ILLEGAL = 0,
-    CHAR,
-    FLOAT,
-    IDENT,
-    INT,
-    STRING,
-    _keywordBeg,
-    BREAK,
-    CASE,
-    CONST,
-    CONTINUE,
-    DEFAULT,
-    ELSE,
-    ENUM,
-    EXTERN,
-    FOR,
-    FUNC,
-    GOTO,
-    IF,
-    IMPORT,
-    PACKAGE,
-    RETURN,
-    SIGNED,
-    SIZEOF,
-    STATIC,
-    STRUCT,
-    SWITCH,
-    TYPEDEF,
-    UNION,
-    UNSIGNED,
-    VAR,
-    WHILE,
-    _keywordEnd,
-    ARROW,
-    COLON,
-    COMMA,
-    ELLIPSIS,
-    EOF,
-    HASH,
-    LBRACE,
-    LBRACK,
-    LPAREN,
-    PERIOD,
-    QUESTION_MARK,
-    RBRACE,
-    RBRACK,
-    RPAREN,
-    SEMICOLON,
-    ADD,
-    ADD_ASSIGN,
-    AND,
-    AND_ASSIGN,
-    ASSIGN,
-    BITWISE_NOT,
-    DEC,
-    DIV,
-    DIV_ASSIGN,
-    DOLLAR,
-    EQUAL,
-    GT,
-    GT_EQUAL,
-    INC,
-    LAND,
-    LOR,
-    LT,
-    LT_EQUAL,
-    MOD,
-    MOD_ASSIGN,
-    MUL,
-    MUL_ASSIGN,
-    NOT,
-    NOT_EQUAL,
-    OR,
-    OR_ASSIGN,
-    SHL,
-    SHL_ASSIGN,
-    SHR,
-    SHR_ASSIGN,
-    SUB,
-    SUB_ASSIGN,
-    XOR,
-    XOR_ASSIGN,
+    ILLEGAL = 0
+    CHAR
+    FLOAT
+    IDENT
+    INT
+    STRING
+    _keywordBeg
+    BREAK
+    CASE
+    CONST
+    CONTINUE
+    DEFAULT
+    ELSE
+    ENUM
+    EXTERN
+    FOR
+    FUNC
+    GOTO
+    IF
+    IMPORT
+    PACKAGE
+    RETURN
+    SIGNED
+    SIZEOF
+    STATIC
+    STRUCT
+    SWITCH
+    TYPEDEF
+    UNION
+    UNSIGNED
+    VAR
+    WHILE
+    _keywordEnd
+    ARROW
+    COLON
+    COMMA
+    ELLIPSIS
+    EOF
+    HASH
+    LBRACE
+    LBRACK
+    LPAREN
+    PERIOD
+    QUESTION_MARK
+    RBRACE
+    RBRACK
+    RPAREN
+    SEMICOLON
+    ADD
+    ADD_ASSIGN
+    AND
+    AND_ASSIGN
+    ASSIGN
+    BITWISE_NOT
+    DEC
+    DIV
+    DIV_ASSIGN
+    DOLLAR
+    EQUAL
+    GT
+    GT_EQUAL
+    INC
+    LAND
+    LOR
+    LT
+    LT_EQUAL
+    MOD
+    MOD_ASSIGN
+    MUL
+    MUL_ASSIGN
+    NOT
+    NOT_EQUAL
+    OR
+    OR_ASSIGN
+    SHL
+    SHL_ASSIGN
+    SHR
+    SHR_ASSIGN
+    SUB
+    SUB_ASSIGN
+    XOR
+    XOR_ASSIGN
 }
 
 typedef Pos int
 
 typedef Prec enum {
-    lowest_prec = 0,
-    unary_prec = 11,
-    highest_prec = 12,
+    lowest_prec = 0
+    unary_prec = 11
+    highest_prec = 12
 }
 
 typedef File struct {

@@ -434,7 +434,6 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
                     emitter$emitSpace(e);
                     emitter$emitExpr(e, enumerator->value.value);
                 }
-                emitter$emitToken(e, token$COMMA);
                 emitter$emitNewline(e);
             }
             e->indent--;

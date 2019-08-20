@@ -6,54 +6,54 @@ import "sys"
 import "utils"
 
 typedef NodeKind enum {
-    NODE_ILLEGAL = 0,
-    _DECL_START,
-    DECL_ELLIPSIS,
-    DECL_FIELD,
-    DECL_FUNC,
-    DECL_IMPORT,
-    DECL_PRAGMA,
-    DECL_TYPEDEF,
-    DECL_VALUE,
-    _DECL_END,
-    _EXPR_START,
-    EXPR_BASIC_LIT,
-    EXPR_BINARY,
-    EXPR_CALL,
-    EXPR_CAST,
-    EXPR_COMPOSITE_LIT,
-    EXPR_IDENT,
-    EXPR_INDEX,
-    EXPR_KEY_VALUE,
-    EXPR_PAREN,
-    EXPR_SELECTOR,
-    EXPR_SIZEOF,
-    EXPR_STAR,
-    EXPR_TERNARY,
-    EXPR_UNARY,
-    _EXPR_END,
-    _STMT_START,
-    STMT_ASSIGN,
-    STMT_BLOCK,
-    STMT_CASE,
-    STMT_DECL,
-    STMT_EMPTY,
-    STMT_EXPR,
-    STMT_IF,
-    STMT_ITER,
-    STMT_JUMP,
-    STMT_LABEL,
-    STMT_POSTFIX,
-    STMT_RETURN,
-    STMT_SWITCH,
-    _STMT_END,
-    _TYPE_START,
-    TYPE_ARRAY,
-    TYPE_ENUM,
-    TYPE_NATIVE,
-    TYPE_FUNC,
-    TYPE_STRUCT,
-    _TYPE_END,
+    NODE_ILLEGAL = 0
+    _DECL_START
+    DECL_ELLIPSIS
+    DECL_FIELD
+    DECL_FUNC
+    DECL_IMPORT
+    DECL_PRAGMA
+    DECL_TYPEDEF
+    DECL_VALUE
+    _DECL_END
+    _EXPR_START
+    EXPR_BASIC_LIT
+    EXPR_BINARY
+    EXPR_CALL
+    EXPR_CAST
+    EXPR_COMPOSITE_LIT
+    EXPR_IDENT
+    EXPR_INDEX
+    EXPR_KEY_VALUE
+    EXPR_PAREN
+    EXPR_SELECTOR
+    EXPR_SIZEOF
+    EXPR_STAR
+    EXPR_TERNARY
+    EXPR_UNARY
+    _EXPR_END
+    _STMT_START
+    STMT_ASSIGN
+    STMT_BLOCK
+    STMT_CASE
+    STMT_DECL
+    STMT_EMPTY
+    STMT_EXPR
+    STMT_IF
+    STMT_ITER
+    STMT_JUMP
+    STMT_LABEL
+    STMT_POSTFIX
+    STMT_RETURN
+    STMT_SWITCH
+    _STMT_END
+    _TYPE_START
+    TYPE_ARRAY
+    TYPE_ENUM
+    TYPE_NATIVE
+    TYPE_FUNC
+    TYPE_STRUCT
+    _TYPE_END
 }
 
 typedef Node struct {
@@ -61,11 +61,11 @@ typedef Node struct {
 }
 
 typedef ObjKind enum {
-    ObjKind_BAD,
-    ObjKind_FUNC,
-    ObjKind_PKG,
-    ObjKind_TYPE,
-    ObjKind_VALUE,
+    ObjKind_BAD
+    ObjKind_FUNC
+    ObjKind_PKG
+    ObjKind_TYPE
+    ObjKind_VALUE
 }
 
 typedef Object struct {

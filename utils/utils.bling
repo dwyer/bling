@@ -21,7 +21,7 @@ typedef Map struct {
 }
 
 typedef MapStatus enum {
-    MapStatus_ok = 1,
+    MapStatus_ok = 1
 }
 
 var Map_hits int

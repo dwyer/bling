@@ -700,7 +700,7 @@ fun parseEnumType(p *Parser) *ast.Expr {
         var list utils.Slice = {
             size: sizeof(*ast.Decl),
         }
-        for ;; {
+        while p.tok != token.RBRACE {
             var decl ast.Decl = {
                 kind: ast.DECL_VALUE,
                 pos: p.pos,
@@ -713,9 +713,7 @@ fun parseEnumType(p *Parser) *ast.Expr {
             }
             var enumerator *ast.Decl = esc(decl)
             utils.Slice_append(&list, &enumerator)
-            if !accept(p, token.COMMA) || p.tok == token.RBRACE {
-                break
-            }
+            expect(p, token.SEMICOLON)
         }
         enums = utils.Slice_to_nil_array(list)
         expect(p, token.RBRACE)

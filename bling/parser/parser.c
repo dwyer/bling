@@ -766,7 +766,7 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
     if (parser$accept(p, token$LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
         utils$Slice list = {.size = sizeof(ast$Decl *)};
-        for (;;) {
+        while (p->tok != token$RBRACE) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             ast$Decl decl = {
                 .kind = ast$DECL_VALUE,
@@ -780,9 +780,7 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
             }
             ast$Decl *enumerator = esc(decl);
             utils$Slice_append(&list, &enumerator);
-            if (!parser$accept(p, token$COMMA) || p->tok == token$RBRACE) {
-                break;
-            }
+            parser$expect(p, token$SEMICOLON);
         }
         enums = utils$Slice_to_nil_array(list);
         parser$expect(p, token$RBRACE);
