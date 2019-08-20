@@ -140,7 +140,6 @@ typedef Ident struct {
     pos token.Pos
     name *char
     obj *Object
-    pkg *Expr
 }
 
 typedef IndexExpr struct {

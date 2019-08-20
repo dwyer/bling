@@ -68,19 +68,14 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitter.emitToken(e, token.RBRACE)
         break
     case ast.EXPR_IDENT:
-        if expr.ident.pkg {
-            emitter.emitExpr(e, expr.ident.pkg)
-            emitter.emitToken(e, token.DOLLAR)
-        } else {
-            var obj *ast.Object = expr.ident.obj
-            if obj {
-                var scope *ast.Scope = obj.scope
-                if scope {
-                    var pkg *char = scope.pkg
-                    if pkg && !streq(pkg, "main") {
-                        emitter.emitString(e, pkg)
-                        emitter.emitToken(e, token.DOLLAR)
-                    }
+        var obj *ast.Object = expr.ident.obj
+        if obj {
+            var scope *ast.Scope = obj.scope
+            if scope {
+                var pkg *char = scope.pkg
+                if pkg && !streq(pkg, "main") {
+                    emitter.emitString(e, pkg)
+                    emitter.emitToken(e, token.DOLLAR)
                 }
             }
         }

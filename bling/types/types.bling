@@ -501,21 +501,6 @@ fun Checker_resolve(c *Checker, s *ast.Scope, x *ast.Expr) {
     if x.ident.obj {
         Checker_error(c, ast.Expr_pos(x), "already resolved")
     }
-    if x.ident.pkg {
-        var pkg *ast.Expr = x.ident.pkg
-        Checker_resolve(c, s, pkg)
-        if pkg.ident.obj.kind != ast.ObjKind_PKG {
-            Checker_error(c, ast.Expr_pos(pkg), sys.sprintf("not a pkg: %s", pkg.ident.name))
-        }
-        var decl *ast.Decl = pkg.ident.obj.decl
-        assert(decl.kind == ast.DECL_IMPORT)
-        var t *ast.Scope = decl.imp.scope
-        if !t {
-            Checker_error(c, ast.Expr_pos(x), sys.sprintf("%s $ %s", pkg.ident.name, x.ident.name))
-        }
-        assert(t)
-        s = t
-    }
     if ast.resolve(s, x) {
         return
     }
@@ -526,14 +511,6 @@ fun Checker_declare(c *Checker, s *ast.Scope, decl *ast.Decl) {
     var ident *ast.Expr = getDeclName(decl)
     if ident.ident.obj != NULL {
         Checker_error(c, decl.pos, sys.sprintf("already declared: %s", ident.ident.name))
-    }
-    if ident.ident.pkg != NULL {
-        var pkg *ast.Expr = ident.ident.pkg
-        Checker_resolve(c, s, pkg)
-        var pkgObj *ast.Object = pkg.ident.obj
-        var decl *ast.Decl = pkgObj.decl
-        assert(decl.kind == ast.DECL_IMPORT)
-        s = decl.imp.scope
     }
     var kind ast.ObjKind = getDeclKind(decl)
     var obj *ast.Object = ast.newObject(kind, ident.ident.name)

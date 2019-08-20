@@ -143,7 +143,6 @@ typedef struct {
     token$Pos pos;
     char *name;
     ast$Object *obj;
-    ast$Expr *pkg;
 } ast$Ident;
 
 typedef struct {

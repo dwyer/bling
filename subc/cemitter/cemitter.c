@@ -60,19 +60,14 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_IDENT:
-        if (expr->ident.pkg) {
-            emitter$emitExpr(e, expr->ident.pkg);
-            emitter$emitToken(e, token$DOLLAR);
-        } else {
-            ast$Object *obj = expr->ident.obj;
-            if (obj) {
-                ast$Scope *scope = obj->scope;
-                if (scope) {
-                    char *pkg = scope->pkg;
-                    if (pkg && !streq(pkg, "main")) {
-                        emitter$emitString(e, pkg);
-                        emitter$emitToken(e, token$DOLLAR);
-                    }
+        ast$Object *obj = expr->ident.obj;
+        if (obj) {
+            ast$Scope *scope = obj->scope;
+            if (scope) {
+                char *pkg = scope->pkg;
+                if (pkg && !streq(pkg, "main")) {
+                    emitter$emitString(e, pkg);
+                    emitter$emitToken(e, token$DOLLAR);
                 }
             }
         }

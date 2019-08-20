@@ -455,23 +455,6 @@ static void Checker_resolve(Checker *c, ast$Scope *s, ast$Expr *x) {
     if (x->ident.obj) {
         Checker_error(c, ast$Expr_pos(x), "already resolved");
     }
-    if (x->ident.pkg) {
-        ast$Expr *pkg = x->ident.pkg;
-        Checker_resolve(c, s, pkg);
-        if (pkg->ident.obj->kind != ast$ObjKind_PKG) {
-            Checker_error(c, ast$Expr_pos(pkg),
-                    sys$sprintf("not a pkg: %s", pkg->ident.name));
-        }
-        ast$Decl *decl = pkg->ident.obj->decl;
-        assert(decl->kind == ast$DECL_IMPORT);
-        ast$Scope *t = decl->imp.scope;
-        if (!t) {
-            Checker_error(c, ast$Expr_pos(x),
-                    sys$sprintf("%s $ %s", pkg->ident.name, x->ident.name));
-        }
-        assert(t);
-        s = t;
-    }
     if (ast$resolve(s, x)) {
         return;
     }
@@ -483,15 +466,6 @@ static void Checker_declare(Checker *c, ast$Scope *s, ast$Decl *decl) {
     if (ident->ident.obj != NULL) {
         Checker_error(c, decl->pos,
                 sys$sprintf("already declared: %s", ident->ident.name));
-    }
-    if (ident->ident.pkg != NULL) {
-        ast$Expr *pkg = ident->ident.pkg;
-        Checker_resolve(c, s, pkg);
-        ast$Object *pkgObj = pkg->ident.obj;
-        ast$Decl *decl = pkgObj->decl;
-        assert(decl->kind == ast$DECL_IMPORT);
-        s = decl->imp.scope;
-        // panic("get pkg scope: %s $ %s", pkg->ident.name, ident->ident.name);
     }
     ast$ObjKind kind = getDeclKind(decl);
     ast$Object *obj = ast$newObject(kind, ident->ident.name);
