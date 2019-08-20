@@ -559,6 +559,9 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
                 decl->value.type = t->enum_.name;
             }
             Checker_declare(c, c->pkg.scope, decl);
+            if (decl->value.value) {
+                Checker_checkExpr(c, decl->value.value);
+            }
         }
         break;
 

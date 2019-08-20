@@ -1,11 +1,8 @@
 #include "bootstrap.h"
 
+#include <execinfo.h>
 #include <stdarg.h>
 #include <stdio.h>
-
-extern int backtrace(void **, int); // libc
-extern void backtrace_symbols_fd(void* const*, int, int); // libc
-extern void exit(int) /* __attribute__((noreturn)) */; // lib
 
 static void vprint(const char *s, va_list ap) {
     vfprintf(stderr, s, ap);

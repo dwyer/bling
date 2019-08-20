@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <strings.h>
 
+#define $
 #define import(_)
 #define package(_)
 
