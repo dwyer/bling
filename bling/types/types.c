@@ -433,7 +433,6 @@ typedef struct {
     ast$Package pkg;
     ast$Expr *result;
     utils$Slice files;
-    ast$Expr *typedefName;
     utils$Map scopes;
 } Checker;
 
@@ -555,13 +554,10 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         break;
 
     case ast$TYPE_ENUM:
-        if (t->enum_.name == NULL) {
-            t->enum_.name = c->typedefName;
-        }
         for (int i = 0; t->enum_.enums[i]; i++) {
             ast$Decl *decl = t->enum_.enums[i];
-            if (c->typedefName) {
-                decl->value.type = c->typedefName;
+            if (t->enum_.name) {
+                decl->value.type = t->enum_.name;
             }
             Checker_declare(c, c->pkg.scope, decl);
         }
@@ -586,9 +582,6 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         break;
 
     case ast$TYPE_STRUCT:
-        if (t->enum_.name == NULL) {
-            t->enum_.name = c->typedefName;
-        }
         if (t->struct_.fields) {
             Checker_openScope(c);
             for (int i = 0; t->struct_.fields[i]; i++) {
@@ -1112,9 +1105,17 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
     case ast$DECL_PRAGMA:
         break;
     case ast$DECL_TYPEDEF:
-        c->typedefName = decl->typedef_.name;
+        switch (decl->typedef_.type->kind) {
+        case ast$TYPE_ENUM:
+            decl->typedef_.type->enum_.name = decl->typedef_.name;
+            break;
+        case ast$TYPE_STRUCT:
+            decl->typedef_.type->struct_.name = decl->typedef_.name;
+            break;
+        default:
+            break;
+        }
         Checker_checkType(c, decl->typedef_.type);
-        c->typedefName = NULL;
         break;
     case ast$DECL_VALUE:
         {

@@ -186,7 +186,7 @@ typedef UnaryExpr struct {
     x *Expr
 }
 
-typedef Expr struct Expr {
+typedef Expr struct {
     Node
     is_const bool
     union {
@@ -245,7 +245,7 @@ typedef Field struct {
     type *Expr
 }
 
-typedef Decl struct Decl {
+typedef Decl struct {
     Node
     pos token.Pos
     union {
@@ -330,7 +330,7 @@ typedef SwitchStmt struct {
     stmts **Stmt
 }
 
-typedef Stmt struct Stmt {
+typedef Stmt struct {
     Node
     union {
         assign AssignStmt
@@ -349,7 +349,7 @@ typedef Stmt struct Stmt {
     }
 }
 
-typedef Scope struct Scope {
+typedef Scope struct {
     outer *Scope
     objects utils.Map
     pkg *char

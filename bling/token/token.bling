@@ -106,7 +106,7 @@ typedef File struct {
     src *char
 }
 
-typedef FileSet struct FileSet {
+typedef FileSet struct {
     fset *FileSet
     base int
     files utils.Slice

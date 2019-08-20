@@ -573,7 +573,6 @@ fun parseFieldDecl(p *Parser, scope *ast.Scope) *ast.Decl {
 fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
     var pos token.Pos = p.pos
     expect(p, keyword)
-    var name *ast.Expr = p.tok == token.IDENT ? parseIdent(p) : NULL
     var fields **ast.Decl = NULL
     if accept(p, token.LBRACE) {
         var scope *ast.Scope = ast.Scope_new(p.topScope)
@@ -595,7 +594,6 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
         struct_: {
             pos: pos,
             tok: keyword,
-            name: name,
             fields: fields,
         },
     }
@@ -695,12 +693,8 @@ fun parseFuncType(p *Parser) *ast.Expr {
 }
 
 fun parseEnumType(p *Parser) *ast.Expr {
-    var name *ast.Expr = NULL
     var pos token.Pos = p.pos
     expect(p, token.ENUM)
-    if p.tok == token.IDENT {
-        name = parseIdent(p)
-    }
     var enums **ast.Decl = NULL
     if accept(p, token.LBRACE) {
         var list utils.Slice = {
@@ -730,7 +724,6 @@ fun parseEnumType(p *Parser) *ast.Expr {
         kind: ast.TYPE_ENUM,
         enum_: {
             pos: pos,
-            name: name,
             enums: enums,
         },
     }

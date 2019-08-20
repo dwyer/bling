@@ -636,7 +636,6 @@ static ast$Decl *parseFieldDecl(parser$Parser *p, ast$Scope *scope) {
 static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
     token$Pos pos = p->pos;
     parser$expect(p, keyword);
-    ast$Expr *name = p->tok == token$IDENT ? parser$parseIdent(p) : NULL;
     ast$Decl **fields = NULL;
     if (parser$accept(p, token$LBRACE)) {
         ast$Scope *scope = ast$Scope_new(p->topScope);
@@ -657,7 +656,6 @@ static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
         .struct_ = {
             .pos = pos,
             .tok = keyword,
-            .name = name,
             .fields = fields,
         },
     };
@@ -762,12 +760,8 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
     //         | ENUM IDENTIFIER '{' enumerator_list '}'
     //         | ENUM IDENTIFIER
     //         ;
-    ast$Expr *name = NULL;
     token$Pos pos = p->pos;
     parser$expect(p, token$ENUM);
-    if (p->tok == token$IDENT) {
-        name = parser$parseIdent(p);
-    }
     ast$Decl **enums = NULL;
     if (parser$accept(p, token$LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
@@ -797,7 +791,6 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
         .kind = ast$TYPE_ENUM,
         .enum_ = {
             .pos = pos,
-            .name = name,
             .enums = enums,
         },
     };

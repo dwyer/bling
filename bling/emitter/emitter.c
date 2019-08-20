@@ -419,10 +419,6 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
 
     case ast$TYPE_ENUM:
         emitter$emitToken(e, token$ENUM);
-        if (type->enum_.name) {
-            emitter$emitSpace(e);
-            emitter$emitExpr(e, type->enum_.name);
-        }
         if (type->enum_.enums) {
             emitter$emitSpace(e);
             emitter$emitToken(e, token$LBRACE);
@@ -473,10 +469,6 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
 
     case ast$TYPE_STRUCT:
         emitter$emitToken(e, type->struct_.tok);
-        if (type->struct_.name) {
-            emitter$emitSpace(e);
-            emitter$emitExpr(e, type->struct_.name);
-        }
         if (type->struct_.fields) {
             emitter$emitSpace(e);
             emitter$emitToken(e, token$LBRACE);

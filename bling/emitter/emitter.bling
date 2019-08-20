@@ -388,10 +388,6 @@ fun emitType(e *Emitter, type *ast.Expr) {
         break
     case ast.TYPE_ENUM:
         emitToken(e, token.ENUM)
-        if type.enum_.name {
-            emitSpace(e)
-            emitExpr(e, type.enum_.name)
-        }
         if type.enum_.enums {
             emitSpace(e)
             emitToken(e, token.LBRACE)
@@ -440,10 +436,6 @@ fun emitType(e *Emitter, type *ast.Expr) {
         break
     case ast.TYPE_STRUCT:
         emitToken(e, type.struct_.tok)
-        if type.struct_.name {
-            emitSpace(e)
-            emitExpr(e, type.struct_.name)
-        }
         if type.struct_.fields {
             emitSpace(e)
             emitToken(e, token.LBRACE)

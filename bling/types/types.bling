@@ -451,7 +451,6 @@ typedef Checker struct {
     pkg ast.Package
     result *ast.Expr
     files utils.Slice
-    typedefName *ast.Expr
     scopes utils.Map
 }
 
@@ -555,13 +554,10 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
         }
         break
     case ast.TYPE_ENUM:
-        if t.enum_.name == NULL {
-            t.enum_.name = c.typedefName
-        }
         for var i int = 0; t.enum_.enums[i]; i++ {
             var decl *ast.Decl = t.enum_.enums[i]
-            if c.typedefName {
-                decl.value.type = c.typedefName
+            if t.enum_.name {
+                decl.value.type = t.enum_.name
             }
             Checker_declare(c, c.pkg.scope, decl)
         }
@@ -583,9 +579,6 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
         Checker_checkType(c, t.star.x)
         break
     case ast.TYPE_STRUCT:
-        if t.enum_.name == NULL {
-            t.enum_.name = c.typedefName
-        }
         if t.struct_.fields {
             Checker_openScope(c)
             for var i int = 0; t.struct_.fields[i]; i++ {
@@ -1008,9 +1001,16 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
         break
     case ast.DECL_PRAGMA: break
     case ast.DECL_TYPEDEF:
-        c.typedefName = decl.typedef_.name
+        switch decl.typedef_.type.kind {
+        case ast.TYPE_ENUM:
+            decl.typedef_.type.enum_.name = decl.typedef_.name
+            break
+        case ast.TYPE_STRUCT:
+            decl.typedef_.type.struct_.name = decl.typedef_.name
+            break
+        default: break
+        }
         Checker_checkType(c, decl.typedef_.type)
-        c.typedefName = NULL
         break
     case ast.DECL_VALUE: {
         var valType *ast.Expr = NULL
