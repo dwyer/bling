@@ -2,7 +2,6 @@
 #include "bling/emitter/emitter.h"
 #include "bling/parser/parser.h"
 #include "bling/types/types.h"
-#include "paths/paths.h"
 #include "sys/sys.h"
 
 static char *constant_stringVal(ast$Expr *x) {

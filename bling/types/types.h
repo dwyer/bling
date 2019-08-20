@@ -7,7 +7,6 @@ import("bling/ast");
 import("bling/emitter");
 import("bling/parser");
 import("bling/token");
-import("paths");
 import("sys");
 import("utils");
 
