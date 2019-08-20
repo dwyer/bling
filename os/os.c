@@ -5,6 +5,7 @@
 #include "utils/utils.h"
 
 #include <dirent.h> // DIR, dirent, opendir, readdir, closedir
+#include <errno.h>
 #include <fcntl.h> // open
 #include <sys/stat.h> // stat
 #include <unistd.h> // read, close, write, STD*_FILENO
@@ -176,4 +177,28 @@ extern const char *os$tempDir() {
         return tmpdir;
     }
     return "/tmp";
+}
+
+extern void os$mkdir(const char *path, uint32_t mode, utils$Error **error) {
+    utils$clearError();
+    mkdir(path, mode);
+    utils$Error_check(error);
+}
+
+extern void os$mkdirAll(const char *path, uint32_t mode, utils$Error **error) {
+    char *dir = paths$dir(path);
+    if (!streq(dir, ".")) {
+        os$mkdirAll(dir, mode, error);
+    }
+    free(dir);
+    utils$Error *err = NULL;
+    os$mkdir(path, mode, &err);
+    switch (sys$errno()) {
+    case 0:
+    case EEXIST:
+        break;
+    default:
+        utils$Error_move(err, error);
+        break;
+    }
 }
