@@ -28,6 +28,7 @@ SRCS=sys/sys.h \
      bling/emitter/emitter.c \
      bling/types/types.h \
      bling/types/types.c \
+     bling/types/universe.c \
      subc/cparser/cparser.h \
      subc/cparser/cparser.c \
      subc/cemitter/cemitter.h \
@@ -46,6 +47,7 @@ CFILES=utils/error.c \
      bling/parser/parser.c \
      bling/emitter/emitter.c \
      bling/types/types.c \
+     bling/types/universe.c \
      subc/cparser/cparser.c \
      subc/cemitter/cemitter.c \
      cmd/blingc/main.c

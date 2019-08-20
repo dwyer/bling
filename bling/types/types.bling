@@ -24,90 +24,6 @@ fun constant_stringVal(x *ast.Expr) *char {
     return val
 }
 
-var natives []struct {
-    name *char
-    size int
-    arith bool
-} = {
-    {
-        "char",
-        sizeof(char),
-        true,
-    },
-    {
-        "double",
-        sizeof(double),
-        true,
-    },
-    {
-        "float",
-        sizeof(float),
-        true,
-    },
-    {
-        "int",
-        sizeof(int),
-        true,
-    },
-    {
-        "void",
-        sizeof(void),
-    },
-    {
-        "int16_t",
-        sizeof(int16_t),
-        true,
-    },
-    {
-        "int32_t",
-        sizeof(int32_t),
-        true,
-    },
-    {
-        "int64_t",
-        sizeof(int64_t),
-        true,
-    },
-    {
-        "int8_t",
-        sizeof(int8_t),
-        true,
-    },
-    {
-        "size_t",
-        sizeof(size_t),
-        true,
-    },
-    {
-        "uint16_t",
-        sizeof(uint16_t),
-        true,
-    },
-    {
-        "uint32_t",
-        sizeof(uint32_t),
-        true,
-    },
-    {
-        "uint64_t",
-        sizeof(uint64_t),
-        true,
-    },
-    {
-        "uint8_t",
-        sizeof(uint8_t),
-        true,
-    },
-    {
-        "uintptr_t",
-        sizeof(uintptr_t),
-        true,
-    },
-    {
-        NULL,
-    },
-}
-
 fun declString(decl *ast.Decl) *char {
     var e emitter.Emitter = {}
     emitter.emitDecl(&e, decl)
@@ -333,55 +249,6 @@ fun getDeclName(decl *ast.Decl) *ast.Expr {
         panic("bad decl: %s", declString(decl))
         return NULL
     }
-}
-
-fun declareBuiltins(s *ast.Scope) {
-    for var i int = 0; natives[i].name != NULL; i++ {
-        var _name ast.Expr = {
-            kind: ast.EXPR_IDENT,
-            ident: {
-                name: strdup(natives[i].name),
-            },
-        }
-        var name *ast.Expr = esc(_name)
-        var type ast.Expr = {
-            kind: ast.TYPE_NATIVE,
-            native: {
-                name: strdup(natives[i].name),
-                size: natives[i].size,
-            },
-        }
-        var decl ast.Decl = {
-            kind: ast.DECL_TYPEDEF,
-            typedef_: {
-                name: name,
-                type: esc(type),
-            },
-        }
-        var obj *ast.Object = ast.newObject(ast.ObjKind_TYP, name.ident.name)
-        obj.decl = esc(decl)
-        name.ident.obj = obj
-        assert(ast.Scope_insert(s, obj) == NULL)
-    }
-}
-
-var _universe *ast.Scope = NULL
-
-fun universe() *ast.Scope {
-    if _universe == NULL {
-        _universe = ast.Scope_new(NULL)
-        declareBuiltins(_universe)
-        var fset *token.FileSet = token.newFileSet()
-        var file *ast.File = parser.parseFile(fset, "builtin/builtin.bling", _universe)
-        _universe = file.scope
-        var conf Config = {
-            strict: true,
-        }
-        checkFile(&conf, fset, file)
-        free(file.decls)
-        free(file)
-    }
-    return _universe
 }
 
 fun isLhs(expr *ast.Expr) bool {
@@ -1112,4 +979,137 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package {
     Checker_checkFile(&c, file)
     c.pkg.files = utils.Slice_to_nil_array(c.files)
     return c.pkg
+}
+
+var natives []struct {
+    name *char
+    size int
+    arith bool
+} = {
+    {
+        "char",
+        sizeof(char),
+        true,
+    },
+    {
+        "double",
+        sizeof(double),
+        true,
+    },
+    {
+        "float",
+        sizeof(float),
+        true,
+    },
+    {
+        "int",
+        sizeof(int),
+        true,
+    },
+    {
+        "void",
+        sizeof(void),
+    },
+    {
+        "int16_t",
+        sizeof(int16_t),
+        true,
+    },
+    {
+        "int32_t",
+        sizeof(int32_t),
+        true,
+    },
+    {
+        "int64_t",
+        sizeof(int64_t),
+        true,
+    },
+    {
+        "int8_t",
+        sizeof(int8_t),
+        true,
+    },
+    {
+        "size_t",
+        sizeof(size_t),
+        true,
+    },
+    {
+        "uint16_t",
+        sizeof(uint16_t),
+        true,
+    },
+    {
+        "uint32_t",
+        sizeof(uint32_t),
+        true,
+    },
+    {
+        "uint64_t",
+        sizeof(uint64_t),
+        true,
+    },
+    {
+        "uint8_t",
+        sizeof(uint8_t),
+        true,
+    },
+    {
+        "uintptr_t",
+        sizeof(uintptr_t),
+        true,
+    },
+    {
+        NULL,
+    },
+}
+
+fun declareBuiltins(s *ast.Scope) {
+    for var i int = 0; natives[i].name != NULL; i++ {
+        var _name ast.Expr = {
+            kind: ast.EXPR_IDENT,
+            ident: {
+                name: strdup(natives[i].name),
+            },
+        }
+        var name *ast.Expr = esc(_name)
+        var type ast.Expr = {
+            kind: ast.TYPE_NATIVE,
+            native: {
+                name: strdup(natives[i].name),
+                size: natives[i].size,
+            },
+        }
+        var decl ast.Decl = {
+            kind: ast.DECL_TYPEDEF,
+            typedef_: {
+                name: name,
+                type: esc(type),
+            },
+        }
+        var obj *ast.Object = ast.newObject(ast.ObjKind_TYPE, name.ident.name)
+        obj.decl = esc(decl)
+        name.ident.obj = obj
+        assert(ast.Scope_insert(s, obj) == NULL)
+    }
+}
+
+var _universe *ast.Scope = NULL
+
+fun universe() *ast.Scope {
+    if _universe == NULL {
+        _universe = ast.Scope_new(NULL)
+        declareBuiltins(_universe)
+        var fset *token.FileSet = token.newFileSet()
+        var file *ast.File = parser.parseFile(fset, "builtin/builtin.bling", _universe)
+        _universe = file.scope
+        var conf Config = {
+            strict: true,
+        }
+        checkFile(&conf, fset, file)
+        free(file.decls)
+        free(file)
+    }
+    return _universe
 }

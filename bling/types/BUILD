@@ -2,6 +2,7 @@ cc_library(
     name = "types",
     srcs = [
         "types.c",
+        "universe.c",
     ],
     hdrs = [
         "types.h",
