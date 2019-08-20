@@ -28,6 +28,20 @@ fun emit_rawfile(e *emitter.Emitter, filename *const char) {
     free(src)
 }
 
+fun isForwardDecl(decl *ast.Decl) bool {
+    switch decl.kind {
+    case ast.DECL_FUNC: return decl.func.body == NULL
+    case ast.DECL_PRAGMA: return true
+    case ast.DECL_TYPEDEF: {
+        switch decl.typedef_.type.kind {
+        case ast.TYPE_STRUCT: return decl.typedef_.type.struct_.fields == NULL || decl.typedef_.type.struct_.fields[0] == NULL
+        default: return false
+        }
+    }
+    default: return false
+    }
+}
+
 fun compile_c(argv []*char) {
     var dst *const char = NULL
     while **argv == '-' {
@@ -44,6 +58,17 @@ fun compile_c(argv []*char) {
     while *argv {
         var filename *char = *argv
         var file *ast.File = cparser.parseFile(fset, filename, types.universe())
+        var allowForward bool = file.name && (ast.isIdentNamed(file.name, "os") || ast.isIdentNamed(file.name, "sys"))
+        if !allowForward {
+            var i int = 0
+            for var j int = 0; file.decls[j]; j++ {
+                if !isForwardDecl(file.decls[j]) {
+                    file.decls[i] = file.decls[j]
+                    i++
+                }
+            }
+            file.decls[i] = NULL
+        }
         emitter.emitFile(&e, file)
         argv++
     }

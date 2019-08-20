@@ -36,6 +36,27 @@ void emit_rawfile(emitter$Emitter *e, const char *filename) {
     free(src);
 }
 
+static bool isForwardDecl(ast$Decl *decl) {
+    switch (decl->kind) {
+    case ast$DECL_FUNC:
+        return decl->func.body == NULL;
+    case ast$DECL_PRAGMA:
+        return true;
+    case ast$DECL_TYPEDEF:
+        {
+            switch (decl->typedef_.type->kind) {
+            case ast$TYPE_STRUCT:
+                return decl->typedef_.type->struct_.fields == NULL
+                    || decl->typedef_.type->struct_.fields[0] == NULL;
+            default:
+                return false;
+            }
+        }
+    default:
+        return false;
+    }
+}
+
 void compile_c(char *argv[]) {
     const char *dst = NULL;
     while (**argv == '-') {
@@ -54,6 +75,18 @@ void compile_c(char *argv[]) {
         ast$File *file = cparser$parseFile(fset, filename, types$universe());
         // types$Config conf = {.strict = true, .cMode = true};
         // types$checkFile(&conf, fset, file);
+        bool allowForward = file->name && (ast$isIdentNamed(file->name, "os")
+                || ast$isIdentNamed(file->name, "sys"));
+        if (!allowForward) {
+            int i = 0;
+            for (int j = 0; file->decls[j]; j++) {
+                if (!isForwardDecl(file->decls[j])) {
+                    file->decls[i] = file->decls[j];
+                    i++;
+                }
+            }
+            file->decls[i] = NULL;
+        }
         emitter$emitFile(&e, file);
         argv++;
     }

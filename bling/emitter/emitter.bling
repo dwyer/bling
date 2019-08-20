@@ -546,27 +546,9 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
     }
 }
 
-fun isForwardDecl(decl *ast.Decl) bool {
-    switch decl.kind {
-    case ast.DECL_FUNC: return decl.func.body == NULL
-    case ast.DECL_PRAGMA: return true
-    case ast.DECL_TYPEDEF: {
-        switch decl.typedef_.type.kind {
-        case ast.TYPE_STRUCT: return decl.typedef_.type.struct_.fields == NULL || decl.typedef_.type.struct_.fields[0] == NULL
-        default: return false
-        }
-    }
-    default: return false
-    }
-}
-
 fun emitFile(e *Emitter, file *ast.File) {
-    var allowForward bool = false
     if file.name {
         e.pkg = file.name.ident.name
-        if ast.isIdentNamed(file.name, "os") || ast.isIdentNamed(file.name, "sys") {
-            allowForward = true
-        }
     }
     emitString(e, "//")
     emitString(e, file.filename)
@@ -585,10 +567,8 @@ fun emitFile(e *Emitter, file *ast.File) {
         emitNewline(e)
     }
     for var decls **ast.Decl = file.decls; decls && *decls; decls++ {
-        if allowForward || !isForwardDecl(*decls) {
-            emitNewline(e)
-            emitDecl(e, *decls)
-            emitNewline(e)
-        }
+        emitNewline(e)
+        emitDecl(e, *decls)
+        emitNewline(e)
     }
 }
