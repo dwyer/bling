@@ -805,12 +805,9 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
         return
     }
     var files **ast.File = parser.parseDir(c.fset, path, universe(), NULL)
-    assert(files[0] && !files[1])
     utils.Map_set(&c.info.scopes, path, &files[0].scope)
-    oldScope = c.pkg.scope
-    c.pkg.scope = files[0].scope
-    Checker_checkFile(c, files[0])
-    c.pkg.scope = oldScope
+    var pkg *Package = check(c.conf, c.fset, files, c.info)
+    utils.Slice_append(&c.pkg.imports, &pkg)
     imp.imp.name = makeIdent(files[0].scope.pkg)
     Checker_declare(c, imp, files[0].scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
 }
@@ -920,6 +917,9 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File, info *Info) *Pa
     }
     var pkg Package = {
         scope: file.scope,
+        imports: {
+            size: sizeof(*Package),
+        },
     }
     var c Checker = {
         info: info,
@@ -931,6 +931,11 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File, info *Info) *Pa
     Checker_checkFile(&c, file)
     c.pkg.files = utils.Slice_to_nil_array(c.files)
     return c.pkg
+}
+
+fun check(conf *Config, fset *token.FileSet, files **ast.File, info *Info) *Package {
+    assert(files[0] && !files[1])
+    return checkFile(conf, fset, files[0], info)
 }
 
 typedef builtinId enum {

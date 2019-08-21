@@ -38,5 +38,7 @@ typedef struct {
 
 extern types$Package *types$checkFile(types$Config *conf, token$FileSet *fset,
         ast$File *file, types$Info *info);
+extern types$Package *types$check(types$Config *conf, token$FileSet *fset,
+        ast$File **files, types$Info *info);
 
 extern char *types$constant_stringVal(ast$Expr *x); // TODO move this to const pkg
