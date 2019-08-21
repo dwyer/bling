@@ -881,9 +881,6 @@ fun Checker_checkFunc(c *Checker, decl *ast.Decl) {
 }
 
 fun Checker_checkFile(c *Checker, file *ast.File) {
-    if file.name {
-        c.pkg.scope.pkg = file.name.ident.name
-    }
     for var i int = 0; file.imports[i] != NULL; i++ {
         Checker_checkImport(c, file.imports[i])
     }

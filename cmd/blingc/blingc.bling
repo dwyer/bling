@@ -122,6 +122,9 @@ fun compile_bling(argv []*char) {
         var pkg ast.Package = types.checkFile(&conf, fset, file)
         for var i int = 0; pkg.files[i]; i++ {
             var file *ast.File = pkg.files[i]
+            e.forwardDecl = true
+            cemitter.emitFile(&e, file)
+            e.forwardDecl = false
             cemitter.emitFile(&e, file)
             free(file.decls)
             free(file)

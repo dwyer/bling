@@ -449,6 +449,9 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
         emitter.emitToken(e, token.SEMICOLON)
         break
     case ast.DECL_VALUE:
+        if e.forwardDecl {
+            break
+        }
         emitType(e, decl.value.type, decl.value.name)
         if decl.value.value {
             emitter.emitSpace(e)
@@ -478,23 +481,8 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
         emitter.emitNewline(e)
         emitter.emitNewline(e)
     }
-    e.forwardDecl = true
     for var i int = 0; file.decls[i]; i++ {
-        if file.decls[i].kind == ast.DECL_TYPEDEF {
-            emitDecl(e, file.decls[i])
-            emitter.emitNewline(e)
-        }
-    }
-    for var i int = 0; file.decls[i]; i++ {
-        if file.decls[i].kind == ast.DECL_FUNC {
-            emitDecl(e, file.decls[i])
-            emitter.emitNewline(e)
-        }
-    }
-    e.forwardDecl = false
-    for var decls **ast.Decl = file.decls; decls && *decls; decls++ {
-        emitDecl(e, *decls)
-        emitter.emitNewline(e)
+        emitDecl(e, file.decls[i])
         emitter.emitNewline(e)
     }
 }

@@ -141,6 +141,9 @@ void compile_bling(char *argv[]) {
         ast$Package pkg = types$checkFile(&conf, fset, file);
         for (int i = 0; pkg.files[i]; i++) {
             ast$File *file = pkg.files[i];
+            e.forwardDecl = true;
+            cemitter$emitFile(&e, file);
+            e.forwardDecl = false;
             cemitter$emitFile(&e, file);
             free(file->decls);
             free(file);

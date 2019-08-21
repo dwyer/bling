@@ -5,7 +5,7 @@
 #include "bling/parser/parser.h"
 #include "sys/sys.h"
 
-static char *constant_stringVal(ast$Expr *x) {
+extern char *types$constant_stringVal(ast$Expr *x) {
     // TODO move this to const pkg
     assert(x->kind == ast$EXPR_BASIC_LIT);
     const char *lit = x->basic.value;
@@ -935,7 +935,7 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
     if (c->conf->cMode) {
         return;
     }
-    char *path = constant_stringVal(imp->imp.path);
+    char *path = types$constant_stringVal(imp->imp.path);
     ast$Scope *oldScope = NULL;
     utils$Map_get(&c->scopes, path, &oldScope);
     if (oldScope) {
@@ -1043,11 +1043,6 @@ static void Checker_checkFunc(Checker *c, ast$Decl *decl) {
 }
 
 static void Checker_checkFile(Checker *c, ast$File *file) {
-    if (file->name) {
-        c->pkg.scope->pkg = file->name->ident.name;
-        // assert(c->pkg.scope->pkg);
-        // assert(streq(c->pkg.scope->pkg, file->name->ident.name));
-    }
     for (int i = 0; file->imports[i] != NULL; i++) {
         Checker_checkImport(c, file->imports[i]);
     }

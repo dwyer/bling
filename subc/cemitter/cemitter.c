@@ -496,6 +496,9 @@ static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
         break;
 
     case ast$DECL_VALUE:
+        if (e->forwardDecl) {
+            break;
+        }
         cemitter$emitType(e, decl->value.type, decl->value.name);
         if (decl->value.value) {
             emitter$emitSpace(e);
@@ -526,23 +529,8 @@ extern void cemitter$emitFile(emitter$Emitter *e, ast$File *file) {
         emitter$emitNewline(e);
         emitter$emitNewline(e);
     }
-    e->forwardDecl = true;
     for (int i = 0; file->decls[i]; i++) {
-        if (file->decls[i]->kind == ast$DECL_TYPEDEF) {
-            cemitter$emitDecl(e, file->decls[i]);
-            emitter$emitNewline(e);
-        }
-    }
-    for (int i = 0; file->decls[i]; i++) {
-        if (file->decls[i]->kind == ast$DECL_FUNC) {
-            cemitter$emitDecl(e, file->decls[i]);
-            emitter$emitNewline(e);
-        }
-    }
-    e->forwardDecl = false;
-    for (ast$Decl **decls = file->decls; decls && *decls; decls++) {
-        cemitter$emitDecl(e, *decls);
-        emitter$emitNewline(e);
+        cemitter$emitDecl(e, file->decls[i]);
         emitter$emitNewline(e);
     }
 }
