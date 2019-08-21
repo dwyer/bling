@@ -1446,7 +1446,7 @@ extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename,
     utils$Error *err = NULL;
     char *src = ioutil$readFile(filename, &err);
     if (err) {
-        panic("%s: %s", filename, err->error);
+        panic(sys$sprintf("%s: %s", filename, err->error));
     }
     parser$Parser p = {};
     parser$init(&p, fset, filename, src);

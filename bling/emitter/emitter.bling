@@ -3,6 +3,7 @@ package emitter
 import "bling/ast"
 import "bling/token"
 import "bytes"
+import "sys"
 
 typedef Emitter struct {
     buf bytes.Buffer
@@ -451,7 +452,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
         }
         break
     default:
-        panic("Unknown type: %d", type.kind)
+        panic(sys.sprintf("Unknown type: %d", type.kind))
     }
 }
 
@@ -527,7 +528,7 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
             emitSpace(e)
             emitExpr(e, decl.value.value)
         default:
-            panic("bad kind for ast$DECL_VALUE: %s", token.string(decl.value.kind))
+            panic(sys.sprintf("bad kind for ast$DECL_VALUE: %s", token.string(decl.value.kind)))
             break
         }
         break

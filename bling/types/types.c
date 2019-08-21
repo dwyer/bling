@@ -46,7 +46,8 @@ extern bool types$isType(ast$Expr *expr) {
     switch (expr->kind) {
     case ast$EXPR_IDENT:
         if (expr->ident.obj == NULL) {
-            panic("types$isType: unresolved identifier %s", expr->ident.name);
+            panic(sys$sprintf("types$isType: unresolved identifier %s",
+                        expr->ident.name));
         }
         return expr->ident.obj->decl->kind == ast$DECL_TYPEDEF;
     case ast$EXPR_STAR:
@@ -85,7 +86,7 @@ static ast$Expr *types$makePtr(ast$Expr *type) {
 static ast$Expr *getUnderlyingType(ast$Expr *ident) {
     ast$Decl *decl = ident->ident.obj->decl;
     if (decl->kind != ast$DECL_TYPEDEF) {
-        panic("not a type: %s", types$typeString(ident));
+        panic(sys$sprintf("not a type: %s", types$typeString(ident)));
     }
     return decl->typedef_.type;
 }
@@ -105,7 +106,7 @@ static ast$Expr *types$getBaseType(ast$Expr *type) {
         case ast$TYPE_STRUCT:
             return type;
         default:
-            panic("not a type: %s", types$typeString(type));
+            panic(sys$sprintf("not a type: %s", types$typeString(type)));
         }
     }
 }
@@ -185,8 +186,8 @@ static bool types$areIdentical(ast$Expr *a, ast$Expr *b) {
         }
         return true;
     default:
-        panic("not implemented: %s == %s",
-                types$typeString(a), types$typeString(b));
+        panic(sys$sprintf("not implemented: %s == %s",
+                    types$typeString(a), types$typeString(b)));
         return false;
     }
 }
@@ -202,7 +203,7 @@ static ast$Expr *types$pointerBase(ast$Expr *t) {
     case ast$TYPE_ARRAY:
         return t->array.elt;
     default:
-        panic("not a pointer: %s", types$typeString(t));
+        panic(sys$sprintf("not a pointer: %s", types$typeString(t)));
         return NULL;
     }
 }
@@ -280,7 +281,7 @@ static ast$Expr *getDeclType(ast$Decl *decl) {
     case ast$DECL_VALUE:
         return decl->value.type;
     default:
-        panic("unhandled decl: %s", types$declString(decl));
+        panic(sys$sprintf("unhandled decl: %s", types$declString(decl)));
         return NULL;
     }
 }
@@ -310,7 +311,7 @@ static ast$Decl *getStructFieldByName(ast$Expr *type, ast$Expr *name) {
 static ast$Decl *getStructField(ast$Expr *type, int index) {
     assert(type->kind == ast$TYPE_STRUCT);
     if (type->struct_.fields == NULL) {
-        panic("incomplete field defn: %s", types$typeString(type));
+        panic(sys$sprintf("incomplete field defn: %s", types$typeString(type)));
     }
     for (int i = 0; type->struct_.fields[i]; i++) {
         if (i == index) {
@@ -661,6 +662,10 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             int j = 0;
             for (int i = 0; expr->call.args[i]; i++) {
                 ast$Decl *param = type->func.params[j];
+                if (param == NULL) {
+                    Checker_error(c, ast$Expr_pos(expr), "too many args");
+                    break;
+                }
                 ast$Expr *type = Checker_checkExpr(c, expr->call.args[i]);
                 if (param->kind == ast$DECL_FIELD) {
                     if (!types$areAssignable(param->field.type, type)) {

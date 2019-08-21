@@ -40,7 +40,7 @@ fun Error_move(src *Error, dst **Error) {
     if dst != NULL {
         *dst = src
     } else {
-        panic("Unhandled error: %s", src.error)
+        panic(sys.sprintf("Unhandled error: %s", src.error))
     }
 }
 
@@ -88,7 +88,7 @@ fun Slice_ref(s *const Slice, i int) *void {
 
 fun Slice_get(s *const Slice, i int, dst *void) {
     if i >= s.len {
-        panic("out of range: index=%d, len=%d", i, s.len)
+        panic(sys.sprintf("out of range: index=%d, len=%d", i, s.len))
     }
     if s.size == 1 {
         *<*char> dst = (<*char> s.array)[i]

@@ -30,7 +30,7 @@ extern void *utils$Slice_ref(const utils$Slice *s, int i) {
 
 extern void utils$Slice_get(const utils$Slice *s, int i, void *dst) {
     if (i >= s->len) {
-        panic("out of range: index=%d, len=%d", i, s->len);
+        panic(sys$sprintf("out of range: index=%d, len=%d", i, s->len));
     }
     if (s->size == 1) {
          *(char *)dst = ((char *)s->array)[i];

@@ -7,6 +7,7 @@ package(emitter);
 import("bling/ast");
 import("bling/token");
 import("bytes");
+import("sys");
 
 typedef struct {
     bytes$Buffer buf;

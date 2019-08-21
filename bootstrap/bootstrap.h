@@ -16,7 +16,7 @@
 #define esc(x) ({typeof(x) $0 = (x); memcpy(malloc(sizeof $0), &$0, sizeof $0);})
 
 extern void print(const char *s);
-extern void panic(const char *s, ...);
+extern void panic(const char *s);
 extern bool streq(const char *a, const char *b);
 
 #endif

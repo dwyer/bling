@@ -9,7 +9,7 @@ fun assert(bool)
 fun esc(*void) *void
 fun free(*void)
 fun malloc(size_t) *void
-fun panic(fmt *const char, ...)
+fun panic(fmt *const char)
 fun print(fmt *const char)
 fun strdup(*const char) *char
 fun streq(a *const char, b *const char) bool

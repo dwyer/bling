@@ -1189,7 +1189,7 @@ static ast$Decl *declaration(parser$Parser *p, bool is_external) {
             name = type->struct_.name;
             break;
         default:
-            panic("FUCK: %d", type->kind);
+            panic(sys$sprintf("bad kind: %d", type->kind));
             break;
         }
         ast$Decl decl = {

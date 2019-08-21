@@ -4,20 +4,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-static void vprint(const char *s, va_list ap) {
-    vfprintf(stderr, s, ap);
-    fprintf(stderr, "\n");
-}
-
 extern void print(const char *s) {
     fprintf(stderr, "%s\n", s);
 }
 
-extern void panic(const char *s, ...) {
-    va_list ap;
-    va_start(ap, s);
-    vprint(s, ap);
-    va_end(ap);
+extern void panic(const char *s) {
+    print(s);
     void *buf[1024];
     int n = backtrace(buf, 1024);
     int fd = 2; //stderr

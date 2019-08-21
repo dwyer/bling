@@ -64,7 +64,7 @@ void compile_c(char *argv[]) {
             argv++;
             dst = *argv;
         } else {
-            panic("unknown option: %s", *argv);
+            panic(sys$sprintf("unknown option: %s", *argv));
         }
         argv++;
     }
@@ -121,7 +121,7 @@ void compile_bling(char *argv[]) {
             argv++;
             dst = *argv;
         } else {
-            panic("unknown option: %s", *argv);
+            panic(sys$sprintf("unknown option: %s", *argv));
         }
         argv++;
     }
@@ -136,7 +136,7 @@ void compile_bling(char *argv[]) {
         } else if (bytes$hasSuffix(filename, ".c")) {
             file = cparser$parseFile(fset, filename, types$universe());
         } else {
-            panic("unknown file type: %s", filename);
+            panic(sys$sprintf("unknown file type: %s", filename));
         }
         types$Package *pkg = types$checkFile(&conf, paths$dir(filename), fset,
                 file, NULL);
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     char *progname = *argv;
     argv++;
     if (!*argv) {
-        panic("usage: %s -o DST SRCS", progname);
+        panic(sys$sprintf("usage: %s -o DST SRCS", progname));
     }
     if (streq(*argv, "build")) {
         argv++;

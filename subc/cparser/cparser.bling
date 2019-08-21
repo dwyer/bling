@@ -944,7 +944,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
             name = type.struct_.name
             break
         default:
-            panic("FUCK: %d", type.kind)
+            panic(sys.sprintf("bad kind: %d", type.kind))
             break
         }
         var decl ast.Decl = {

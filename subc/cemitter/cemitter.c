@@ -1,6 +1,8 @@
 #include "subc/cemitter/cemitter.h"
 #include "bling/token/token.h"
 
+#include "sys/sys.h"
+
 static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl);
 static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr);
 static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name);
@@ -140,7 +142,7 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     default:
-        panic("Unknown expr: %d", expr->kind);
+        panic(sys$sprintf("Unknown expr: %d", expr->kind));
         break;
     }
 }
@@ -447,7 +449,7 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
         break;
 
     default:
-        panic("Unknown type: %d", type->kind);
+        panic(sys$sprintf("Unknown type: %d", type->kind));
     }
 
     if (type->is_const && type->kind == ast$EXPR_STAR) {

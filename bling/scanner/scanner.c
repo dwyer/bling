@@ -135,7 +135,7 @@ static char *scan_string(scanner$Scanner *s) {
 }
 
 static void scanner$error(scanner$Scanner *s, int offs, const char *msg) {
-    panic("scanner error: offset %d: %s", offs, msg);
+    panic(sys$sprintf("scanner error: offset %d: %s", offs, msg));
 }
 
 static void scan_comment(scanner$Scanner *s) {

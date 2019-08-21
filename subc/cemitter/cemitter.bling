@@ -3,6 +3,7 @@ package cemitter
 import "bling/ast"
 import "bling/emitter"
 import "bling/token"
+import "sys"
 
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     if !expr {
@@ -124,7 +125,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitExpr(e, expr.unary.x)
         break
     default:
-        panic("Unknown expr: %d", expr.kind)
+        panic(sys.sprintf("Unknown expr: %d", expr.kind))
         break
     }
 }
@@ -408,7 +409,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         emitExpr(e, type.selector.sel)
         break
     default:
-        panic("Unknown type: %d", type.kind)
+        panic(sys.sprintf("Unknown type: %d", type.kind))
     }
     if type.is_const && type.kind == ast.EXPR_STAR {
         emitter.emitSpace(e)

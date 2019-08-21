@@ -1298,7 +1298,7 @@ fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.
     var err *utils.Error = NULL
     var src *char = ioutil.readFile(filename, &err)
     if err {
-        panic("%s: %s", filename, err.error)
+        panic(sys.sprintf("%s: %s", filename, err.error))
     }
     var p Parser = {}
     init(&p, fset, filename, src)

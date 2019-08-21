@@ -66,7 +66,7 @@ fun isType(expr *ast.Expr) bool {
     switch expr.kind {
     case ast.EXPR_IDENT:
         if expr.ident.obj == NULL {
-            panic("types$isType: unresolved identifier %s", expr.ident.name)
+            panic(sys.sprintf("types$isType: unresolved identifier %s", expr.ident.name))
         }
         return expr.ident.obj.decl.kind == ast.DECL_TYPEDEF
     case ast.EXPR_STAR: return isType(expr.star.x)
@@ -98,7 +98,7 @@ fun makePtr(type *ast.Expr) *ast.Expr {
 fun getUnderlyingType(ident *ast.Expr) *ast.Expr {
     var decl *ast.Decl = ident.ident.obj.decl
     if decl.kind != ast.DECL_TYPEDEF {
-        panic("not a type: %s", typeString(ident))
+        panic(sys.sprintf("not a type: %s", typeString(ident)))
     }
     return decl.typedef_.type
 }
@@ -114,7 +114,7 @@ fun getBaseType(type *ast.Expr) *ast.Expr {
             break
         case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_NATIVE, ast.TYPE_STRUCT: return type
         default:
-            panic("not a type: %s", typeString(type))
+            panic(sys.sprintf("not a type: %s", typeString(type)))
         }
     }
 }
@@ -182,7 +182,7 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
         }
         return true
     default:
-        panic("not implemented: %s == %s", typeString(a), typeString(b))
+        panic(sys.sprintf("not implemented: %s == %s", typeString(a), typeString(b)))
         return false
     }
 }
@@ -196,7 +196,7 @@ fun pointerBase(t *ast.Expr) *ast.Expr {
     case ast.EXPR_STAR: return t.star.x
     case ast.TYPE_ARRAY: return t.array.elt
     default:
-        panic("not a pointer: %s", typeString(t))
+        panic(sys.sprintf("not a pointer: %s", typeString(t)))
         return NULL
     }
 }
@@ -262,7 +262,7 @@ fun getDeclType(decl *ast.Decl) *ast.Expr {
     case ast.DECL_TYPEDEF: return decl.typedef_.type
     case ast.DECL_VALUE: return decl.value.type
     default:
-        panic("unhandled decl: %s", declString(decl))
+        panic(sys.sprintf("unhandled decl: %s", declString(decl)))
         return NULL
     }
 }
@@ -292,7 +292,7 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
 fun getStructField(type *ast.Expr, index int) *ast.Decl {
     assert(type.kind == ast.TYPE_STRUCT)
     if type.struct_.fields == NULL {
-        panic("incomplete field defn: %s", typeString(type))
+        panic(sys.sprintf("incomplete field defn: %s", typeString(type)))
     }
     for var i int = 0; type.struct_.fields[i]; i++ {
         if i == index {
@@ -587,6 +587,10 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         var j int = 0
         for var i int = 0; expr.call.args[i]; i++ {
             var param *ast.Decl = type.func.params[j]
+            if param == NULL {
+                Checker_error(c, ast.Expr_pos(expr), "too many args")
+                break
+            }
             var type *ast.Expr = Checker_checkExpr(c, expr.call.args[i])
             if param.kind == ast.DECL_FIELD {
                 if !areAssignable(param.field.type, type) {

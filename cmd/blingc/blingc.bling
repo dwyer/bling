@@ -47,7 +47,7 @@ fun compile_c(argv []*char) {
             argv++
             dst = *argv
         } else {
-            panic("unknown option: %s", *argv)
+            panic(sys.sprintf("unknown option: %s", *argv))
         }
         argv++
     }
@@ -102,7 +102,7 @@ fun compile_bling(argv []*char) {
             argv++
             dst = *argv
         } else {
-            panic("unknown option: %s", *argv)
+            panic(sys.sprintf("unknown option: %s", *argv))
         }
         argv++
     }
@@ -117,7 +117,7 @@ fun compile_bling(argv []*char) {
         } else if bytes.hasSuffix(filename, ".c") {
             file = cparser.parseFile(fset, filename, types.universe())
         } else {
-            panic("unknown file type: %s", filename)
+            panic(sys.sprintf("unknown file type: %s", filename))
         }
         var pkg *types.Package = types.checkFile(&conf, paths.dir(filename), fset, file, NULL)
         for var i int = 0; i < utils.Slice_len(&pkg.files); i++ {
@@ -163,7 +163,7 @@ fun main(argc int, argv []*char) int {
     var progname *char = *argv
     argv++
     if !*argv {
-        panic("usage: %s -o DST SRCS", progname)
+        panic(sys.sprintf("usage: %s -o DST SRCS", progname))
     }
     if streq(*argv, "build") {
         argv++

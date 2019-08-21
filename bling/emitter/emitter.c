@@ -1,6 +1,8 @@
 #include "bling/emitter/emitter.h"
 #include "bling/token/token.h"
 
+#include "sys/sys.h"
+
 extern char *emitter$Emitter_string(emitter$Emitter *e) {
     return bytes$Buffer_string(&e->buf);
 }
@@ -486,7 +488,7 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         break;
 
     default:
-        panic("Unknown type: %d", type->kind);
+        panic(sys$sprintf("Unknown type: %d", type->kind));
     }
 }
 
@@ -570,8 +572,8 @@ extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
             emitter$emitSpace(e);
             emitter$emitExpr(e, decl->value.value);
         default:
-            panic("bad kind for ast$DECL_VALUE: %s",
-                    token$string(decl->value.kind));
+            panic(sys$sprintf("bad kind for ast$DECL_VALUE: %s",
+                        token$string(decl->value.kind)));
             break;
         }
         break;

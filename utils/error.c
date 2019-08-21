@@ -13,7 +13,7 @@ extern void utils$Error_move(utils$Error *src, utils$Error **dst) {
     if (dst != NULL) {
         *dst = src;
     } else {
-        panic("Unhandled error: %s", src->error);
+        panic(sys$sprintf("Unhandled error: %s", src->error));
     }
 }
 
