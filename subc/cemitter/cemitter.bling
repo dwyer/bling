@@ -511,13 +511,18 @@ fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
     emitObjects(e, scope, ast.ObjKind_FUN)
 }
 
-fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
-    for var i int = 0; i < utils.Slice_len(&pkg.files); i++ {
-        var file *ast.File = NULL
-        utils.Slice_get(&pkg.files, i, &file)
-        e.forwardDecl = true
-        emitScope(e, file.scope)
-        e.forwardDecl = false
-        emitScope(e, file.scope)
+fun _emitPackage(e *emitter.Emitter, pkg *types.Package) {
+    for var i int = 0; i < utils.Slice_len(&pkg.imports); i++ {
+        var impt *types.Package = NULL
+        utils.Slice_get(&pkg.imports, i, &impt)
+        _emitPackage(e, impt)
     }
+    e.forwardDecl = true
+    emitScope(e, pkg.scope)
+    e.forwardDecl = false
+    emitScope(e, pkg.scope)
+}
+
+fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
+    _emitPackage(e, pkg)
 }

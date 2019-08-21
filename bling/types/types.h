@@ -28,7 +28,6 @@ typedef struct {
 
 typedef struct {
     utils$Map scopes;
-    utils$Slice files;
 } types$Info;
 
 extern types$Info *types$newInfo();
@@ -38,7 +37,6 @@ typedef struct {
     char *name;
     ast$Scope *scope;
     utils$Slice imports;
-    utils$Slice files; // XXX
 } types$Package;
 
 extern types$Package *types$checkFile(types$Config *conf, const char *path,

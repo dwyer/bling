@@ -1046,7 +1046,6 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
     for (int i = 0; file->imports[i] != NULL; i++) {
         Checker_checkImport(c, file->imports[i]);
     }
-    utils$Slice_append(&c->info->files, &file);
     for (int i = 0; file->decls[i] != NULL; i++) {
         ast$ObjKind kind = ast$ObjKind_BAD;
         switch (file->decls[i]->kind) {
@@ -1072,7 +1071,6 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
 extern types$Info *types$newInfo() {
     types$Info info = {
         .scopes = utils$Map_init(sizeof(ast$Scope *)),
-        .files = {.size = sizeof(ast$File *)},
     };
     return esc(info);
 }
@@ -1092,7 +1090,6 @@ extern types$Package *types$checkFile(types$Config *conf, const char *path,
         .pkg = esc(pkg),
     };
     Checker_checkFile(&c, file);
-    c.pkg->files = c.info->files;
     return c.pkg;
 }
 

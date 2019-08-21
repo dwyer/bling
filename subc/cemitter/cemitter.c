@@ -558,13 +558,18 @@ extern void cemitter$emitScope(emitter$Emitter *e, ast$Scope *scope) {
     emitObjects(e, scope, ast$ObjKind_FUN);
 }
 
-extern void cemitter$emitPackage(emitter$Emitter *e, types$Package *pkg) {
-    for (int i = 0; i < utils$Slice_len(&pkg->files); i++) {
-        ast$File *file = NULL;
-        utils$Slice_get(&pkg->files, i, &file);
-        e->forwardDecl = true;
-        cemitter$emitScope(e, file->scope);
-        e->forwardDecl = false;
-        cemitter$emitScope(e, file->scope);
+extern void _emitPackage(emitter$Emitter *e, types$Package *pkg) {
+    for (int i = 0; i < utils$Slice_len(&pkg->imports); i++) {
+        types$Package *impt = NULL;
+        utils$Slice_get(&pkg->imports, i, &impt);
+        _emitPackage(e, impt);
     }
+    e->forwardDecl = true;
+    cemitter$emitScope(e, pkg->scope);
+    e->forwardDecl = false;
+    cemitter$emitScope(e, pkg->scope);
+}
+
+extern void cemitter$emitPackage(emitter$Emitter *e, types$Package *pkg) {
+    _emitPackage(e, pkg);
 }
