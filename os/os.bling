@@ -46,19 +46,19 @@ typedef FileInfo struct {
     _sys *void
 }
 
-fun FileInfo_name(info FileInfo) *char
+fun FileInfo_name(info *FileInfo) *char
 
-fun FileInfo_size(info FileInfo) uint64_t
+fun FileInfo_size(info *FileInfo) uint64_t
 
-fun FileInfo_mode(info FileInfo) FileMode
+fun FileInfo_mode(info *FileInfo) FileMode
 
-fun FileInfo_mod_time(info FileInfo) Time
+fun FileInfo_mod_time(info *FileInfo) Time
 
-fun FileInfo_is_dir(info FileInfo) bool
+fun FileInfo_is_dir(info *FileInfo) bool
 
-fun FileInfo_sys(info FileInfo) *void
+fun FileInfo_sys(info *FileInfo) *void
 
-fun FileInfo_free(info FileInfo)
+fun FileInfo_free(info *FileInfo)
 
 fun stat(filename *const char, error **utils.Error) FileInfo
 

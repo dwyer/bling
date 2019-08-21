@@ -1235,7 +1235,7 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
     }
     var files utils.Slice = utils.Slice_init(sizeof(uintptr_t))
     for var i int = 0; infos[i]; i++ {
-        var name *char = os.FileInfo_name(*infos[i])
+        var name *char = os.FileInfo_name(infos[i])
         if isBlingFile(name) && !isTestFile(name) {
             var file *ast.File = parseFile(fset, name, scope)
             utils.Slice_append(&files, &file)

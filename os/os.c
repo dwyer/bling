@@ -92,9 +92,10 @@ extern os$FileInfo os$stat(const char *name, utils$Error **error) {
     return info;
 }
 
-extern void os$FileInfo_free(os$FileInfo info) {
-    free(info._name);
-    free(info._sys);
+extern void os$FileInfo_free(os$FileInfo *info) {
+    free(info->_name);
+    free(info->_sys);
+    free(info);
 }
 
 extern os$File *os$openDir(const char *name, utils$Error **error) {
@@ -154,32 +155,32 @@ extern os$FileInfo **os$readdir(os$File *file, utils$Error **error) {
     return arr.array;
 }
 
-extern char *os$FileInfo_name(os$FileInfo info) {
-    return info._name;
+extern char *os$FileInfo_name(os$FileInfo *info) {
+    return info->_name;
 }
 
-extern uint64_t os$FileInfo_size(os$FileInfo info) {
+extern uint64_t os$FileInfo_size(os$FileInfo *info) {
     struct stat st = *(struct stat *)os$FileInfo_sys(info);
     return st.st_size;
 }
 
-extern os$FileMode os$FileInfo_mode(os$FileInfo info) {
+extern os$FileMode os$FileInfo_mode(os$FileInfo *info) {
     struct stat st = *(struct stat *)os$FileInfo_sys(info);
     return st.st_mode;
 }
 
-extern os$Time os$FileInfo_mod_time(os$FileInfo info) {
+extern os$Time os$FileInfo_mod_time(os$FileInfo *info) {
     struct stat st = *(struct stat *)os$FileInfo_sys(info);
     return st.st_mtime;
 }
 
-extern bool os$FileInfo_is_dir(os$FileInfo info) {
+extern bool os$FileInfo_is_dir(os$FileInfo *info) {
     struct stat st = *(struct stat *)os$FileInfo_sys(info);
     return S_ISDIR(st.st_mode);
 }
 
-extern void *os$FileInfo_sys(os$FileInfo info) {
-    return info._sys;
+extern void *os$FileInfo_sys(os$FileInfo *info) {
+    return info->_sys;
 }
 
 extern const char *os$tempDir() {

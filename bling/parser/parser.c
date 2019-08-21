@@ -1382,7 +1382,7 @@ extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
     }
     utils$Slice files = utils$Slice_init(sizeof(uintptr_t));
     for (int i = 0; infos[i]; i++) {
-        char *name = os$FileInfo_name(*infos[i]);
+        char *name = os$FileInfo_name(infos[i]);
         if (isBlingFile(name) && !isTestFile(name)) {
             ast$File *file = parser$parseFile(fset, name, scope);
             utils$Slice_append(&files, &file);
