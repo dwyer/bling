@@ -793,11 +793,7 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
         free(path)
         return
     }
-    var err *utils.Error = NULL
-    var files **ast.File = parser.parseDir(c.fset, path, universe(), &err)
-    if err {
-        Checker_error(c, imp.pos, sys.sprintf("%s: %s", path, err.error))
-    }
+    var files **ast.File = parser.parseDir(c.fset, path, universe(), NULL)
     assert(files[0] && !files[1])
     utils.Map_set(&c.scopes, path, &files[0].scope)
     oldScope = c.pkg.scope
@@ -810,9 +806,28 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
 
 fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
     switch decl.kind {
-    case ast.DECL_FUNC:
+    case ast.DECL_FUNC: {
         Checker_checkType(c, decl.func.type)
+        if !decl.func.body {
+            break
+        }
+        Checker_openScope(c)
+        var type *ast.Expr = decl.func.type
+        for var i int = 0; type.func.params && type.func.params[i]; i++ {
+            var param *ast.Decl = type.func.params[i]
+            assert(param.kind == ast.DECL_FIELD)
+            if param.field.name {
+                Checker_declare(c, param, NULL, c.pkg.scope, ast.ObjKind_VAL, param.field.name)
+            }
+        }
+        c.result = decl.func.type.func.result
+        for var i int = 0; decl.func.body.block.stmts[i]; i++ {
+            Checker_checkStmt(c, decl.func.body.block.stmts[i])
+        }
+        c.result = NULL
+        Checker_closeScope(c)
         break
+    }
     case ast.DECL_PRAGMA: break
     case ast.DECL_TYPEDEF:
         switch decl.typedef_.type.kind {
@@ -860,26 +875,6 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
     }
 }
 
-fun Checker_checkFunc(c *Checker, decl *ast.Decl) {
-    if decl.kind == ast.DECL_FUNC && decl.func.body {
-        Checker_openScope(c)
-        var type *ast.Expr = decl.func.type
-        for var i int = 0; type.func.params && type.func.params[i]; i++ {
-            var param *ast.Decl = type.func.params[i]
-            assert(param.kind == ast.DECL_FIELD)
-            if param.field.name {
-                Checker_declare(c, param, NULL, c.pkg.scope, ast.ObjKind_VAL, param.field.name)
-            }
-        }
-        c.result = decl.func.type.func.result
-        for var i int = 0; decl.func.body.block.stmts[i]; i++ {
-            Checker_checkStmt(c, decl.func.body.block.stmts[i])
-        }
-        c.result = NULL
-        Checker_closeScope(c)
-    }
-}
-
 fun Checker_checkFile(c *Checker, file *ast.File) {
     for var i int = 0; file.imports[i] != NULL; i++ {
         Checker_checkImport(c, file.imports[i])
@@ -887,20 +882,22 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
     utils.Slice_append(&c.files, &file)
     if c.conf.strict {
         for var i int = 0; file.decls[i] != NULL; i++ {
-            if file.decls[i].kind == ast.DECL_TYPEDEF {
-                Checker_declare(c, file.decls[i], NULL, c.pkg.scope, ast.ObjKind_TYP, file.decls[i].typedef_.name)
+            var kind ast.ObjKind = ast.ObjKind_BAD
+            switch file.decls[i].kind {
+            case ast.DECL_FUNC:
+                kind = ast.ObjKind_FUN
+                break
+            case ast.DECL_TYPEDEF:
+                kind = ast.ObjKind_TYP
+                break
+            default: break
             }
-        }
-        for var i int = 0; file.decls[i] != NULL; i++ {
-            if file.decls[i].kind == ast.DECL_FUNC {
-                Checker_declare(c, file.decls[i], NULL, c.pkg.scope, ast.ObjKind_FUN, file.decls[i].func.name)
+            if kind {
+                Checker_declare(c, file.decls[i], NULL, c.pkg.scope, kind, file.decls[i].typedef_.name)
             }
         }
         for var i int = 0; file.decls[i] != NULL; i++ {
             Checker_checkDecl(c, file.decls[i])
-        }
-        for var i int = 0; file.decls[i] != NULL; i++ {
-            Checker_checkFunc(c, file.decls[i])
         }
     }
 }
