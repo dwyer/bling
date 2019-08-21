@@ -3,6 +3,7 @@ package cemitter
 import "bling/ast"
 import "bling/emitter"
 import "bling/token"
+import "bling/types"
 import "sys"
 import "utils"
 
@@ -508,4 +509,15 @@ fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
     emitObjects(e, scope, ast.ObjKind_TYP)
     emitObjects(e, scope, ast.ObjKind_VAL)
     emitObjects(e, scope, ast.ObjKind_FUN)
+}
+
+fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
+    for var i int = 0; i < utils.Slice_len(&pkg.files); i++ {
+        var file *ast.File = NULL
+        utils.Slice_get(&pkg.files, i, &file)
+        e.forwardDecl = true
+        emitScope(e, file.scope)
+        e.forwardDecl = false
+        emitScope(e, file.scope)
+    }
 }

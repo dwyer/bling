@@ -125,33 +125,26 @@ void compile_bling(char *argv[]) {
         }
         argv++;
     }
+    if (!*argv) {
+        return;
+    }
     emitter$Emitter e = {};
     emit_rawfile(&e, "bootstrap/bootstrap.h");
     token$FileSet *fset = token$newFileSet();
-    while (*argv) {
-        char *filename = *argv;
-        ast$File *file = NULL;
-        if (bytes$hasSuffix(filename, ".bling")) {
-            file = parser$parseFile(fset, filename, types$universe());
-        } else if (bytes$hasSuffix(filename, ".c")) {
-            file = cparser$parseFile(fset, filename, types$universe());
-        } else {
-            panic(sys$sprintf("unknown file type: %s", filename));
-        }
-        types$Package *pkg = types$checkFile(&conf, paths$dir(filename), fset,
-                file, NULL);
-        for (int i = 0; i < utils$Slice_len(&pkg->files); i++) {
-            ast$File *file = NULL;
-            utils$Slice_get(&pkg->files, i, &file);
-            e.forwardDecl = true;
-            cemitter$emitScope(&e, file->scope);
-            e.forwardDecl = false;
-            cemitter$emitScope(&e, file->scope);
-            free(file->decls);
-            free(file);
-        }
-        argv++;
+    char *filename = *argv;
+    ast$File *file = NULL;
+    if (bytes$hasSuffix(filename, ".bling")) {
+        file = parser$parseFile(fset, filename, types$universe());
+    } else if (bytes$hasSuffix(filename, ".c")) {
+        file = cparser$parseFile(fset, filename, types$universe());
+    } else {
+        panic(sys$sprintf("unknown file type: %s", filename));
     }
+    types$Package *pkg = types$checkFile(&conf, paths$dir(filename), fset,
+            file, NULL);
+    cemitter$emitPackage(&e, pkg);
+    argv++;
+    assert(!*argv);
     char *out = emitter$Emitter_string(&e);
     if (dst) {
         if (bytes$hasSuffix(dst, ".out")) {

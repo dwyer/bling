@@ -106,32 +106,25 @@ fun compile_bling(argv []*char) {
         }
         argv++
     }
+    if !*argv {
+        return
+    }
     var e emitter.Emitter = {}
     emit_rawfile(&e, "bootstrap/bootstrap.h")
     var fset *token.FileSet = token.newFileSet()
-    while *argv {
-        var filename *char = *argv
-        var file *ast.File = NULL
-        if bytes.hasSuffix(filename, ".bling") {
-            file = parser.parseFile(fset, filename, types.universe())
-        } else if bytes.hasSuffix(filename, ".c") {
-            file = cparser.parseFile(fset, filename, types.universe())
-        } else {
-            panic(sys.sprintf("unknown file type: %s", filename))
-        }
-        var pkg *types.Package = types.checkFile(&conf, paths.dir(filename), fset, file, NULL)
-        for var i int = 0; i < utils.Slice_len(&pkg.files); i++ {
-            var file *ast.File = NULL
-            utils.Slice_get(&pkg.files, i, &file)
-            e.forwardDecl = true
-            cemitter.emitScope(&e, file.scope)
-            e.forwardDecl = false
-            cemitter.emitScope(&e, file.scope)
-            free(file.decls)
-            free(file)
-        }
-        argv++
+    var filename *char = *argv
+    var file *ast.File = NULL
+    if bytes.hasSuffix(filename, ".bling") {
+        file = parser.parseFile(fset, filename, types.universe())
+    } else if bytes.hasSuffix(filename, ".c") {
+        file = cparser.parseFile(fset, filename, types.universe())
+    } else {
+        panic(sys.sprintf("unknown file type: %s", filename))
     }
+    var pkg *types.Package = types.checkFile(&conf, paths.dir(filename), fset, file, NULL)
+    cemitter.emitPackage(&e, pkg)
+    argv++
+    assert(!*argv)
     var out *char = emitter.Emitter_string(&e)
     if dst {
         if bytes.hasSuffix(dst, ".out") {
