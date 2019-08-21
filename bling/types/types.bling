@@ -7,6 +7,12 @@ import "bling/token"
 import "sys"
 import "utils"
 
+typedef Package struct {
+    scope *ast.Scope
+    imports utils.Slice
+    files **ast.File
+}
+
 typedef Config struct {
     strict bool
     cMode bool
@@ -292,7 +298,7 @@ fun getStructField(type *ast.Expr, index int) *ast.Decl {
 typedef Checker struct {
     fset *token.FileSet
     conf *Config
-    pkg ast.Package
+    pkg Package
     result *ast.Expr
     files utils.Slice
     scopes utils.Map
@@ -901,7 +907,7 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
     }
 }
 
-fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package {
+fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) *Package {
     var c Checker = {
         fset: fset,
         conf: conf,
@@ -913,7 +919,7 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) ast.Package {
     }
     Checker_checkFile(&c, file)
     c.pkg.files = utils.Slice_to_nil_array(c.files)
-    return c.pkg
+    return esc(c.pkg)
 }
 
 typedef builtinId enum {

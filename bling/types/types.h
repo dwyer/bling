@@ -12,6 +12,12 @@ import("utils");
 
 extern ast$Scope *types$universe();
 
+typedef struct {
+    ast$Scope *scope;
+    utils$Slice imports;
+    ast$File **files; // XXX
+} types$Package;
+
 extern bool types$isIdent(ast$Expr *expr);
 extern bool types$isVoid(ast$Expr *type);
 extern bool types$isVoidPtr(ast$Expr *type);
@@ -26,7 +32,7 @@ typedef struct {
     bool ignoreFuncBodies;
 } types$Config;
 
-extern ast$Package types$checkFile(types$Config *conf, token$FileSet *fset,
+extern types$Package *types$checkFile(types$Config *conf, token$FileSet *fset,
         ast$File *file);
 
 extern char *types$constant_stringVal(ast$Expr *x); // TODO move this to const pkg

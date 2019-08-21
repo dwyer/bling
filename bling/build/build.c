@@ -56,7 +56,7 @@ typedef struct {
     const char *path;
     os$FileInfo *lib;
     ast$File **files;
-    ast$Package pkg;
+    types$Package *pkg;
 } Package;
 
 typedef struct {

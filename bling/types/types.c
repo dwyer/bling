@@ -323,7 +323,7 @@ static ast$Decl *getStructField(ast$Expr *type, int index) {
 typedef struct {
     token$FileSet *fset;
     types$Config *conf;
-    ast$Package pkg;
+    types$Package pkg;
     ast$Expr *result;
     utils$Slice files;
     utils$Map scopes;
@@ -1065,7 +1065,7 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
     }
 }
 
-extern ast$Package types$checkFile(types$Config *conf, token$FileSet *fset,
+extern types$Package *types$checkFile(types$Config *conf, token$FileSet *fset,
         ast$File *file) {
     Checker c = {
         .fset = fset,
@@ -1078,5 +1078,5 @@ extern ast$Package types$checkFile(types$Config *conf, token$FileSet *fset,
     };
     Checker_checkFile(&c, file);
     c.pkg.files = utils$Slice_to_nil_array(c.files);
-    return c.pkg;
+    return esc(c.pkg);
 }
