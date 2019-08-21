@@ -74,7 +74,7 @@ void compile_c(char *argv[]) {
         char *filename = *argv;
         ast$File *file = cparser$parseFile(fset, filename, types$universe());
         // types$Config conf = {.strict = true, .cMode = true};
-        // types$checkFile(&conf, fset, file);
+        // types$checkFile(&conf, fset, file, NULL);
         bool allowForward = file->name && (ast$isIdentNamed(file->name, "os")
                 || ast$isIdentNamed(file->name, "sys"));
         if (!allowForward) {
@@ -138,7 +138,7 @@ void compile_bling(char *argv[]) {
         } else {
             panic("unknown file type: %s", filename);
         }
-        types$Package *pkg = types$checkFile(&conf, fset, file);
+        types$Package *pkg = types$checkFile(&conf, fset, file, NULL);
         for (int i = 0; pkg->files[i]; i++) {
             ast$File *file = pkg->files[i];
             e.forwardDecl = true;

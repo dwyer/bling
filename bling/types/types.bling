@@ -13,6 +13,10 @@ typedef Package struct {
     files **ast.File
 }
 
+typedef Info struct {
+    scopes utils.Map
+}
+
 typedef Config struct {
     strict bool
     cMode bool
@@ -296,12 +300,12 @@ fun getStructField(type *ast.Expr, index int) *ast.Decl {
 }
 
 typedef Checker struct {
+    info *Info
     conf *Config
     fset *token.FileSet
     pkg *Package
     result *ast.Expr
     files utils.Slice
-    scopes utils.Map
 }
 
 fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
@@ -793,7 +797,7 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
     }
     var path *char = constant_stringVal(imp.imp.path)
     var oldScope *ast.Scope = NULL
-    utils.Map_get(&c.scopes, path, &oldScope)
+    utils.Map_get(&c.info.scopes, path, &oldScope)
     if oldScope {
         imp.imp.name = makeIdent(oldScope.pkg)
         Checker_declare(c, imp, oldScope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
@@ -802,7 +806,7 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
     }
     var files **ast.File = parser.parseDir(c.fset, path, universe(), NULL)
     assert(files[0] && !files[1])
-    utils.Map_set(&c.scopes, path, &files[0].scope)
+    utils.Map_set(&c.info.scopes, path, &files[0].scope)
     oldScope = c.pkg.scope
     c.pkg.scope = files[0].scope
     Checker_checkFile(c, files[0])
@@ -907,16 +911,22 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
     }
 }
 
-fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) *Package {
+fun checkFile(conf *Config, fset *token.FileSet, file *ast.File, info *Info) *Package {
+    if info == NULL {
+        var tmp Info = {
+            scopes: utils.Map_init(sizeof(*ast.Scope)),
+        }
+        info = esc(tmp)
+    }
     var pkg Package = {
         scope: file.scope,
     }
     var c Checker = {
+        info: info,
         fset: fset,
         conf: conf,
         pkg: esc(pkg),
         files: utils.Slice_init(sizeof(*ast.File)),
-        scopes: utils.Map_init(sizeof(*ast.Scope)),
     }
     Checker_checkFile(&c, file)
     c.pkg.files = utils.Slice_to_nil_array(c.files)
@@ -1134,7 +1144,7 @@ fun universe() *ast.Scope {
         var conf Config = {
             strict: true,
         }
-        checkFile(&conf, fset, file)
+        checkFile(&conf, fset, file, NULL)
         free(file.decls)
         free(file)
     }

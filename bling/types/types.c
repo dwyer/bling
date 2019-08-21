@@ -321,12 +321,12 @@ static ast$Decl *getStructField(ast$Expr *type, int index) {
 }
 
 typedef struct {
+    types$Info *info;
     types$Config *conf;
     token$FileSet *fset;
     types$Package *pkg;
     ast$Expr *result;
     utils$Slice files;
-    utils$Map scopes;
 } Checker;
 
 static void Checker_error(Checker *c, token$Pos pos, const char *msg) {
@@ -937,7 +937,7 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
     }
     char *path = types$constant_stringVal(imp->imp.path);
     ast$Scope *oldScope = NULL;
-    utils$Map_get(&c->scopes, path, &oldScope);
+    utils$Map_get(&c->info->scopes, path, &oldScope);
     if (oldScope) {
         imp->imp.name = types$makeIdent(oldScope->pkg);
         Checker_declare(c, imp, oldScope, c->pkg->scope, ast$ObjKind_PKG,
@@ -947,7 +947,7 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
     }
     ast$File **files = parser$parseDir(c->fset, path, types$universe(), NULL);
     assert(files[0] && !files[1]);
-    utils$Map_set(&c->scopes, path, &files[0]->scope);
+    utils$Map_set(&c->info->scopes, path, &files[0]->scope);
     oldScope = c->pkg->scope;
     c->pkg->scope = files[0]->scope;
     Checker_checkFile(c, files[0]);
@@ -1066,16 +1066,22 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
 }
 
 extern types$Package *types$checkFile(types$Config *conf, token$FileSet *fset,
-        ast$File *file) {
+        ast$File *file, types$Info *info) {
+    if (info == NULL) {
+        types$Info tmp = {
+            .scopes = utils$Map_init(sizeof(ast$Scope *)),
+        };
+        info = esc(tmp);
+    }
     types$Package pkg = {
         .scope = file->scope,
     };
     Checker c = {
+        .info = info,
         .fset = fset,
         .conf = conf,
         .pkg = esc(pkg),
         .files = utils$Slice_init(sizeof(ast$File *)),
-        .scopes = utils$Map_init(sizeof(ast$Scope *)),
     };
     Checker_checkFile(&c, file);
     c.pkg->files = utils$Slice_to_nil_array(c.files);

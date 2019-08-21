@@ -162,7 +162,7 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
     };
     assert(pkg.files[0] && !pkg.files[1]);
     ast$File *f = pkg.files[0];
-    pkg.pkg = types$checkFile(&b->conf, b->fset, f);
+    pkg.pkg = types$checkFile(&b->conf, b->fset, f, NULL);
     utils$Slice libs = {.size = sizeof(os$FileInfo *)};
 
     emitter$Emitter e = {.forwardDecl=true};

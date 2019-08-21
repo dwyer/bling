@@ -18,6 +18,10 @@ typedef struct {
     ast$File **files; // XXX
 } types$Package;
 
+typedef struct {
+    utils$Map scopes;
+} types$Info;
+
 extern bool types$isIdent(ast$Expr *expr);
 extern bool types$isVoid(ast$Expr *type);
 extern bool types$isVoidPtr(ast$Expr *type);
@@ -33,6 +37,6 @@ typedef struct {
 } types$Config;
 
 extern types$Package *types$checkFile(types$Config *conf, token$FileSet *fset,
-        ast$File *file);
+        ast$File *file, types$Info *info);
 
 extern char *types$constant_stringVal(ast$Expr *x); // TODO move this to const pkg

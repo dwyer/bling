@@ -108,7 +108,7 @@ extern ast$Scope *types$universe() {
         ast$File *file = parser$parseFile(fset, "builtin/builtin.bling", _universe);
         _universe = file->scope;
         types$Config conf = {.strict = true};
-        types$checkFile(&conf, fset, file);
+        types$checkFile(&conf, fset, file, NULL);
         free(file->decls);
         free(file);
     }

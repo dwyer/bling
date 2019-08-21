@@ -170,7 +170,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
     }
     assert(pkg.files[0] && !pkg.files[1])
     var f *ast.File = pkg.files[0]
-    pkg.pkg = types.checkFile(&b.conf, b.fset, f)
+    pkg.pkg = types.checkFile(&b.conf, b.fset, f, NULL)
     var libs utils.Slice = {
         size: sizeof(*os.FileInfo),
     }
