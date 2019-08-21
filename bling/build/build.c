@@ -53,9 +53,17 @@ static void mkdirForFile(const char *path) {
 }
 
 typedef struct {
+    const char *path;
+    os$FileInfo *lib;
+    ast$File **files;
+    ast$Package pkg;
+} Package;
+
+typedef struct {
     token$FileSet *fset;
     bool force;
     types$Config conf;
+    utils$Map pkgs;
 } Builder;
 
 static os$FileInfo *buildCFile(Builder *b, os$FileInfo *cFile) {
@@ -91,9 +99,9 @@ static os$FileInfo *buildCFile(Builder *b, os$FileInfo *cFile) {
     return objFile;
 }
 
-static os$FileInfo *_buildPackage(Builder *b, const char *path);
+static Package *_buildPackage(Builder *b, const char *path);
 
-static os$FileInfo *buildCPackage(Builder *b, const char *path) {
+static Package *buildCPackage(Builder *b, const char *path) {
     char *base = paths$base(path);
     char *dst = sys$sprintf("%s/%s/lib%s.a", GEN_PATH, path, base);
     utils$Slice objFiles = {.size = sizeof(os$FileInfo *)};
@@ -108,7 +116,8 @@ static os$FileInfo *buildCPackage(Builder *b, const char *path) {
                 for (int i = 0; file->imports[i]; i++) {
                     char *path = types$constant_stringVal(
                             file->imports[i]->imp.path);
-                    os$FileInfo *lib = _buildPackage(b, path);
+                    Package *pkg = _buildPackage(b, path);
+                    os$FileInfo *lib = pkg->lib;
                     if (lib != NULL) {
                         utils$Slice_append(&objFiles, &lib);
                     }
@@ -140,24 +149,35 @@ static os$FileInfo *buildCPackage(Builder *b, const char *path) {
         os$FileInfo_free(libFile);
         libFile = os$stat(dst, &err);
     }
-    return libFile;
+    Package pkg = {
+        .path = path,
+        .lib = libFile,
+    };
+    return esc(pkg);
 }
 
-static os$FileInfo *buildBlingPackage(Builder *b, const char *path) {
-    ast$File **fs = parser$parseDir(b->fset, path, types$universe(), NULL);
-    assert(fs[0] && !fs[1]);
-    ast$File *f = fs[0];
+static Package *buildBlingPackage(Builder *b, const char *path) {
+    Package pkg = {
+        .files = parser$parseDir(b->fset, path, types$universe(), NULL),
+    };
+    assert(pkg.files[0] && !pkg.files[1]);
+    ast$File *f = pkg.files[0];
+    pkg.pkg = types$checkFile(&b->conf, b->fset, f);
     utils$Slice libs = {.size = sizeof(os$FileInfo *)};
 
-    emitter$Emitter e = {};
+    emitter$Emitter e = {.forwardDecl=true};
     emit_rawfile(&e, "bootstrap/bootstrap.h");
 
     os$Time modified = 0;
     for (int i = 0; f->imports[i]; i++) {
-        types$checkFile(&b->conf, b->fset, f);
-        cemitter$emitFile(&e, f);
+        // for (int i = 0; pkg.files[i]; i++) {
+        //     cemitter$emitFile(&e, pkg.files[i]);
+        // }
+        // e.forwardDecl = false;
+        // cemitter$emitFile(&e, f);
         char *path = types$constant_stringVal(f->imports[i]->imp.path);
-        os$FileInfo *lib = _buildPackage(b, path);
+        Package *pkg = _buildPackage(b, path);
+        os$FileInfo *lib = pkg->lib;
         assert(lib);
         if (modified < os$FileInfo_modTime(lib)) {
             modified = os$FileInfo_modTime(lib);
@@ -184,8 +204,9 @@ static os$FileInfo *buildBlingPackage(Builder *b, const char *path) {
 
     {
         utils$Slice cmd = {.size = sizeof(char *)};
-        Slice_appendStrLit(&cmd, "/bin/echo");
+        // Slice_appendStrLit(&cmd, "/bin/echo");
         Slice_appendStrLit(&cmd, CC_PATH);
+        Slice_appendStrLit(&cmd, "-c");
         Slice_appendStrLit(&cmd, "-o");
         Slice_appendStrLit(&cmd, objPath);
         Slice_appendStrLit(&cmd, cPath);
@@ -194,7 +215,6 @@ static os$FileInfo *buildBlingPackage(Builder *b, const char *path) {
 
     {
         utils$Slice cmd = {.size = sizeof(char *)};
-        Slice_appendStrLit(&cmd, "/bin/echo");
         Slice_appendStrLit(&cmd, AR_PATH);
         Slice_appendStrLit(&cmd, "rsc");
         Slice_appendStrLit(&cmd, libPath);
@@ -205,7 +225,7 @@ static os$FileInfo *buildBlingPackage(Builder *b, const char *path) {
     return NULL;
 }
 
-static os$FileInfo *_buildPackage(Builder *b, const char *path) {
+static Package *_buildPackage(Builder *b, const char *path) {
     sys$printf("building %s\n", path);
     if (streq(path, "os") || streq(path, "sys")) {
         return buildCPackage(b, path);
@@ -219,6 +239,7 @@ extern void build$buildPackage(char *argv[]) {
     Builder builder = {
         .fset = token$newFileSet(),
         .force = true,
+        .pkgs = utils$Map_init(sizeof(Package *)),
     };
     _buildPackage(&builder, path);
 }

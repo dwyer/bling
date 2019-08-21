@@ -532,5 +532,6 @@ extern void cemitter$emitFile(emitter$Emitter *e, ast$File *file) {
     for (int i = 0; file->decls[i]; i++) {
         cemitter$emitDecl(e, file->decls[i]);
         emitter$emitNewline(e);
+        emitter$emitNewline(e);
     }
 }

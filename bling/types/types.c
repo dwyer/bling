@@ -962,7 +962,7 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
     case ast$DECL_FUNC:
         {
             Checker_checkType(c, decl->func.type);
-            if (!decl->func.body) {
+            if (c->conf->ignoreFuncBodies || !decl->func.body) {
                 break;
             }
             Checker_openScope(c);
@@ -1043,27 +1043,25 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
         Checker_checkImport(c, file->imports[i]);
     }
     utils$Slice_append(&c->files, &file);
-    if (c->conf->strict) {
-        for (int i = 0; file->decls[i] != NULL; i++) {
-            ast$ObjKind kind = ast$ObjKind_BAD;
-            switch (file->decls[i]->kind) {
-            case ast$DECL_FUNC:
-                kind = ast$ObjKind_FUN;
-                break;
-            case ast$DECL_TYPEDEF:
-                kind = ast$ObjKind_TYP;
-                break;
-            default:
-                break;
-            }
-            if (kind) {
-                Checker_declare(c, file->decls[i], NULL, c->pkg.scope, kind,
-                        file->decls[i]->typedef_.name);
-            }
+    for (int i = 0; file->decls[i] != NULL; i++) {
+        ast$ObjKind kind = ast$ObjKind_BAD;
+        switch (file->decls[i]->kind) {
+        case ast$DECL_FUNC:
+            kind = ast$ObjKind_FUN;
+            break;
+        case ast$DECL_TYPEDEF:
+            kind = ast$ObjKind_TYP;
+            break;
+        default:
+            break;
         }
-        for (int i = 0; file->decls[i] != NULL; i++) {
-            Checker_checkDecl(c, file->decls[i]);
+        if (kind) {
+            Checker_declare(c, file->decls[i], NULL, c->pkg.scope, kind,
+                    file->decls[i]->typedef_.name);
         }
+    }
+    for (int i = 0; file->decls[i] != NULL; i++) {
+        Checker_checkDecl(c, file->decls[i]);
     }
 }
 

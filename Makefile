@@ -57,12 +57,12 @@ CFILES=utils/error.c \
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
-	$(CC) $(CFLAGS) all.c \
-	    bazel-bin/bootstrap/libbootstrap.a \
-	    bazel-bin/os/libos.a bazel-bin/sys/libsys.a
+	# $(CC) $(CFLAGS) all.c \
+	#     bazel-bin/bootstrap/libbootstrap.a \
+	#     bazel-bin/os/libos.a bazel-bin/sys/libsys.a
+	$(BLINGC) build utils
 
 hello: $(BLINGC) all.bling
-	# $(BLINGC) build sys
 	$(BLINGC) build utils
 
 test_compiler: $(BLINGC)

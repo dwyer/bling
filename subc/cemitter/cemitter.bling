@@ -484,5 +484,6 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
     for var i int = 0; file.decls[i]; i++ {
         emitDecl(e, file.decls[i])
         emitter.emitNewline(e)
+        emitter.emitNewline(e)
     }
 }
