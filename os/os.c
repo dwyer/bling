@@ -93,9 +93,11 @@ extern os$FileInfo os$stat(const char *name, utils$Error **error) {
 }
 
 extern void os$FileInfo_free(os$FileInfo *info) {
-    free(info->_name);
-    free(info->_sys);
-    free(info);
+    if (info) {
+        free(info->_name);
+        free(info->_sys);
+        free(info);
+    }
 }
 
 extern os$File *os$openDir(const char *name, utils$Error **error) {
@@ -169,12 +171,12 @@ extern os$FileMode os$FileInfo_mode(os$FileInfo *info) {
     return st.st_mode;
 }
 
-extern os$Time os$FileInfo_mod_time(os$FileInfo *info) {
+extern os$Time os$FileInfo_modTime(os$FileInfo *info) {
     struct stat st = *(struct stat *)os$FileInfo_sys(info);
     return st.st_mtime;
 }
 
-extern bool os$FileInfo_is_dir(os$FileInfo *info) {
+extern bool os$FileInfo_isDir(os$FileInfo *info) {
     struct stat st = *(struct stat *)os$FileInfo_sys(info);
     return S_ISDIR(st.st_mode);
 }

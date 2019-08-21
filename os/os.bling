@@ -52,9 +52,9 @@ fun FileInfo_size(info *FileInfo) uint64_t
 
 fun FileInfo_mode(info *FileInfo) FileMode
 
-fun FileInfo_mod_time(info *FileInfo) Time
+fun FileInfo_modTime(info *FileInfo) Time
 
-fun FileInfo_is_dir(info *FileInfo) bool
+fun FileInfo_isDir(info *FileInfo) bool
 
 fun FileInfo_sys(info *FileInfo) *void
 

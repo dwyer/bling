@@ -42,8 +42,8 @@ typedef struct {
 extern char *os$FileInfo_name(os$FileInfo *info);
 extern uint64_t os$FileInfo_size(os$FileInfo *info);
 extern os$FileMode os$FileInfo_mode(os$FileInfo *info);
-extern os$Time os$FileInfo_mod_time(os$FileInfo *info);
-extern bool os$FileInfo_is_dir(os$FileInfo *info);
+extern os$Time os$FileInfo_modTime(os$FileInfo *info);
+extern bool os$FileInfo_isDir(os$FileInfo *info);
 extern void *os$FileInfo_sys(os$FileInfo *info);
 
 extern void os$FileInfo_free(os$FileInfo *info);
