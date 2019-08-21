@@ -138,7 +138,8 @@ void compile_bling(char *argv[]) {
         } else {
             panic("unknown file type: %s", filename);
         }
-        types$Package *pkg = types$checkFile(&conf, fset, file, NULL);
+        types$Package *pkg = types$checkFile(&conf, paths$dir(filename), fset,
+                file, NULL);
         for (int i = 0; pkg->files[i]; i++) {
             ast$File *file = pkg->files[i];
             e.forwardDecl = true;

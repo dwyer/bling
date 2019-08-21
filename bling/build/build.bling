@@ -168,9 +168,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
     var pkg Package = {
         files: parser.parseDir(b.fset, path, types.universe(), NULL),
     }
-    assert(pkg.files[0] && !pkg.files[1])
-    var f *ast.File = pkg.files[0]
-    pkg.pkg = types.checkFile(&b.conf, b.fset, f, NULL)
+    pkg.pkg = types.check(&b.conf, path, b.fset, pkg.files, NULL)
     var libs utils.Slice = {
         size: sizeof(*os.FileInfo),
     }
@@ -179,6 +177,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
     }
     emit_rawfile(&e, "bootstrap/bootstrap.h")
     var modified os.Time = 0
+    var f *ast.File = pkg.files[0]
     for var i int = 0; f.imports[i]; i++ {
         var path *char = types.constant_stringVal(f.imports[i].imp.path)
         var pkg *Package = _buildPackage(b, path)

@@ -160,15 +160,14 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
     Package pkg = {
         .files = parser$parseDir(b->fset, path, types$universe(), NULL),
     };
-    assert(pkg.files[0] && !pkg.files[1]);
-    ast$File *f = pkg.files[0];
-    pkg.pkg = types$checkFile(&b->conf, b->fset, f, NULL);
+    pkg.pkg = types$check(&b->conf, path, b->fset, pkg.files, NULL);
     utils$Slice libs = {.size = sizeof(os$FileInfo *)};
 
     emitter$Emitter e = {.forwardDecl=true};
     emit_rawfile(&e, "bootstrap/bootstrap.h");
 
     os$Time modified = 0;
+    ast$File *f = pkg.files[0];
     for (int i = 0; f->imports[i]; i++) {
         // for (int i = 0; pkg.files[i]; i++) {
         //     cemitter$emitFile(&e, pkg.files[i]);

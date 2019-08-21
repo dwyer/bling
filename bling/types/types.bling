@@ -806,7 +806,7 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) {
     }
     var files **ast.File = parser.parseDir(c.fset, path, universe(), NULL)
     utils.Map_set(&c.info.scopes, path, &files[0].scope)
-    var pkg *Package = check(c.conf, c.fset, files, c.info)
+    var pkg *Package = check(c.conf, path, c.fset, files, c.info)
     utils.Slice_append(&c.pkg.imports, &pkg)
     imp.imp.name = makeIdent(files[0].scope.pkg)
     Checker_declare(c, imp, files[0].scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
@@ -908,7 +908,7 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
     }
 }
 
-fun checkFile(conf *Config, fset *token.FileSet, file *ast.File, info *Info) *Package {
+fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.File, info *Info) *Package {
     if info == NULL {
         var tmp Info = {
             scopes: utils.Map_init(sizeof(*ast.Scope)),
@@ -933,9 +933,9 @@ fun checkFile(conf *Config, fset *token.FileSet, file *ast.File, info *Info) *Pa
     return c.pkg
 }
 
-fun check(conf *Config, fset *token.FileSet, files **ast.File, info *Info) *Package {
+fun check(conf *Config, path *const char, fset *token.FileSet, files **ast.File, info *Info) *Package {
     assert(files[0] && !files[1])
-    return checkFile(conf, fset, files[0], info)
+    return checkFile(conf, path, fset, files[0], info)
 }
 
 typedef builtinId enum {
@@ -1149,7 +1149,7 @@ fun universe() *ast.Scope {
         var conf Config = {
             strict: true,
         }
-        checkFile(&conf, fset, file, NULL)
+        checkFile(&conf, "builtin", fset, file, NULL)
         free(file.decls)
         free(file)
     }

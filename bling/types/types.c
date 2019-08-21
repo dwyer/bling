@@ -947,7 +947,7 @@ static void Checker_checkImport(Checker *c, ast$Decl *imp) {
     }
     ast$File **files = parser$parseDir(c->fset, path, types$universe(), NULL);
     utils$Map_set(&c->info->scopes, path, &files[0]->scope);
-    types$Package *pkg = types$check(c->conf, c->fset, files, c->info);
+    types$Package *pkg = types$check(c->conf, path, c->fset, files, c->info);
     utils$Slice_append(&c->pkg->imports, &pkg);
     imp->imp.name = types$makeIdent(files[0]->scope->pkg);
     Checker_declare(c, imp, files[0]->scope, c->pkg->scope, ast$ObjKind_PKG,
@@ -1062,8 +1062,8 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
     }
 }
 
-extern types$Package *types$checkFile(types$Config *conf, token$FileSet *fset,
-        ast$File *file, types$Info *info) {
+extern types$Package *types$checkFile(types$Config *conf, const char *path,
+        token$FileSet *fset, ast$File *file, types$Info *info) {
     if (info == NULL) {
         types$Info tmp = {
             .scopes = utils$Map_init(sizeof(ast$Scope *)),
@@ -1086,8 +1086,8 @@ extern types$Package *types$checkFile(types$Config *conf, token$FileSet *fset,
     return c.pkg;
 }
 
-extern types$Package *types$check(types$Config *conf, token$FileSet *fset,
-        ast$File **files, types$Info *info) {
+extern types$Package *types$check(types$Config *conf, const char *path,
+        token$FileSet *fset, ast$File **files, types$Info *info) {
     assert(files[0] && !files[1]);
-    return types$checkFile(conf, fset, files[0], info);
+    return types$checkFile(conf, path, fset, files[0], info);
 }
