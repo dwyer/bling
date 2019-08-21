@@ -79,7 +79,7 @@ typedef struct ast$Scope ast$Scope;
 
 typedef enum {
     ast$ObjKind_BAD,
-    // ast$ObjKind_CON,
+    ast$ObjKind_CON,
     ast$ObjKind_FUN,
     // ast$ObjKind_LBL,
     ast$ObjKind_PKG,
@@ -378,6 +378,7 @@ extern ast$Object *ast$newObject(ast$ObjKind kind, char *name);
 typedef struct ast$Scope {
     ast$Scope *outer;
     utils$Map objects;
+    utils$Slice keys;
     char *pkg;
 } ast$Scope;
 

@@ -63,6 +63,7 @@ typedef Node struct {
 
 typedef ObjKind enum {
     ObjKind_BAD
+    ObjKind_CON
     ObjKind_FUN
     ObjKind_PKG
     ObjKind_TYP
@@ -358,6 +359,7 @@ typedef Stmt struct {
 typedef Scope struct {
     outer *Scope
     objects utils.Map
+    keys utils.Slice
     pkg *char
 }
 
@@ -391,12 +393,16 @@ fun Scope_new(outer *Scope) *Scope {
     var s Scope = {
         outer: outer,
         objects: utils.Map_init(sizeof(*Object)),
+        keys: utils.Slice_init(sizeof(*char)),
     }
     return esc(s)
 }
 
 fun Scope_deinit(s *Scope) {
-    utils.Map_deinit(&s.objects)
+    if s {
+        utils.Map_deinit(&s.objects)
+        utils.Slice_deinit(&s.keys)
+    }
 }
 
 fun Scope_insert(s *Scope, obj *Object) *Object {
@@ -404,6 +410,7 @@ fun Scope_insert(s *Scope, obj *Object) *Object {
     utils.Map_get(&s.objects, obj.name, &alt)
     if alt == NULL {
         utils.Map_set(&s.objects, obj.name, &obj)
+        utils.Slice_append(&s.keys, &obj.name)
     }
     return alt
 }

@@ -144,9 +144,9 @@ void compile_bling(char *argv[]) {
             ast$File *file = NULL;
             utils$Slice_get(&pkg->files, i, &file);
             e.forwardDecl = true;
-            cemitter$emitFile(&e, file);
+            cemitter$emitScope(&e, file->scope);
             e.forwardDecl = false;
-            cemitter$emitFile(&e, file);
+            cemitter$emitScope(&e, file->scope);
             free(file->decls);
             free(file);
         }

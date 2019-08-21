@@ -18,12 +18,16 @@ extern ast$Scope *ast$Scope_new(ast$Scope *outer) {
     ast$Scope s = {
         .outer = outer,
         .objects = utils$Map_init(sizeof(ast$Object *)),
+        .keys = utils$Slice_init(sizeof(char *)),
     };
     return esc(s);
 }
 
 extern void ast$Scope_deinit(ast$Scope *s) {
-    utils$Map_deinit(&s->objects);
+    if (s) {
+        utils$Map_deinit(&s->objects);
+        utils$Slice_deinit(&s->keys);
+    }
 }
 
 extern ast$Object *ast$Scope_insert(ast$Scope *s, ast$Object *obj) {
@@ -31,6 +35,7 @@ extern ast$Object *ast$Scope_insert(ast$Scope *s, ast$Object *obj) {
     utils$Map_get(&s->objects, obj->name, &alt);
     if (alt == NULL) {
         utils$Map_set(&s->objects, obj->name, &obj);
+        utils$Slice_append(&s->keys, &obj->name);
     }
     return alt;
 }

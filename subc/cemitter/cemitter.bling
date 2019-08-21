@@ -4,6 +4,7 @@ import "bling/ast"
 import "bling/emitter"
 import "bling/token"
 import "sys"
+import "utils"
 
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     if !expr {
@@ -487,4 +488,24 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
         emitter.emitNewline(e)
         emitter.emitNewline(e)
     }
+}
+
+fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
+    var key *char = NULL
+    var obj *ast.Object = NULL
+    for var i int = 0; i < utils.Slice_len(&scope.keys); i++ {
+        utils.Slice_get(&scope.keys, i, &key)
+        utils.Map_get(&scope.objects, key, &obj)
+        if obj.kind == kind {
+            emitDecl(e, obj.decl)
+            emitter.emitNewline(e)
+            emitter.emitNewline(e)
+        }
+    }
+}
+
+fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
+    emitObjects(e, scope, ast.ObjKind_TYP)
+    emitObjects(e, scope, ast.ObjKind_VAL)
+    emitObjects(e, scope, ast.ObjKind_FUN)
 }

@@ -537,3 +537,23 @@ extern void cemitter$emitFile(emitter$Emitter *e, ast$File *file) {
         emitter$emitNewline(e);
     }
 }
+
+static void emitObjects(emitter$Emitter *e, ast$Scope *scope, ast$ObjKind kind) {
+    char *key = NULL;
+    ast$Object *obj = NULL;
+    for (int i = 0; i < utils$Slice_len(&scope->keys); i++) {
+        utils$Slice_get(&scope->keys, i, &key);
+        utils$Map_get(&scope->objects, key, &obj);
+        if (obj->kind == kind) {
+            cemitter$emitDecl(e, obj->decl);
+            emitter$emitNewline(e);
+            emitter$emitNewline(e);
+        }
+    }
+}
+
+extern void cemitter$emitScope(emitter$Emitter *e, ast$Scope *scope) {
+    emitObjects(e, scope, ast$ObjKind_TYP);
+    emitObjects(e, scope, ast$ObjKind_VAL);
+    emitObjects(e, scope, ast$ObjKind_FUN);
+}

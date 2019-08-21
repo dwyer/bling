@@ -428,7 +428,7 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
             if (t->enum_.name) {
                 decl->value.type = t->enum_.name;
             }
-            Checker_declare(c, decl, NULL, c->pkg->scope, ast$ObjKind_VAL,
+            Checker_declare(c, decl, NULL, c->pkg->scope, ast$ObjKind_CON,
                     decl->value.name);
             if (decl->value.value) {
                 Checker_checkExpr(c, decl->value.value);
