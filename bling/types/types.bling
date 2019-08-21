@@ -15,6 +15,7 @@ typedef Config struct {
 
 typedef Info struct {
     scopes utils.Map
+    files utils.Slice
 }
 
 typedef Package struct {
@@ -22,7 +23,7 @@ typedef Package struct {
     name *char
     scope *ast.Scope
     imports utils.Slice
-    files **ast.File
+    files utils.Slice
 }
 
 fun constant_stringVal(x *ast.Expr) *char {
@@ -306,7 +307,6 @@ typedef Checker struct {
     fset *token.FileSet
     pkg *Package
     info *Info
-    files utils.Slice
     result *ast.Expr
 }
 
@@ -889,7 +889,7 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
     for var i int = 0; file.imports[i] != NULL; i++ {
         Checker_checkImport(c, file.imports[i])
     }
-    utils.Slice_append(&c.files, &file)
+    utils.Slice_append(&c.info.files, &file)
     for var i int = 0; file.decls[i] != NULL; i++ {
         var kind ast.ObjKind = ast.ObjKind_BAD
         switch file.decls[i].kind {
@@ -913,6 +913,9 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
 fun newInfo() *Info {
     var info Info = {
         scopes: utils.Map_init(sizeof(*ast.Scope)),
+        files: {
+            size: sizeof(*ast.File),
+        },
     }
     return esc(info)
 }
@@ -931,10 +934,9 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
         fset: fset,
         conf: conf,
         pkg: esc(pkg),
-        files: utils.Slice_init(sizeof(*ast.File)),
     }
     Checker_checkFile(&c, file)
-    c.pkg.files = utils.Slice_to_nil_array(c.files)
+    c.pkg.files = c.info.files
     return c.pkg
 }
 

@@ -325,7 +325,6 @@ typedef struct {
     token$FileSet *fset;
     types$Package *pkg;
     types$Info *info;
-    utils$Slice files;
 
     ast$Expr *result;
 } Checker;
@@ -1040,7 +1039,7 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
     for (int i = 0; file->imports[i] != NULL; i++) {
         Checker_checkImport(c, file->imports[i]);
     }
-    utils$Slice_append(&c->files, &file);
+    utils$Slice_append(&c->info->files, &file);
     for (int i = 0; file->decls[i] != NULL; i++) {
         ast$ObjKind kind = ast$ObjKind_BAD;
         switch (file->decls[i]->kind) {
@@ -1066,6 +1065,7 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
 extern types$Info *types$newInfo() {
     types$Info info = {
         .scopes = utils$Map_init(sizeof(ast$Scope *)),
+        .files = {.size = sizeof(ast$File *)},
     };
     return esc(info);
 }
@@ -1083,10 +1083,9 @@ extern types$Package *types$checkFile(types$Config *conf, const char *path,
         .fset = fset,
         .conf = conf,
         .pkg = esc(pkg),
-        .files = utils$Slice_init(sizeof(ast$File *)),
     };
     Checker_checkFile(&c, file);
-    c.pkg->files = utils$Slice_to_nil_array(c.files);
+    c.pkg->files = c.info->files;
     return c.pkg;
 }
 

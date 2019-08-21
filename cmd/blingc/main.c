@@ -140,8 +140,9 @@ void compile_bling(char *argv[]) {
         }
         types$Package *pkg = types$checkFile(&conf, paths$dir(filename), fset,
                 file, NULL);
-        for (int i = 0; pkg->files[i]; i++) {
-            ast$File *file = pkg->files[i];
+        for (int i = 0; i < utils$Slice_len(&pkg->files); i++) {
+            ast$File *file = NULL;
+            utils$Slice_get(&pkg->files, i, &file);
             e.forwardDecl = true;
             cemitter$emitFile(&e, file);
             e.forwardDecl = false;

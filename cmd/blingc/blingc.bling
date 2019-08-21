@@ -120,8 +120,9 @@ fun compile_bling(argv []*char) {
             panic("unknown file type: %s", filename)
         }
         var pkg *types.Package = types.checkFile(&conf, paths.dir(filename), fset, file, NULL)
-        for var i int = 0; pkg.files[i]; i++ {
-            var file *ast.File = pkg.files[i]
+        for var i int = 0; i < utils.Slice_len(&pkg.files); i++ {
+            var file *ast.File = NULL
+            utils.Slice_get(&pkg.files, i, &file)
             e.forwardDecl = true
             cemitter.emitFile(&e, file)
             e.forwardDecl = false
