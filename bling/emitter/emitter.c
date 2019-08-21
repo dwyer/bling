@@ -180,9 +180,11 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         emitter$emitExpr(e, expr->ternary.cond);
         emitter$emitSpace(e);
         emitter$emitToken(e, token$QUESTION_MARK);
-        emitter$emitSpace(e);
-        emitter$emitExpr(e, expr->ternary.x);
-        emitter$emitSpace(e);
+        if (expr->ternary.x) {
+            emitter$emitSpace(e);
+            emitter$emitExpr(e, expr->ternary.x);
+            emitter$emitSpace(e);
+        }
         emitter$emitToken(e, token$COLON);
         emitter$emitSpace(e);
         emitter$emitExpr(e, expr->ternary.y);

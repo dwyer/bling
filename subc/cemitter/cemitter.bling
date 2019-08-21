@@ -115,9 +115,11 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitExpr(e, expr.ternary.cond)
         emitter.emitSpace(e)
         emitter.emitToken(e, token.QUESTION_MARK)
-        emitter.emitSpace(e)
-        emitExpr(e, expr.ternary.x)
-        emitter.emitSpace(e)
+        if expr.ternary.x {
+            emitter.emitSpace(e)
+            emitExpr(e, expr.ternary.x)
+            emitter.emitSpace(e)
+        }
         emitter.emitToken(e, token.COLON)
         emitter.emitSpace(e)
         emitExpr(e, expr.ternary.y)

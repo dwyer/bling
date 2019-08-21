@@ -783,7 +783,9 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
         {
             ast$Expr *t1 = Checker_checkExpr(c, expr->ternary.cond);
             assert(types$isArithmetic(t1));
-            ast$Expr *t2 = Checker_checkExpr(c, expr->ternary.x);
+            ast$Expr *t2 = expr->ternary.x
+                ? Checker_checkExpr(c, expr->ternary.x)
+                : t1;
             ast$Expr *t3 = Checker_checkExpr(c, expr->ternary.y);
             assert(types$areIdentical(t2, t3));
             return t2;
@@ -1084,7 +1086,7 @@ extern types$Package *types$checkFile(types$Config *conf, const char *path,
         .imports = {.size = sizeof(types$Package *)},
     };
     Checker c = {
-        .info = info ? info : types$newInfo(),
+        .info = info ?: types$newInfo(),
         .fset = fset,
         .conf = conf,
         .pkg = esc(pkg),

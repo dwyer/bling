@@ -128,9 +128,11 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         cemitter$emitExpr(e, expr->ternary.cond);
         emitter$emitSpace(e);
         emitter$emitToken(e, token$QUESTION_MARK);
-        emitter$emitSpace(e);
-        cemitter$emitExpr(e, expr->ternary.x);
-        emitter$emitSpace(e);
+        if (expr->ternary.x) {
+            emitter$emitSpace(e);
+            cemitter$emitExpr(e, expr->ternary.x);
+            emitter$emitSpace(e);
+        }
         emitter$emitToken(e, token$COLON);
         emitter$emitSpace(e);
         cemitter$emitExpr(e, expr->ternary.y);

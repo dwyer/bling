@@ -506,7 +506,10 @@ fun parseBinaryExpr(p *Parser, lhs bool, prec1 int) *ast.Expr {
 fun parseTernaryExpr(p *Parser, lhs bool) *ast.Expr {
     var x *ast.Expr = parseBinaryExpr(p, lhs, token.lowest_prec + 1)
     if accept(p, token.QUESTION_MARK) {
-        var consequence *ast.Expr = parseExpr(p, false)
+        var consequence *ast.Expr = NULL
+        if p.tok != token.COLON {
+            consequence = parseExpr(p, false)
+        }
         expect(p, token.COLON)
         var alternative *ast.Expr = parseTernaryExpr(p, false)
         var y ast.Expr = {

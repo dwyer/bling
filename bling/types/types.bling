@@ -676,7 +676,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     case ast.EXPR_TERNARY: {
         var t1 *ast.Expr = Checker_checkExpr(c, expr.ternary.cond)
         assert(isArithmetic(t1))
-        var t2 *ast.Expr = Checker_checkExpr(c, expr.ternary.x)
+        var t2 *ast.Expr = expr.ternary.x ? Checker_checkExpr(c, expr.ternary.x) : t1
         var t3 *ast.Expr = Checker_checkExpr(c, expr.ternary.y)
         assert(areIdentical(t2, t3))
         return t2
@@ -928,7 +928,7 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
         },
     }
     var c Checker = {
-        info: info ? info : newInfo(),
+        info: info ?: newInfo(),
         fset: fset,
         conf: conf,
         pkg: esc(pkg),

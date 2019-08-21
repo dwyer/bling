@@ -282,7 +282,10 @@ static ast$Expr *ternary_expression(parser$Parser *p) {
     //         ;
     ast$Expr *x = binary_expression(p, token$lowest_prec + 1);
     if (parser$accept(p, token$QUESTION_MARK)) {
-        ast$Expr *consequence = expression(p);
+        ast$Expr *consequence = NULL;
+        if (p->tok != token$COLON) {
+            consequence = expression(p);
+        }
         parser$expect(p, token$COLON);
         ast$Expr *alternative = ternary_expression(p);
         ast$Expr y = {

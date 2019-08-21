@@ -570,7 +570,10 @@ static ast$Expr *parseTernaryExpr(parser$Parser *p, bool lhs) {
     //         ;
     ast$Expr *x = parseBinaryExpr(p, lhs, token$lowest_prec + 1);
     if (parser$accept(p, token$QUESTION_MARK)) {
-        ast$Expr *consequence = parseExpr(p, false);
+        ast$Expr *consequence = NULL;
+        if (p->tok != token$COLON) {
+            consequence = parseExpr(p, false);
+        }
         parser$expect(p, token$COLON);
         ast$Expr *alternative = parseTernaryExpr(p, false);
         ast$Expr y = {

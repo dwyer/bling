@@ -211,7 +211,10 @@ fun binary_expression(p *parser.Parser, prec1 int) *ast.Expr {
 fun ternary_expression(p *parser.Parser) *ast.Expr {
     var x *ast.Expr = binary_expression(p, token.lowest_prec + 1)
     if parser.accept(p, token.QUESTION_MARK) {
-        var consequence *ast.Expr = expression(p)
+        var consequence *ast.Expr = NULL
+        if p.tok != token.COLON {
+            consequence = expression(p)
+        }
         parser.expect(p, token.COLON)
         var alternative *ast.Expr = ternary_expression(p)
         var y ast.Expr = {
