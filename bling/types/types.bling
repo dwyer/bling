@@ -296,9 +296,9 @@ fun getStructField(type *ast.Expr, index int) *ast.Decl {
 }
 
 typedef Checker struct {
-    fset *token.FileSet
     conf *Config
-    pkg Package
+    fset *token.FileSet
+    pkg *Package
     result *ast.Expr
     files utils.Slice
     scopes utils.Map
@@ -908,18 +908,19 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
 }
 
 fun checkFile(conf *Config, fset *token.FileSet, file *ast.File) *Package {
+    var pkg Package = {
+        scope: file.scope,
+    }
     var c Checker = {
         fset: fset,
         conf: conf,
-        pkg: {
-            scope: file.scope,
-        },
+        pkg: esc(pkg),
         files: utils.Slice_init(sizeof(*ast.File)),
         scopes: utils.Map_init(sizeof(*ast.Scope)),
     }
     Checker_checkFile(&c, file)
     c.pkg.files = utils.Slice_to_nil_array(c.files)
-    return esc(c.pkg)
+    return c.pkg
 }
 
 typedef builtinId enum {
