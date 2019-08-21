@@ -82,14 +82,10 @@ static os$FileInfo *buildCFile(os$FileInfo *cFile) {
 static os$FileInfo *buildCPackage(Builder *b, const char *path) {
     char *base = paths$base(path);
     char *dst = sys$sprintf("%s/%s/lib%s.a", GEN_PATH, path, base);
-    utils$Slice cmd = {.size = sizeof(char *)};
     utils$Slice objFiles = {.size = sizeof(os$FileInfo *)};
     os$Time latestUpdate = 0;
     {
         os$FileInfo **files = ioutil$readDir(path, NULL);
-        Slice_appendStrLit(&cmd, "/usr/bin/ar");
-        Slice_appendStrLit(&cmd, "rsc");
-        Slice_appendStrLit(&cmd, dst);
         for (int i = 0; files[i]; i++) {
             if (bytes$hasSuffix(files[i]->_name, ".bling")) {
                 ast$File *file = parser$parseFile(b->fset, files[i]->_name,
@@ -101,17 +97,26 @@ static os$FileInfo *buildCPackage(Builder *b, const char *path) {
                 }
             } else if (bytes$hasSuffix(files[i]->_name, ".c")) {
                 os$FileInfo *obj = buildCFile(files[i]);
+                utils$Slice_append(&objFiles, &obj);
                 if (latestUpdate < os$FileInfo_modTime(obj)) {
                     latestUpdate = os$FileInfo_modTime(obj);
                 }
-                utils$Slice_append(&objFiles, &obj);
-                utils$Slice_append(&cmd, &obj->_name);
             }
+            os$FileInfo_free(files[i]);
         }
     }
     utils$Error *err = NULL;
     os$FileInfo *libFile = os$stat(dst, &err);
     if (libFile == NULL || latestUpdate > os$FileInfo_modTime(libFile)) {
+        utils$Slice cmd = {.size = sizeof(char *)};
+        Slice_appendStrLit(&cmd, "/usr/bin/ar");
+        Slice_appendStrLit(&cmd, "rsc");
+        Slice_appendStrLit(&cmd, dst);
+        for (int i = 0; i < utils$Slice_len(&objFiles); i++) {
+            os$FileInfo *obj = NULL;
+            utils$Slice_get(&objFiles, i, &obj);
+            utils$Slice_append(&cmd, &obj->_name);
+        }
         char **args = utils$Slice_to_nil_array(cmd);
         mkdirForFile(dst);
         execute(args);

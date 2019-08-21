@@ -89,18 +89,12 @@ fun buildCFile(cFile *os.FileInfo) *os.FileInfo {
 fun buildCPackage(b *Builder, path *const char) *os.FileInfo {
     var base *char = paths.base(path)
     var dst *char = sys.sprintf("%s/%s/lib%s.a", GEN_PATH, path, base)
-    var cmd utils.Slice = {
-        size: sizeof(*char),
-    }
     var objFiles utils.Slice = {
         size: sizeof(*os.FileInfo),
     }
     var latestUpdate os.Time = 0
     {
         var files **os.FileInfo = ioutil.readDir(path, NULL)
-        Slice_appendStrLit(&cmd, "/usr/bin/ar")
-        Slice_appendStrLit(&cmd, "rsc")
-        Slice_appendStrLit(&cmd, dst)
         for var i int = 0; files[i]; i++ {
             if bytes.hasSuffix(files[i]._name, ".bling") {
                 var file *ast.File = parser.parseFile(b.fset, files[i]._name, types.universe())
@@ -109,17 +103,28 @@ fun buildCPackage(b *Builder, path *const char) *os.FileInfo {
                 }
             } else if bytes.hasSuffix(files[i]._name, ".c") {
                 var obj *os.FileInfo = buildCFile(files[i])
+                utils.Slice_append(&objFiles, &obj)
                 if latestUpdate < os.FileInfo_modTime(obj) {
                     latestUpdate = os.FileInfo_modTime(obj)
                 }
-                utils.Slice_append(&objFiles, &obj)
-                utils.Slice_append(&cmd, &obj._name)
             }
+            os.FileInfo_free(files[i])
         }
     }
     var err *utils.Error = NULL
     var libFile *os.FileInfo = os.stat(dst, &err)
     if libFile == NULL || latestUpdate > os.FileInfo_modTime(libFile) {
+        var cmd utils.Slice = {
+            size: sizeof(*char),
+        }
+        Slice_appendStrLit(&cmd, "/usr/bin/ar")
+        Slice_appendStrLit(&cmd, "rsc")
+        Slice_appendStrLit(&cmd, dst)
+        for var i int = 0; i < utils.Slice_len(&objFiles); i++ {
+            var obj *os.FileInfo = NULL
+            utils.Slice_get(&objFiles, i, &obj)
+            utils.Slice_append(&cmd, &obj._name)
+        }
         var args **char = utils.Slice_to_nil_array(cmd)
         mkdirForFile(dst)
         execute(args)
