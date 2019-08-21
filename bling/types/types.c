@@ -321,12 +321,13 @@ static ast$Decl *getStructField(ast$Expr *type, int index) {
 }
 
 typedef struct {
-    types$Info *info;
     types$Config *conf;
     token$FileSet *fset;
     types$Package *pkg;
-    ast$Expr *result;
+    types$Info *info;
     utils$Slice files;
+
+    ast$Expr *result;
 } Checker;
 
 static void Checker_error(Checker *c, token$Pos pos, const char *msg) {
@@ -1062,20 +1063,23 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
     }
 }
 
+extern types$Info *types$newInfo() {
+    types$Info info = {
+        .scopes = utils$Map_init(sizeof(ast$Scope *)),
+    };
+    return esc(info);
+}
+
 extern types$Package *types$checkFile(types$Config *conf, const char *path,
         token$FileSet *fset, ast$File *file, types$Info *info) {
-    if (info == NULL) {
-        types$Info tmp = {
-            .scopes = utils$Map_init(sizeof(ast$Scope *)),
-        };
-        info = esc(tmp);
-    }
     types$Package pkg = {
+        .path = strdup(path),
+        .name = file->name ? strdup(file->name->ident.name) : NULL,
         .scope = file->scope,
         .imports = {.size = sizeof(types$Package *)},
     };
     Checker c = {
-        .info = info,
+        .info = info ? info : types$newInfo(),
         .fset = fset,
         .conf = conf,
         .pkg = esc(pkg),

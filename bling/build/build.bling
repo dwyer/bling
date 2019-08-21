@@ -67,6 +67,7 @@ typedef Package struct {
     lib *os.FileInfo
     files **ast.File
     pkg *types.Package
+    modTime os.Time
 }
 
 typedef Builder struct {
@@ -114,7 +115,9 @@ fun buildCPackage(b *Builder, path *const char) *Package {
     var objFiles utils.Slice = {
         size: sizeof(*os.FileInfo),
     }
-    var latestUpdate os.Time = 0
+    var pkg Package = {
+        path: path,
+    }
     {
         var files **os.FileInfo = ioutil.readDir(path, NULL)
         for var i int = 0; files[i]; i++ {
@@ -131,16 +134,16 @@ fun buildCPackage(b *Builder, path *const char) *Package {
             } else if bytes.hasSuffix(files[i]._name, ".c") {
                 var obj *os.FileInfo = buildCFile(b, files[i])
                 utils.Slice_append(&objFiles, &obj)
-                if latestUpdate < os.FileInfo_modTime(obj) {
-                    latestUpdate = os.FileInfo_modTime(obj)
+                if pkg.modTime < os.FileInfo_modTime(obj) {
+                    pkg.modTime = os.FileInfo_modTime(obj)
                 }
             }
             os.FileInfo_free(files[i])
         }
     }
     var err *utils.Error = NULL
-    var libFile *os.FileInfo = os.stat(dst, &err)
-    if b.force || libFile == NULL || latestUpdate > os.FileInfo_modTime(libFile) {
+    pkg.lib = os.stat(dst, &err)
+    if b.force || pkg.lib == NULL || pkg.modTime > os.FileInfo_modTime(pkg.lib) {
         var cmd utils.Slice = {
             size: sizeof(*char),
         }
@@ -154,12 +157,9 @@ fun buildCPackage(b *Builder, path *const char) *Package {
         }
         mkdirForFile(dst)
         execute(&cmd)
-        os.FileInfo_free(libFile)
-        libFile = os.stat(dst, &err)
-    }
-    var pkg Package = {
-        path: path,
-        lib: libFile,
+        os.FileInfo_free(pkg.lib)
+        pkg.lib = os.stat(dst, &err)
+        pkg.modTime = os.FileInfo_modTime(pkg.lib)
     }
     return esc(pkg)
 }
@@ -176,15 +176,14 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         forwardDecl: true,
     }
     emit_rawfile(&e, "bootstrap/bootstrap.h")
-    var modified os.Time = 0
     var f *ast.File = pkg.files[0]
     for var i int = 0; f.imports[i]; i++ {
         var path *char = types.constant_stringVal(f.imports[i].imp.path)
-        var pkg *Package = _buildPackage(b, path)
-        var lib *os.FileInfo = pkg.lib
+        var imp *Package = _buildPackage(b, path)
+        var lib *os.FileInfo = imp.lib
         assert(lib)
-        if modified < os.FileInfo_modTime(lib) {
-            modified = os.FileInfo_modTime(lib)
+        if pkg.modTime < os.FileInfo_modTime(lib) {
+            pkg.modTime = os.FileInfo_modTime(lib)
         }
         utils.Slice_append(&libs, &lib)
     }

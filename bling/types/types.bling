@@ -7,20 +7,22 @@ import "bling/token"
 import "sys"
 import "utils"
 
-typedef Package struct {
-    scope *ast.Scope
-    imports utils.Slice
-    files **ast.File
+typedef Config struct {
+    strict bool
+    cMode bool
+    ignoreFuncBodies bool
 }
 
 typedef Info struct {
     scopes utils.Map
 }
 
-typedef Config struct {
-    strict bool
-    cMode bool
-    ignoreFuncBodies bool
+typedef Package struct {
+    path *char
+    name *char
+    scope *ast.Scope
+    imports utils.Slice
+    files **ast.File
 }
 
 fun constant_stringVal(x *ast.Expr) *char {
@@ -300,12 +302,12 @@ fun getStructField(type *ast.Expr, index int) *ast.Decl {
 }
 
 typedef Checker struct {
-    info *Info
     conf *Config
     fset *token.FileSet
     pkg *Package
-    result *ast.Expr
+    info *Info
     files utils.Slice
+    result *ast.Expr
 }
 
 fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
@@ -908,21 +910,24 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
     }
 }
 
-fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.File, info *Info) *Package {
-    if info == NULL {
-        var tmp Info = {
-            scopes: utils.Map_init(sizeof(*ast.Scope)),
-        }
-        info = esc(tmp)
+fun newInfo() *Info {
+    var info Info = {
+        scopes: utils.Map_init(sizeof(*ast.Scope)),
     }
+    return esc(info)
+}
+
+fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.File, info *Info) *Package {
     var pkg Package = {
+        path: strdup(path),
+        name: file.name ? strdup(file.name.ident.name) : NULL,
         scope: file.scope,
         imports: {
             size: sizeof(*Package),
         },
     }
     var c Checker = {
-        info: info,
+        info: info ? info : newInfo(),
         fset: fset,
         conf: conf,
         pkg: esc(pkg),

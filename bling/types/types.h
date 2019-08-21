@@ -12,16 +12,6 @@ import("utils");
 
 extern ast$Scope *types$universe();
 
-typedef struct {
-    ast$Scope *scope;
-    utils$Slice imports;
-    ast$File **files; // XXX
-} types$Package;
-
-typedef struct {
-    utils$Map scopes;
-} types$Info;
-
 extern bool types$isIdent(ast$Expr *expr);
 extern bool types$isVoid(ast$Expr *type);
 extern bool types$isVoidPtr(ast$Expr *type);
@@ -35,6 +25,20 @@ typedef struct {
     bool cMode;
     bool ignoreFuncBodies;
 } types$Config;
+
+typedef struct {
+    utils$Map scopes;
+} types$Info;
+
+extern types$Info *types$newInfo();
+
+typedef struct {
+    char *path;
+    char *name;
+    ast$Scope *scope;
+    utils$Slice imports;
+    ast$File **files; // XXX
+} types$Package;
 
 extern types$Package *types$checkFile(types$Config *conf, const char *path,
         token$FileSet *fset, ast$File *file, types$Info *info);

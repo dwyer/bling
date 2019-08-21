@@ -57,6 +57,7 @@ typedef struct {
     os$FileInfo *lib;
     ast$File **files;
     types$Package *pkg;
+    os$Time modTime;
 } Package;
 
 typedef struct {
@@ -105,7 +106,9 @@ static Package *buildCPackage(Builder *b, const char *path) {
     char *base = paths$base(path);
     char *dst = sys$sprintf("%s/%s/lib%s.a", GEN_PATH, path, base);
     utils$Slice objFiles = {.size = sizeof(os$FileInfo *)};
-    os$Time latestUpdate = 0;
+    Package pkg = {
+        .path = path,
+    };
     {
         os$FileInfo **files = ioutil$readDir(path, NULL);
         for (int i = 0; files[i]; i++) {
@@ -125,16 +128,16 @@ static Package *buildCPackage(Builder *b, const char *path) {
             } else if (bytes$hasSuffix(files[i]->_name, ".c")) {
                 os$FileInfo *obj = buildCFile(b, files[i]);
                 utils$Slice_append(&objFiles, &obj);
-                if (latestUpdate < os$FileInfo_modTime(obj)) {
-                    latestUpdate = os$FileInfo_modTime(obj);
+                if (pkg.modTime < os$FileInfo_modTime(obj)) {
+                    pkg.modTime = os$FileInfo_modTime(obj);
                 }
             }
             os$FileInfo_free(files[i]);
         }
     }
     utils$Error *err = NULL;
-    os$FileInfo *libFile = os$stat(dst, &err);
-    if (b->force || libFile == NULL || latestUpdate > os$FileInfo_modTime(libFile)) {
+    pkg.lib = os$stat(dst, &err);
+    if (b->force || pkg.lib == NULL || pkg.modTime > os$FileInfo_modTime(pkg.lib)) {
         utils$Slice cmd = {.size = sizeof(char *)};
         Slice_appendStrLit(&cmd, "/usr/bin/ar");
         Slice_appendStrLit(&cmd, "rsc");
@@ -146,13 +149,10 @@ static Package *buildCPackage(Builder *b, const char *path) {
         }
         mkdirForFile(dst);
         execute(&cmd);
-        os$FileInfo_free(libFile);
-        libFile = os$stat(dst, &err);
+        os$FileInfo_free(pkg.lib);
+        pkg.lib = os$stat(dst, &err);
+        pkg.modTime = os$FileInfo_modTime(pkg.lib);
     }
-    Package pkg = {
-        .path = path,
-        .lib = libFile,
-    };
     return esc(pkg);
 }
 
@@ -166,7 +166,6 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
     emitter$Emitter e = {.forwardDecl=true};
     emit_rawfile(&e, "bootstrap/bootstrap.h");
 
-    os$Time modified = 0;
     ast$File *f = pkg.files[0];
     for (int i = 0; f->imports[i]; i++) {
         // for (int i = 0; pkg.files[i]; i++) {
@@ -175,11 +174,11 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
         // e.forwardDecl = false;
         // cemitter$emitFile(&e, f);
         char *path = types$constant_stringVal(f->imports[i]->imp.path);
-        Package *pkg = _buildPackage(b, path);
-        os$FileInfo *lib = pkg->lib;
+        Package *imp = _buildPackage(b, path);
+        os$FileInfo *lib = imp->lib;
         assert(lib);
-        if (modified < os$FileInfo_modTime(lib)) {
-            modified = os$FileInfo_modTime(lib);
+        if (pkg.modTime < os$FileInfo_modTime(lib)) {
+            pkg.modTime = os$FileInfo_modTime(lib);
         }
         utils$Slice_append(&libs, &lib);
     }
