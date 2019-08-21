@@ -18,6 +18,17 @@ os$File *os$stdin = &_stdin;
 os$File *os$stdout = &_stdout;
 os$File *os$stderr = &_stderr;
 
+static void PathError_check(const char *path, utils$Error **error) {
+    utils$Error *err = NULL;
+    utils$Error_check(&err);
+    if (err) {
+        char *msg = err->error;
+        err->error = sys$sprintf("PathError: %s: %s", path, msg);
+        free(msg);
+        utils$Error_move(err, error);
+    }
+}
+
 extern os$File *os$newFile(uintptr_t fd, const char *name) {
     os$File file = {
         .name = strdup(name),
@@ -30,7 +41,7 @@ extern os$File *os$openFile(const char *filename, int mode, int perm, utils$Erro
     utils$clearError();
     int fd = open(filename, mode, perm);
     if (fd == -1) {
-        utils$Error_check(error);
+        PathError_check(filename, error);
         return NULL;
     }
     return os$newFile(fd, filename);
@@ -47,14 +58,14 @@ extern os$File *os$create(const char *filename, utils$Error **error) {
 extern int os$read(os$File *file, char *b, int n, utils$Error **error) {
     utils$clearError();
     n = read(file->fd, b, n);
-    utils$Error_check(error);
+    PathError_check(file->name, error);
     return n;
 }
 
 extern int os$write(os$File *file, const char *b, utils$Error **error) {
     utils$clearError();
     int n = write(file->fd, b, strlen(b));
-    utils$Error_check(error);
+    PathError_check(file->name, error);
     return n;
 }
 
@@ -65,7 +76,7 @@ extern void os$close(os$File *file, utils$Error **error) {
     } else {
         close(file->fd);
     }
-    utils$Error_check(error);
+    PathError_check(file->name, error);
 }
 
 extern os$FileInfo os$stat(const char *name, utils$Error **error) {
@@ -73,7 +84,7 @@ extern os$FileInfo os$stat(const char *name, utils$Error **error) {
     os$FileInfo info = {};
     utils$clearError();
     if (stat(name, &st) != 0) {
-        utils$Error_check(error);
+        PathError_check(name, error);
         return info;
     }
     info._name = strdup(name);
@@ -89,7 +100,7 @@ extern void os$FileInfo_free(os$FileInfo info) {
 extern os$File *os$openDir(const char *name, utils$Error **error) {
     DIR *dp = opendir(name);
     if (dp == NULL) {
-        utils$Error_check(error);
+        PathError_check(name, error);
         return NULL;
     }
     os$File *file = os$newFile((uintptr_t)dp, name);
@@ -182,7 +193,7 @@ extern const char *os$tempDir() {
 extern void os$mkdir(const char *path, uint32_t mode, utils$Error **error) {
     utils$clearError();
     mkdir(path, mode);
-    utils$Error_check(error);
+    PathError_check(path, error);
 }
 
 extern void os$mkdirAll(const char *path, uint32_t mode, utils$Error **error) {
