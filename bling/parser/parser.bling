@@ -664,11 +664,20 @@ fun parseParameterList(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
             break
         }
         if p.tok == token.ELLIPSIS {
-            var decl ast.Decl = {
-                kind: ast.DECL_ELLIPSIS,
-                pos: p.pos,
+            var pos token.Pos = expect(p, token.ELLIPSIS)
+            var type ast.Expr = {
+                kind: ast.TYPE_ELLIPSIS,
+                ellipsis: {
+                    pos: pos,
+                },
             }
-            next(p)
+            var decl ast.Decl = {
+                kind: ast.DECL_FIELD,
+                pos: pos,
+                field: {
+                    type: esc(type),
+                },
+            }
             var param *ast.Decl = esc(decl)
             utils.Slice_append(&params, &param)
             break

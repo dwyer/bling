@@ -371,6 +371,9 @@ fun emitType(e *Emitter, type *ast.Expr) {
         emitToken(e, token.RBRACK)
         emitType(e, type.array.elt)
         break
+    case ast.TYPE_ELLIPSIS:
+        emitToken(e, token.ELLIPSIS)
+        break
     case ast.TYPE_FUNC:
         emitToken(e, token.LPAREN)
         for var params **ast.Decl = type.func.params; params && *params; {
@@ -458,9 +461,6 @@ fun emitType(e *Emitter, type *ast.Expr) {
 
 fun emitDecl(e *Emitter, decl *ast.Decl) {
     switch decl.kind {
-    case ast.DECL_ELLIPSIS:
-        emitToken(e, token.ELLIPSIS)
-        break
     case ast.DECL_FIELD:
         if decl.field.name != NULL {
             emitExpr(e, decl.field.name)

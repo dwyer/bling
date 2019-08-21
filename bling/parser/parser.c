@@ -732,11 +732,20 @@ static ast$Decl **parseParameterList(parser$Parser *p, ast$Scope *scope,
             break;
         }
         if (p->tok == token$ELLIPSIS) {
-            ast$Decl decl = {
-                .kind = ast$DECL_ELLIPSIS,
-                .pos = p->pos,
+            token$Pos pos = parser$expect(p, token$ELLIPSIS);
+            ast$Expr type = {
+                .kind = ast$TYPE_ELLIPSIS,
+                .ellipsis = {
+                    .pos = pos,
+                },
             };
-            parser$next(p);
+            ast$Decl decl = {
+                .kind = ast$DECL_FIELD,
+                .pos = pos,
+                .field = {
+                    .type = esc(type),
+                },
+            };
             ast$Decl *param = esc(decl);
             utils$Slice_append(&params, &param);
             break;

@@ -423,9 +423,19 @@ fun parameter_type_list(p *parser.Parser) **ast.Decl {
             break
         }
         if p.tok == token.ELLIPSIS {
+            var pos token.Pos = parser.expect(p, token.ELLIPSIS)
+            var type ast.Expr = {
+                kind: ast.TYPE_ELLIPSIS,
+                ellipsis: {
+                    pos: pos,
+                },
+            }
             var decl ast.Decl = {
-                kind: ast.DECL_ELLIPSIS,
-                pos: parser.expect(p, token.ELLIPSIS),
+                kind: ast.DECL_FIELD,
+                pos: pos,
+                field: {
+                    type: esc(type),
+                },
             }
             var param *ast.Decl = esc(decl)
             utils.Slice_append(&params, &param)

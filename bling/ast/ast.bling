@@ -8,7 +8,6 @@ import "utils"
 typedef NodeKind enum {
     NODE_ILLEGAL = 0
     _DECL_START
-    DECL_ELLIPSIS
     DECL_FIELD
     DECL_FUNC
     DECL_IMPORT
@@ -50,6 +49,7 @@ typedef NodeKind enum {
     _TYPE_START
     TYPE_ARRAY
     TYPE_BUILTIN_FUNC
+    TYPE_ELLIPSIS
     TYPE_ENUM
     TYPE_NATIVE
     TYPE_FUNC
@@ -111,6 +111,10 @@ typedef CompositeLit struct {
     pos token.Pos
     type *Expr
     list **Expr
+}
+
+typedef EllipsisType struct {
+    pos token.Pos
 }
 
 typedef EnumType struct {
@@ -198,6 +202,7 @@ typedef Expr struct {
         call CallExpr
         cast CastExpr
         composite CompositeLit
+        ellipsis EllipsisType
         enum_ EnumType
         func FuncExpr
         ident Ident

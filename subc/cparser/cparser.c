@@ -541,9 +541,19 @@ static ast$Decl **parameter_type_list(parser$Parser *p) {
             break;
         }
         if (p->tok == token$ELLIPSIS) {
+            token$Pos pos = parser$expect(p, token$ELLIPSIS); 
+            ast$Expr type = {
+                .kind = ast$TYPE_ELLIPSIS,
+                .ellipsis = {
+                    .pos = pos,
+                },
+            };
             ast$Decl decl = {
-                .kind = ast$DECL_ELLIPSIS,
-                .pos = parser$expect(p, token$ELLIPSIS),
+                .kind = ast$DECL_FIELD,
+                .pos = pos,
+                .field = {
+                    .type = esc(type),
+                },
             };
             ast$Decl *param = esc(decl);
             utils$Slice_append(&params, &param);

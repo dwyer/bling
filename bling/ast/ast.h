@@ -14,7 +14,6 @@ typedef enum {
     ast$NODE_ILLEGAL = 0,
 
     ast$_DECL_START,
-    ast$DECL_ELLIPSIS,
     ast$DECL_FIELD,
     ast$DECL_FUNC,
     ast$DECL_IMPORT,
@@ -59,6 +58,7 @@ typedef enum {
     ast$_TYPE_START,
     ast$TYPE_ARRAY,
     ast$TYPE_BUILTIN_FUNC,
+    ast$TYPE_ELLIPSIS,
     ast$TYPE_ENUM,
     ast$TYPE_NATIVE,
     ast$TYPE_FUNC,
@@ -130,6 +130,10 @@ typedef struct {
     ast$Expr *type;
     ast$Expr **list;
 } ast$CompositeLit;
+
+typedef struct {
+    token$Pos pos;
+} ast$EllipsisType;
 
 typedef struct {
     token$Pos pos;
@@ -216,6 +220,7 @@ typedef struct ast$Expr {
         ast$CallExpr call;
         ast$CastExpr cast;
         ast$CompositeLit composite;
+        ast$EllipsisType ellipsis;
         ast$EnumType enum_;
         ast$FuncExpr func;
         ast$Ident ident;

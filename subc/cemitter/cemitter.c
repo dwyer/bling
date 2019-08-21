@@ -359,6 +359,10 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
         name = NULL;
         break;
 
+    case ast$TYPE_ELLIPSIS:
+        emitter$emitToken(e, token$ELLIPSIS);
+        break;
+
     case ast$TYPE_ENUM:
         emitter$emitToken(e, token$ENUM);
         if (type->enum_.name) {
@@ -465,10 +469,6 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
 
 static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
     switch (decl->kind) {
-
-    case ast$DECL_ELLIPSIS:
-        emitter$emitToken(e, token$ELLIPSIS);
-        break;
 
     case ast$DECL_FIELD:
         cemitter$emitType(e, decl->field.type, decl->field.name);

@@ -402,6 +402,10 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         emitter$emitType(e, type->array.elt);
         break;
 
+    case ast$TYPE_ELLIPSIS:
+        emitter$emitToken(e, token$ELLIPSIS);
+        break;
+
     case ast$TYPE_FUNC:
         emitter$emitToken(e, token$LPAREN);
         for (ast$Decl **params = type->func.params; params && *params; ) {
@@ -494,10 +498,6 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
 
 extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
     switch (decl->kind) {
-
-    case ast$DECL_ELLIPSIS:
-        emitter$emitToken(e, token$ELLIPSIS);
-        break;
 
     case ast$DECL_FIELD:
         if (decl->field.name != NULL) {

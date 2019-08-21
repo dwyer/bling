@@ -202,6 +202,9 @@ fun pointerBase(t *ast.Expr) *ast.Expr {
 }
 
 fun areAssignable(a *ast.Expr, b *ast.Expr) bool {
+    if a.kind == ast.TYPE_ELLIPSIS {
+        return true
+    }
     if areIdentical(a, b) {
         return true
     }
@@ -379,6 +382,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
             <void> len
         }
         break
+    case ast.TYPE_ELLIPSIS: break
     case ast.TYPE_ENUM:
         for var i int = 0; t.enum_.enums[i]; i++ {
             var decl *ast.Decl = t.enum_.enums[i]
@@ -394,9 +398,6 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
     case ast.TYPE_FUNC:
         for var i int = 0; t.func.params && t.func.params[i]; i++ {
             var param *ast.Decl = t.func.params[i]
-            if param.kind == ast.DECL_ELLIPSIS {
-                continue
-            }
             assert(param.kind == ast.DECL_FIELD)
             Checker_checkType(c, param.field.type)
         }
@@ -592,13 +593,12 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 break
             }
             var type *ast.Expr = Checker_checkExpr(c, expr.call.args[i])
-            if param.kind == ast.DECL_FIELD {
-                if !areAssignable(param.field.type, type) {
-                    Checker_error(c, ast.Expr_pos(expr), sys.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
-                }
+            assert(param.kind == ast.DECL_FIELD)
+            if !areAssignable(param.field.type, type) {
+                Checker_error(c, ast.Expr_pos(expr), sys.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
+            }
+            if param.field.type.kind != ast.TYPE_ELLIPSIS {
                 j++
-            } else {
-                assert(param.kind == ast.DECL_ELLIPSIS)
             }
         }
         return type.func.result

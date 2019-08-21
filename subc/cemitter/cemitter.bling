@@ -325,6 +325,9 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         emitter.emitToken(e, token.RPAREN)
         name = NULL
         break
+    case ast.TYPE_ELLIPSIS:
+        emitter.emitToken(e, token.ELLIPSIS)
+        break
     case ast.TYPE_ENUM:
         emitter.emitToken(e, token.ENUM)
         if type.enum_.name {
@@ -423,9 +426,6 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
 
 fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
     switch decl.kind {
-    case ast.DECL_ELLIPSIS:
-        emitter.emitToken(e, token.ELLIPSIS)
-        break
     case ast.DECL_FIELD:
         emitType(e, decl.field.type, decl.field.name)
         break

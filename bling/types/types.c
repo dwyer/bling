@@ -209,6 +209,9 @@ static ast$Expr *types$pointerBase(ast$Expr *t) {
 }
 
 static bool types$areAssignable(ast$Expr *a, ast$Expr *b) {
+    if (a->kind == ast$TYPE_ELLIPSIS) {
+        return true;
+    }
     if (types$areIdentical(a, b)) {
         return true;
     }
@@ -416,6 +419,9 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         }
         break;
 
+    case ast$TYPE_ELLIPSIS:
+        break;
+
     case ast$TYPE_ENUM:
         for (int i = 0; t->enum_.enums[i]; i++) {
             ast$Decl *decl = t->enum_.enums[i];
@@ -433,9 +439,6 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
     case ast$TYPE_FUNC:
         for (int i = 0; t->func.params && t->func.params[i]; i++) {
             ast$Decl *param = t->func.params[i];
-            if (param->kind == ast$DECL_ELLIPSIS) {
-                continue;
-            }
             assert(param->kind == ast$DECL_FIELD);
             Checker_checkType(c, param->field.type);
         }
@@ -667,16 +670,15 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                     break;
                 }
                 ast$Expr *type = Checker_checkExpr(c, expr->call.args[i]);
-                if (param->kind == ast$DECL_FIELD) {
-                    if (!types$areAssignable(param->field.type, type)) {
-                        Checker_error(c, ast$Expr_pos(expr), sys$sprintf(
-                                    "not assignable: %s and %s",
-                                    types$typeString(param->field.type),
-                                    types$typeString(type)));
-                    }
+                assert(param->kind == ast$DECL_FIELD);
+                if (!types$areAssignable(param->field.type, type)) {
+                    Checker_error(c, ast$Expr_pos(expr), sys$sprintf(
+                                "not assignable: %s and %s",
+                                types$typeString(param->field.type),
+                                types$typeString(type)));
+                }
+                if (param->field.type->kind != ast$TYPE_ELLIPSIS) {
                     j++;
-                } else {
-                    assert(param->kind == ast$DECL_ELLIPSIS);
                 }
             }
             return type->func.result;
