@@ -1455,6 +1455,7 @@ static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
 
 extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename,
         ast$Scope *scope) {
+    // sys$printf("parsing %s\n", filename);
     utils$Error *err = NULL;
     char *src = ioutil$readFile(filename, &err);
     if (err) {

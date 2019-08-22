@@ -27,7 +27,7 @@ typedef struct {
 } types$Config;
 
 typedef struct {
-    utils$Map scopes;
+    utils$Map imports; // map of types$Package
 } types$Info;
 
 extern types$Info *types$newInfo();

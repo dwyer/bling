@@ -938,29 +938,18 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
     }
 }
 
-static void Checker_checkFile(Checker *c, ast$File *file);
-
-static void Checker_checkImport(Checker *c, ast$Decl *imp) {
-    if (c->conf->cMode) {
-        return;
-    }
+static types$Package *Checker_checkImport(Checker *c, ast$Decl *imp) {
     char *path = types$constant_stringVal(imp->imp.path);
-    ast$Scope *oldScope = NULL;
-    utils$Map_get(&c->info->scopes, path, &oldScope);
-    if (oldScope) {
-        imp->imp.name = types$makeIdent(oldScope->pkg);
-        Checker_declare(c, imp, oldScope, c->pkg->scope, ast$ObjKind_PKG,
-                imp->imp.name);
-        free(path);
-        return;
+    types$Package *pkg = NULL;
+    utils$Map_get(&c->info->imports, path, &pkg);
+    if (pkg == NULL) {
+        pkg = types$check(c->conf, path, c->fset, NULL, c->info);
+        assert(utils$Map_has_key(&c->info->imports, path));
     }
-    ast$File **files = parser$parseDir(c->fset, path, types$universe(), NULL);
-    utils$Map_set(&c->info->scopes, path, &files[0]->scope);
-    types$Package *pkg = types$check(c->conf, path, c->fset, files, c->info);
-    utils$Slice_append(&c->pkg->imports, &pkg);
-    imp->imp.name = types$makeIdent(files[0]->scope->pkg);
-    Checker_declare(c, imp, files[0]->scope, c->pkg->scope, ast$ObjKind_PKG,
+    imp->imp.name = types$makeIdent(pkg->scope->pkg);
+    Checker_declare(c, imp, pkg->scope, c->pkg->scope, ast$ObjKind_PKG,
             imp->imp.name);
+    return pkg;
 }
 
 static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
@@ -1046,7 +1035,8 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
 
 static void Checker_checkFile(Checker *c, ast$File *file) {
     for (int i = 0; file->imports[i] != NULL; i++) {
-        Checker_checkImport(c, file->imports[i]);
+        types$Package *pkg = Checker_checkImport(c, file->imports[i]);
+        utils$Slice_append(&c->pkg->imports, &pkg);
     }
     for (int i = 0; file->decls[i] != NULL; i++) {
         ast$ObjKind kind = ast$ObjKind_BAD;
@@ -1072,13 +1062,23 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
 
 extern types$Info *types$newInfo() {
     types$Info info = {
-        .scopes = utils$Map_init(sizeof(ast$Scope *)),
+        .imports = utils$Map_init(sizeof(types$Package *)),
     };
     return esc(info);
 }
 
 extern types$Package *types$checkFile(types$Config *conf, const char *path,
         token$FileSet *fset, ast$File *file, types$Info *info) {
+    if (info) {
+        types$Package *pkg = NULL;
+        utils$Map_get(&info->imports, path, &pkg);
+        if (pkg) {
+            return pkg;
+        }
+    } else {
+        info = types$newInfo();
+    }
+    // sys$printf("checking %s\n", path);
     types$Package pkg = {
         .path = strdup(path),
         .name = file->name ? strdup(file->name->ident.name) : NULL,
@@ -1086,17 +1086,21 @@ extern types$Package *types$checkFile(types$Config *conf, const char *path,
         .imports = {.size = sizeof(types$Package *)},
     };
     Checker c = {
-        .info = info ?: types$newInfo(),
+        .info = info,
         .fset = fset,
         .conf = conf,
         .pkg = esc(pkg),
     };
+    utils$Map_set(&info->imports, path, &c.pkg);
     Checker_checkFile(&c, file);
     return c.pkg;
 }
 
 extern types$Package *types$check(types$Config *conf, const char *path,
         token$FileSet *fset, ast$File **files, types$Info *info) {
+    if (files == NULL) {
+        files = parser$parseDir(fset, path, types$universe(), NULL);
+    }
     assert(files[0] && !files[1]);
     return types$checkFile(conf, path, fset, files[0], info);
 }

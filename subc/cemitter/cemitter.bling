@@ -513,11 +513,15 @@ fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
     emitObjects(e, scope, ast.ObjKind_FUN)
 }
 
-fun _emitPackage(e *emitter.Emitter, pkg *types.Package) {
+fun _emitPackage(e *emitter.Emitter, done *utils.Map, pkg *types.Package) {
+    if utils.Map_has_key(done, pkg.path) {
+        return
+    }
+    utils.Map_set(done, pkg.path, &pkg.path)
     for var i int = 0; i < utils.Slice_len(&pkg.imports); i++ {
         var impt *types.Package = NULL
         utils.Slice_get(&pkg.imports, i, &impt)
-        _emitPackage(e, impt)
+        _emitPackage(e, done, impt)
     }
     e.forwardDecl = true
     emitScope(e, pkg.scope)
@@ -526,5 +530,7 @@ fun _emitPackage(e *emitter.Emitter, pkg *types.Package) {
 }
 
 fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
-    _emitPackage(e, pkg)
+    var done utils.Map = utils.Map_init(sizeof(*char))
+    _emitPackage(e, &done, pkg)
+    utils.Map_deinit(&done)
 }

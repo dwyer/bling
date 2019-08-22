@@ -55,15 +55,15 @@ CFILES=utils/error.c \
      bling/build/build.c \
      cmd/blingc/main.c
 
+hello: $(BLINGC) all.bling
+	$(BLINGC) build cmd/blingc
+
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
 	$(CC) $(CFLAGS) all.c \
 	    bazel-bin/bootstrap/libbootstrap.a \
 	    bazel-bin/os/libos.a bazel-bin/sys/libsys.a
-	# $(BLINGC) build utils
-
-hello: $(BLINGC) all.bling
-	$(BLINGC) build utils
+	$(BLINGC) build cmd/blingc
 
 test_compiler: $(BLINGC)
 	./test_compiler.sh

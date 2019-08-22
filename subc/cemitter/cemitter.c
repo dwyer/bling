@@ -560,11 +560,15 @@ extern void cemitter$emitScope(emitter$Emitter *e, ast$Scope *scope) {
     emitObjects(e, scope, ast$ObjKind_FUN);
 }
 
-extern void _emitPackage(emitter$Emitter *e, types$Package *pkg) {
+extern void _emitPackage(emitter$Emitter *e, utils$Map *done, types$Package *pkg) {
+    if (utils$Map_has_key(done, pkg->path)) {
+        return;
+    }
+    utils$Map_set(done, pkg->path, &pkg->path);
     for (int i = 0; i < utils$Slice_len(&pkg->imports); i++) {
         types$Package *impt = NULL;
         utils$Slice_get(&pkg->imports, i, &impt);
-        _emitPackage(e, impt);
+        _emitPackage(e, done, impt);
     }
     e->forwardDecl = true;
     cemitter$emitScope(e, pkg->scope);
@@ -573,5 +577,7 @@ extern void _emitPackage(emitter$Emitter *e, types$Package *pkg) {
 }
 
 extern void cemitter$emitPackage(emitter$Emitter *e, types$Package *pkg) {
-    _emitPackage(e, pkg);
+    utils$Map done = utils$Map_init(sizeof(char *));
+    _emitPackage(e, &done, pkg);
+    utils$Map_deinit(&done);
 }

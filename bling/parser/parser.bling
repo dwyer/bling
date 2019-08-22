@@ -1307,6 +1307,7 @@ fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
 }
 
 fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.File {
+    sys.printf("parsing %s\n", filename)
     var err *utils.Error = NULL
     var src *char = ioutil.readFile(filename, &err)
     if err {

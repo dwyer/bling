@@ -14,7 +14,7 @@ typedef Config struct {
 }
 
 typedef Info struct {
-    scopes utils.Map
+    imports utils.Map
 }
 
 typedef Package struct {
@@ -795,25 +795,17 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
     }
 }
 
-fun Checker_checkImport(c *Checker, imp *ast.Decl) {
-    if c.conf.cMode {
-        return
-    }
+fun Checker_checkImport(c *Checker, imp *ast.Decl) *Package {
     var path *char = constant_stringVal(imp.imp.path)
-    var oldScope *ast.Scope = NULL
-    utils.Map_get(&c.info.scopes, path, &oldScope)
-    if oldScope {
-        imp.imp.name = makeIdent(oldScope.pkg)
-        Checker_declare(c, imp, oldScope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
-        free(path)
-        return
+    var pkg *Package = NULL
+    utils.Map_get(&c.info.imports, path, &pkg)
+    if pkg == NULL {
+        pkg = check(c.conf, path, c.fset, NULL, c.info)
+        assert(utils.Map_has_key(&c.info.imports, path))
     }
-    var files **ast.File = parser.parseDir(c.fset, path, universe(), NULL)
-    utils.Map_set(&c.info.scopes, path, &files[0].scope)
-    var pkg *Package = check(c.conf, path, c.fset, files, c.info)
-    utils.Slice_append(&c.pkg.imports, &pkg)
-    imp.imp.name = makeIdent(files[0].scope.pkg)
-    Checker_declare(c, imp, files[0].scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
+    imp.imp.name = makeIdent(pkg.scope.pkg)
+    Checker_declare(c, imp, pkg.scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
+    return pkg
 }
 
 fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
@@ -889,7 +881,8 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
 
 fun Checker_checkFile(c *Checker, file *ast.File) {
     for var i int = 0; file.imports[i] != NULL; i++ {
-        Checker_checkImport(c, file.imports[i])
+        var pkg *Package = Checker_checkImport(c, file.imports[i])
+        utils.Slice_append(&c.pkg.imports, &pkg)
     }
     for var i int = 0; file.decls[i] != NULL; i++ {
         var kind ast.ObjKind = ast.ObjKind_BAD
@@ -913,12 +906,21 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
 
 fun newInfo() *Info {
     var info Info = {
-        scopes: utils.Map_init(sizeof(*ast.Scope)),
+        imports: utils.Map_init(sizeof(*Package)),
     }
     return esc(info)
 }
 
 fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.File, info *Info) *Package {
+    if info {
+        var pkg *Package = NULL
+        utils.Map_get(&info.imports, path, &pkg)
+        if pkg {
+            return pkg
+        }
+    } else {
+        info = newInfo()
+    }
     var pkg Package = {
         path: strdup(path),
         name: file.name ? strdup(file.name.ident.name) : NULL,
@@ -928,16 +930,20 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
         },
     }
     var c Checker = {
-        info: info ?: newInfo(),
+        info: info,
         fset: fset,
         conf: conf,
         pkg: esc(pkg),
     }
+    utils.Map_set(&info.imports, path, &c.pkg)
     Checker_checkFile(&c, file)
     return c.pkg
 }
 
 fun check(conf *Config, path *const char, fset *token.FileSet, files **ast.File, info *Info) *Package {
+    if files == NULL {
+        files = parser.parseDir(fset, path, universe(), NULL)
+    }
     assert(files[0] && !files[1])
     return checkFile(conf, path, fset, files[0], info)
 }

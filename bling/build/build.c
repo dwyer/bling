@@ -22,7 +22,7 @@ static void emit_rawfile(emitter$Emitter *e, const char *filename) {
     free(src);
 }
 
-static void printStrArray(char **s) {
+extern void printStrArray(char **s) {
     for (int i = 0; s[i]; i++) {
         if (i) {
             sys$printf(" ");
@@ -34,7 +34,7 @@ static void printStrArray(char **s) {
 
 static void execute(utils$Slice *cmd) {
     char **args = utils$Slice_to_nil_array(*cmd);
-    printStrArray(args);
+    // printStrArray(args);
     int code = sys$run(args);
     if (code != 0) {
         panic(sys$sprintf("- failed with code %d", code));
@@ -55,13 +55,13 @@ static void mkdirForFile(const char *path) {
 typedef struct {
     const char *path;
     os$FileInfo *lib;
-    ast$File **files;
     types$Package *pkg;
     os$Time modTime;
 } Package;
 
 typedef struct {
     token$FileSet *fset;
+    types$Info *info;
     bool force;
     types$Config conf;
     utils$Map pkgs;
@@ -158,23 +158,13 @@ static Package *buildCPackage(Builder *b, const char *path) {
 
 static Package *buildBlingPackage(Builder *b, const char *path) {
     Package pkg = {
-        .files = parser$parseDir(b->fset, path, types$universe(), NULL),
+        .pkg = types$check(&b->conf, path, b->fset, NULL, b->info),
     };
-    pkg.pkg = types$check(&b->conf, path, b->fset, pkg.files, NULL);
     utils$Slice libs = {.size = sizeof(os$FileInfo *)};
-
-    emitter$Emitter e = {.forwardDecl=true};
-    emit_rawfile(&e, "bootstrap/bootstrap.h");
-
-    ast$File *f = pkg.files[0];
-    for (int i = 0; f->imports[i]; i++) {
-        // for (int i = 0; pkg.files[i]; i++) {
-        //     cemitter$emitFile(&e, pkg.files[i]);
-        // }
-        // e.forwardDecl = false;
-        // cemitter$emitFile(&e, f);
-        char *path = types$constant_stringVal(f->imports[i]->imp.path);
-        Package *imp = _buildPackage(b, path);
+    for (int i = 0; i < utils$Slice_len(&pkg.pkg->imports); i++) {
+        types$Package *impt = NULL;
+        utils$Slice_get(&pkg.pkg->imports, i, &impt);
+        Package *imp = _buildPackage(b, impt->path);
         os$FileInfo *lib = imp->lib;
         assert(lib);
         if (pkg.modTime < os$FileInfo_modTime(lib)) {
@@ -183,27 +173,25 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
         utils$Slice_append(&libs, &lib);
     }
 
-    // TODO typecheck the file
-    // TODO emit imports (forward decls only)
-    // TODO build imports
-    // TODO emit C code
-    // print(emitter$Emitter_string(&e));
-    // TODO compile C code to obj
-    // TODO link obj with imported libs to make new lib
-
     char *base = paths$base(path);
     char *libPath = sys$sprintf("%s/%s/lib%s.a", GEN_PATH, path, base);
     char *objPath = sys$sprintf("%s/%s/%s.o", GEN_PATH, path, base);
     char *cPath = sys$sprintf("%s/%s/%s.c", GEN_PATH, path, base);
     free(base);
 
+    emitter$Emitter e = {
+        .forwardDecl = true,
+    };
+    emit_rawfile(&e, "bootstrap/bootstrap.h");
+    cemitter$emitPackage(&e, pkg.pkg);
     mkdirForFile(cPath);
     ioutil$writeFile(cPath, emitter$Emitter_string(&e), 0644, NULL);
 
     {
         utils$Slice cmd = {.size = sizeof(char *)};
-        // Slice_appendStrLit(&cmd, "/bin/echo");
         Slice_appendStrLit(&cmd, CC_PATH);
+        Slice_appendStrLit(&cmd, "-fms-extensions");
+        Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag");
         Slice_appendStrLit(&cmd, "-c");
         Slice_appendStrLit(&cmd, "-o");
         Slice_appendStrLit(&cmd, objPath);
@@ -211,24 +199,47 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
         execute(&cmd);
     }
 
-    {
+    if (streq(path, "cmd/blingc")) {
+        utils$Slice cmd = {.size = sizeof(char *)};
+        Slice_appendStrLit(&cmd, CC_PATH);
+        Slice_appendStrLit(&cmd, "-o");
+        Slice_appendStrLit(&cmd, "blingc.out");
+        Slice_appendStrLit(&cmd, objPath);
+        {
+            Package *pkg = NULL;
+            utils$MapIter iter = utils$NewMapIter(&b->pkgs);
+            while (utils$MapIter_next(&iter, NULL, &pkg)) {
+                Slice_appendStrLit(&cmd, pkg->lib->_name);
+            }
+        }
+        execute(&cmd);
+    } else {
         utils$Slice cmd = {.size = sizeof(char *)};
         Slice_appendStrLit(&cmd, AR_PATH);
         Slice_appendStrLit(&cmd, "rsc");
         Slice_appendStrLit(&cmd, libPath);
         Slice_appendStrLit(&cmd, objPath);
         execute(&cmd);
+        pkg.lib = os$stat(libPath, NULL);
     }
 
-    return NULL;
+    return esc(pkg);
 }
 
 static Package *_buildPackage(Builder *b, const char *path) {
-    sys$printf("building %s\n", path);
-    if (streq(path, "os") || streq(path, "sys")) {
-        return buildCPackage(b, path);
+    Package *pkg = NULL;
+    utils$Map_get(&b->pkgs, path, &pkg);
+    if (pkg) {
+        return pkg;
     }
-    return buildBlingPackage(b, path);
+    // sys$printf("building %s\n", path);
+    if (streq(path, "bootstrap") || streq(path, "os") || streq(path, "sys")) {
+        pkg = buildCPackage(b, path);
+    } else {
+        pkg = buildBlingPackage(b, path);
+    }
+    utils$Map_set(&b->pkgs, path, &pkg);
+    return pkg;
 }
 
 extern void build$buildPackage(char *argv[]) {
@@ -236,8 +247,10 @@ extern void build$buildPackage(char *argv[]) {
     char *path = *argv;
     Builder builder = {
         .fset = token$newFileSet(),
+        .info = types$newInfo(),
         .force = true,
         .pkgs = utils$Map_init(sizeof(Package *)),
     };
+    _buildPackage(&builder, "bootstrap");
     _buildPackage(&builder, path);
 }

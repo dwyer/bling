@@ -44,7 +44,6 @@ fun printStrArray(s **char) {
 
 fun execute(cmd *utils.Slice) {
     var args **char = utils.Slice_to_nil_array(*cmd)
-    printStrArray(args)
     var code int = sys.run(args)
     if code != 0 {
         panic(sys.sprintf("- failed with code %d", code))
@@ -65,13 +64,13 @@ fun mkdirForFile(path *const char) {
 typedef Package struct {
     path *const char
     lib *os.FileInfo
-    files **ast.File
     pkg *types.Package
     modTime os.Time
 }
 
 typedef Builder struct {
     fset *token.FileSet
+    info *types.Info
     force bool
     conf types.Config
     pkgs utils.Map
@@ -166,20 +165,15 @@ fun buildCPackage(b *Builder, path *const char) *Package {
 
 fun buildBlingPackage(b *Builder, path *const char) *Package {
     var pkg Package = {
-        files: parser.parseDir(b.fset, path, types.universe(), NULL),
+        pkg: types.check(&b.conf, path, b.fset, NULL, b.info),
     }
-    pkg.pkg = types.check(&b.conf, path, b.fset, pkg.files, NULL)
     var libs utils.Slice = {
         size: sizeof(*os.FileInfo),
     }
-    var e emitter.Emitter = {
-        forwardDecl: true,
-    }
-    emit_rawfile(&e, "bootstrap/bootstrap.h")
-    var f *ast.File = pkg.files[0]
-    for var i int = 0; f.imports[i]; i++ {
-        var path *char = types.constant_stringVal(f.imports[i].imp.path)
-        var imp *Package = _buildPackage(b, path)
+    for var i int = 0; i < utils.Slice_len(&pkg.pkg.imports); i++ {
+        var impt *types.Package = NULL
+        utils.Slice_get(&pkg.pkg.imports, i, &impt)
+        var imp *Package = _buildPackage(b, impt.path)
         var lib *os.FileInfo = imp.lib
         assert(lib)
         if pkg.modTime < os.FileInfo_modTime(lib) {
@@ -192,6 +186,11 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
     var objPath *char = sys.sprintf("%s/%s/%s.o", GEN_PATH, path, base)
     var cPath *char = sys.sprintf("%s/%s/%s.c", GEN_PATH, path, base)
     free(base)
+    var e emitter.Emitter = {
+        forwardDecl: true,
+    }
+    emit_rawfile(&e, "bootstrap/bootstrap.h")
+    cemitter.emitPackage(&e, pkg.pkg)
     mkdirForFile(cPath)
     ioutil.writeFile(cPath, emitter.Emitter_string(&e), 0644, NULL)
     {
@@ -199,13 +198,31 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
             size: sizeof(*char),
         }
         Slice_appendStrLit(&cmd, CC_PATH)
+        Slice_appendStrLit(&cmd, "-fms-extensions")
+        Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag")
         Slice_appendStrLit(&cmd, "-c")
         Slice_appendStrLit(&cmd, "-o")
         Slice_appendStrLit(&cmd, objPath)
         Slice_appendStrLit(&cmd, cPath)
         execute(&cmd)
     }
-    {
+    if streq(path, "cmd/blingc") {
+        var cmd utils.Slice = {
+            size: sizeof(*char),
+        }
+        Slice_appendStrLit(&cmd, CC_PATH)
+        Slice_appendStrLit(&cmd, "-o")
+        Slice_appendStrLit(&cmd, "blingc.out")
+        Slice_appendStrLit(&cmd, objPath)
+        {
+            var pkg *Package = NULL
+            var iter utils.MapIter = utils.NewMapIter(&b.pkgs)
+            while utils.MapIter_next(&iter, NULL, &pkg) {
+                Slice_appendStrLit(&cmd, pkg.lib._name)
+            }
+        }
+        execute(&cmd)
+    } else {
         var cmd utils.Slice = {
             size: sizeof(*char),
         }
@@ -214,16 +231,24 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         Slice_appendStrLit(&cmd, libPath)
         Slice_appendStrLit(&cmd, objPath)
         execute(&cmd)
+        pkg.lib = os.stat(libPath, NULL)
     }
-    return NULL
+    return esc(pkg)
 }
 
 fun _buildPackage(b *Builder, path *const char) *Package {
-    sys.printf("building %s\n", path)
-    if streq(path, "os") || streq(path, "sys") {
-        return buildCPackage(b, path)
+    var pkg *Package = NULL
+    utils.Map_get(&b.pkgs, path, &pkg)
+    if pkg {
+        return pkg
     }
-    return buildBlingPackage(b, path)
+    if streq(path, "bootstrap") || streq(path, "os") || streq(path, "sys") {
+        pkg = buildCPackage(b, path)
+    } else {
+        pkg = buildBlingPackage(b, path)
+    }
+    utils.Map_set(&b.pkgs, path, &pkg)
+    return pkg
 }
 
 fun buildPackage(argv []*char) {
@@ -231,8 +256,10 @@ fun buildPackage(argv []*char) {
     var path *char = *argv
     var builder Builder = {
         fset: token.newFileSet(),
+        info: types.newInfo(),
         force: true,
         pkgs: utils.Map_init(sizeof(*Package)),
     }
+    _buildPackage(&builder, "bootstrap")
     _buildPackage(&builder, path)
 }
