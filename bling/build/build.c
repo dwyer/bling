@@ -54,15 +54,14 @@ static void mkdirForFile(const char *path) {
 
 typedef struct {
     char *path;
-    os$FileInfo *lib;
     types$Package *pkg;
-    os$Time modTime;
     char *hPath;
     char *cPath;
     char *objPath;
     utils$Slice objPaths;
     char *libPath;
-
+    os$Time libModTime; // modtime of libPath
+    os$Time srcModTime; // modtime of newest src or dep
     utils$Slice deps;
 } Package;
 
@@ -87,6 +86,17 @@ static void genObj(Builder *b, const char *dst, const char *src) {
     Slice_appendStrLit(&cmd, src);
     mkdirForFile(dst);
     execute(&cmd);
+}
+
+static os$Time getModTime(const char *path) {
+    os$Time t = 0;
+    utils$Error *err = NULL;
+    os$FileInfo *info = os$stat(path, &err);
+    if (info) {
+        t = os$FileInfo_modTime(info);
+        os$FileInfo_free(info);
+    }
+    return t;
 }
 
 static os$FileInfo *buildCFile(Builder *b, os$FileInfo *cFile) {
@@ -118,17 +128,27 @@ static Package *_buildPackage(Builder *b, const char *path);
 static Package newPackage(Builder *b, const char *path) {
     char *base = paths$base(path);
     char *genPath = paths$join2(GEN_PATH, path);
+    char *libPath = sys$sprintf("%s/%s.a", genPath, base);
     Package pkg = {
         .path = strdup(path),
         .pkg = types$check(&b->conf, path, b->fset, NULL, b->info),
         .hPath = sys$sprintf("%s/%s.h", genPath, base),
         .cPath = sys$sprintf("%s/%s.c", genPath, base),
         .objPath = sys$sprintf("%s/%s.o", genPath, base),
-        .libPath = sys$sprintf("%s/%s.a", genPath, base),
+        .libPath = libPath,
+        .libModTime = getModTime(libPath),
         .deps = {.size = sizeof(Package *)},
     };
     free(genPath);
     free(base);
+    for (int i = 0; i < utils$Slice_len(&pkg.pkg->imports); i++) {
+        types$Package *impt = NULL;
+        utils$Slice_get(&pkg.pkg->imports, i, &impt);
+        Package *dep = _buildPackage(b, impt->path);
+        if (pkg.srcModTime < dep->srcModTime) {
+            pkg.srcModTime = dep->srcModTime;
+        }
+    }
     return pkg;
 }
 
@@ -157,68 +177,52 @@ static void getCFile(Builder *b, Package *pkg) {
 }
 
 static Package *buildCPackage(Builder *b, const char *path) {
-    utils$Slice objFiles = {.size = sizeof(os$FileInfo *)};
     Package pkg = newPackage(b, path);
+    utils$Slice objFiles = {.size = sizeof(char *)};
     {
         os$FileInfo **files = ioutil$readDir(path, NULL);
         for (int i = 0; files[i]; i++) {
             bool checkTime = false;
             os$Time modTime = os$FileInfo_modTime(files[i]);
             if (bytes$hasSuffix(files[i]->_name, ".bling")) {
-                if (pkg.modTime < modTime) {
-                    pkg.modTime = modTime;
+                if (pkg.srcModTime < modTime) {
+                    pkg.srcModTime = modTime;
                 }
             } else if (bytes$hasSuffix(files[i]->_name, ".c")) {
-                if (pkg.modTime < modTime) {
-                    pkg.modTime = modTime;
+                if (pkg.srcModTime < modTime) {
+                    pkg.srcModTime = modTime;
                 }
                 os$FileInfo *obj = buildCFile(b, files[i]);
-                utils$Slice_append(&objFiles, &obj);
+                utils$Slice_append(&objFiles, &obj->_name);
                 checkTime = true;
                 modTime = os$FileInfo_modTime(obj);
-                if (pkg.modTime < modTime) {
-                    pkg.modTime = modTime;
+                if (pkg.srcModTime < modTime) {
+                    pkg.srcModTime = modTime;
                 }
             }
             os$FileInfo_free(files[i]);
         }
     }
-    utils$Error *err = NULL;
-    pkg.lib = os$stat(pkg.libPath, &err);
-    if (b->force || pkg.lib == NULL || pkg.modTime > os$FileInfo_modTime(pkg.lib)) {
+    if (b->force || pkg.srcModTime > pkg.libModTime) {
         genHeader(b, &pkg);
         utils$Slice cmd = {.size = sizeof(char *)};
-        Slice_appendStrLit(&cmd, "/usr/bin/ar");
+        Slice_appendStrLit(&cmd, AR_PATH);
         Slice_appendStrLit(&cmd, "rsc");
         Slice_appendStrLit(&cmd, pkg.libPath);
         for (int i = 0; i < utils$Slice_len(&objFiles); i++) {
-            os$FileInfo *obj = NULL;
+            char *obj = NULL;
             utils$Slice_get(&objFiles, i, &obj);
-            utils$Slice_append(&cmd, &obj->_name);
+            utils$Slice_append(&cmd, &obj);
         }
         mkdirForFile(pkg.libPath);
         execute(&cmd);
-        os$FileInfo_free(pkg.lib);
-        pkg.lib = os$stat(pkg.libPath, &err);
-        pkg.modTime = os$FileInfo_modTime(pkg.lib);
+        pkg.libModTime = getModTime(pkg.libPath);
     }
     return esc(pkg);
 }
 
 static Package *buildBlingPackage(Builder *b, const char *path) {
     Package pkg = newPackage(b, path);
-    utils$Slice libs = {.size = sizeof(os$FileInfo *)};
-    for (int i = 0; i < utils$Slice_len(&pkg.pkg->imports); i++) {
-        types$Package *impt = NULL;
-        utils$Slice_get(&pkg.pkg->imports, i, &impt);
-        Package *imp = _buildPackage(b, impt->path);
-        os$FileInfo *lib = imp->lib;
-        assert(lib);
-        if (pkg.modTime < os$FileInfo_modTime(lib)) {
-            pkg.modTime = os$FileInfo_modTime(lib);
-        }
-        utils$Slice_append(&libs, &lib);
-    }
 
     genHeader(b, &pkg);
     getCFile(b, &pkg);
@@ -234,7 +238,7 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
             Package *pkg = NULL;
             utils$MapIter iter = utils$NewMapIter(&b->pkgs);
             while (utils$MapIter_next(&iter, NULL, &pkg)) {
-                Slice_appendStrLit(&cmd, pkg->lib->_name);
+                Slice_appendStrLit(&cmd, pkg->libPath);
             }
         }
         execute(&cmd);
@@ -245,7 +249,6 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
         Slice_appendStrLit(&cmd, pkg.libPath);
         Slice_appendStrLit(&cmd, pkg.objPath);
         execute(&cmd);
-        pkg.lib = os$stat(pkg.libPath, NULL);
     }
 
     return esc(pkg);

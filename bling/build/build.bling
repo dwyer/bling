@@ -63,14 +63,14 @@ fun mkdirForFile(path *const char) {
 
 typedef Package struct {
     path *char
-    lib *os.FileInfo
     pkg *types.Package
-    modTime os.Time
     hPath *char
     cPath *char
     objPath *char
     objPaths utils.Slice
     libPath *char
+    libModTime os.Time
+    srcModTime os.Time
     deps utils.Slice
 }
 
@@ -99,6 +99,17 @@ fun genObj(b *Builder, dst *const char, src *const char) {
     execute(&cmd)
 }
 
+fun getModTime(path *const char) os.Time {
+    var t os.Time = 0
+    var err *utils.Error = NULL
+    var info *os.FileInfo = os.stat(path, &err)
+    if info {
+        t = os.FileInfo_modTime(info)
+        os.FileInfo_free(info)
+    }
+    return t
+}
+
 fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
     var src *char = os.FileInfo_name(cFile)
     var dst *char = NULL
@@ -123,19 +134,29 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
 fun newPackage(b *Builder, path *const char) Package {
     var base *char = paths.base(path)
     var genPath *char = paths.join2(GEN_PATH, path)
+    var libPath *char = sys.sprintf("%s/%s.a", genPath, base)
     var pkg Package = {
         path: strdup(path),
         pkg: types.check(&b.conf, path, b.fset, NULL, b.info),
         hPath: sys.sprintf("%s/%s.h", genPath, base),
         cPath: sys.sprintf("%s/%s.c", genPath, base),
         objPath: sys.sprintf("%s/%s.o", genPath, base),
-        libPath: sys.sprintf("%s/%s.a", genPath, base),
+        libPath: libPath,
+        libModTime: getModTime(libPath),
         deps: {
             size: sizeof(*Package),
         },
     }
     free(genPath)
     free(base)
+    for var i int = 0; i < utils.Slice_len(&pkg.pkg.imports); i++ {
+        var impt *types.Package = NULL
+        utils.Slice_get(&pkg.pkg.imports, i, &impt)
+        var dep *Package = _buildPackage(b, impt.path)
+        if pkg.srcModTime < dep.srcModTime {
+            pkg.srcModTime = dep.srcModTime
+        }
+    }
     return pkg
 }
 
@@ -164,74 +185,56 @@ fun getCFile(b *Builder, pkg *Package) {
 }
 
 fun buildCPackage(b *Builder, path *const char) *Package {
-    var objFiles utils.Slice = {
-        size: sizeof(*os.FileInfo),
-    }
     var pkg Package = newPackage(b, path)
+    var objFiles utils.Slice = {
+        size: sizeof(*char),
+    }
     {
         var files **os.FileInfo = ioutil.readDir(path, NULL)
         for var i int = 0; files[i]; i++ {
             var checkTime bool = false
             var modTime os.Time = os.FileInfo_modTime(files[i])
             if bytes.hasSuffix(files[i]._name, ".bling") {
-                if pkg.modTime < modTime {
-                    pkg.modTime = modTime
+                if pkg.srcModTime < modTime {
+                    pkg.srcModTime = modTime
                 }
             } else if bytes.hasSuffix(files[i]._name, ".c") {
-                if pkg.modTime < modTime {
-                    pkg.modTime = modTime
+                if pkg.srcModTime < modTime {
+                    pkg.srcModTime = modTime
                 }
                 var obj *os.FileInfo = buildCFile(b, files[i])
-                utils.Slice_append(&objFiles, &obj)
+                utils.Slice_append(&objFiles, &obj._name)
                 checkTime = true
                 modTime = os.FileInfo_modTime(obj)
-                if pkg.modTime < modTime {
-                    pkg.modTime = modTime
+                if pkg.srcModTime < modTime {
+                    pkg.srcModTime = modTime
                 }
             }
             os.FileInfo_free(files[i])
         }
     }
-    var err *utils.Error = NULL
-    pkg.lib = os.stat(pkg.libPath, &err)
-    if b.force || pkg.lib == NULL || pkg.modTime > os.FileInfo_modTime(pkg.lib) {
+    if b.force || pkg.srcModTime > pkg.libModTime {
         genHeader(b, &pkg)
         var cmd utils.Slice = {
             size: sizeof(*char),
         }
-        Slice_appendStrLit(&cmd, "/usr/bin/ar")
+        Slice_appendStrLit(&cmd, AR_PATH)
         Slice_appendStrLit(&cmd, "rsc")
         Slice_appendStrLit(&cmd, pkg.libPath)
         for var i int = 0; i < utils.Slice_len(&objFiles); i++ {
-            var obj *os.FileInfo = NULL
+            var obj *char = NULL
             utils.Slice_get(&objFiles, i, &obj)
-            utils.Slice_append(&cmd, &obj._name)
+            utils.Slice_append(&cmd, &obj)
         }
         mkdirForFile(pkg.libPath)
         execute(&cmd)
-        os.FileInfo_free(pkg.lib)
-        pkg.lib = os.stat(pkg.libPath, &err)
-        pkg.modTime = os.FileInfo_modTime(pkg.lib)
+        pkg.libModTime = getModTime(pkg.libPath)
     }
     return esc(pkg)
 }
 
 fun buildBlingPackage(b *Builder, path *const char) *Package {
     var pkg Package = newPackage(b, path)
-    var libs utils.Slice = {
-        size: sizeof(*os.FileInfo),
-    }
-    for var i int = 0; i < utils.Slice_len(&pkg.pkg.imports); i++ {
-        var impt *types.Package = NULL
-        utils.Slice_get(&pkg.pkg.imports, i, &impt)
-        var imp *Package = _buildPackage(b, impt.path)
-        var lib *os.FileInfo = imp.lib
-        assert(lib)
-        if pkg.modTime < os.FileInfo_modTime(lib) {
-            pkg.modTime = os.FileInfo_modTime(lib)
-        }
-        utils.Slice_append(&libs, &lib)
-    }
     genHeader(b, &pkg)
     getCFile(b, &pkg)
     genObj(b, pkg.objPath, pkg.cPath)
@@ -247,7 +250,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
             var pkg *Package = NULL
             var iter utils.MapIter = utils.NewMapIter(&b.pkgs)
             while utils.MapIter_next(&iter, NULL, &pkg) {
-                Slice_appendStrLit(&cmd, pkg.lib._name)
+                Slice_appendStrLit(&cmd, pkg.libPath)
             }
         }
         execute(&cmd)
@@ -260,7 +263,6 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         Slice_appendStrLit(&cmd, pkg.libPath)
         Slice_appendStrLit(&cmd, pkg.objPath)
         execute(&cmd)
-        pkg.lib = os.stat(pkg.libPath, NULL)
     }
     return esc(pkg)
 }
