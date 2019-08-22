@@ -27,16 +27,23 @@ fun emit_rawfile(e *emitter.Emitter, filename *const char) {
 
 fun isForwardDecl(decl *ast.Decl) bool {
     switch decl.kind {
-    case ast.DECL_FUNC: return decl.func.body == NULL
-    case ast.DECL_PRAGMA: return true
-    case ast.DECL_TYPEDEF: {
-        switch decl.typedef_.type.kind {
-        case ast.TYPE_STRUCT: return decl.typedef_.type.struct_.fields == NULL || decl.typedef_.type.struct_.fields[0] == NULL
-        default: return false
+    case ast.DECL_FUNC:
+        return decl.func.body == NULL
+    case ast.DECL_PRAGMA:
+        return true
+    case ast.DECL_TYPEDEF:
+        {
+            switch decl.typedef_.type.kind {
+            case ast.TYPE_STRUCT:
+                return decl.typedef_.type.struct_.fields == NULL || decl.typedef_.type.struct_.fields[0] == NULL
+            default:
+                return false
+            }
         }
-    }
-    case ast.DECL_VALUE: return decl.value.value == NULL
-    default: return false
+    case ast.DECL_VALUE:
+        return decl.value.value == NULL
+    default:
+        return false
     }
 }
 

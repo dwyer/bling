@@ -63,8 +63,10 @@ fun isSimpleType(t *ast.Expr) bool {
         t = t.array.elt
     }
     switch t.kind {
-    case ast.EXPR_IDENT, ast.EXPR_SELECTOR: return true
-    default: return false
+    case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
+        return true
+    default:
+        return false
     }
 }
 
@@ -206,7 +208,8 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
         e.indent++
         for var stmts **ast.Stmt = stmt.block.stmts; stmts && *stmts; stmts++ {
             switch (*stmts).kind {
-            case ast.STMT_LABEL: break
+            case ast.STMT_LABEL:
+                break
             default:
                 emitTabs(e)
                 break
@@ -241,9 +244,11 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
                 case ast.STMT_BLOCK, ast.STMT_JUMP, ast.STMT_RETURN:
                     oneline = stmt.case_.stmts[1] == NULL
                     break
-                default: break
+                default:
+                    break
                 }
             }
+            oneline = false
             if oneline {
                 emitSpace(e)
                 emitStmt(e, first)
@@ -510,7 +515,8 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
                 case ast.EXPR_COMPOSITE_LIT:
                     omitType = isSimpleType(decl.value.value.composite.type)
                     break
-                default: break
+                default:
+                    break
                 }
             }
             if !omitType {

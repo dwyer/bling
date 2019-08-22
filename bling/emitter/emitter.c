@@ -261,6 +261,7 @@ extern void emitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
                     break;
                 }
             }
+            oneline = false; // XXX breaks syntax in vim
             if (oneline) {
                 emitter$emitSpace(e);
                 emitter$emitStmt(e, first);

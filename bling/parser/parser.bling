@@ -28,17 +28,23 @@ typedef Parser struct {
 
 fun isTypeName(x *ast.Expr) bool {
     switch x.kind {
-    case ast.EXPR_IDENT: return true
-    case ast.EXPR_SELECTOR: return x.selector.x.kind == ast.EXPR_IDENT
-    default: return false
+    case ast.EXPR_IDENT:
+        return true
+    case ast.EXPR_SELECTOR:
+        return x.selector.x.kind == ast.EXPR_IDENT
+    default:
+        return false
     }
 }
 
 fun isLiteralType(x *ast.Expr) bool {
     switch x.kind {
-    case ast.EXPR_IDENT, ast.TYPE_ARRAY, ast.TYPE_STRUCT: return true
-    case ast.EXPR_SELECTOR: return x.selector.x.kind == ast.EXPR_IDENT
-    default: return false
+    case ast.EXPR_IDENT, ast.TYPE_ARRAY, ast.TYPE_STRUCT:
+        return true
+    case ast.EXPR_SELECTOR:
+        return x.selector.x.kind == ast.EXPR_IDENT
+    default:
+        return false
     }
 }
 
@@ -143,7 +149,8 @@ fun expect(p *Parser, tok token.Token) token.Pos {
 
 fun checkExpr(p *Parser, x *ast.Expr) *ast.Expr {
     switch unparen(x).kind {
-    case ast.EXPR_IDENT, ast.EXPR_BASIC_LIT, ast.EXPR_BINARY, ast.EXPR_CALL, ast.EXPR_CAST, ast.EXPR_COMPOSITE_LIT, ast.EXPR_INDEX, ast.EXPR_SELECTOR, ast.EXPR_SIZEOF, ast.EXPR_STAR, ast.EXPR_TERNARY, ast.EXPR_UNARY: break
+    case ast.EXPR_IDENT, ast.EXPR_BASIC_LIT, ast.EXPR_BINARY, ast.EXPR_CALL, ast.EXPR_CAST, ast.EXPR_COMPOSITE_LIT, ast.EXPR_INDEX, ast.EXPR_SELECTOR, ast.EXPR_SIZEOF, ast.EXPR_STAR, ast.EXPR_TERNARY, ast.EXPR_UNARY:
+        break
     case ast.EXPR_PAREN:
         panic("unreachable")
         break
@@ -225,12 +232,14 @@ fun parseIdent(p *Parser) *ast.Expr {
 
 fun parseOperand(p *Parser, lhs bool) *ast.Expr {
     switch p.tok {
-    case token.IDENT: {
-        var x *ast.Expr = parseIdent(p)
-        resolve(p, x)
-        return x
-    }
-    case token.CHAR, token.FLOAT, token.INT, token.STRING: return parseBasicLit(p, p.tok)
+    case token.IDENT:
+        {
+            var x *ast.Expr = parseIdent(p)
+            resolve(p, x)
+            return x
+        }
+    case token.CHAR, token.FLOAT, token.INT, token.STRING:
+        return parseBasicLit(p, p.tok)
     case token.LPAREN:
         if p.c_mode {
             error(p, p.pos, "unreachable")
@@ -249,7 +258,8 @@ fun parseOperand(p *Parser, lhs bool) *ast.Expr {
             expect(p, token.RPAREN)
             return esc(x)
         }
-    default: break
+    default:
+        break
     }
     var t *ast.Expr = tryIdentOrType(p)
     if t {
@@ -408,72 +418,78 @@ fun parsePrimaryExpr(p *Parser, lhs bool) *ast.Expr {
             } else {
                 return x
             }
-        default: return x
+        default:
+            return x
         }
     }
 }
 
 fun parseUnaryExpr(p *Parser, lhs bool) *ast.Expr {
     switch p.tok {
-    case token.ADD, token.AND, token.BITWISE_NOT, token.NOT, token.SUB: {
-        var pos token.Pos = p.pos
-        var op token.Token = p.tok
-        next(p)
-        var x ast.Expr = {
-            kind: ast.EXPR_UNARY,
-            unary: {
-                pos: pos,
-                op: op,
-                x: checkExpr(p, parseUnaryExpr(p, false)),
-            },
+    case token.ADD, token.AND, token.BITWISE_NOT, token.NOT, token.SUB:
+        {
+            var pos token.Pos = p.pos
+            var op token.Token = p.tok
+            next(p)
+            var x ast.Expr = {
+                kind: ast.EXPR_UNARY,
+                unary: {
+                    pos: pos,
+                    op: op,
+                    x: checkExpr(p, parseUnaryExpr(p, false)),
+                },
+            }
+            return esc(x)
         }
-        return esc(x)
-    }
-    case token.MUL: {
-        var pos token.Pos = p.pos
-        next(p)
-        var x ast.Expr = {
-            kind: ast.EXPR_STAR,
-            star: {
-                pos: pos,
-                x: checkExprOrType(p, parseUnaryExpr(p, false)),
-            },
+    case token.MUL:
+        {
+            var pos token.Pos = p.pos
+            next(p)
+            var x ast.Expr = {
+                kind: ast.EXPR_STAR,
+                star: {
+                    pos: pos,
+                    x: checkExprOrType(p, parseUnaryExpr(p, false)),
+                },
+            }
+            return esc(x)
         }
-        return esc(x)
-    }
-    case token.SIZEOF: {
-        var pos token.Pos = p.pos
-        next(p)
-        expect(p, token.LPAREN)
-        var x ast.Expr = {
-            kind: ast.EXPR_SIZEOF,
-            sizeof_: {
-                pos: pos,
-                x: parseType(p),
-            },
+    case token.SIZEOF:
+        {
+            var pos token.Pos = p.pos
+            next(p)
+            expect(p, token.LPAREN)
+            var x ast.Expr = {
+                kind: ast.EXPR_SIZEOF,
+                sizeof_: {
+                    pos: pos,
+                    x: parseType(p),
+                },
+            }
+            expect(p, token.RPAREN)
+            return esc(x)
         }
-        expect(p, token.RPAREN)
-        return esc(x)
-    }
-    case token.LT: {
-        var pos token.Pos = p.pos
-        expect(p, token.LT)
-        var type *ast.Expr = parseType(p)
-        expect(p, token.GT)
-        if p.tok == token.LBRACE {
-            return parseLiteralValue(p, type)
+    case token.LT:
+        {
+            var pos token.Pos = p.pos
+            expect(p, token.LT)
+            var type *ast.Expr = parseType(p)
+            expect(p, token.GT)
+            if p.tok == token.LBRACE {
+                return parseLiteralValue(p, type)
+            }
+            var y ast.Expr = {
+                kind: ast.EXPR_CAST,
+                cast: {
+                    pos: pos,
+                    type: type,
+                    expr: parseUnaryExpr(p, false),
+                },
+            }
+            return esc(y)
         }
-        var y ast.Expr = {
-            kind: ast.EXPR_CAST,
-            cast: {
-                pos: pos,
-                type: type,
-                expr: parseUnaryExpr(p, false),
-            },
-        }
-        return esc(y)
-    }
-    default: return parsePrimaryExpr(p, lhs)
+    default:
+        return parsePrimaryExpr(p, lhs)
     }
 }
 
@@ -770,14 +786,22 @@ fun parseQualifiedType(p *Parser, tok token.Token) *ast.Expr {
 
 fun tryIdentOrType(p *Parser) *ast.Expr {
     switch p.tok {
-    case token.IDENT: return parseTypeName(p)
-    case token.LBRACK: return parseArrayType(p)
-    case token.STRUCT, token.UNION: return parseStructOrUnionType(p, p.tok)
-    case token.MUL: return parsePointerType(p)
-    case token.FUNC: return parseFuncType(p)
-    case token.ENUM: return parseEnumType(p)
-    case token.CONST: return parseQualifiedType(p, p.tok)
-    default: return NULL
+    case token.IDENT:
+        return parseTypeName(p)
+    case token.LBRACK:
+        return parseArrayType(p)
+    case token.STRUCT, token.UNION:
+        return parseStructOrUnionType(p, p.tok)
+    case token.MUL:
+        return parsePointerType(p)
+    case token.FUNC:
+        return parseFuncType(p)
+    case token.ENUM:
+        return parseEnumType(p)
+    case token.CONST:
+        return parseQualifiedType(p, p.tok)
+    default:
+        return NULL
     }
 }
 
@@ -801,31 +825,34 @@ fun parseSimpleStmt(p *Parser, labelOk bool) *ast.Stmt {
     var x *ast.Expr = parseExpr(p, true)
     var op token.Token = p.tok
     switch op {
-    case token.ADD_ASSIGN, token.ASSIGN, token.DIV_ASSIGN, token.MOD_ASSIGN, token.MUL_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.SUB_ASSIGN, token.XOR_ASSIGN: {
-        next(p)
-        var y *ast.Expr = parseRhs(p)
-        var stmt ast.Stmt = {
-            kind: ast.STMT_ASSIGN,
-            assign: {
-                x: x,
-                op: op,
-                y: y,
-            },
+    case token.ADD_ASSIGN, token.ASSIGN, token.DIV_ASSIGN, token.MOD_ASSIGN, token.MUL_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.SUB_ASSIGN, token.XOR_ASSIGN:
+        {
+            next(p)
+            var y *ast.Expr = parseRhs(p)
+            var stmt ast.Stmt = {
+                kind: ast.STMT_ASSIGN,
+                assign: {
+                    x: x,
+                    op: op,
+                    y: y,
+                },
+            }
+            return esc(stmt)
         }
-        return esc(stmt)
-    }
-    case token.INC, token.DEC: {
-        next(p)
-        var stmt ast.Stmt = {
-            kind: ast.STMT_POSTFIX,
-            postfix: {
-                x: x,
-                op: op,
-            },
+    case token.INC, token.DEC:
+        {
+            next(p)
+            var stmt ast.Stmt = {
+                kind: ast.STMT_POSTFIX,
+                postfix: {
+                    x: x,
+                    op: op,
+                },
+            }
+            return esc(stmt)
         }
-        return esc(stmt)
-    }
-    default: break
+    default:
+        break
     }
     if labelOk && x.kind == ast.EXPR_IDENT {
         if accept(p, token.COLON) {
@@ -967,7 +994,8 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
             case token.CASE, token.DEFAULT, token.RBRACE:
                 loop = false
                 break
-            default: break
+            default:
+                break
             }
             if loop {
                 var stmt *ast.Stmt = parseStmt(p)
@@ -1048,15 +1076,24 @@ fun parseDeclStmt(p *Parser) *ast.Stmt {
 
 fun parseStmt(p *Parser) *ast.Stmt {
     switch p.tok {
-    case token.VAR: return parseDeclStmt(p)
-    case token.FOR: return parseForStmt(p)
-    case token.IF: return parseIfStmt(p)
-    case token.RETURN: return parseReturnStmt(p)
-    case token.SWITCH: return parseSwitchStmt(p)
-    case token.WHILE: return parseWhileStmt(p)
-    case token.BREAK, token.CONTINUE, token.GOTO: return parseJumpStmt(p, p.tok)
-    case token.LBRACE: return parseBlockStmt(p)
-    default: break
+    case token.VAR:
+        return parseDeclStmt(p)
+    case token.FOR:
+        return parseForStmt(p)
+    case token.IF:
+        return parseIfStmt(p)
+    case token.RETURN:
+        return parseReturnStmt(p)
+    case token.SWITCH:
+        return parseSwitchStmt(p)
+    case token.WHILE:
+        return parseWhileStmt(p)
+    case token.BREAK, token.CONTINUE, token.GOTO:
+        return parseJumpStmt(p, p.tok)
+    case token.LBRACE:
+        return parseBlockStmt(p)
+    default:
+        break
     }
     var pos token.Pos = p.pos
     if accept(p, token.SEMICOLON) {
@@ -1220,10 +1257,14 @@ fun parseFuncDecl(p *Parser) *ast.Decl {
 
 fun parseDecl(p *Parser) *ast.Decl {
     switch p.tok {
-    case token.HASH: return parsePragma(p)
-    case token.TYPEDEF: return parseTypeDecl(p)
-    case token.CONST, token.VAR: return parseValueDecl(p)
-    case token.FUNC: return parseFuncDecl(p)
+    case token.HASH:
+        return parsePragma(p)
+    case token.TYPEDEF:
+        return parseTypeDecl(p)
+    case token.CONST, token.VAR:
+        return parseValueDecl(p)
+    case token.FUNC:
+        return parseFuncDecl(p)
     default:
         error(p, p.pos, sys.sprintf("cant handle it: %s", token.string(p.tok)))
         return NULL

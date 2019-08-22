@@ -150,7 +150,8 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         e.indent++
         for var stmts **ast.Stmt = stmt.block.stmts; stmts && *stmts; stmts++ {
             switch (*stmts).kind {
-            case ast.STMT_LABEL: break
+            case ast.STMT_LABEL:
+                break
             default:
                 emitter.emitTabs(e)
                 break
@@ -460,7 +461,8 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
             case ast.TYPE_ARRAY, ast.TYPE_STRUCT:
                 isPublic = false
                 break
-            default: break
+            default:
+                break
             }
             if !isPublic {
                 break

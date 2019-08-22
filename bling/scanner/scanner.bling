@@ -188,7 +188,8 @@ scan_again:
             switch tok {
             case token.IDENT, token.BREAK, token.CONTINUE, token.RETURN:
                 insertSemi = true
-            default: break
+            default:
+                break
             }
         } else {
             insertSemi = true
