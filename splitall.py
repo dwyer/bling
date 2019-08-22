@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 import os
+import hashlib
 
 files = []
+
+def checksum(text):
+    return hashlib.sha224(text).hexdigest()
 
 with open('all.bling') as fp:
     file = None
@@ -25,5 +29,10 @@ for file in files:
         pkgs[newfile] = []
     pkgs[newfile].extend(file['lines'])
 for pkg, lines in pkgs.items():
-    with open(pkg, 'w') as fp:
-        fp.writelines(lines)
+    src = ''.join(lines)
+    ch1 = checksum(src.encode())
+    with open(pkg) as fp:
+        ch2 = checksum(fp.read().encode())
+    if ch1 != ch2:
+        with open(pkg, 'w') as fp:
+            fp.write(src)
