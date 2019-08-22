@@ -268,6 +268,9 @@ fun buildCPackage(b *Builder, path *const char) *Package {
         }
     }
     if b.force || pkg.srcModTime > pkg.libModTime {
+        if VERBOSE {
+            sys.printf("%d > %d\n", pkg.srcModTime, pkg.libModTime)
+        }
         genHeader(b, &pkg)
         var cmd utils.Slice = {
             size: sizeof(*char),
@@ -289,10 +292,13 @@ fun buildCPackage(b *Builder, path *const char) *Package {
 
 fun buildBlingPackage(b *Builder, path *const char) *Package {
     var pkg Package = newPackage(b, path)
-    genHeader(b, &pkg)
-    getCFile(b, &pkg)
-    genObj(b, pkg.objPath, pkg.cPath)
     if b.force || pkg.srcModTime > pkg.libModTime {
+        genHeader(b, &pkg)
+        getCFile(b, &pkg)
+        genObj(b, pkg.objPath, pkg.cPath)
+        if VERBOSE {
+            sys.printf("%d > %d\n", pkg.srcModTime, pkg.libModTime)
+        }
         if streq(path, "cmd/blingc") {
             var cmd utils.Slice = {
                 size: sizeof(*char),
@@ -301,12 +307,10 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
             Slice_appendStrLit(&cmd, "-o")
             Slice_appendStrLit(&cmd, "blingc.out")
             Slice_appendStrLit(&cmd, pkg.objPath)
-            {
-                var pkg *Package = NULL
-                var iter utils.MapIter = utils.NewMapIter(&b.pkgs)
-                while utils.MapIter_next(&iter, NULL, &pkg) {
-                    Slice_appendStrLit(&cmd, pkg.libPath)
-                }
+            var pkg *Package = NULL
+            var iter utils.MapIter = utils.NewMapIter(&b.pkgs)
+            while utils.MapIter_next(&iter, NULL, &pkg) {
+                Slice_appendStrLit(&cmd, pkg.libPath)
             }
             execute(&cmd)
         } else {
@@ -347,7 +351,7 @@ fun buildPackage(argv []*char) {
     var builder Builder = {
         fset: token.newFileSet(),
         info: types.newInfo(),
-        force: true,
+        force: false,
         pkgs: utils.Map_init(sizeof(*Package)),
     }
     _buildPackage(&builder, "bootstrap")

@@ -256,6 +256,9 @@ static Package *buildCPackage(Builder *b, const char *path) {
         }
     }
     if (b->force || pkg.srcModTime > pkg.libModTime) {
+        if (VERBOSE) {
+            sys$printf("%d > %d\n", pkg.srcModTime, pkg.libModTime);
+        }
         genHeader(b, &pkg);
         utils$Slice cmd = {.size = sizeof(char *)};
         Slice_appendStrLit(&cmd, AR_PATH);
@@ -275,24 +278,23 @@ static Package *buildCPackage(Builder *b, const char *path) {
 
 static Package *buildBlingPackage(Builder *b, const char *path) {
     Package pkg = newPackage(b, path);
-
-    genHeader(b, &pkg);
-    getCFile(b, &pkg);
-    genObj(b, pkg.objPath, pkg.cPath);
-
     if (b->force || pkg.srcModTime > pkg.libModTime) {
+        genHeader(b, &pkg);
+        getCFile(b, &pkg);
+        genObj(b, pkg.objPath, pkg.cPath);
+        if (VERBOSE) {
+            sys$printf("%d > %d\n", pkg.srcModTime, pkg.libModTime);
+        }
         if (streq(path, "cmd/blingc")) {
             utils$Slice cmd = {.size = sizeof(char *)};
             Slice_appendStrLit(&cmd, CC_PATH);
             Slice_appendStrLit(&cmd, "-o");
             Slice_appendStrLit(&cmd, "blingc.out");
             Slice_appendStrLit(&cmd, pkg.objPath);
-            {
-                Package *pkg = NULL;
-                utils$MapIter iter = utils$NewMapIter(&b->pkgs);
-                while (utils$MapIter_next(&iter, NULL, &pkg)) {
-                    Slice_appendStrLit(&cmd, pkg->libPath);
-                }
+            Package *pkg = NULL;
+            utils$MapIter iter = utils$NewMapIter(&b->pkgs);
+            while (utils$MapIter_next(&iter, NULL, &pkg)) {
+                Slice_appendStrLit(&cmd, pkg->libPath);
             }
             execute(&cmd);
         } else {
@@ -304,7 +306,6 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
             execute(&cmd);
         }
     }
-
     return esc(pkg);
 }
 
@@ -332,7 +333,7 @@ extern void build$buildPackage(char *argv[]) {
     Builder builder = {
         .fset = token$newFileSet(),
         .info = types$newInfo(),
-        .force = true,
+        .force = false,
         .pkgs = utils$Map_init(sizeof(Package *)),
     };
     _buildPackage(&builder, "bootstrap");
