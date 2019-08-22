@@ -53,10 +53,17 @@ static void mkdirForFile(const char *path) {
 }
 
 typedef struct {
-    const char *path;
+    char *path;
     os$FileInfo *lib;
     types$Package *pkg;
     os$Time modTime;
+    char *hPath;
+    char *cPath;
+    char *objPath;
+    utils$Slice objPaths;
+    char *libPath;
+
+    utils$Slice deps;
 } Package;
 
 typedef struct {
@@ -66,6 +73,21 @@ typedef struct {
     types$Config conf;
     utils$Map pkgs;
 } Builder;
+
+static void genObj(Builder *b, const char *dst, const char *src) {
+    utils$Slice cmd = {.size = sizeof(char *)};
+    Slice_appendStrLit(&cmd, CC_PATH);
+    Slice_appendStrLit(&cmd, "-fms-extensions");
+    Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag");
+    Slice_appendStrLit(&cmd, "-I");
+    Slice_appendStrLit(&cmd, INCL_PATH);
+    Slice_appendStrLit(&cmd, "-c");
+    Slice_appendStrLit(&cmd, "-o");
+    Slice_appendStrLit(&cmd, dst);
+    Slice_appendStrLit(&cmd, src);
+    mkdirForFile(dst);
+    execute(&cmd);
+}
 
 static os$FileInfo *buildCFile(Builder *b, os$FileInfo *cFile) {
     // build an obj and return its path
@@ -83,16 +105,7 @@ static os$FileInfo *buildCFile(Builder *b, os$FileInfo *cFile) {
     bool doBuild = objFile == NULL ||
         os$FileInfo_modTime(cFile) > os$FileInfo_modTime(objFile);
     if (b->force || doBuild) {
-        utils$Slice cmd = {.size = sizeof(char *)};
-        Slice_appendStrLit(&cmd, CC_PATH);
-        Slice_appendStrLit(&cmd, "-I");
-        Slice_appendStrLit(&cmd, INCL_PATH);
-        Slice_appendStrLit(&cmd, "-c");
-        Slice_appendStrLit(&cmd, "-o");
-        Slice_appendStrLit(&cmd, dst);
-        Slice_appendStrLit(&cmd, src);
-        mkdirForFile(dst);
-        execute(&cmd);
+        genObj(b, dst, src);
         // update objFile
         os$FileInfo_free(objFile);
         objFile = os$stat(dst, &err);
@@ -102,64 +115,98 @@ static os$FileInfo *buildCFile(Builder *b, os$FileInfo *cFile) {
 
 static Package *_buildPackage(Builder *b, const char *path);
 
-static Package *buildCPackage(Builder *b, const char *path) {
+static Package newPackage(Builder *b, const char *path) {
     char *base = paths$base(path);
-    char *dst = sys$sprintf("%s/%s/lib%s.a", GEN_PATH, path, base);
-    utils$Slice objFiles = {.size = sizeof(os$FileInfo *)};
+    char *genPath = paths$join2(GEN_PATH, path);
     Package pkg = {
-        .path = path,
+        .path = strdup(path),
+        .pkg = types$check(&b->conf, path, b->fset, NULL, b->info),
+        .hPath = sys$sprintf("%s/%s.h", genPath, base),
+        .cPath = sys$sprintf("%s/%s.c", genPath, base),
+        .objPath = sys$sprintf("%s/%s.o", genPath, base),
+        .libPath = sys$sprintf("%s/%s.a", genPath, base),
+        .deps = {.size = sizeof(Package *)},
     };
+    free(genPath);
+    free(base);
+    return pkg;
+}
+
+static void genHeader(Builder *b, Package *pkg) {
+    emitter$Emitter e = {};
+    emitter$emitString(&e, "#pragma once");
+    emitter$emitNewline(&e);
+    emit_rawfile(&e, "bootstrap/bootstrap.h");
+    cemitter$emitHeader(&e, pkg->pkg);
+    char *out = emitter$Emitter_string(&e);
+    mkdirForFile(pkg->hPath);
+    ioutil$writeFile(pkg->hPath, out, 0644, NULL);
+    free(out);
+}
+
+static void getCFile(Builder *b, Package *pkg) {
+    emitter$Emitter e = {
+        .forwardDecl = true,
+    };
+    emit_rawfile(&e, "bootstrap/bootstrap.h");
+    cemitter$emitPackage(&e, pkg->pkg);
+    mkdirForFile(pkg->cPath);
+    char *out = emitter$Emitter_string(&e);
+    ioutil$writeFile(pkg->cPath, out, 0644, NULL);
+    free(out);
+}
+
+static Package *buildCPackage(Builder *b, const char *path) {
+    utils$Slice objFiles = {.size = sizeof(os$FileInfo *)};
+    Package pkg = newPackage(b, path);
     {
         os$FileInfo **files = ioutil$readDir(path, NULL);
         for (int i = 0; files[i]; i++) {
+            bool checkTime = false;
+            os$Time modTime = os$FileInfo_modTime(files[i]);
             if (bytes$hasSuffix(files[i]->_name, ".bling")) {
-                ast$File *file = parser$parseFile(b->fset, files[i]->_name,
-                        types$universe());
-                // TODO type check the file
-                for (int i = 0; file->imports[i]; i++) {
-                    char *path = types$constant_stringVal(
-                            file->imports[i]->imp.path);
-                    Package *pkg = _buildPackage(b, path);
-                    os$FileInfo *lib = pkg->lib;
-                    if (lib != NULL) {
-                        utils$Slice_append(&objFiles, &lib);
-                    }
+                if (pkg.modTime < modTime) {
+                    pkg.modTime = modTime;
                 }
             } else if (bytes$hasSuffix(files[i]->_name, ".c")) {
+                if (pkg.modTime < modTime) {
+                    pkg.modTime = modTime;
+                }
                 os$FileInfo *obj = buildCFile(b, files[i]);
                 utils$Slice_append(&objFiles, &obj);
-                if (pkg.modTime < os$FileInfo_modTime(obj)) {
-                    pkg.modTime = os$FileInfo_modTime(obj);
+                checkTime = true;
+                modTime = os$FileInfo_modTime(obj);
+                if (pkg.modTime < modTime) {
+                    pkg.modTime = modTime;
                 }
             }
             os$FileInfo_free(files[i]);
         }
     }
     utils$Error *err = NULL;
-    pkg.lib = os$stat(dst, &err);
+    pkg.lib = os$stat(pkg.libPath, &err);
     if (b->force || pkg.lib == NULL || pkg.modTime > os$FileInfo_modTime(pkg.lib)) {
+        genHeader(b, &pkg);
         utils$Slice cmd = {.size = sizeof(char *)};
         Slice_appendStrLit(&cmd, "/usr/bin/ar");
         Slice_appendStrLit(&cmd, "rsc");
-        Slice_appendStrLit(&cmd, dst);
+        Slice_appendStrLit(&cmd, pkg.libPath);
         for (int i = 0; i < utils$Slice_len(&objFiles); i++) {
             os$FileInfo *obj = NULL;
             utils$Slice_get(&objFiles, i, &obj);
             utils$Slice_append(&cmd, &obj->_name);
         }
-        mkdirForFile(dst);
+        mkdirForFile(pkg.libPath);
         execute(&cmd);
         os$FileInfo_free(pkg.lib);
-        pkg.lib = os$stat(dst, &err);
+        pkg.lib = os$stat(pkg.libPath, &err);
         pkg.modTime = os$FileInfo_modTime(pkg.lib);
     }
     return esc(pkg);
 }
 
 static Package *buildBlingPackage(Builder *b, const char *path) {
-    Package pkg = {
-        .pkg = types$check(&b->conf, path, b->fset, NULL, b->info),
-    };
+    Package pkg = newPackage(b, path);
     utils$Slice libs = {.size = sizeof(os$FileInfo *)};
     for (int i = 0; i < utils$Slice_len(&pkg.pkg->imports); i++) {
         types$Package *impt = NULL;
@@ -173,38 +220,16 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
         utils$Slice_append(&libs, &lib);
     }
 
-    char *base = paths$base(path);
-    char *libPath = sys$sprintf("%s/%s/lib%s.a", GEN_PATH, path, base);
-    char *objPath = sys$sprintf("%s/%s/%s.o", GEN_PATH, path, base);
-    char *cPath = sys$sprintf("%s/%s/%s.c", GEN_PATH, path, base);
-    free(base);
-
-    emitter$Emitter e = {
-        .forwardDecl = true,
-    };
-    emit_rawfile(&e, "bootstrap/bootstrap.h");
-    cemitter$emitPackage(&e, pkg.pkg);
-    mkdirForFile(cPath);
-    ioutil$writeFile(cPath, emitter$Emitter_string(&e), 0644, NULL);
-
-    {
-        utils$Slice cmd = {.size = sizeof(char *)};
-        Slice_appendStrLit(&cmd, CC_PATH);
-        Slice_appendStrLit(&cmd, "-fms-extensions");
-        Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag");
-        Slice_appendStrLit(&cmd, "-c");
-        Slice_appendStrLit(&cmd, "-o");
-        Slice_appendStrLit(&cmd, objPath);
-        Slice_appendStrLit(&cmd, cPath);
-        execute(&cmd);
-    }
+    genHeader(b, &pkg);
+    getCFile(b, &pkg);
+    genObj(b, pkg.objPath, pkg.cPath);
 
     if (streq(path, "cmd/blingc")) {
         utils$Slice cmd = {.size = sizeof(char *)};
         Slice_appendStrLit(&cmd, CC_PATH);
         Slice_appendStrLit(&cmd, "-o");
         Slice_appendStrLit(&cmd, "blingc.out");
-        Slice_appendStrLit(&cmd, objPath);
+        Slice_appendStrLit(&cmd, pkg.objPath);
         {
             Package *pkg = NULL;
             utils$MapIter iter = utils$NewMapIter(&b->pkgs);
@@ -217,10 +242,10 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
         utils$Slice cmd = {.size = sizeof(char *)};
         Slice_appendStrLit(&cmd, AR_PATH);
         Slice_appendStrLit(&cmd, "rsc");
-        Slice_appendStrLit(&cmd, libPath);
-        Slice_appendStrLit(&cmd, objPath);
+        Slice_appendStrLit(&cmd, pkg.libPath);
+        Slice_appendStrLit(&cmd, pkg.objPath);
         execute(&cmd);
-        pkg.lib = os$stat(libPath, NULL);
+        pkg.lib = os$stat(pkg.libPath, NULL);
     }
 
     return esc(pkg);

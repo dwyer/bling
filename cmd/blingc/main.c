@@ -177,6 +177,10 @@ int main(int argc, char *argv[]) {
     if (!*argv) {
         panic(sys$sprintf("usage: %s -o DST SRCS", progname));
     }
+    if (streq(*argv, "version")) {
+        print("0.0.0-alpha");
+        return 0;
+    }
     if (streq(*argv, "build")) {
         argv++;
         build$buildPackage(argv);

@@ -484,11 +484,10 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
         emitter.emitToken(e, token.RPAREN)
         emitter.emitToken(e, token.SEMICOLON)
         emitter.emitNewline(e)
-        emitter.emitNewline(e)
     }
     for var i int = 0; file.decls[i]; i++ {
-        emitDecl(e, file.decls[i])
         emitter.emitNewline(e)
+        emitDecl(e, file.decls[i])
         emitter.emitNewline(e)
     }
 }
@@ -500,8 +499,8 @@ fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
         utils.Slice_get(&scope.keys, i, &key)
         utils.Map_get(&scope.objects, key, &obj)
         if obj.kind == kind {
-            emitDecl(e, obj.decl)
             emitter.emitNewline(e)
+            emitDecl(e, obj.decl)
             emitter.emitNewline(e)
         }
     }
@@ -533,4 +532,23 @@ fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
     var done utils.Map = utils.Map_init(sizeof(*char))
     _emitPackage(e, &done, pkg)
     utils.Map_deinit(&done)
+}
+
+fun emitHeader(e *emitter.Emitter, pkg *types.Package) {
+    var old bool = e.forwardDecl
+    e.forwardDecl = true
+    emitObjects(e, pkg.scope, ast.ObjKind_TYP)
+    emitObjects(e, pkg.scope, ast.ObjKind_VAL)
+    emitObjects(e, pkg.scope, ast.ObjKind_FUN)
+    e.forwardDecl = false
+    emitObjects(e, pkg.scope, ast.ObjKind_TYP)
+    e.forwardDecl = old
+}
+
+fun emitBody(e *emitter.Emitter, pkg *types.Package) {
+    var old bool = e.forwardDecl
+    e.forwardDecl = false
+    emitObjects(e, pkg.scope, ast.ObjKind_VAL)
+    emitObjects(e, pkg.scope, ast.ObjKind_FUN)
+    e.forwardDecl = old
 }

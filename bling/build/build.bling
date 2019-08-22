@@ -62,10 +62,16 @@ fun mkdirForFile(path *const char) {
 }
 
 typedef Package struct {
-    path *const char
+    path *char
     lib *os.FileInfo
     pkg *types.Package
     modTime os.Time
+    hPath *char
+    cPath *char
+    objPath *char
+    objPaths utils.Slice
+    libPath *char
+    deps utils.Slice
 }
 
 typedef Builder struct {
@@ -74,6 +80,23 @@ typedef Builder struct {
     force bool
     conf types.Config
     pkgs utils.Map
+}
+
+fun genObj(b *Builder, dst *const char, src *const char) {
+    var cmd utils.Slice = {
+        size: sizeof(*char),
+    }
+    Slice_appendStrLit(&cmd, CC_PATH)
+    Slice_appendStrLit(&cmd, "-fms-extensions")
+    Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag")
+    Slice_appendStrLit(&cmd, "-I")
+    Slice_appendStrLit(&cmd, INCL_PATH)
+    Slice_appendStrLit(&cmd, "-c")
+    Slice_appendStrLit(&cmd, "-o")
+    Slice_appendStrLit(&cmd, dst)
+    Slice_appendStrLit(&cmd, src)
+    mkdirForFile(dst)
+    execute(&cmd)
 }
 
 fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
@@ -90,83 +113,111 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
     var objFile *os.FileInfo = os.stat(dst, &err)
     var doBuild bool = objFile == NULL || os.FileInfo_modTime(cFile) > os.FileInfo_modTime(objFile)
     if b.force || doBuild {
-        var cmd utils.Slice = {
-            size: sizeof(*char),
-        }
-        Slice_appendStrLit(&cmd, CC_PATH)
-        Slice_appendStrLit(&cmd, "-I")
-        Slice_appendStrLit(&cmd, INCL_PATH)
-        Slice_appendStrLit(&cmd, "-c")
-        Slice_appendStrLit(&cmd, "-o")
-        Slice_appendStrLit(&cmd, dst)
-        Slice_appendStrLit(&cmd, src)
-        mkdirForFile(dst)
-        execute(&cmd)
+        genObj(b, dst, src)
         os.FileInfo_free(objFile)
         objFile = os.stat(dst, &err)
     }
     return objFile
 }
 
-fun buildCPackage(b *Builder, path *const char) *Package {
+fun newPackage(b *Builder, path *const char) Package {
     var base *char = paths.base(path)
-    var dst *char = sys.sprintf("%s/%s/lib%s.a", GEN_PATH, path, base)
+    var genPath *char = paths.join2(GEN_PATH, path)
+    var pkg Package = {
+        path: strdup(path),
+        pkg: types.check(&b.conf, path, b.fset, NULL, b.info),
+        hPath: sys.sprintf("%s/%s.h", genPath, base),
+        cPath: sys.sprintf("%s/%s.c", genPath, base),
+        objPath: sys.sprintf("%s/%s.o", genPath, base),
+        libPath: sys.sprintf("%s/%s.a", genPath, base),
+        deps: {
+            size: sizeof(*Package),
+        },
+    }
+    free(genPath)
+    free(base)
+    return pkg
+}
+
+fun genHeader(b *Builder, pkg *Package) {
+    var e emitter.Emitter = {}
+    emitter.emitString(&e, "#pragma once")
+    emitter.emitNewline(&e)
+    emit_rawfile(&e, "bootstrap/bootstrap.h")
+    cemitter.emitHeader(&e, pkg.pkg)
+    var out *char = emitter.Emitter_string(&e)
+    mkdirForFile(pkg.hPath)
+    ioutil.writeFile(pkg.hPath, out, 0644, NULL)
+    free(out)
+}
+
+fun getCFile(b *Builder, pkg *Package) {
+    var e emitter.Emitter = {
+        forwardDecl: true,
+    }
+    emit_rawfile(&e, "bootstrap/bootstrap.h")
+    cemitter.emitPackage(&e, pkg.pkg)
+    mkdirForFile(pkg.cPath)
+    var out *char = emitter.Emitter_string(&e)
+    ioutil.writeFile(pkg.cPath, out, 0644, NULL)
+    free(out)
+}
+
+fun buildCPackage(b *Builder, path *const char) *Package {
     var objFiles utils.Slice = {
         size: sizeof(*os.FileInfo),
     }
-    var pkg Package = {
-        path: path,
-    }
+    var pkg Package = newPackage(b, path)
     {
         var files **os.FileInfo = ioutil.readDir(path, NULL)
         for var i int = 0; files[i]; i++ {
+            var checkTime bool = false
+            var modTime os.Time = os.FileInfo_modTime(files[i])
             if bytes.hasSuffix(files[i]._name, ".bling") {
-                var file *ast.File = parser.parseFile(b.fset, files[i]._name, types.universe())
-                for var i int = 0; file.imports[i]; i++ {
-                    var path *char = types.constant_stringVal(file.imports[i].imp.path)
-                    var pkg *Package = _buildPackage(b, path)
-                    var lib *os.FileInfo = pkg.lib
-                    if lib != NULL {
-                        utils.Slice_append(&objFiles, &lib)
-                    }
+                if pkg.modTime < modTime {
+                    pkg.modTime = modTime
                 }
             } else if bytes.hasSuffix(files[i]._name, ".c") {
+                if pkg.modTime < modTime {
+                    pkg.modTime = modTime
+                }
                 var obj *os.FileInfo = buildCFile(b, files[i])
                 utils.Slice_append(&objFiles, &obj)
-                if pkg.modTime < os.FileInfo_modTime(obj) {
-                    pkg.modTime = os.FileInfo_modTime(obj)
+                checkTime = true
+                modTime = os.FileInfo_modTime(obj)
+                if pkg.modTime < modTime {
+                    pkg.modTime = modTime
                 }
             }
             os.FileInfo_free(files[i])
         }
     }
     var err *utils.Error = NULL
-    pkg.lib = os.stat(dst, &err)
+    pkg.lib = os.stat(pkg.libPath, &err)
     if b.force || pkg.lib == NULL || pkg.modTime > os.FileInfo_modTime(pkg.lib) {
+        genHeader(b, &pkg)
         var cmd utils.Slice = {
             size: sizeof(*char),
         }
         Slice_appendStrLit(&cmd, "/usr/bin/ar")
         Slice_appendStrLit(&cmd, "rsc")
-        Slice_appendStrLit(&cmd, dst)
+        Slice_appendStrLit(&cmd, pkg.libPath)
         for var i int = 0; i < utils.Slice_len(&objFiles); i++ {
             var obj *os.FileInfo = NULL
             utils.Slice_get(&objFiles, i, &obj)
             utils.Slice_append(&cmd, &obj._name)
         }
-        mkdirForFile(dst)
+        mkdirForFile(pkg.libPath)
         execute(&cmd)
         os.FileInfo_free(pkg.lib)
-        pkg.lib = os.stat(dst, &err)
+        pkg.lib = os.stat(pkg.libPath, &err)
         pkg.modTime = os.FileInfo_modTime(pkg.lib)
     }
     return esc(pkg)
 }
 
 fun buildBlingPackage(b *Builder, path *const char) *Package {
-    var pkg Package = {
-        pkg: types.check(&b.conf, path, b.fset, NULL, b.info),
-    }
+    var pkg Package = newPackage(b, path)
     var libs utils.Slice = {
         size: sizeof(*os.FileInfo),
     }
@@ -181,31 +232,9 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         }
         utils.Slice_append(&libs, &lib)
     }
-    var base *char = paths.base(path)
-    var libPath *char = sys.sprintf("%s/%s/lib%s.a", GEN_PATH, path, base)
-    var objPath *char = sys.sprintf("%s/%s/%s.o", GEN_PATH, path, base)
-    var cPath *char = sys.sprintf("%s/%s/%s.c", GEN_PATH, path, base)
-    free(base)
-    var e emitter.Emitter = {
-        forwardDecl: true,
-    }
-    emit_rawfile(&e, "bootstrap/bootstrap.h")
-    cemitter.emitPackage(&e, pkg.pkg)
-    mkdirForFile(cPath)
-    ioutil.writeFile(cPath, emitter.Emitter_string(&e), 0644, NULL)
-    {
-        var cmd utils.Slice = {
-            size: sizeof(*char),
-        }
-        Slice_appendStrLit(&cmd, CC_PATH)
-        Slice_appendStrLit(&cmd, "-fms-extensions")
-        Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag")
-        Slice_appendStrLit(&cmd, "-c")
-        Slice_appendStrLit(&cmd, "-o")
-        Slice_appendStrLit(&cmd, objPath)
-        Slice_appendStrLit(&cmd, cPath)
-        execute(&cmd)
-    }
+    genHeader(b, &pkg)
+    getCFile(b, &pkg)
+    genObj(b, pkg.objPath, pkg.cPath)
     if streq(path, "cmd/blingc") {
         var cmd utils.Slice = {
             size: sizeof(*char),
@@ -213,7 +242,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         Slice_appendStrLit(&cmd, CC_PATH)
         Slice_appendStrLit(&cmd, "-o")
         Slice_appendStrLit(&cmd, "blingc.out")
-        Slice_appendStrLit(&cmd, objPath)
+        Slice_appendStrLit(&cmd, pkg.objPath)
         {
             var pkg *Package = NULL
             var iter utils.MapIter = utils.NewMapIter(&b.pkgs)
@@ -228,10 +257,10 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         }
         Slice_appendStrLit(&cmd, AR_PATH)
         Slice_appendStrLit(&cmd, "rsc")
-        Slice_appendStrLit(&cmd, libPath)
-        Slice_appendStrLit(&cmd, objPath)
+        Slice_appendStrLit(&cmd, pkg.libPath)
+        Slice_appendStrLit(&cmd, pkg.objPath)
         execute(&cmd)
-        pkg.lib = os.stat(libPath, NULL)
+        pkg.lib = os.stat(pkg.libPath, NULL)
     }
     return esc(pkg)
 }

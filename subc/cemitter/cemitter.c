@@ -531,11 +531,10 @@ extern void cemitter$emitFile(emitter$Emitter *e, ast$File *file) {
         emitter$emitToken(e, token$RPAREN);
         emitter$emitToken(e, token$SEMICOLON);
         emitter$emitNewline(e);
-        emitter$emitNewline(e);
     }
     for (int i = 0; file->decls[i]; i++) {
-        cemitter$emitDecl(e, file->decls[i]);
         emitter$emitNewline(e);
+        cemitter$emitDecl(e, file->decls[i]);
         emitter$emitNewline(e);
     }
 }
@@ -547,8 +546,8 @@ static void emitObjects(emitter$Emitter *e, ast$Scope *scope, ast$ObjKind kind) 
         utils$Slice_get(&scope->keys, i, &key);
         utils$Map_get(&scope->objects, key, &obj);
         if (obj->kind == kind) {
-            cemitter$emitDecl(e, obj->decl);
             emitter$emitNewline(e);
+            cemitter$emitDecl(e, obj->decl);
             emitter$emitNewline(e);
         }
     }
@@ -580,4 +579,23 @@ extern void cemitter$emitPackage(emitter$Emitter *e, types$Package *pkg) {
     utils$Map done = utils$Map_init(sizeof(char *));
     _emitPackage(e, &done, pkg);
     utils$Map_deinit(&done);
+}
+
+extern void cemitter$emitHeader(emitter$Emitter *e, types$Package *pkg) {
+    bool old = e->forwardDecl;
+    e->forwardDecl = true;
+    emitObjects(e, pkg->scope, ast$ObjKind_TYP);
+    emitObjects(e, pkg->scope, ast$ObjKind_VAL);
+    emitObjects(e, pkg->scope, ast$ObjKind_FUN);
+    e->forwardDecl = false;
+    emitObjects(e, pkg->scope, ast$ObjKind_TYP);
+    e->forwardDecl = old;
+}
+
+extern void cemitter$emitBody(emitter$Emitter *e, types$Package *pkg) {
+    bool old = e->forwardDecl;
+    e->forwardDecl = false;
+    emitObjects(e, pkg->scope, ast$ObjKind_VAL);
+    emitObjects(e, pkg->scope, ast$ObjKind_FUN);
+    e->forwardDecl = old;
 }
