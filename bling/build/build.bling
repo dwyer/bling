@@ -299,7 +299,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         if VERBOSE {
             sys.printf("%d > %d\n", pkg.srcModTime, pkg.libModTime)
         }
-        if streq(path, "cmd/blingc") {
+        if streq(pkg.pkg.name, "main") {
             var cmd utils.Slice = {
                 size: sizeof(*char),
             }

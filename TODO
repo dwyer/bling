@@ -1,3 +1,6 @@
+Emit field names of anonymous tags to eliminate the dependency on
+-fms-extensions.
+
 Make `sizeof` a builtin func.
 
 Implement a way to define a value with no address, such as #define and C's enum.

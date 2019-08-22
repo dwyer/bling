@@ -285,7 +285,7 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
         if (VERBOSE) {
             sys$printf("%d > %d\n", pkg.srcModTime, pkg.libModTime);
         }
-        if (streq(path, "cmd/blingc")) {
+        if (streq(pkg.pkg->name, "main")) {
             utils$Slice cmd = {.size = sizeof(char *)};
             Slice_appendStrLit(&cmd, CC_PATH);
             Slice_appendStrLit(&cmd, "-o");
