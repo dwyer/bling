@@ -501,10 +501,25 @@ static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
 
     case ast$DECL_VALUE:
         if (e->forwardDecl) {
-            break;
+            bool isPublic = true;
+            switch (decl->value.type->kind) {
+            case ast$TYPE_ARRAY:
+            case ast$TYPE_STRUCT:
+                isPublic = false;
+                break;
+            default:
+                break;
+            }
+            if (!isPublic) {
+                break;
+            }
+        }
+        if (e->forwardDecl && decl->value.value) {
+            emitter$emitToken(e, token$EXTERN);
+            emitter$emitSpace(e);
         }
         cemitter$emitType(e, decl->value.type, decl->value.name);
-        if (decl->value.value) {
+        if (!e->forwardDecl && decl->value.value) {
             emitter$emitSpace(e);
             emitter$emitToken(e, token$ASSIGN);
             emitter$emitSpace(e);
@@ -585,10 +600,11 @@ extern void cemitter$emitHeader(emitter$Emitter *e, types$Package *pkg) {
     bool old = e->forwardDecl;
     e->forwardDecl = true;
     emitObjects(e, pkg->scope, ast$ObjKind_TYP);
-    emitObjects(e, pkg->scope, ast$ObjKind_VAL);
-    emitObjects(e, pkg->scope, ast$ObjKind_FUN);
     e->forwardDecl = false;
     emitObjects(e, pkg->scope, ast$ObjKind_TYP);
+    e->forwardDecl = true;
+    emitObjects(e, pkg->scope, ast$ObjKind_VAL);
+    emitObjects(e, pkg->scope, ast$ObjKind_FUN);
     e->forwardDecl = old;
 }
 

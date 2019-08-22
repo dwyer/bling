@@ -220,12 +220,9 @@ static void genHeader(Builder *b, Package *pkg) {
 }
 
 static void getCFile(Builder *b, Package *pkg) {
-    emitter$Emitter e = {
-        .forwardDecl = true,
-    };
-    emit_rawfile(&e, "bootstrap/bootstrap.h");
-    cemitter$emitPackage(&e, pkg->pkg);
-    mkdirForFile(pkg->cPath);
+    emitter$Emitter e = {};
+    emitInclude(&e, pkg->hPath);
+    cemitter$emitBody(&e, pkg->pkg);
     char *out = emitter$Emitter_string(&e);
     writeFile(pkg->cPath, out);
     free(out);

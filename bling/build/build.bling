@@ -230,12 +230,9 @@ fun genHeader(b *Builder, pkg *Package) {
 }
 
 fun getCFile(b *Builder, pkg *Package) {
-    var e emitter.Emitter = {
-        forwardDecl: true,
-    }
-    emit_rawfile(&e, "bootstrap/bootstrap.h")
-    cemitter.emitPackage(&e, pkg.pkg)
-    mkdirForFile(pkg.cPath)
+    var e emitter.Emitter = {}
+    emitInclude(&e, pkg.hPath)
+    cemitter.emitBody(&e, pkg.pkg)
     var out *char = emitter.Emitter_string(&e)
     writeFile(pkg.cPath, out)
     free(out)
@@ -350,7 +347,7 @@ fun buildPackage(argv []*char) {
     var builder Builder = {
         fset: token.newFileSet(),
         info: types.newInfo(),
-        force: false,
+        force: true,
         pkgs: utils.Map_init(sizeof(*Package)),
     }
     _buildPackage(&builder, "bootstrap")

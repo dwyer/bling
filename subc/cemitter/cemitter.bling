@@ -455,10 +455,23 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
         break
     case ast.DECL_VALUE:
         if e.forwardDecl {
-            break
+            var isPublic bool = true
+            switch decl.value.type.kind {
+            case ast.TYPE_ARRAY, ast.TYPE_STRUCT:
+                isPublic = false
+                break
+            default: break
+            }
+            if !isPublic {
+                break
+            }
+        }
+        if e.forwardDecl && decl.value.value {
+            emitter.emitToken(e, token.EXTERN)
+            emitter.emitSpace(e)
         }
         emitType(e, decl.value.type, decl.value.name)
-        if decl.value.value {
+        if !e.forwardDecl && decl.value.value {
             emitter.emitSpace(e)
             emitter.emitToken(e, token.ASSIGN)
             emitter.emitSpace(e)
@@ -538,10 +551,11 @@ fun emitHeader(e *emitter.Emitter, pkg *types.Package) {
     var old bool = e.forwardDecl
     e.forwardDecl = true
     emitObjects(e, pkg.scope, ast.ObjKind_TYP)
-    emitObjects(e, pkg.scope, ast.ObjKind_VAL)
-    emitObjects(e, pkg.scope, ast.ObjKind_FUN)
     e.forwardDecl = false
     emitObjects(e, pkg.scope, ast.ObjKind_TYP)
+    e.forwardDecl = true
+    emitObjects(e, pkg.scope, ast.ObjKind_VAL)
+    emitObjects(e, pkg.scope, ast.ObjKind_FUN)
     e.forwardDecl = old
 }
 
