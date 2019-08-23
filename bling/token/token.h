@@ -17,6 +17,7 @@ typedef enum {
     token$STRING,
 
     token$_keywordBeg,
+
     token$BREAK,
     token$CASE,
     token$CONST,
@@ -25,7 +26,7 @@ typedef enum {
     token$ELSE,
     token$ENUM,
     token$ESC,
-    token$EXTERN,
+    token$EXTERN, // used by subc
     token$FALLTHROUGH,
     token$FOR,
     token$FUNC,
@@ -34,17 +35,26 @@ typedef enum {
     token$IMPORT,
     token$PACKAGE,
     token$RETURN,
-    token$SIGNED,
+    token$SIGNED, // used by subc
     token$SIZEOF,
-    token$STATIC,
+    token$STATIC, // used by subc
     token$STRUCT,
     token$SWITCH,
     token$TYPE,
-    token$TYPEDEF,
+    token$TYPEDEF, // used by subc
     token$UNION,
-    token$UNSIGNED,
+    token$UNSIGNED, // used by subc
     token$VAR,
     token$WHILE,
+
+    // reserved by external C compiler:
+    token$_ATTR,
+    token$_AUTO,
+    token$_DO,
+    token$_LONG,
+    token$_TYPEOF,
+    token$_VOLATILE,
+
     token$_keywordEnd,
 
     token$ARROW,

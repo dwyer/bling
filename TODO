@@ -1,4 +1,5 @@
 * Make `void` a keyword?
+* if and switch: allow init expr
 * Change cast syntax from `<T>x` to `typ(T) x`;
 * Emit field names of anonymous tags to eliminate the dependency on
   -fms-extensions.

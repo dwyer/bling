@@ -40,6 +40,12 @@ typ Token enum {
     UNSIGNED
     VAR
     WHILE
+    _ATTR
+    _AUTO
+    _DO
+    _LONG
+    _TYPEOF
+    _VOLATILE
     _keywordEnd
     ARROW
     COLON
@@ -152,12 +158,18 @@ var tokens []*char = {
     STATIC: "static",
     STRUCT: "struct",
     SWITCH: "switch",
-    TYPE: "typ",
     TYPEDEF: "typedef",
+    TYPE: "typ",
     UNION: "union",
     UNSIGNED: "unsigned",
     VAR: "var",
     WHILE: "while",
+    _ATTR: "__attribute__",
+    _AUTO: "auto",
+    _DO: "do",
+    _LONG: "long",
+    _TYPEOF: "typeof",
+    _VOLATILE: "volatile",
     ARROW: "->",
     COLON: ":",
     COMMA: ",",
