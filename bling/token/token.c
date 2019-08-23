@@ -20,6 +20,7 @@ static char *tokens[] = {
     [token$DEFAULT] = "default",
     [token$ELSE] = "else",
     [token$ENUM] = "enum",
+    [token$ESC] = "esc",
     [token$EXTERN] = "extern",
     [token$FOR] = "for",
     [token$FUNC] = "fun",

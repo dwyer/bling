@@ -140,6 +140,7 @@ static ast$Expr *unary_expression(parser$Parser *p) {
     switch (p->tok) {
     case token$ADD:
     case token$AND:
+    case token$ESC:
     case token$BITWISE_NOT:
     case token$NOT:
     case token$SUB:
@@ -154,6 +155,10 @@ static ast$Expr *unary_expression(parser$Parser *p) {
         {
             token$Token op = p->tok;
             parser$next(p);
+            if (op == token$ESC) {
+                op = token$LAND;
+                parser$expect(p, token$LPAREN);
+            }
             ast$Expr x = {
                 .kind = ast$EXPR_UNARY,
                 .unary = {
@@ -162,6 +167,9 @@ static ast$Expr *unary_expression(parser$Parser *p) {
                     .x = cast_expression(p),
                 },
             };
+            if (op == token$LAND) {
+                parser$expect(p, token$RPAREN);
+            }
             return esc(x);
         }
     case token$MUL:

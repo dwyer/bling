@@ -6,7 +6,6 @@ const true = !false
 const NULL = <*void> 0
 
 fun assert(bool)
-fun esc(*void) *void
 fun free(*void)
 fun malloc(size_t) *void
 fun panic(fmt *const char)

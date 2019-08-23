@@ -19,6 +19,7 @@ typedef Token enum {
     DEFAULT
     ELSE
     ENUM
+    ESC
     EXTERN
     FOR
     FUNC
@@ -134,6 +135,7 @@ var tokens []*char = {
     DEFAULT: "default",
     ELSE: "else",
     ENUM: "enum",
+    ESC: "esc",
     EXTERN: "extern",
     FOR: "for",
     FUNC: "fun",
@@ -334,7 +336,7 @@ fun newFileSet() *FileSet {
         base: 1,
         files: utils.Slice_init(sizeof(*File)),
     }
-    return esc(fset)
+    return &&fset
 }
 
 fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File {
@@ -353,7 +355,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
         size: size,
         lines: lines,
     }
-    var f *File = esc(file)
+    var f *File = &&file
     base += size + 1
     s.base = base
     utils.Slice_append(&s.files, &f)

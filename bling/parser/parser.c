@@ -461,6 +461,7 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p, bool lhs) {
     case token$ADD:
     case token$AND:
     case token$BITWISE_NOT:
+    case token$LAND:
     case token$NOT:
     case token$SUB:
         // unary_operator

@@ -2,9 +2,6 @@
 * Emit field names of anonymous tags to eliminate the dependency on
   -fms-extensions.
 * Make `sizeof` a builtin func.
-* Make `esc` a keyword
-    * Replace `esc` keyword with unary `&&`
-        * Remove `esc` keyword from bling scanner
 * Remove the follow tokens from bling (unless we find a use for them.
     - `->`
     - `$`

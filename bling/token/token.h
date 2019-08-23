@@ -24,6 +24,7 @@ typedef enum {
     token$DEFAULT,
     token$ELSE,
     token$ENUM,
+    token$ESC,
     token$EXTERN,
     token$FOR,
     token$FUNC,

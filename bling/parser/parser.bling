@@ -211,7 +211,7 @@ fun parseBasicLit(p *Parser, kind token.Token) *ast.Expr {
             value: value,
         },
     }
-    return esc(x)
+    return &&x
 }
 
 fun parseIdent(p *Parser) *ast.Expr {
@@ -227,7 +227,7 @@ fun parseIdent(p *Parser) *ast.Expr {
     }
     expect(p, token.IDENT)
     p.numIdents++
-    return esc(x)
+    return &&x
 }
 
 fun parseOperand(p *Parser, lhs bool) *ast.Expr {
@@ -256,7 +256,7 @@ fun parseOperand(p *Parser, lhs bool) *ast.Expr {
             }
             p.exprLev--
             expect(p, token.RPAREN)
-            return esc(x)
+            return &&x
         }
     default:
         break
@@ -294,7 +294,7 @@ fun parseElement(p *Parser) *ast.Expr {
                 value: parseValue(p, false),
             },
         }
-        value = esc(x)
+        value = &&x
     }
     return value
 }
@@ -330,7 +330,7 @@ fun parseLiteralValue(p *Parser, type *ast.Expr) *ast.Expr {
             list: list,
         },
     }
-    return esc(expr)
+    return &&expr
 }
 
 fun parseIndexExpr(p *Parser, x *ast.Expr) *ast.Expr {
@@ -345,7 +345,7 @@ fun parseIndexExpr(p *Parser, x *ast.Expr) *ast.Expr {
     }
     p.exprLev--
     expect(p, token.RBRACK)
-    return esc(y)
+    return &&y
 }
 
 fun parseCallExpr(p *Parser, x *ast.Expr) *ast.Expr {
@@ -370,7 +370,7 @@ fun parseCallExpr(p *Parser, x *ast.Expr) *ast.Expr {
             args: utils.Slice_to_nil_array(args),
         },
     }
-    return esc(call)
+    return &&call
 }
 
 fun parseSelector(p *Parser, x *ast.Expr) *ast.Expr {
@@ -382,7 +382,7 @@ fun parseSelector(p *Parser, x *ast.Expr) *ast.Expr {
             sel: parseIdent(p),
         },
     }
-    return esc(y)
+    return &&y
 }
 
 fun parsePrimaryExpr(p *Parser, lhs bool) *ast.Expr {
@@ -426,7 +426,7 @@ fun parsePrimaryExpr(p *Parser, lhs bool) *ast.Expr {
 
 fun parseUnaryExpr(p *Parser, lhs bool) *ast.Expr {
     switch p.tok {
-    case token.ADD, token.AND, token.BITWISE_NOT, token.NOT, token.SUB:
+    case token.ADD, token.AND, token.BITWISE_NOT, token.LAND, token.NOT, token.SUB:
         {
             var pos token.Pos = p.pos
             var op token.Token = p.tok
@@ -439,7 +439,7 @@ fun parseUnaryExpr(p *Parser, lhs bool) *ast.Expr {
                     x: checkExpr(p, parseUnaryExpr(p, false)),
                 },
             }
-            return esc(x)
+            return &&x
         }
     case token.MUL:
         {
@@ -452,7 +452,7 @@ fun parseUnaryExpr(p *Parser, lhs bool) *ast.Expr {
                     x: checkExprOrType(p, parseUnaryExpr(p, false)),
                 },
             }
-            return esc(x)
+            return &&x
         }
     case token.SIZEOF:
         {
@@ -467,7 +467,7 @@ fun parseUnaryExpr(p *Parser, lhs bool) *ast.Expr {
                 },
             }
             expect(p, token.RPAREN)
-            return esc(x)
+            return &&x
         }
     case token.LT:
         {
@@ -486,7 +486,7 @@ fun parseUnaryExpr(p *Parser, lhs bool) *ast.Expr {
                     expr: parseUnaryExpr(p, false),
                 },
             }
-            return esc(y)
+            return &&y
         }
     default:
         return parsePrimaryExpr(p, lhs)
@@ -515,7 +515,7 @@ fun parseBinaryExpr(p *Parser, lhs bool, prec1 int) *ast.Expr {
                 y: checkExpr(p, y),
             },
         }
-        x = esc(z)
+        x = &&z
     }
 }
 
@@ -536,7 +536,7 @@ fun parseTernaryExpr(p *Parser, lhs bool) *ast.Expr {
                 y: alternative,
             },
         }
-        x = esc(y)
+        x = &&y
     }
     return x
 }
@@ -557,7 +557,7 @@ fun parseTypeName(p *Parser) *ast.Expr {
                 sel: parseIdent(p),
             },
         }
-        x = esc(y)
+        x = &&y
     }
     return x
 }
@@ -579,7 +579,7 @@ fun parseArrayType(p *Parser) *ast.Expr {
             len: len,
         },
     }
-    return esc(type)
+    return &&type
 }
 
 fun parseFieldDecl(p *Parser, scope *ast.Scope) *ast.Decl {
@@ -598,7 +598,7 @@ fun parseFieldDecl(p *Parser, scope *ast.Scope) *ast.Decl {
             decl.field.type = parseType(p)
         }
     }
-    var d *ast.Decl = esc(decl)
+    var d *ast.Decl = &&decl
     if decl.field.name {
         declare(p, d, NULL, scope, ast.ObjKind_VAL, decl.field.name)
     }
@@ -636,7 +636,7 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
         },
     }
     closeScope(p)
-    return esc(x)
+    return &&x
 }
 
 fun parsePointerType(p *Parser) *ast.Expr {
@@ -649,7 +649,7 @@ fun parsePointerType(p *Parser) *ast.Expr {
             x: parseType(p),
         },
     }
-    return esc(x)
+    return &&x
 }
 
 fun parseParam(p *Parser, scope *ast.Scope, anon bool) *ast.Decl {
@@ -666,7 +666,7 @@ fun parseParam(p *Parser, scope *ast.Scope, anon bool) *ast.Decl {
     } else {
         decl.field.type = parseType(p)
     }
-    var d *ast.Decl = esc(decl)
+    var d *ast.Decl = &&decl
     if d.field.name {
         declare(p, d, NULL, scope, ast.ObjKind_VAL, d.field.name)
     }
@@ -694,10 +694,10 @@ fun parseParameterList(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
                 kind: ast.DECL_FIELD,
                 pos: pos,
                 field: {
-                    type: esc(type),
+                    type: &&type,
                 },
             }
-            var param *ast.Decl = esc(decl)
+            var param *ast.Decl = &&decl
             utils.Slice_append(&params, &param)
             break
         }
@@ -735,10 +735,10 @@ fun parseFuncType(p *Parser) *ast.Expr {
         kind: ast.EXPR_STAR,
         star: {
             pos: pos,
-            x: esc(type),
+            x: &&type,
         },
     }
-    return esc(ptr)
+    return &&ptr
 }
 
 fun parseEnumType(p *Parser) *ast.Expr {
@@ -760,7 +760,7 @@ fun parseEnumType(p *Parser) *ast.Expr {
             if accept(p, token.ASSIGN) {
                 decl.value.value = parseRhs(p)
             }
-            var enumerator *ast.Decl = esc(decl)
+            var enumerator *ast.Decl = &&decl
             utils.Slice_append(&list, &enumerator)
             expect(p, token.SEMICOLON)
         }
@@ -774,7 +774,7 @@ fun parseEnumType(p *Parser) *ast.Expr {
             enums: enums,
         },
     }
-    return esc(x)
+    return &&x
 }
 
 fun parseQualifiedType(p *Parser, tok token.Token) *ast.Expr {
@@ -837,7 +837,7 @@ fun parseSimpleStmt(p *Parser, labelOk bool) *ast.Stmt {
                     y: y,
                 },
             }
-            return esc(stmt)
+            return &&stmt
         }
     case token.INC, token.DEC:
         {
@@ -849,7 +849,7 @@ fun parseSimpleStmt(p *Parser, labelOk bool) *ast.Stmt {
                     op: op,
                 },
             }
-            return esc(stmt)
+            return &&stmt
         }
     default:
         break
@@ -863,7 +863,7 @@ fun parseSimpleStmt(p *Parser, labelOk bool) *ast.Stmt {
                     stmt: parseStmt(p),
                 },
             }
-            return esc(stmt)
+            return &&stmt
         }
     }
     var stmt ast.Stmt = {
@@ -872,7 +872,7 @@ fun parseSimpleStmt(p *Parser, labelOk bool) *ast.Stmt {
             x: x,
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parseForStmt(p *Parser) *ast.Stmt {
@@ -905,7 +905,7 @@ fun parseForStmt(p *Parser) *ast.Stmt {
             body: body,
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parseIfStmt(p *Parser) *ast.Stmt {
@@ -937,7 +937,7 @@ fun parseIfStmt(p *Parser) *ast.Stmt {
             else_: else_,
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parseReturnStmt(p *Parser) *ast.Stmt {
@@ -954,7 +954,7 @@ fun parseReturnStmt(p *Parser) *ast.Stmt {
             x: x,
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parseSwitchStmt(p *Parser) *ast.Stmt {
@@ -1010,7 +1010,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
                 stmts: utils.Slice_to_nil_array(stmts),
             },
         }
-        var clause *ast.Stmt = esc(stmt)
+        var clause *ast.Stmt = &&stmt
         utils.Slice_append(&clauses, &clause)
     }
     closeScope(p)
@@ -1024,7 +1024,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
             stmts: utils.Slice_to_nil_array(clauses),
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parseWhileStmt(p *Parser) *ast.Stmt {
@@ -1043,7 +1043,7 @@ fun parseWhileStmt(p *Parser) *ast.Stmt {
             body: body,
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parseJumpStmt(p *Parser, keyword token.Token) *ast.Stmt {
@@ -1061,7 +1061,7 @@ fun parseJumpStmt(p *Parser, keyword token.Token) *ast.Stmt {
             label: label,
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parseDeclStmt(p *Parser) *ast.Stmt {
@@ -1071,7 +1071,7 @@ fun parseDeclStmt(p *Parser) *ast.Stmt {
             decl: parseDecl(p),
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parseStmt(p *Parser) *ast.Stmt {
@@ -1103,7 +1103,7 @@ fun parseStmt(p *Parser) *ast.Stmt {
                 pos: pos,
             },
         }
-        return esc(stmt)
+        return &&stmt
     }
     var stmt *ast.Stmt = parseSimpleStmt(p, true)
     if stmt.kind != ast.STMT_LABEL {
@@ -1138,7 +1138,7 @@ fun parseBody(p *Parser, scope *ast.Scope) *ast.Stmt {
             stmts: list,
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parseBlockStmt(p *Parser) *ast.Stmt {
@@ -1155,7 +1155,7 @@ fun parseBlockStmt(p *Parser) *ast.Stmt {
             stmts: list,
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parsePragma(p *Parser) *ast.Decl {
@@ -1170,7 +1170,7 @@ fun parsePragma(p *Parser) *ast.Decl {
             lit: lit,
         },
     }
-    return esc(decl)
+    return &&decl
 }
 
 fun parseValueDecl(p *Parser) *ast.Decl {
@@ -1200,7 +1200,7 @@ fun parseValueDecl(p *Parser) *ast.Decl {
             kind: keyword,
         },
     }
-    var d *ast.Decl = esc(decl)
+    var d *ast.Decl = &&decl
     declare(p, d, NULL, p.topScope, ast.ObjKind_VAL, d.value.name)
     return d
 }
@@ -1219,7 +1219,7 @@ fun parseTypeDecl(p *Parser) *ast.Decl {
             type: type,
         },
     }
-    var d *ast.Decl = esc(decl)
+    var d *ast.Decl = &&decl
     declare(p, d, NULL, p.topScope, ast.ObjKind_TYP, ident)
     return d
 }
@@ -1244,13 +1244,13 @@ fun parseFuncDecl(p *Parser) *ast.Decl {
     if p.tok != token.LBRACE && p.tok != token.SEMICOLON {
         type.func.result = parseType(p)
     }
-    decl.func.type = esc(type)
+    decl.func.type = &&type
     if p.tok == token.LBRACE {
         decl.func.body = parseBody(p, scope)
     } else {
         expect(p, token.SEMICOLON)
     }
-    var d *ast.Decl = esc(decl)
+    var d *ast.Decl = &&decl
     declare(p, d, NULL, p.topScope, ast.ObjKind_FUN, d.func.name)
     return d
 }
@@ -1328,7 +1328,7 @@ fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
                 path: path,
             },
         }
-        var declp *ast.Decl = esc(decl)
+        var declp *ast.Decl = &&decl
         utils.Slice_append(&imports, &declp)
     }
     while p.tok != token.EOF {
@@ -1344,7 +1344,7 @@ fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
         decls: utils.Slice_to_nil_array(decls),
         scope: p.pkgScope,
     }
-    return esc(file)
+    return &&file
 }
 
 fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.File {

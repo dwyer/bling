@@ -386,7 +386,7 @@ fun newObject(kind ObjKind, name *char) *Object {
         kind: kind,
         name: name,
     }
-    return esc(obj)
+    return &&obj
 }
 
 fun Scope_new(outer *Scope) *Scope {
@@ -395,7 +395,7 @@ fun Scope_new(outer *Scope) *Scope {
         objects: utils.Map_init(sizeof(*Object)),
         keys: utils.Slice_init(sizeof(*char)),
     }
-    return esc(s)
+    return &&s
 }
 
 fun Scope_deinit(s *Scope) {

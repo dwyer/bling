@@ -648,13 +648,6 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
         {
             ast$Expr *func = expr->call.func;
             ast$Expr *type = Checker_checkExpr(c, func);
-            if (func->kind == ast$EXPR_IDENT) {
-                if (streq(func->ident.name, "esc")) {
-                    assert(expr->call.args[0] && !expr->call.args[1]);
-                    ast$Expr *type = Checker_checkExpr(c, expr->call.args[0]);
-                    return types$makePtr(type);
-                }
-            }
             if (type->kind == ast$EXPR_STAR) {
                 type = type->star.x;
             }
@@ -794,13 +787,18 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
     case ast$EXPR_UNARY:
         {
             ast$Expr *type = Checker_checkExpr(c, expr->unary.x);
-            if (expr->unary.op == token$AND) {
+            switch (expr->unary.op) {
+            case token$AND:
                 if (!types$isLhs(expr->unary.x)) {
                     Checker_error(c, ast$Expr_pos(expr),
                             sys$sprintf("invalid lvalue `%s`",
                                 types$exprString(expr->unary.x)));
                 }
                 return types$makePtr(type);
+            case token$LAND:
+                return types$makePtr(type);
+            default:
+                break;
             }
             return type;
         }

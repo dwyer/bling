@@ -83,7 +83,7 @@ fun makeIdent(name *const char) *ast.Expr {
             name: strdup(name),
         },
     }
-    return esc(x)
+    return &&x
 }
 
 fun makePtr(type *ast.Expr) *ast.Expr {
@@ -93,7 +93,7 @@ fun makePtr(type *ast.Expr) *ast.Expr {
             x: type,
         },
     }
-    return esc(x)
+    return &&x
 }
 
 fun getUnderlyingType(ident *ast.Expr) *ast.Expr {
@@ -605,13 +605,6 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         {
             var func *ast.Expr = expr.call.func
             var type *ast.Expr = Checker_checkExpr(c, func)
-            if func.kind == ast.EXPR_IDENT {
-                if streq(func.ident.name, "esc") {
-                    assert(expr.call.args[0] && !expr.call.args[1])
-                    var type *ast.Expr = Checker_checkExpr(c, expr.call.args[0])
-                    return makePtr(type)
-                }
-            }
             if type.kind == ast.EXPR_STAR {
                 type = type.star.x
             }
@@ -727,11 +720,16 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     case ast.EXPR_UNARY:
         {
             var type *ast.Expr = Checker_checkExpr(c, expr.unary.x)
-            if expr.unary.op == token.AND {
+            switch expr.unary.op {
+            case token.AND:
                 if !isLhs(expr.unary.x) {
                     Checker_error(c, ast.Expr_pos(expr), sys.sprintf("invalid lvalue `%s`", exprString(expr.unary.x)))
                 }
                 return makePtr(type)
+            case token.LAND:
+                return makePtr(type)
+            default:
+                break
             }
             return type
         }
@@ -959,7 +957,7 @@ fun newInfo() *Info {
     var info Info = {
         imports: utils.Map_init(sizeof(*Package)),
     }
-    return esc(info)
+    return &&info
 }
 
 fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.File, info *Info) *Package {
@@ -984,7 +982,7 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
         info: info,
         fset: fset,
         conf: conf,
-        pkg: esc(pkg),
+        pkg: &&pkg,
     }
     utils.Map_set(&info.imports, path, &c.pkg)
     Checker_checkFile(&c, file)
@@ -1176,7 +1174,7 @@ fun declareBuiltins(s *ast.Scope) {
                 name: strdup(natives[i].name),
             },
         }
-        var name *ast.Expr = esc(_name)
+        var name *ast.Expr = &&_name
         var type ast.Expr = {
             kind: ast.TYPE_NATIVE,
             native: {
@@ -1188,11 +1186,11 @@ fun declareBuiltins(s *ast.Scope) {
             kind: ast.DECL_TYPEDEF,
             typedef_: {
                 name: name,
-                type: esc(type),
+                type: &&type,
             },
         }
         var obj *ast.Object = ast.newObject(ast.ObjKind_TYP, name.ident.name)
-        obj.decl = esc(decl)
+        obj.decl = &&decl
         name.ident.obj = obj
         assert(ast.Scope_insert(s, obj) == NULL)
     }

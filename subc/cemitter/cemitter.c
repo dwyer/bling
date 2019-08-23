@@ -139,8 +139,16 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_UNARY:
-        emitter$emitToken(e, expr->unary.op);
+        if (expr->unary.op == token$LAND) {
+            emitter$emitToken(e, token$ESC);
+            emitter$emitToken(e, token$LPAREN);
+        } else {
+            emitter$emitToken(e, expr->unary.op);
+        }
         cemitter$emitExpr(e, expr->unary.x);
+        if (expr->unary.op == token$LAND) {
+            emitter$emitToken(e, token$RPAREN);
+        }
         break;
 
     default:

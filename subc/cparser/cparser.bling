@@ -44,7 +44,7 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
                     },
                 }
                 parser.expect(p, token.RBRACK)
-                x = esc(y)
+                x = &&y
             }
             break
         case token.LPAREN:
@@ -68,7 +68,7 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
                         args: utils.Slice_to_nil_array(args),
                     },
                 }
-                x = esc(call)
+                x = &&call
             }
             break
         case token.ARROW, token.PERIOD:
@@ -83,7 +83,7 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
                         sel: parser.parseIdent(p),
                     },
                 }
-                x = esc(y)
+                x = &&y
             }
             break
         default:
@@ -97,10 +97,14 @@ done:
 fun unary_expression(p *parser.Parser) *ast.Expr {
     var pos token.Pos = p.pos
     switch p.tok {
-    case token.ADD, token.AND, token.BITWISE_NOT, token.NOT, token.SUB:
+    case token.ADD, token.AND, token.ESC, token.BITWISE_NOT, token.NOT, token.SUB:
         {
             var op token.Token = p.tok
             parser.next(p)
+            if op == token.ESC {
+                op = token.LAND
+                parser.expect(p, token.LPAREN)
+            }
             var x ast.Expr = {
                 kind: ast.EXPR_UNARY,
                 unary: {
@@ -109,7 +113,10 @@ fun unary_expression(p *parser.Parser) *ast.Expr {
                     x: cast_expression(p),
                 },
             }
-            return esc(x)
+            if op == token.LAND {
+                parser.expect(p, token.RPAREN)
+            }
+            return &&x
         }
     case token.MUL:
         {
@@ -121,7 +128,7 @@ fun unary_expression(p *parser.Parser) *ast.Expr {
                     x: cast_expression(p),
                 },
             }
-            return esc(x)
+            return &&x
         }
     case token.SIZEOF:
         {
@@ -144,7 +151,7 @@ fun unary_expression(p *parser.Parser) *ast.Expr {
                     x: x,
                 },
             }
-            return esc(y)
+            return &&y
         }
     case token.DEC, token.INC:
         parser.error(p, p.pos, sys.sprintf("unary `%s` not supported in subc", token.string(p.tok)))
@@ -174,7 +181,7 @@ fun cast_expression(p *parser.Parser) *ast.Expr {
                     expr: cast_expression(p),
                 },
             }
-            return esc(y)
+            return &&y
         } else {
             var x *ast.Expr = expression(p)
             if x.kind != ast.EXPR_COMPOSITE_LIT {
@@ -185,7 +192,7 @@ fun cast_expression(p *parser.Parser) *ast.Expr {
                         x: x,
                     },
                 }
-                x = esc(y)
+                x = &&y
             }
             parser.expect(p, token.RPAREN)
             return postfix_expression(p, x)
@@ -212,7 +219,7 @@ fun binary_expression(p *parser.Parser, prec1 int) *ast.Expr {
                 y: y,
             },
         }
-        x = esc(z)
+        x = &&z
     }
 }
 
@@ -233,7 +240,7 @@ fun ternary_expression(p *parser.Parser) *ast.Expr {
                 y: alternative,
             },
         }
-        x = esc(y)
+        x = &&y
     }
     return x
 }
@@ -271,7 +278,7 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
                 },
             }
             parser.expect(p, token.SEMICOLON)
-            var field *ast.Decl = esc(f)
+            var field *ast.Decl = &&f
             utils.Slice_append(&fieldSlice, &field)
             if p.tok == token.RBRACE {
                 break
@@ -289,7 +296,7 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
             fields: fields,
         },
     }
-    return esc(x)
+    return &&x
 }
 
 fun enum_specifier(p *parser.Parser) *ast.Expr {
@@ -315,7 +322,7 @@ fun enum_specifier(p *parser.Parser) *ast.Expr {
             if parser.accept(p, token.ASSIGN) {
                 decl.value.value = constant_expression(p)
             }
-            var enumerator *ast.Decl = esc(decl)
+            var enumerator *ast.Decl = &&decl
             utils.Slice_append(&list, &enumerator)
             if !parser.accept(p, token.COMMA) || p.tok == token.RBRACE {
                 break
@@ -332,7 +339,7 @@ fun enum_specifier(p *parser.Parser) *ast.Expr {
             enums: enums,
         },
     }
-    return esc(x)
+    return &&x
 }
 
 fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
@@ -372,7 +379,7 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
             },
         }
         parser.expect(p, token.RBRACK)
-        *type_ptr = esc(type)
+        *type_ptr = &&type
     } else if parser.accept(p, token.LPAREN) {
         var params **ast.Decl = NULL
         if p.tok != token.RPAREN {
@@ -387,7 +394,7 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
             },
         }
         parser.expect(p, token.RPAREN)
-        *type_ptr = esc(type)
+        *type_ptr = &&type
     }
     if is_ptr {
         var type ast.Expr = {
@@ -396,7 +403,7 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
                 x: *type_ptr,
             },
         }
-        *type_ptr = esc(type)
+        *type_ptr = &&type
     }
     return name
 }
@@ -418,7 +425,7 @@ fun pointer(p *parser.Parser, type *ast.Expr) *ast.Expr {
             },
         }
         parser.next(p)
-        type = esc(x)
+        type = &&x
         type = type_qualifier(p, type)
     }
     return type
@@ -446,10 +453,10 @@ fun parameter_type_list(p *parser.Parser) **ast.Decl {
                 kind: ast.DECL_FIELD,
                 pos: pos,
                 field: {
-                    type: esc(type),
+                    type: &&type,
                 },
             }
-            var param *ast.Decl = esc(decl)
+            var param *ast.Decl = &&decl
             utils.Slice_append(&params, &param)
             break
         }
@@ -489,7 +496,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
                 },
             }
             parser.expect(p, token.RBRACK)
-            type = esc(t)
+            type = &&t
         } else if parser.accept(p, token.LPAREN) {
             var params **ast.Decl = NULL
             if p.tok != token.RPAREN {
@@ -504,7 +511,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
                 },
             }
             parser.expect(p, token.RPAREN)
-            type = esc(t)
+            type = &&t
         } else {
             break
         }
@@ -517,7 +524,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
                 x: type,
             },
         }
-        type = esc(tmp)
+        type = &&tmp
     }
     var declarator ast.Decl = {
         kind: ast.DECL_FIELD,
@@ -526,7 +533,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
             type: type,
         },
     }
-    return esc(declarator)
+    return &&declarator
 }
 
 fun initializer(p *parser.Parser) *ast.Expr {
@@ -558,7 +565,7 @@ fun initializer(p *parser.Parser) *ast.Expr {
                     isArray: isArray,
                 },
             }
-            value = esc(x)
+            value = &&x
         }
         utils.Slice_append(&list, &value)
         if !parser.accept(p, token.COMMA) {
@@ -572,7 +579,7 @@ fun initializer(p *parser.Parser) *ast.Expr {
             list: utils.Slice_to_nil_array(list),
         },
     }
-    return esc(expr)
+    return &&expr
 }
 
 fun simple_statement(p *parser.Parser, labelOk bool) *ast.Stmt {
@@ -591,7 +598,7 @@ fun simple_statement(p *parser.Parser, labelOk bool) *ast.Stmt {
                     y: y,
                 },
             }
-            return esc(stmt)
+            return &&stmt
         }
     case token.INC, token.DEC:
         {
@@ -603,7 +610,7 @@ fun simple_statement(p *parser.Parser, labelOk bool) *ast.Stmt {
                     op: op,
                 },
             }
-            return esc(stmt)
+            return &&stmt
         }
     default:
         break
@@ -617,7 +624,7 @@ fun simple_statement(p *parser.Parser, labelOk bool) *ast.Stmt {
                     stmt: statement(p),
                 },
             }
-            return esc(stmt)
+            return &&stmt
         }
     }
     var stmt ast.Stmt = {
@@ -626,7 +633,7 @@ fun simple_statement(p *parser.Parser, labelOk bool) *ast.Stmt {
             x: x,
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun statement(p *parser.Parser) *ast.Stmt {
@@ -637,7 +644,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 decl: declaration(p, false),
             },
         }
-        return esc(stmt)
+        return &&stmt
     }
     var pos token.Pos = p.pos
     if parser.accept(p, token.FOR) {
@@ -668,7 +675,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 body: body,
             },
         }
-        return esc(stmt)
+        return &&stmt
     }
     if parser.accept(p, token.IF) {
         parser.expect(p, token.LPAREN)
@@ -692,7 +699,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 else_: else_,
             },
         }
-        return esc(stmt)
+        return &&stmt
     }
     if parser.accept(p, token.RETURN) {
         var x *ast.Expr = NULL
@@ -707,7 +714,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 x: x,
             },
         }
-        return esc(stmt)
+        return &&stmt
     }
     if parser.accept(p, token.SWITCH) {
         parser.expect(p, token.LPAREN)
@@ -755,7 +762,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                     stmts: utils.Slice_to_nil_array(stmts),
                 },
             }
-            var clause *ast.Stmt = esc(stmt)
+            var clause *ast.Stmt = &&stmt
             utils.Slice_append(&clauses, &clause)
         }
         parser.expect(p, token.RBRACE)
@@ -767,7 +774,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 stmts: utils.Slice_to_nil_array(clauses),
             },
         }
-        return esc(stmt)
+        return &&stmt
     }
     if parser.accept(p, token.WHILE) {
         parser.expect(p, token.LPAREN)
@@ -783,7 +790,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 body: body,
             },
         }
-        return esc(stmt)
+        return &&stmt
     }
     switch p.tok {
     case token.BREAK, token.CONTINUE, token.GOTO:
@@ -803,7 +810,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                     label: label,
                 },
             }
-            return esc(stmt)
+            return &&stmt
         }
     case token.LBRACE:
         return compound_statement(p, false)
@@ -817,7 +824,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 pos: pos,
             },
         }
-        return esc(stmt)
+        return &&stmt
     }
     var stmt *ast.Stmt = simple_statement(p, true)
     if stmt.kind != ast.STMT_LABEL {
@@ -851,7 +858,7 @@ fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt {
             stmts: utils.Slice_to_nil_array(stmts),
         },
     }
-    return esc(stmt)
+    return &&stmt
 }
 
 fun parameter_declaration(p *parser.Parser) *ast.Decl {
@@ -861,7 +868,7 @@ fun parameter_declaration(p *parser.Parser) *ast.Decl {
     }
     decl.field.type = declaration_specifiers(p, false)
     decl.field.name = declarator(p, &decl.field.type)
-    return esc(decl)
+    return &&decl
 }
 
 fun type_specifier(p *parser.Parser) *ast.Expr {
@@ -928,7 +935,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
                 type: type,
             },
         }
-        var decl *ast.Decl = esc(declref)
+        var decl *ast.Decl = &&declref
         var obj *ast.Object = ast.newObject(ast.ObjKind_TYP, name.ident.name)
         ast.Scope_insert(p.topScope, obj)
         return decl
@@ -950,7 +957,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
         } else {
             parser.expect(p, token.SEMICOLON)
         }
-        return esc(decl)
+        return &&decl
     }
     if parser.accept(p, token.ASSIGN) {
         value = initializer(p)
@@ -967,7 +974,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
                 kind: token.VAR,
             },
         }
-        return esc(decl)
+        return &&decl
     } else {
         switch type.kind {
         case ast.TYPE_STRUCT:
@@ -985,7 +992,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
                 name: name,
             },
         }
-        return esc(decl)
+        return &&decl
     }
 }
 
@@ -1021,7 +1028,7 @@ fun parse_cfile(p *parser.Parser, scope *ast.Scope) *ast.File {
                 path: path,
             },
         }
-        var declp *ast.Decl = esc(decl)
+        var declp *ast.Decl = &&decl
         utils.Slice_append(&imports, &declp)
     }
     while p.tok != token.EOF {
@@ -1035,7 +1042,7 @@ fun parse_cfile(p *parser.Parser, scope *ast.Scope) *ast.File {
         imports: utils.Slice_to_nil_array(imports),
         scope: p.pkgScope,
     }
-    return esc(file)
+    return &&file
 }
 
 fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.File {

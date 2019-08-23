@@ -33,7 +33,7 @@ fun NewError(msg *const char) *Error {
     var err Error = {
         error: strdup(msg),
     }
-    return esc(err)
+    return &&err
 }
 
 fun Error_move(src *Error, dst **Error) {

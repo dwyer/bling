@@ -125,8 +125,16 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitExpr(e, expr.ternary.y)
         break
     case ast.EXPR_UNARY:
-        emitter.emitToken(e, expr.unary.op)
+        if expr.unary.op == token.LAND {
+            emitter.emitToken(e, token.ESC)
+            emitter.emitToken(e, token.LPAREN)
+        } else {
+            emitter.emitToken(e, expr.unary.op)
+        }
         emitExpr(e, expr.unary.x)
+        if expr.unary.op == token.LAND {
+            emitter.emitToken(e, token.RPAREN)
+        }
         break
     default:
         panic(sys.sprintf("Unknown expr: %d", expr.kind))
