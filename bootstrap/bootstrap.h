@@ -7,13 +7,14 @@
 #include <stdlib.h>
 #include <strings.h>
 
-#define $
-#define import(_)
-#define package(_)
+#define import(_) // noop in C
+#define package(_) // noop in C
+#define esc(x) ({typeof(x) $0 = (x); memcpy(malloc(sizeof $0), &$0, sizeof $0);})
+
+#define fallthrough // noop in C
+#define typ typedef
 
 #define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
-
-#define esc(x) ({typeof(x) $0 = (x); memcpy(malloc(sizeof $0), &$0, sizeof $0);})
 
 extern void print(const char *s);
 extern void panic(const char *s);

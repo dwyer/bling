@@ -1,12 +1,23 @@
-Emit field names of anonymous tags to eliminate the dependency on
--fms-extensions.
-
-Make `sizeof` a builtin func.
-
-Implement a way to define a value with no address, such as #define and C's enum.
-
-Eventually we want to have switch cases to have an implicit break and to open a
-new scope by default. So the above example would be converted to:
+* Change cast syntax from `<T>x` to T(x).
+* Emit field names of anonymous tags to eliminate the dependency on
+  -fms-extensions.
+* Make `sizeof` a builtin func.
+* Make `esc` a keyword
+    * Replace `esc` keyword with unary `&&`
+        * Remove `esc` keyword from bling scanner
+* Remove the follow tokens from bling (unless we find a use for them.
+    - `->`
+    - `$`
+    - `#`
+* Replace  `*_t` types with `*` (e.g. `uint8_t` with `uint8`, etc)
+* Replace `typedef` keyword with `typ` keyword
+* Implement a const type
+* Implement `import ( ... )` decl
+* Make semicolons optional before `}` and `)'
+* Implement a `fallthrough` keyword and make sure it's used where `break` is
+  expected.
+* Eventually we want to have switch cases to have an implicit break and to open
+  a new scope by default. So the above example would be converted to:
 
     // in bling
     switch (x) {
@@ -32,4 +43,4 @@ new scope by default. So the above example would be converted to:
         break;
     }
 
-Compile to assembly.
+* Compile to assembly.
