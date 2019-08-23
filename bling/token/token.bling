@@ -21,6 +21,7 @@ typ Token enum {
     ENUM
     ESC
     EXTERN
+    FALLTHROUGH
     FOR
     FUNC
     GOTO
@@ -138,6 +139,7 @@ var tokens []*char = {
     ENUM: "enum",
     ESC: "esc",
     EXTERN: "extern",
+    FALLTHROUGH: "fallthrough",
     FOR: "for",
     FUNC: "fun",
     GOTO: "goto",

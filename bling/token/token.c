@@ -22,6 +22,7 @@ static char *tokens[] = {
     [token$ENUM] = "enum",
     [token$ESC] = "esc",
     [token$EXTERN] = "extern",
+    [token$FALLTHROUGH] = "fallthrough",
     [token$FOR] = "for",
     [token$FUNC] = "fun",
     [token$GOTO] = "goto",

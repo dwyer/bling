@@ -79,6 +79,7 @@ $(BLINGC):
 	bazel build \
 	    --copt="-Wall" \
 	    --copt="-Werror" \
+	    --copt="-Wimplicit-fallthrough" \
 	    --copt="-fms-extensions" \
 	    --copt="-Wno-microsoft-anon-tag" \
 	    cmd/blingc

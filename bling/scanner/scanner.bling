@@ -186,8 +186,9 @@ scan_again:
                 *lit = NULL
             }
             switch tok {
-            case token.IDENT, token.BREAK, token.CONTINUE, token.RETURN:
+            case token.IDENT, token.BREAK, token.CONTINUE, token.FALLTHROUGH, token.RETURN:
                 insertSemi = true
+                break
             default:
                 break
             }

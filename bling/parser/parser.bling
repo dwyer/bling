@@ -1088,7 +1088,7 @@ fun parseStmt(p *Parser) *ast.Stmt {
         return parseSwitchStmt(p)
     case token.WHILE:
         return parseWhileStmt(p)
-    case token.BREAK, token.CONTINUE, token.GOTO:
+    case token.BREAK, token.CONTINUE, token.FALLTHROUGH, token.GOTO:
         return parseJumpStmt(p, p.tok)
     case token.LBRACE:
         return parseBlockStmt(p)

@@ -182,8 +182,10 @@ scan_again:
             case token$IDENT:
             case token$BREAK:
             case token$CONTINUE:
+            case token$FALLTHROUGH:
             case token$RETURN:
                 insertSemi = true;
+                break;
             default:
                 break;
             }

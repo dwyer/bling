@@ -1148,6 +1148,7 @@ static ast$Stmt *parseJumpStmt(parser$Parser *p, token$Token keyword) {
     //         : GOTO IDENTIFIER ';'
     //         | CONTINUE ';'
     //         | BREAK ';'
+    //         | FALLTHROUGH ';'
     //         ;
     token$Pos pos = parser$expect(p, keyword);
     ast$Expr *label = NULL;
@@ -1196,6 +1197,7 @@ static ast$Stmt *parseStmt(parser$Parser *p) {
     case token$WHILE: return parseWhileStmt(p);
     case token$BREAK:
     case token$CONTINUE:
+    case token$FALLTHROUGH:
     case token$GOTO: return parseJumpStmt(p, p->tok);
     case token$LBRACE: return parseBlockStmt(p);
     default:

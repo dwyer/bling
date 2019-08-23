@@ -11,8 +11,6 @@
 * Implement a const type (like `enum` value or #define directive).
 * Implement `import ( ... )` decl.
 * Make semicolons optional before `}` and `)'.
-* Implement a `fallthrough` keyword and make sure it's used where `break` is
-  expected.
 * After we replace C code with Bling:
     * rename `esc` to `__bling_escape` or something similar.
 * Eventually we want to have switch cases to have an implicit break and to open
@@ -41,3 +39,5 @@
         }
         break;
     }
+
+    * When this is complete, change the functionality of `fallthrough`.

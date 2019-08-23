@@ -793,7 +793,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         return &&stmt
     }
     switch p.tok {
-    case token.BREAK, token.CONTINUE, token.GOTO:
+    case token.BREAK, token.CONTINUE, token.FALLTHROUGH, token.GOTO:
         {
             var keyword token.Token = p.tok
             parser.next(p)

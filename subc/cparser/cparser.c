@@ -979,10 +979,12 @@ static ast$Stmt *statement(parser$Parser *p) {
     switch (p->tok) {
     case token$BREAK:
     case token$CONTINUE:
+    case token$FALLTHROUGH:
     case token$GOTO:
         // jump_statement
         //         : GOTO IDENTIFIER ';'
         //         | CONTINUE ';'
+        //         | FALLTHROUGH ';'
         //         | BREAK ';'
         //         ;
         {
