@@ -4,7 +4,7 @@ import "bytes"
 import "sys"
 import "utils"
 
-typedef Token enum {
+typ Token enum {
     ILLEGAL = 0
     CHAR
     FLOAT
@@ -33,6 +33,7 @@ typedef Token enum {
     STATIC
     STRUCT
     SWITCH
+    TYPE
     TYPEDEF
     UNION
     UNSIGNED
@@ -90,15 +91,15 @@ typedef Token enum {
     XOR_ASSIGN
 }
 
-typedef Pos int
+typ Pos int
 
-typedef Prec enum {
+typ Prec enum {
     lowest_prec = 0
     unary_prec = 11
     highest_prec = 12
 }
 
-typedef File struct {
+typ File struct {
     set *FileSet
     name *char
     base int
@@ -107,14 +108,14 @@ typedef File struct {
     src *char
 }
 
-typedef FileSet struct {
+typ FileSet struct {
     fset *FileSet
     base int
     files utils.Slice
     last *File
 }
 
-typedef Position struct {
+typ Position struct {
     filename *char
     offset int
     line int
@@ -149,6 +150,7 @@ var tokens []*char = {
     STATIC: "static",
     STRUCT: "struct",
     SWITCH: "switch",
+    TYPE: "typ",
     TYPEDEF: "typedef",
     UNION: "union",
     UNSIGNED: "unsigned",

@@ -66,7 +66,7 @@ fun mkdirForFile(path *const char) {
     free(dir)
 }
 
-typedef Package struct {
+typ Package struct {
     path *char
     pkg *types.Package
     hPath *char
@@ -79,7 +79,7 @@ typedef Package struct {
     deps utils.Slice
 }
 
-typedef Builder struct {
+typ Builder struct {
     fset *token.FileSet
     info *types.Info
     force bool
@@ -183,7 +183,7 @@ fun newPackage(b *Builder, path *const char) Package {
     return pkg
 }
 
-typedef SliceIter struct {
+typ SliceIter struct {
     s *utils.Slice
     i int
     it *void

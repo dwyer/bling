@@ -7,7 +7,6 @@
     - `$`
     - `#`
 * Replace  `*_t` types with `*` (e.g. `uint8_t` with `uint8`, etc)
-* Replace `typedef` keyword with `typ` keyword
 * Implement a const type
 * Implement `import ( ... )` decl
 * Make semicolons optional before `}` and `)'
@@ -41,3 +40,6 @@
     }
 
 * Compile to assembly.
+
+* After we replace C code with Bling:
+    * rename `esc` to `__bling_escape` or something similar.

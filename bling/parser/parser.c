@@ -1363,7 +1363,7 @@ static ast$Decl *parseDecl(parser$Parser *p) {
     switch (p->tok) {
     case token$HASH:
         return parser$parsePragma(p);
-    case token$TYPEDEF:
+    case token$TYPE:
         return parseTypeDecl(p);
     case token$CONST:
     case token$VAR:

@@ -3,7 +3,7 @@ package scanner
 import "bling/token"
 import "sys"
 
-typedef Scanner struct {
+typ Scanner struct {
     file *token.File
     src *char
     rd_offset int

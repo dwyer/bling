@@ -7,17 +7,17 @@ import "bling/token"
 import "sys"
 import "utils"
 
-typedef Config struct {
+typ Config struct {
     strict bool
     cMode bool
     ignoreFuncBodies bool
 }
 
-typedef Info struct {
+typ Info struct {
     imports utils.Map
 }
 
-typedef Package struct {
+typ Package struct {
     path *char
     name *char
     scope *ast.Scope
@@ -330,7 +330,7 @@ fun getStructField(type *ast.Expr, index int) *ast.Decl {
     return NULL
 }
 
-typedef Checker struct {
+typ Checker struct {
     conf *Config
     fset *token.FileSet
     pkg *Package
@@ -997,7 +997,7 @@ fun check(conf *Config, path *const char, fset *token.FileSet, files **ast.File,
     return checkFile(conf, path, fset, files[0], info)
 }
 
-typedef builtinId enum {
+typ builtinId enum {
     _assert
     _esc
     _free
@@ -1010,7 +1010,7 @@ typedef builtinId enum {
     numBuiltinIds
 }
 
-typedef exprKind enum {
+typ exprKind enum {
     expression
     statement
 }

@@ -501,7 +501,7 @@ static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
         break;
 
     case ast$DECL_TYPEDEF:
-        emitter$emitToken(e, token$TYPEDEF);
+        emitter$emitToken(e, token$TYPE);
         emitter$emitSpace(e);
         cemitter$emitType(e, decl->typedef_.type, decl->typedef_.name);
         emitter$emitToken(e, token$SEMICOLON);

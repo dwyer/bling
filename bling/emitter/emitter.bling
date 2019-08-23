@@ -5,7 +5,7 @@ import "bling/token"
 import "bytes"
 import "sys"
 
-typedef Emitter struct {
+typ Emitter struct {
     buf bytes.Buffer
     indent int
     skipSemi bool
@@ -491,7 +491,7 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
         emitExpr(e, decl.imp.path)
         break
     case ast.DECL_TYPEDEF:
-        emitToken(e, token.TYPEDEF)
+        emitToken(e, token.TYPE)
         emitSpace(e)
         emitExpr(e, decl.typedef_.name)
         emitSpace(e)

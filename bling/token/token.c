@@ -34,6 +34,7 @@ static char *tokens[] = {
     [token$STATIC] = "static",
     [token$STRUCT] = "struct",
     [token$SWITCH] = "switch",
+    [token$TYPE] = "typ",
     [token$TYPEDEF] = "typedef",
     [token$UNION] = "union",
     [token$UNSIGNED] = "unsigned",

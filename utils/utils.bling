@@ -2,29 +2,29 @@ package utils
 
 import "sys"
 
-typedef Error struct {
+typ Error struct {
     error *char
 }
 
-typedef Slice struct {
+typ Slice struct {
     size int
     len int
     cap int
     array *void
 }
 
-typedef Map struct {
+typ Map struct {
     len int
     key_size int
     val_size int
     pairs Slice
 }
 
-typedef MapStatus enum {
+typ MapStatus enum {
     MapStatus_ok = 1
 }
 
-typedef MapIter struct {
+typ MapIter struct {
     _map *const Map
     _idx int
 }
@@ -174,7 +174,7 @@ fun memdup(src *const void, size size_t) *void {
     return sys.memcpy(malloc(size), src, size)
 }
 
-typedef pair_t struct {
+typ pair_t struct {
     key *void
     val *void
 }

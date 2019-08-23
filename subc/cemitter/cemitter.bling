@@ -457,7 +457,7 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
         emitter.emitString(e, decl.pragma.lit)
         break
     case ast.DECL_TYPEDEF:
-        emitter.emitToken(e, token.TYPEDEF)
+        emitter.emitToken(e, token.TYPE)
         emitter.emitSpace(e)
         emitType(e, decl.typedef_.type, decl.typedef_.name)
         emitter.emitToken(e, token.SEMICOLON)

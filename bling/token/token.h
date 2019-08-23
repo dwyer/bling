@@ -38,6 +38,7 @@ typedef enum {
     token$STATIC,
     token$STRUCT,
     token$SWITCH,
+    token$TYPE,
     token$TYPEDEF,
     token$UNION,
     token$UNSIGNED,

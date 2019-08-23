@@ -9,11 +9,11 @@ import "utils"
 
 #include "utils/utils.h"
 
-typedef Time uint64_t
+typ Time uint64_t
 
-typedef FileMode uint32_t
+typ FileMode uint32_t
 
-typedef File struct {
+typ File struct {
     fd uintptr_t
     name *char
     is_dir bool
@@ -41,7 +41,7 @@ fun read(file *File, b *char, n int, error **utils.Error) int
 
 fun write(file *File, b *const char, error **utils.Error) int
 
-typedef FileInfo struct {
+typ FileInfo struct {
     _name *char
     _sys *void
 }

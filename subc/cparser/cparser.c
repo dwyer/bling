@@ -1140,7 +1140,7 @@ static ast$Decl *declaration(parser$Parser *p, bool is_external) {
         return parser$parsePragma(p);
     }
     token$Pos pos = p->pos;
-    if (p->tok == token$TYPEDEF) {
+    if (p->tok == token$TYPE || p->tok == token$TYPEDEF) {
         token$Token keyword = p->tok;
         parser$expect(p, keyword);
         ast$Expr *type = declaration_specifiers(p, true);

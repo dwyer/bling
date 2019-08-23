@@ -1,4 +1,4 @@
-typedef bool char
+typ bool char
 
 const false = <bool> 0
 const true = !false

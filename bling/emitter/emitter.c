@@ -528,7 +528,7 @@ extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
         break;
 
     case ast$DECL_TYPEDEF:
-        emitter$emitToken(e, token$TYPEDEF);
+        emitter$emitToken(e, token$TYPE);
         emitter$emitSpace(e);
         emitter$emitExpr(e, decl->typedef_.name);
         emitter$emitSpace(e);

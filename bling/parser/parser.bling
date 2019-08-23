@@ -10,7 +10,7 @@ import "paths"
 import "utils"
 import "sys"
 
-typedef Parser struct {
+typ Parser struct {
     file *token.File
     scanner scanner.Scanner
     pos token.Pos
@@ -1259,7 +1259,7 @@ fun parseDecl(p *Parser) *ast.Decl {
     switch p.tok {
     case token.HASH:
         return parsePragma(p)
-    case token.TYPEDEF:
+    case token.TYPE:
         return parseTypeDecl(p)
     case token.CONST, token.VAR:
         return parseValueDecl(p)

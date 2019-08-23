@@ -5,7 +5,7 @@ import "bytes"
 import "sys"
 import "utils"
 
-typedef NodeKind enum {
+typ NodeKind enum {
     NODE_ILLEGAL = 0
     _DECL_START
     DECL_FIELD
@@ -57,11 +57,11 @@ typedef NodeKind enum {
     _TYPE_END
 }
 
-typedef Node struct {
+typ Node struct {
     kind NodeKind
 }
 
-typedef ObjKind enum {
+typ ObjKind enum {
     ObjKind_BAD
     ObjKind_CON
     ObjKind_FUN
@@ -70,7 +70,7 @@ typedef ObjKind enum {
     ObjKind_VAL
 }
 
-typedef Object struct {
+typ Object struct {
     kind ObjKind
     name *char
     decl *Decl
@@ -79,101 +79,101 @@ typedef Object struct {
     scope *Scope
 }
 
-typedef ArrayType struct {
+typ ArrayType struct {
     pos token.Pos
     len *Expr
     elt *Expr
 }
 
-typedef BasicLit struct {
+typ BasicLit struct {
     pos token.Pos
     kind token.Token
     value *char
 }
 
-typedef BinaryExpr struct {
+typ BinaryExpr struct {
     op token.Token
     x *Expr
     y *Expr
 }
 
-typedef CallExpr struct {
+typ CallExpr struct {
     func *Expr
     args **Expr
 }
 
-typedef CastExpr struct {
+typ CastExpr struct {
     pos token.Pos
     type *Expr
     expr *Expr
 }
 
-typedef CompositeLit struct {
+typ CompositeLit struct {
     pos token.Pos
     type *Expr
     list **Expr
 }
 
-typedef EllipsisType struct {
+typ EllipsisType struct {
     pos token.Pos
 }
 
-typedef EnumType struct {
+typ EnumType struct {
     pos token.Pos
     name *Expr
     enums **Decl
 }
 
-typedef FuncExpr struct {
+typ FuncExpr struct {
     pos token.Pos
     result *Expr
     params **Decl
 }
 
-typedef Ident struct {
+typ Ident struct {
     pos token.Pos
     name *char
     obj *Object
 }
 
-typedef IndexExpr struct {
+typ IndexExpr struct {
     x *Expr
     index *Expr
 }
 
-typedef KeyValueExpr struct {
+typ KeyValueExpr struct {
     key *Expr
     value *Expr
     isArray bool
 }
 
-typedef NativeType struct {
+typ NativeType struct {
     name *char
     size int
 }
 
-typedef ParenExpr struct {
+typ ParenExpr struct {
     pos token.Pos
     x *Expr
 }
 
-typedef SelectorExpr struct {
+typ SelectorExpr struct {
     x *Expr
     tok token.Token
     sel *Expr
 }
 
-typedef SizeofExpr struct {
+typ SizeofExpr struct {
     pos token.Pos
     x *Expr
 }
 
-typedef StarExpr struct {
+typ StarExpr struct {
     pos token.Pos
     x *Expr
 }
 
-typedef StructType struct {
+typ StructType struct {
     pos token.Pos
     tok token.Token
     name *Expr
@@ -181,19 +181,19 @@ typedef StructType struct {
     scope *Scope
 }
 
-typedef TernaryExpr struct {
+typ TernaryExpr struct {
     cond *Expr
     x *Expr
     y *Expr
 }
 
-typedef UnaryExpr struct {
+typ UnaryExpr struct {
     pos token.Pos
     op token.Token
     x *Expr
 }
 
-typedef Expr struct {
+typ Expr struct {
     Node
     is_const bool
     union {
@@ -220,39 +220,39 @@ typedef Expr struct {
     }
 }
 
-typedef ImportDecl struct {
+typ ImportDecl struct {
     name *Expr
     path *Expr
 }
 
-typedef PragmaDecl struct {
+typ PragmaDecl struct {
     lit *char
 }
 
-typedef TypeDecl struct {
+typ TypeDecl struct {
     name *Expr
     type *Expr
 }
 
-typedef ValueDecl struct {
+typ ValueDecl struct {
     name *Expr
     type *Expr
     value *Expr
     kind token.Token
 }
 
-typedef FuncDecl struct {
+typ FuncDecl struct {
     name *Expr
     type *Expr
     body *Stmt
 }
 
-typedef Field struct {
+typ Field struct {
     name *Expr
     type *Expr
 }
 
-typedef Decl struct {
+typ Decl struct {
     Node
     pos token.Pos
     union {
@@ -265,43 +265,43 @@ typedef Decl struct {
     }
 }
 
-typedef AssignStmt struct {
+typ AssignStmt struct {
     x *Expr
     op token.Token
     y *Expr
 }
 
-typedef BlockStmt struct {
+typ BlockStmt struct {
     pos token.Pos
     stmts **Stmt
 }
 
-typedef CaseStmt struct {
+typ CaseStmt struct {
     pos token.Pos
     exprs **Expr
     stmts **Stmt
 }
 
-typedef EmptyStmt struct {
+typ EmptyStmt struct {
     pos token.Pos
 }
 
-typedef ExprStmt struct {
+typ ExprStmt struct {
     x *Expr
 }
 
-typedef DeclStmt struct {
+typ DeclStmt struct {
     decl *Decl
 }
 
-typedef IfStmt struct {
+typ IfStmt struct {
     pos token.Pos
     cond *Expr
     body *Stmt
     else_ *Stmt
 }
 
-typedef IterStmt struct {
+typ IterStmt struct {
     pos token.Pos
     kind token.Token
     init *Stmt
@@ -310,34 +310,34 @@ typedef IterStmt struct {
     body *Stmt
 }
 
-typedef JumpStmt struct {
+typ JumpStmt struct {
     pos token.Pos
     keyword token.Token
     label *Expr
 }
 
-typedef LabelStmt struct {
+typ LabelStmt struct {
     label *Expr
     stmt *Stmt
 }
 
-typedef PostfixStmt struct {
+typ PostfixStmt struct {
     x *Expr
     op token.Token
 }
 
-typedef ReturnStmt struct {
+typ ReturnStmt struct {
     pos token.Pos
     x *Expr
 }
 
-typedef SwitchStmt struct {
+typ SwitchStmt struct {
     pos token.Pos
     tag *Expr
     stmts **Stmt
 }
 
-typedef Stmt struct {
+typ Stmt struct {
     Node
     union {
         assign AssignStmt
@@ -356,14 +356,14 @@ typedef Stmt struct {
     }
 }
 
-typedef Scope struct {
+typ Scope struct {
     outer *Scope
     objects utils.Map
     keys utils.Slice
     pkg *char
 }
 
-typedef File struct {
+typ File struct {
     filename *const char
     name *Expr
     imports **Decl
@@ -371,7 +371,7 @@ typedef File struct {
     scope *Scope
 }
 
-typedef Package struct {
+typ Package struct {
     name *char
     scope *Scope
     files **File
