@@ -574,6 +574,7 @@ extern void emitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
             emitter$emitString(e, "define");
             emitter$emitSpace(e);
             emitter$emitExpr(e, decl->value.value);
+            break;
         default:
             panic(sys$sprintf("bad kind for ast$DECL_VALUE: %s",
                         token$string(decl->value.kind)));

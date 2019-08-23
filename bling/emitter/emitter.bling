@@ -535,6 +535,7 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
             emitString(e, "define")
             emitSpace(e)
             emitExpr(e, decl.value.value)
+            break
         default:
             panic(sys.sprintf("bad kind for ast$DECL_VALUE: %s", token.string(decl.value.kind)))
             break
