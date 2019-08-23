@@ -10,12 +10,16 @@ extern void print(const char *s) {
     fprintf(stderr, "%s\n", s);
 }
 
-extern void panic(const char *s) {
-    print(s);
+extern void panic0(void) {
     void *buf[BUFSIZ];
     int n = backtrace(buf, BUFSIZ);
     backtrace_symbols_fd(buf, n, STDERR_FILENO);
     exit(1);
+}
+
+extern void panic(const char *s) {
+    print(s);
+    panic0();
 }
 
 extern int strcmp(const char *, const char *);

@@ -26,7 +26,6 @@ typedef enum {
     token$ELSE,
     token$ENUM,
     token$ESC,
-    token$EXTERN, // used by subc
     token$FALLTHROUGH,
     token$FOR,
     token$FUNC,
@@ -35,23 +34,30 @@ typedef enum {
     token$IMPORT,
     token$PACKAGE,
     token$RETURN,
-    token$SIGNED, // used by subc
     token$SIZEOF,
-    token$STATIC, // used by subc
     token$STRUCT,
     token$SWITCH,
     token$TYPE,
-    token$TYPEDEF, // used by subc
     token$UNION,
-    token$UNSIGNED, // used by subc
     token$VAR,
     token$WHILE,
 
     // reserved by external C compiler:
-    token$_ATTR,
+    // inline and restrict can be removed when we emit c89
+    token$EXTERN,
+    token$SIGNED,
+    token$STATIC,
+    token$TYPEDEF,
+    token$UNSIGNED,
     token$_AUTO,
+    token$_COMPLEX, // c99
     token$_DO,
+    token$_IMAGINARY, // c99
+    token$_INLINE, // c99
     token$_LONG,
+    token$_REGISTER,
+    token$_RESTRICT, // c99
+    token$_SHORT,
     token$_TYPEOF,
     token$_VOLATILE,
 

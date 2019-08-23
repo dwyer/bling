@@ -263,7 +263,7 @@ scan_again:
             tok = switch2(s, token$NOT, token$NOT_EQUAL);
             break;
         case '$':
-            tok = token$DOLLAR;
+            // tok = token$DOLLAR;
             break;
         case '%':
             tok = switch2(s, token$MOD, token$MOD_ASSIGN);

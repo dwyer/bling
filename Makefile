@@ -77,6 +77,8 @@ debug:
 
 $(BLINGC):
 	bazel build \
+	    --copt="-std=gnu99" \
+	    --copt="-Wno-implicit-function-declaration" \
 	    --copt="-Wall" \
 	    --copt="-Werror" \
 	    --copt="-Wimplicit-fallthrough" \

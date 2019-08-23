@@ -20,8 +20,8 @@
 #define false (0)
 #define true (!false)
 
+typedef char bool;
 typedef unsigned long int size_t;
-typedef _Bool bool;
 
 extern void free(void *);
 extern void *malloc(size_t);
@@ -29,7 +29,8 @@ extern void *malloc(size_t);
 extern char *strdup(char const *);
 extern size_t strlen(char const *);
 extern void print(const char *s);
-extern void panic(const char *s) __attribute__((noreturn));
+extern void _Noreturn panic0(void) __attribute__((noreturn));
+extern void _Noreturn panic(const char *s) __attribute__((noreturn));
 extern bool streq(const char *a, const char *b);
 
 #endif

@@ -20,7 +20,6 @@ typ Token enum {
     ELSE
     ENUM
     ESC
-    EXTERN
     FALLTHROUGH
     FOR
     FUNC
@@ -29,21 +28,27 @@ typ Token enum {
     IMPORT
     PACKAGE
     RETURN
-    SIGNED
     SIZEOF
-    STATIC
     STRUCT
     SWITCH
     TYPE
-    TYPEDEF
     UNION
-    UNSIGNED
     VAR
     WHILE
-    _ATTR
+    EXTERN
+    SIGNED
+    STATIC
+    TYPEDEF
+    UNSIGNED
     _AUTO
+    _COMPLEX
     _DO
+    _IMAGINARY
+    _INLINE
     _LONG
+    _REGISTER
+    _RESTRICT
+    _SHORT
     _TYPEOF
     _VOLATILE
     _keywordEnd
@@ -164,10 +169,15 @@ var tokens []*char = {
     UNSIGNED: "unsigned",
     VAR: "var",
     WHILE: "while",
-    _ATTR: "__attribute__",
     _AUTO: "auto",
+    _COMPLEX: "_Complex",
     _DO: "do",
+    _IMAGINARY: "_Imaginary",
+    _INLINE: "inline",
     _LONG: "long",
+    _REGISTER: "register",
+    _RESTRICT: "restrict",
+    _SHORT: "short",
     _TYPEOF: "typeof",
     _VOLATILE: "volatile",
     ARROW: "->",
