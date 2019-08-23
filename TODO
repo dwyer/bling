@@ -1,4 +1,5 @@
-* Change cast syntax from `<T>x` to T(x).
+* Make `void` a keyword?
+* Change cast syntax from `<T>x` to `typ(T) x`;
 * Emit field names of anonymous tags to eliminate the dependency on
   -fms-extensions.
 * Make `sizeof` a builtin func.
@@ -6,12 +7,14 @@
     - `->`
     - `$`
     - `#`
-* Replace  `*_t` types with `*` (e.g. `uint8_t` with `uint8`, etc)
-* Implement a const type
-* Implement `import ( ... )` decl
-* Make semicolons optional before `}` and `)'
+* Replace  `*_t` types with `*` (e.g. `uint8_t` with `uint8`, etc).
+* Implement a const type (like `enum` value or #define directive).
+* Implement `import ( ... )` decl.
+* Make semicolons optional before `}` and `)'.
 * Implement a `fallthrough` keyword and make sure it's used where `break` is
   expected.
+* After we replace C code with Bling:
+    * rename `esc` to `__bling_escape` or something similar.
 * Eventually we want to have switch cases to have an implicit break and to open
   a new scope by default. So the above example would be converted to:
 
@@ -38,8 +41,3 @@
         }
         break;
     }
-
-* Compile to assembly.
-
-* After we replace C code with Bling:
-    * rename `esc` to `__bling_escape` or something similar.
