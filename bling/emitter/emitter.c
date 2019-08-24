@@ -94,11 +94,12 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_CAST:
-        emitter$emitToken(e, token$LT);
-        emitter$emitType(e, expr->cast.type);
-        emitter$emitToken(e, token$GT);
+        emitter$emitToken(e, token$TYPE);
         emitter$emitSpace(e);
+        emitter$emitType(e, expr->cast.type);
+        emitter$emitToken(e, token$LPAREN);
         emitter$emitExpr(e, expr->cast.expr);
+        emitter$emitToken(e, token$RPAREN);
         break;
 
     case ast$EXPR_COMPOSITE_LIT:

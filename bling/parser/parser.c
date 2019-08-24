@@ -514,12 +514,11 @@ static ast$Expr *parseUnaryExpr(parser$Parser *p, bool lhs) {
             parser$expect(p, token$RPAREN);
             return esc(x);
         }
-    case token$LT:
+    case token$TYPE:
         {
             token$Pos pos = p->pos;
-            parser$expect(p, token$LT);
+            parser$expect(p, token$TYPE);
             ast$Expr *type = parseType(p);
-            parser$expect(p, token$GT);
             if (p->tok == token$LBRACE) {
                 return parseLiteralValue(p, type);
             }

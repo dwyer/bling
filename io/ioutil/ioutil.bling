@@ -72,7 +72,7 @@ end:
 }
 
 fun writeFile(filename *const char, data *const char, perm int, error **utils.Error) {
-    <void> perm
+    typ void(perm)
     var err *utils.Error = NULL
     var file *os.File = os.create(filename, &err)
     if err {

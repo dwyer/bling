@@ -99,11 +99,12 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         emitToken(e, token.RPAREN)
         break
     case ast.EXPR_CAST:
-        emitToken(e, token.LT)
-        emitType(e, expr.cast.type)
-        emitToken(e, token.GT)
+        emitToken(e, token.TYPE)
         emitSpace(e)
+        emitType(e, expr.cast.type)
+        emitToken(e, token.LPAREN)
         emitExpr(e, expr.cast.expr)
+        emitToken(e, token.RPAREN)
         break
     case ast.EXPR_COMPOSITE_LIT:
         if isSimpleType(expr.composite.type) {

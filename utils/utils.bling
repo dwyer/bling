@@ -85,7 +85,7 @@ fun Slice_cap(s *const Slice) int {
 }
 
 fun Slice_ref(s *const Slice, i int) *void {
-    return &(<*char> s.array)[i * s.size]
+    return &(typ *char(s.array))[i * s.size]
 }
 
 fun Slice_get(s *const Slice, i int, dst *void) {
@@ -93,7 +93,7 @@ fun Slice_get(s *const Slice, i int, dst *void) {
         panic(sys.sprintf("out of range: index=%d, len=%d", i, s.len))
     }
     if s.size == 1 {
-        *<*char> dst = (<*char> s.array)[i]
+        *typ *char(dst) = (typ *char(s.array))[i]
     } else {
         sys.memcpy(dst, Slice_ref(s, i), s.size)
     }
@@ -132,7 +132,7 @@ fun Slice_setLen(s *Slice, len int) {
 
 fun Slice_set(s *Slice, i int, x *const void) {
     if s.size == 1 {
-        (<*char> s.array)[i] = *<*char> x
+        (typ *char(s.array))[i] = *typ *char(x)
     } else {
         sys.memcpy(Slice_ref(s, i), x, s.size)
     }
@@ -203,7 +203,7 @@ fun pair_ref(m *const Map, key *const void) *MapPair {
     for var i int = 0; i < Slice_len(&m._pairs); i++ {
         stats.iters++
         var idx int = (hash + i) % Map_cap(m)
-        var p *MapPair = <*MapPair> Slice_ref(&m._pairs, idx)
+        var p *MapPair = typ *MapPair(Slice_ref(&m._pairs, idx))
         if !p.key || streq(key, p.key) {
             if !i {
                 stats.hits++
@@ -240,7 +240,7 @@ fun Map_get(m *const Map, key *const char, val *void) bool {
 
 fun Map_set(m *Map, key *const char, val *const void) {
     set_unsafe(m, key, val)
-    var load_factor float = <float> Map_len(m) / Map_cap(m)
+    var load_factor float = typ float(Map_len(m)) / Map_cap(m)
     if load_factor >= MAP_LOAD_FACTOR {
         var newCap int = Map_cap(m) * 2
         var pairs Slice = m._pairs
@@ -248,7 +248,7 @@ fun Map_set(m *Map, key *const char, val *const void) {
         Slice_setLen(&m._pairs, newCap)
         m._len = 0
         for var i int = 0; i < Slice_len(&pairs); i++ {
-            var p *MapPair = <*MapPair> Slice_ref(&pairs, i)
+            var p *MapPair = Slice_ref(&pairs, i)
             if p.key {
                 set_unsafe(m, p.key, p.val)
             }
@@ -266,11 +266,11 @@ fun NewMapIter(m *const Map) MapIter {
 
 fun MapIter_next(m *MapIter, key **char, val *void) int {
     while m._idx < Slice_len(&m._map._pairs) {
-        var p *MapPair = <*MapPair> Slice_ref(&m._map._pairs, m._idx)
+        var p *MapPair = typ *MapPair(Slice_ref(&m._map._pairs, m._idx))
         m._idx++
         if p.key {
             if key {
-                *<**void> key = p.key
+                *typ **void(key) = p.key
             }
             if val {
                 sys.memcpy(val, p.val, m._map._valSize)

@@ -407,7 +407,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
         Checker_checkType(c, t.array.elt)
         if t.array.len {
             var len *ast.Expr = Checker_checkExpr(c, t.array.len)
-            <void> len
+            typ void(len)
         }
         break
     case ast.TYPE_ELLIPSIS:
@@ -663,7 +663,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 break
             }
             var typ2 *ast.Expr = Checker_checkExpr(c, expr.index.index)
-            <void> typ2
+            typ void(typ2)
             return type
         }
     case ast.EXPR_PAREN:

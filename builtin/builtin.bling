@@ -1,9 +1,9 @@
 typ bool char
 
-const false = <bool> 0
-const true = !false
+const false bool = 0
+const true bool = 1
 
-const NULL = <*void> 0
+const NULL *void = 0
 
 fun assert(bool)
 fun free(*void)

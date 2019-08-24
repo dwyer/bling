@@ -101,7 +101,7 @@ extern void utils$Map_set(utils$Map *m, const char *key, const void *val) {
         utils$Slice_setLen(&m->_pairs, newCap);
         m->_len = 0;
         for (int i = 0; i < utils$Slice_len(&pairs); i++) {
-            MapPair *p = (MapPair *)utils$Slice_ref(&pairs, i);
+            MapPair *p = utils$Slice_ref(&pairs, i);
             if (p->key) {
                 set_unsafe(m, p->key, p->val);
             }

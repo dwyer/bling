@@ -1,4 +1,5 @@
 * Make `void` a keyword?
+* Implement native maps and dynamic arrays.
 * if and switch: allow init expr
 * Change cast syntax from `<T>x` to `typ(T) x`;
 * Emit field names of anonymous tags to eliminate the dependency on
@@ -11,31 +12,31 @@
 * Make semicolons optional before `}` and `)'.
 * After we replace C code with Bling:
     * rename `esc` to `__bling_escape` or something similar.
-* Eventually we want to have switch cases to have an implicit break and to open
-  a new scope by default. So the above example would be converted to:
+    * Eventually we want to have switch cases to have an implicit break and to open
+      a new scope by default. So the above example would be converted to:
 
-    // in bling
-    switch (x) {
-    case A, B, C:
-        var y = x + 1;
-        doSomething(y);
-    default:
-        doSomethingElse();
-    }
-
-    // in C
-    switch (x) {
-    case A:
-    case B:
-    case C: {
-            int y = x + 1;
+        // in bling
+        switch (x) {
+        case A, B, C:
+            var y = x + 1;
             doSomething(y);
-        }
-        break;
-    default: {
+        default:
             doSomethingElse();
         }
-        break;
-    }
 
-    * When this is complete, change the functionality of `fallthrough`.
+        // in C
+        switch (x) {
+        case A:
+        case B:
+        case C: {
+                int y = x + 1;
+                doSomething(y);
+            }
+            break;
+        default: {
+                doSomethingElse();
+            }
+            break;
+        }
+
+        * When this is complete, change the functionality of `fallthrough`.

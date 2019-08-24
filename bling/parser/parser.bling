@@ -469,12 +469,11 @@ fun parseUnaryExpr(p *Parser, lhs bool) *ast.Expr {
             expect(p, token.RPAREN)
             return &&x
         }
-    case token.LT:
+    case token.TYPE:
         {
             var pos token.Pos = p.pos
-            expect(p, token.LT)
+            expect(p, token.TYPE)
             var type *ast.Expr = parseType(p)
-            expect(p, token.GT)
             if p.tok == token.LBRACE {
                 return parseLiteralValue(p, type)
             }
