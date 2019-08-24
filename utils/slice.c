@@ -61,7 +61,7 @@ static void _set_len(utils$Slice *s, int len) {
     s->len = len;
 }
 
-extern void utils$Slice_set_len(utils$Slice *s, int len) {
+extern void utils$Slice_setLen(utils$Slice *s, int len) {
     int old = s->len;
     _set_len(s, len);
     int diff = len - old;

@@ -238,7 +238,7 @@ fun string(tok Token) *char {
 var keywords utils.Map = {}
 
 fun lookup(ident *char) Token {
-    if keywords.val_size == 0 {
+    if !utils.Map_isInitialized(&keywords) {
         keywords = utils.Map_init(sizeof(Token))
         for var i int = _keywordBeg + 1; i < _keywordEnd; i++ {
             var s *char = string(i)

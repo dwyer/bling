@@ -14,14 +14,16 @@ typ Slice struct {
 }
 
 typ Map struct {
-    len int
-    key_size int
-    val_size int
-    pairs Slice
+    _valSize int
+    _len int
+    _pairs Slice
 }
 
-typ MapStatus enum {
-    MapStatus_ok = 1
+typ MapStats struct {
+    hits int
+    misses int
+    lookups int
+    iters int
 }
 
 typ MapIter struct {
@@ -119,7 +121,7 @@ fun _set_len(s *Slice, len int) {
     s.len = len
 }
 
-fun Slice_set_len(s *Slice, len int) {
+fun Slice_setLen(s *Slice, len int) {
     var old int = s.len
     _set_len(s, len)
     var diff int = len - old
@@ -147,17 +149,11 @@ fun Slice_to_nil_array(s Slice) *void {
     return s.array
 }
 
-var max_load_factor const float = 0.65
+var MAP_LOAD_FACTOR const float = 0.65
 
-var default_cap const int = 8
+var DEFAULT_CAP const int = 8
 
-var Map_misses int = 0
-
-var Map_hits int = 0
-
-var Map_lookups int = 0
-
-var Map_iters int = 0
+var stats MapStats = {}
 
 fun djb2(s *const char) uintptr_t {
     var hash uintptr_t = 5381
@@ -174,46 +170,45 @@ fun memdup(src *const void, size size_t) *void {
     return sys.memcpy(malloc(size), src, size)
 }
 
-typ pair_t struct {
+typ MapPair struct {
     key *void
     val *void
 }
 
-fun Map_init(val_size int) Map {
+fun Map_init(valSize int) Map {
     var m Map = {
-        len: 0,
-        pairs: Slice_init(sizeof(pair_t)),
-        key_size: sizeof(uintptr_t),
-        val_size: val_size,
+        _valSize: valSize,
+        _len: 0,
+        _pairs: Slice_init(sizeof(MapPair)),
     }
-    Slice_set_len(&m.pairs, default_cap)
+    Slice_setLen(&m._pairs, DEFAULT_CAP)
     return m
 }
 
 fun Map_deinit(m *Map) {
-    Slice_deinit(&m.pairs)
+    Slice_deinit(&m._pairs)
 }
 
 fun Map_len(m *const Map) int {
-    return m.len
+    return m._len
 }
 
 fun Map_cap(m *const Map) int {
-    return Slice_len(&m.pairs)
+    return Slice_len(&m._pairs)
 }
 
-fun pair_ref(m *const Map, key *const void) *pair_t {
+fun pair_ref(m *const Map, key *const void) *MapPair {
     var hash uintptr_t = djb2(key) % Map_cap(m)
-    Map_lookups++
-    for var i int = 0; i < Slice_len(&m.pairs); i++ {
-        Map_iters++
+    stats.lookups++
+    for var i int = 0; i < Slice_len(&m._pairs); i++ {
+        stats.iters++
         var idx int = (hash + i) % Map_cap(m)
-        var p *pair_t = <*pair_t> Slice_ref(&m.pairs, idx)
+        var p *MapPair = <*MapPair> Slice_ref(&m._pairs, idx)
         if !p.key || streq(key, p.key) {
             if !i {
-                Map_hits++
+                stats.hits++
             } else {
-                Map_misses++
+                stats.misses++
             }
             return p
         }
@@ -222,25 +217,25 @@ fun pair_ref(m *const Map, key *const void) *pair_t {
 }
 
 fun set_unsafe(m *Map, key *const char, val *const void) {
-    var p *pair_t = pair_ref(m, key)
+    var p *MapPair = pair_ref(m, key)
     if p.key == NULL {
         p.key = strdup(key)
-        p.val = memdup(val, m.val_size)
-        m.len++
+        p.val = memdup(val, m._valSize)
+        m._len++
     } else {
-        sys.memcpy(p.val, val, m.val_size)
+        sys.memcpy(p.val, val, m._valSize)
     }
 }
 
-fun Map_has_key(m *Map, key *const char) bool {
-    var p *pair_t = pair_ref(m, key)
+fun Map_hasKey(m *Map, key *const char) bool {
+    var p *MapPair = pair_ref(m, key)
     return p.key != NULL
 }
 
 fun Map_get(m *const Map, key *const char, val *void) int {
-    var p *pair_t = pair_ref(m, key)
+    var p *MapPair = pair_ref(m, key)
     if p.val {
-        sys.memcpy(val, p.val, m.val_size)
+        sys.memcpy(val, p.val, m._valSize)
         return 1
     }
     return 0
@@ -249,20 +244,24 @@ fun Map_get(m *const Map, key *const char, val *void) int {
 fun Map_set(m *Map, key *const char, val *const void) {
     set_unsafe(m, key, val)
     var load_factor float = <float> Map_len(m) / Map_cap(m)
-    if load_factor >= max_load_factor {
-        var new_cap int = Map_cap(m) * 2
-        var pairs Slice = m.pairs
-        m.pairs = Slice_init(m.pairs.size)
-        Slice_set_len(&m.pairs, new_cap)
-        m.len = 0
+    if load_factor >= MAP_LOAD_FACTOR {
+        var newCap int = Map_cap(m) * 2
+        var pairs Slice = m._pairs
+        m._pairs = Slice_init(m._pairs.size)
+        Slice_setLen(&m._pairs, newCap)
+        m._len = 0
         for var i int = 0; i < Slice_len(&pairs); i++ {
-            var p *pair_t = <*pair_t> Slice_ref(&pairs, i)
+            var p *MapPair = <*MapPair> Slice_ref(&pairs, i)
             if p.key {
                 set_unsafe(m, p.key, p.val)
             }
         }
         Slice_deinit(&pairs)
     }
+}
+
+fun Map_isInitialized(m *Map) bool {
+    return m._valSize > 0
 }
 
 fun NewMapIter(m *const Map) MapIter {
@@ -273,15 +272,15 @@ fun NewMapIter(m *const Map) MapIter {
 }
 
 fun MapIter_next(m *MapIter, key **char, val *void) int {
-    while m._idx < Slice_len(&m._map.pairs) {
-        var p *pair_t = <*pair_t> Slice_ref(&m._map.pairs, m._idx)
+    while m._idx < Slice_len(&m._map._pairs) {
+        var p *MapPair = <*MapPair> Slice_ref(&m._map._pairs, m._idx)
         m._idx++
         if p.key {
             if key {
                 *<**void> key = p.key
             }
             if val {
-                sys.memcpy(val, p.val, m._map.val_size)
+                sys.memcpy(val, p.val, m._map._valSize)
             }
             return 1
         }

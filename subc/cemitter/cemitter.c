@@ -583,7 +583,7 @@ extern void cemitter$emitScope(emitter$Emitter *e, ast$Scope *scope) {
 }
 
 extern void _emitPackage(emitter$Emitter *e, utils$Map *done, types$Package *pkg) {
-    if (utils$Map_has_key(done, pkg->path)) {
+    if (utils$Map_hasKey(done, pkg->path)) {
         return;
     }
     utils$Map_set(done, pkg->path, &pkg->path);

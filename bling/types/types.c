@@ -942,7 +942,7 @@ static types$Package *Checker_checkImport(Checker *c, ast$Decl *imp) {
     utils$Map_get(&c->info->imports, path, &pkg);
     if (pkg == NULL) {
         pkg = types$check(c->conf, path, c->fset, NULL, c->info);
-        assert(utils$Map_has_key(&c->info->imports, path));
+        assert(utils$Map_hasKey(&c->info->imports, path));
     }
     imp->imp.name = types$makeIdent(pkg->scope->pkg);
     Checker_declare(c, imp, pkg->scope, c->pkg->scope, ast$ObjKind_PKG,

@@ -32,34 +32,32 @@ extern int utils$Slice_cap(const utils$Slice *s);
 extern void *utils$Slice_ref(const utils$Slice *s, int i);
 extern void utils$Slice_get(const utils$Slice *s, int i, void *dst);
 
-extern void utils$Slice_set_len(utils$Slice *s, int len);
+extern void utils$Slice_setLen(utils$Slice *s, int len);
 extern void utils$Slice_set(utils$Slice *s, int i, const void *x);
 extern void utils$Slice_append(utils$Slice *s, const void *x);
 extern void *utils$Slice_to_nil_array(utils$Slice s);
 
 typedef struct {
-    int len;
-    int key_size;
-    int val_size;
-    utils$Slice pairs;
+    int _valSize;
+    int _len;
+    utils$Slice _pairs;
 } utils$Map;
 
-typedef enum {
-    utils$MapStatus_ok = 1,
-} utils$MapStatus;
-
-extern utils$Map utils$Map_init(int val_size);
+extern utils$Map utils$Map_init(int valSize);
 extern void utils$Map_deinit(utils$Map *m);
 extern int utils$Map_len(const utils$Map *m);
 extern int utils$Map_cap(const utils$Map *m);
 extern int utils$Map_get(const utils$Map *m, const char *key, void *val);
-extern bool utils$Map_has_key(utils$Map *m, const char *key);
+extern bool utils$Map_hasKey(utils$Map *m, const char *key);
 extern void utils$Map_set(utils$Map *m, const char *key, const void *val);
+extern bool utils$Map_isInitialized(utils$Map *m);
 
-extern int utils$Map_hits;
-extern int utils$Map_misses;
-extern int utils$Map_lookups;
-extern int utils$Map_iters;
+typedef struct {
+    int hits;
+    int misses;
+    int lookups;
+    int iters;
+} utils$MapStats;
 
 typedef struct {
     const utils$Map *_map;

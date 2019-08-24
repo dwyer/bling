@@ -536,7 +536,7 @@ fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
 }
 
 fun _emitPackage(e *emitter.Emitter, done *utils.Map, pkg *types.Package) {
-    if utils.Map_has_key(done, pkg.path) {
+    if utils.Map_hasKey(done, pkg.path) {
         return
     }
     utils.Map_set(done, pkg.path, &pkg.path)
