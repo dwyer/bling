@@ -280,7 +280,7 @@ scan_again:
             }
             break
         case '-':
-            if s.ch == '>' {
+            if s.ch == '>' && s.dontInsertSemis {
                 next0(s)
                 tok = token.ARROW
             } else {
@@ -336,7 +336,5 @@ fun init(s *Scanner, file *token.File, src *char) {
     s.rd_offset = 0
     s.offset = 0
     s.insertSemi = false
-    s.dontInsertSemis = true
     next0(s)
-    s.dontInsertSemis = false
 }

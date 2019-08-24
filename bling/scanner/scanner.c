@@ -281,7 +281,7 @@ scan_again:
             }
             break;
         case '-':
-            if (s->ch == '>') {
+            if (s->ch == '>' && s->dontInsertSemis) {
                 next0(s);
                 tok = token$ARROW;
             } else {
@@ -339,7 +339,5 @@ extern void scanner$init(scanner$Scanner *s, token$File *file, char *src) {
     s->rd_offset = 0;
     s->offset = 0;
     s->insertSemi = false;
-    s->dontInsertSemis = true;
     next0(s);
-    s->dontInsertSemis = false;
 }
