@@ -34,7 +34,7 @@ extern void *utils$Slice_get(const utils$Slice *s, int i, void *dst);
 extern void utils$Slice_setLen(utils$Slice *s, int len);
 extern void utils$Slice_set(utils$Slice *s, int i, const void *x);
 extern void utils$Slice_append(utils$Slice *s, const void *x);
-extern void *utils$Slice_to_nil_array(utils$Slice s);
+extern void *utils$nilArray(utils$Slice *s);
 
 typedef struct {
     int _valSize;

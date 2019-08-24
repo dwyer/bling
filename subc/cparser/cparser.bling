@@ -65,7 +65,7 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
                     kind: ast.EXPR_CALL,
                     call: {
                         func: x,
-                        args: utils.Slice_to_nil_array(args),
+                        args: utils.nilArray(&args),
                     },
                 }
                 x = &&call
@@ -285,7 +285,7 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
             }
         }
         parser.expect(p, token.RBRACE)
-        fields = utils.Slice_to_nil_array(fieldSlice)
+        fields = utils.nilArray(&fieldSlice)
     }
     var x ast.Expr = {
         kind: ast.TYPE_STRUCT,
@@ -328,7 +328,7 @@ fun enum_specifier(p *parser.Parser) *ast.Expr {
                 break
             }
         }
-        enums = utils.Slice_to_nil_array(list)
+        enums = utils.nilArray(&list)
         parser.expect(p, token.RBRACE)
     }
     var x ast.Expr = {
@@ -461,7 +461,7 @@ fun parameter_type_list(p *parser.Parser) **ast.Decl {
             break
         }
     }
-    return utils.Slice_to_nil_array(params)
+    return utils.nilArray(&params)
 }
 
 fun type_name(p *parser.Parser) *ast.Expr {
@@ -578,7 +578,7 @@ fun initializer(p *parser.Parser) *ast.Expr {
         kind: ast.EXPR_COMPOSITE_LIT,
         composite: {
             pos: parser.expect(p, token.RBRACE),
-            list: utils.Slice_to_nil_array(list),
+            list: utils.nilArray(&list),
         },
     }
     return &&expr
@@ -760,8 +760,8 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 kind: ast.STMT_CASE,
                 case_: {
                     pos: pos,
-                    exprs: utils.Slice_to_nil_array(exprs),
-                    stmts: utils.Slice_to_nil_array(stmts),
+                    exprs: utils.nilArray(&exprs),
+                    stmts: utils.nilArray(&stmts),
                 },
             }
             var clause *ast.Stmt = &&stmt
@@ -773,7 +773,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
             switch_: {
                 pos: pos,
                 tag: tag,
-                stmts: utils.Slice_to_nil_array(clauses),
+                stmts: utils.nilArray(&clauses),
             },
         }
         return &&stmt
@@ -857,7 +857,7 @@ fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt {
         kind: ast.STMT_BLOCK,
         block: {
             pos: pos,
-            stmts: utils.Slice_to_nil_array(stmts),
+            stmts: utils.nilArray(&stmts),
         },
     }
     return &&stmt
@@ -1059,8 +1059,8 @@ fun parse_cfile(p *parser.Parser, scope *ast.Scope) *ast.File {
     var file ast.File = {
         filename: p.file.name,
         name: name,
-        decls: utils.Slice_to_nil_array(decls),
-        imports: utils.Slice_to_nil_array(imports),
+        decls: utils.nilArray(&decls),
+        imports: utils.nilArray(&imports),
         scope: p.pkgScope,
     }
     return &&file

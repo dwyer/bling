@@ -97,7 +97,7 @@ static ast$Expr *postfix_expression(parser$Parser *p, ast$Expr *x) {
                     .kind = ast$EXPR_CALL,
                     .call = {
                         .func = x,
-                        .args = utils$Slice_to_nil_array(args),
+                        .args = utils$nilArray(&args),
                     },
                 };
                 x = esc(call);
@@ -369,7 +369,7 @@ static ast$Expr *struct_or_union_specifier(parser$Parser *p) {
             }
         }
         parser$expect(p, token$RBRACE);
-        fields = utils$Slice_to_nil_array(fieldSlice);
+        fields = utils$nilArray(&fieldSlice);
     }
     // TODO assert name or fields
     ast$Expr x = {
@@ -418,7 +418,7 @@ static ast$Expr *enum_specifier(parser$Parser *p) {
                 break;
             }
         }
-        enums = utils$Slice_to_nil_array(list);
+        enums = utils$nilArray(&list);
         parser$expect(p, token$RBRACE);
     }
     ast$Expr x = {
@@ -569,7 +569,7 @@ static ast$Decl **parameter_type_list(parser$Parser *p) {
             break;
         }
     }
-    return utils$Slice_to_nil_array(params);
+    return utils$nilArray(&params);
 }
 
 static ast$Expr *type_name(parser$Parser *p) {
@@ -707,7 +707,7 @@ static ast$Expr *initializer(parser$Parser *p) {
         .kind = ast$EXPR_COMPOSITE_LIT,
         .composite = {
             .pos = parser$expect(p, token$RBRACE),
-            .list = utils$Slice_to_nil_array(list),
+            .list = utils$nilArray(&list),
         },
     };
     return esc(expr);
@@ -939,8 +939,8 @@ static ast$Stmt *statement(parser$Parser *p) {
                 .kind = ast$STMT_CASE,
                 .case_ = {
                     .pos = pos,
-                    .exprs = utils$Slice_to_nil_array(exprs),
-                    .stmts = utils$Slice_to_nil_array(stmts),
+                    .exprs = utils$nilArray(&exprs),
+                    .stmts = utils$nilArray(&stmts),
                 },
             };
             ast$Stmt *clause = esc(stmt);
@@ -952,7 +952,7 @@ static ast$Stmt *statement(parser$Parser *p) {
             .switch_ = {
                 .pos = pos,
                 .tag = tag,
-                .stmts = utils$Slice_to_nil_array(clauses),
+                .stmts = utils$nilArray(&clauses),
             },
         };
         return esc(stmt);
@@ -1050,7 +1050,7 @@ static ast$Stmt *compound_statement(parser$Parser *p, bool allow_single) {
         .kind = ast$STMT_BLOCK,
         .block = {
             .pos = pos,
-            .stmts = utils$Slice_to_nil_array(stmts),
+            .stmts = utils$nilArray(&stmts),
         },
     };
     return esc(stmt);
@@ -1287,8 +1287,8 @@ static ast$File *parse_cfile(parser$Parser *p, ast$Scope *scope) {
     ast$File file = {
         .filename = p->file->name,
         .name = name,
-        .decls = utils$Slice_to_nil_array(decls),
-        .imports = utils$Slice_to_nil_array(imports),
+        .decls = utils$nilArray(&decls),
+        .imports = utils$nilArray(&imports),
         .scope = p->pkgScope,
     };
     return esc(file);

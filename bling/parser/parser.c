@@ -334,7 +334,7 @@ static ast$Expr **parseElementList(parser$Parser *p) {
             break;
         }
     }
-    return utils$Slice_to_nil_array(list);
+    return utils$nilArray(&list);
 }
 
 static ast$Expr *parseLiteralValue(parser$Parser *p, ast$Expr *type) {
@@ -393,7 +393,7 @@ static ast$Expr *parseCallExpr(parser$Parser *p, ast$Expr *x) {
         .kind = ast$EXPR_CALL,
         .call = {
             .func = x,
-            .args = utils$Slice_to_nil_array(args),
+            .args = utils$nilArray(&args),
         },
     };
     return esc(call);
@@ -674,7 +674,7 @@ static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
             }
         }
         parser$expect(p, token$RBRACE);
-        fields = utils$Slice_to_nil_array(fieldSlice);
+        fields = utils$nilArray(&fieldSlice);
     }
     // TODO assert(name || fields)
     ast$Expr x = {
@@ -754,7 +754,7 @@ static ast$Decl **parseParameterList(parser$Parser *p, ast$Scope *scope,
             break;
         }
     }
-    return utils$Slice_to_nil_array(params);
+    return utils$nilArray(&params);
 }
 
 static ast$Decl **parseParameters(parser$Parser *p, ast$Scope *scope,
@@ -835,7 +835,7 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
             utils$Slice_append(&list, &enumerator);
             parser$expect(p, token$SEMICOLON);
         }
-        enums = utils$Slice_to_nil_array(list);
+        enums = utils$nilArray(&list);
         parser$expect(p, token$RBRACE);
     }
     ast$Expr x = {
@@ -1116,8 +1116,8 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
             .kind = ast$STMT_CASE,
             .case_ = {
                 .pos = pos,
-                .exprs = utils$Slice_to_nil_array(exprs),
-                .stmts = utils$Slice_to_nil_array(stmts),
+                .exprs = utils$nilArray(&exprs),
+                .stmts = utils$nilArray(&stmts),
             },
         };
         ast$Stmt *clause = esc(stmt);
@@ -1131,7 +1131,7 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
         .switch_ = {
             .pos = pos,
             .tag = tag,
-            .stmts = utils$Slice_to_nil_array(clauses),
+            .stmts = utils$nilArray(&clauses),
         },
     };
     return esc(stmt);
@@ -1240,7 +1240,7 @@ static ast$Stmt **parseStmtList(parser$Parser *p) {
         ast$Stmt *stmt = parseStmt(p);
         utils$Slice_append(&stmts, &stmt);
     }
-    return utils$Slice_to_nil_array(stmts);
+    return utils$nilArray(&stmts);
 }
 
 static ast$Stmt *parseBody(parser$Parser *p, ast$Scope *scope) {
@@ -1418,7 +1418,7 @@ extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
         }
     }
     free(infos);
-    return utils$Slice_to_nil_array(files);
+    return utils$nilArray(&files);
 }
 
 static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
@@ -1463,8 +1463,8 @@ static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
     ast$File file = {
         .filename = p->file->name,
         .name = name,
-        .imports = utils$Slice_to_nil_array(imports),
-        .decls = utils$Slice_to_nil_array(decls),
+        .imports = utils$nilArray(&imports),
+        .decls = utils$nilArray(&decls),
         .scope = p->pkgScope,
     };
     return esc(file);

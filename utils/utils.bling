@@ -99,12 +99,12 @@ fun Slice_get(s *const Slice, i int, dst *void) *void {
     return ref
 }
 
-fun Slice_set_cap(s *Slice, cap int) {
+fun _setCap(s *Slice, cap int) {
     s.cap = cap
     s._array = sys.realloc(s._array, s.cap * s.size)
 }
 
-fun _set_len(s *Slice, len int) {
+fun _setLen(s *Slice, len int) {
     var grow bool = false
     var cap int = s.cap
     if cap == 0 {
@@ -116,14 +116,14 @@ fun _set_len(s *Slice, len int) {
         grow = true
     }
     if s._array == NULL || grow {
-        Slice_set_cap(s, cap)
+        _setCap(s, cap)
     }
     s.len = len
 }
 
 fun Slice_setLen(s *Slice, len int) {
     var old int = s.len
-    _set_len(s, len)
+    _setLen(s, len)
     var diff int = len - old
     if diff > 0 {
         sys.memset(Slice_get(s, old, NULL), 0, diff * s.size)
@@ -139,13 +139,13 @@ fun Slice_set(s *Slice, i int, x *const void) {
 }
 
 fun Slice_append(s *Slice, x *const void) {
-    _set_len(s, s.len + 1)
+    _setLen(s, s.len + 1)
     Slice_set(s, s.len - 1, x)
 }
 
-fun Slice_to_nil_array(s Slice) *void {
+fun nilArray(s *Slice) *void {
     var nil *void = NULL
-    Slice_append(&s, &nil)
+    Slice_append(s, &nil)
     return s._array
 }
 

@@ -34,7 +34,7 @@ static void printStrArray(char **s) {
 }
 
 static void execute(utils$Slice *cmd) {
-    char **args = utils$Slice_to_nil_array(*cmd);
+    char **args = utils$nilArray(cmd);
     if (VERBOSE) {
         printStrArray(args);
     }

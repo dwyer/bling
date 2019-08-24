@@ -45,7 +45,7 @@ fun printStrArray(s **char) {
 }
 
 fun execute(cmd *utils.Slice) {
-    var args **char = utils.Slice_to_nil_array(*cmd)
+    var args **char = utils.nilArray(cmd)
     if VERBOSE {
         printStrArray(args)
     }

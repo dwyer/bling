@@ -126,7 +126,7 @@ extern char **os$readdirnames(os$File *file, utils$Error **error) {
         char *name = strdup(dirent->d_name);
         utils$Slice_append(&arr, &name);
     }
-    return utils$Slice_to_nil_array(arr);
+    return utils$nilArray(&arr);
 }
 
 extern os$FileInfo **os$readdir(os$File *file, utils$Error **error) {
@@ -150,7 +150,7 @@ extern os$FileInfo **os$readdir(os$File *file, utils$Error **error) {
         utils$Slice_append(&arr, &info);
     }
     free(names);
-    return utils$Slice_to_nil_array(arr);
+    return utils$nilArray(&arr);
 }
 
 extern char *os$FileInfo_name(os$FileInfo *info) {

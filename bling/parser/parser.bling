@@ -310,7 +310,7 @@ fun parseElementList(p *Parser) **ast.Expr {
             break
         }
     }
-    return utils.Slice_to_nil_array(list)
+    return utils.nilArray(&list)
 }
 
 fun parseLiteralValue(p *Parser, type *ast.Expr) *ast.Expr {
@@ -367,7 +367,7 @@ fun parseCallExpr(p *Parser, x *ast.Expr) *ast.Expr {
         kind: ast.EXPR_CALL,
         call: {
             func: x,
-            args: utils.Slice_to_nil_array(args),
+            args: utils.nilArray(&args),
         },
     }
     return &&call
@@ -624,7 +624,7 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
             }
         }
         expect(p, token.RBRACE)
-        fields = utils.Slice_to_nil_array(fieldSlice)
+        fields = utils.nilArray(&fieldSlice)
     }
     var x ast.Expr = {
         kind: ast.TYPE_STRUCT,
@@ -701,7 +701,7 @@ fun parseParameterList(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
             break
         }
     }
-    return utils.Slice_to_nil_array(params)
+    return utils.nilArray(&params)
 }
 
 fun parseParameters(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
@@ -776,7 +776,7 @@ fun parseEnumType(p *Parser) *ast.Expr {
             utils.Slice_append(&list, &enumerator)
             expect(p, token.SEMICOLON)
         }
-        enums = utils.Slice_to_nil_array(list)
+        enums = utils.nilArray(&list)
         expect(p, token.RBRACE)
     }
     var x ast.Expr = {
@@ -1020,8 +1020,8 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
             kind: ast.STMT_CASE,
             case_: {
                 pos: pos,
-                exprs: utils.Slice_to_nil_array(exprs),
-                stmts: utils.Slice_to_nil_array(stmts),
+                exprs: utils.nilArray(&exprs),
+                stmts: utils.nilArray(&stmts),
             },
         }
         var clause *ast.Stmt = &&stmt
@@ -1035,7 +1035,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
         switch_: {
             pos: pos,
             tag: tag,
-            stmts: utils.Slice_to_nil_array(clauses),
+            stmts: utils.nilArray(&clauses),
         },
     }
     return &&stmt
@@ -1134,7 +1134,7 @@ fun parseStmtList(p *Parser) **ast.Stmt {
         var stmt *ast.Stmt = parseStmt(p)
         utils.Slice_append(&stmts, &stmt)
     }
-    return utils.Slice_to_nil_array(stmts)
+    return utils.nilArray(&stmts)
 }
 
 fun parseBody(p *Parser, scope *ast.Scope) *ast.Stmt {
@@ -1309,7 +1309,7 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
         }
     }
     free(infos)
-    return utils.Slice_to_nil_array(files)
+    return utils.nilArray(&files)
 }
 
 fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
@@ -1354,8 +1354,8 @@ fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
     var file ast.File = {
         filename: p.file.name,
         name: name,
-        imports: utils.Slice_to_nil_array(imports),
-        decls: utils.Slice_to_nil_array(decls),
+        imports: utils.nilArray(&imports),
+        decls: utils.nilArray(&decls),
         scope: p.pkgScope,
     }
     return &&file
