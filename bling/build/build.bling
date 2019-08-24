@@ -207,7 +207,6 @@ fun emitInclude(e *emitter.Emitter, path *const char) {
 
 fun writeFile(path *const char, out *const char) {
     if VERBOSE {
-        sys.printf("generating %s\n", path)
     }
     mkdirForFile(path)
     ioutil.writeFile(path, out, 0644, NULL)
@@ -269,7 +268,6 @@ fun buildCPackage(b *Builder, path *const char) *Package {
     }
     if b.force || pkg.srcModTime > pkg.libModTime {
         if VERBOSE {
-            sys.printf("%d > %d\n", pkg.srcModTime, pkg.libModTime)
         }
         genHeader(b, &pkg)
         var cmd utils.Slice = {
@@ -297,7 +295,6 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         getCFile(b, &pkg)
         genObj(b, pkg.objPath, pkg.cPath)
         if VERBOSE {
-            sys.printf("%d > %d\n", pkg.srcModTime, pkg.libModTime)
         }
         if streq(pkg.pkg.name, "main") {
             var cmd utils.Slice = {
@@ -334,7 +331,6 @@ fun _buildPackage(b *Builder, path *const char) *Package {
         return pkg
     }
     if VERBOSE {
-        sys.printf("building %s\n", path)
     }
     if streq(path, "bootstrap") || streq(path, "os") || streq(path, "sys") {
         pkg = buildCPackage(b, path)

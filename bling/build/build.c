@@ -197,7 +197,7 @@ static void emitInclude(emitter$Emitter *e, const char *path) {
 
 static void writeFile(const char *path, const char *out) {
     if (VERBOSE) {
-        sys$printf("generating %s\n", path);
+        // sys$printf("generating %s\n", path);
     }
     mkdirForFile(path);
     ioutil$writeFile(path, out, 0644, NULL);
@@ -257,7 +257,7 @@ static Package *buildCPackage(Builder *b, const char *path) {
     }
     if (b->force || pkg.srcModTime > pkg.libModTime) {
         if (VERBOSE) {
-            sys$printf("%d > %d\n", pkg.srcModTime, pkg.libModTime);
+            // sys$printf("%d > %d\n", pkg.srcModTime, pkg.libModTime);
         }
         genHeader(b, &pkg);
         utils$Slice cmd = {.size = sizeof(char *)};
@@ -283,7 +283,7 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
         getCFile(b, &pkg);
         genObj(b, pkg.objPath, pkg.cPath);
         if (VERBOSE) {
-            sys$printf("%d > %d\n", pkg.srcModTime, pkg.libModTime);
+            // sys$printf("%d > %d\n", pkg.srcModTime, pkg.libModTime);
         }
         if (streq(pkg.pkg->name, "main")) {
             utils$Slice cmd = {.size = sizeof(char *)};
@@ -316,7 +316,7 @@ static Package *_buildPackage(Builder *b, const char *path) {
         return pkg;
     }
     if (VERBOSE) {
-        sys$printf("building %s\n", path);
+        // sys$printf("building %s\n", path);
     }
     if (streq(path, "bootstrap") || streq(path, "os") || streq(path, "sys")) {
         pkg = buildCPackage(b, path);
