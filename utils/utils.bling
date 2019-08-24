@@ -10,7 +10,7 @@ typ Slice struct {
     size int
     len int
     cap int
-    array *void
+    _array *void
 }
 
 typ Map struct {
@@ -67,13 +67,13 @@ fun Slice_init(size int) Slice {
         size: size,
         len: 0,
         cap: 0,
-        array: NULL,
+        _array: NULL,
     }
     return s
 }
 
 fun Slice_deinit(s *Slice) {
-    free(s.array)
+    free(s._array)
 }
 
 fun Slice_len(s *const Slice) int {
@@ -84,24 +84,24 @@ fun Slice_cap(s *const Slice) int {
     return s.cap
 }
 
-fun Slice_ref(s *const Slice, i int) *void {
-    return &(typ *char(s.array))[i * s.size]
-}
-
-fun Slice_get(s *const Slice, i int, dst *void) {
+fun Slice_get(s *const Slice, i int, dst *void) *void {
     if i >= s.len {
         panic(sys.sprintf("out of range: index=%d, len=%d", i, s.len))
     }
-    if s.size == 1 {
-        *typ *char(dst) = (typ *char(s.array))[i]
-    } else {
-        sys.memcpy(dst, Slice_ref(s, i), s.size)
+    var ref *char = &(typ *char(s._array))[i * s.size]
+    if dst {
+        if s.size == 1 {
+            *typ *char(dst) = *ref
+        } else {
+            sys.memcpy(dst, ref, s.size)
+        }
     }
+    return ref
 }
 
 fun Slice_set_cap(s *Slice, cap int) {
     s.cap = cap
-    s.array = sys.realloc(s.array, s.cap * s.size)
+    s._array = sys.realloc(s._array, s.cap * s.size)
 }
 
 fun _set_len(s *Slice, len int) {
@@ -115,7 +115,7 @@ fun _set_len(s *Slice, len int) {
         cap *= 2
         grow = true
     }
-    if s.array == NULL || grow {
+    if s._array == NULL || grow {
         Slice_set_cap(s, cap)
     }
     s.len = len
@@ -126,15 +126,15 @@ fun Slice_setLen(s *Slice, len int) {
     _set_len(s, len)
     var diff int = len - old
     if diff > 0 {
-        sys.memset(Slice_ref(s, old), 0, diff * s.size)
+        sys.memset(Slice_get(s, old, NULL), 0, diff * s.size)
     }
 }
 
 fun Slice_set(s *Slice, i int, x *const void) {
     if s.size == 1 {
-        (typ *char(s.array))[i] = *typ *char(x)
+        (typ *char(s._array))[i] = *typ *char(x)
     } else {
-        sys.memcpy(Slice_ref(s, i), x, s.size)
+        sys.memcpy(Slice_get(s, i, NULL), x, s.size)
     }
 }
 
@@ -146,7 +146,7 @@ fun Slice_append(s *Slice, x *const void) {
 fun Slice_to_nil_array(s Slice) *void {
     var nil *void = NULL
     Slice_append(&s, &nil)
-    return s.array
+    return s._array
 }
 
 var MAP_LOAD_FACTOR const float = 0.65
@@ -203,7 +203,7 @@ fun pair_ref(m *const Map, key *const void) *MapPair {
     for var i int = 0; i < Slice_len(&m._pairs); i++ {
         stats.iters++
         var idx int = (hash + i) % Map_cap(m)
-        var p *MapPair = typ *MapPair(Slice_ref(&m._pairs, idx))
+        var p *MapPair = Slice_get(&m._pairs, idx, NULL)
         if !p.key || streq(key, p.key) {
             if !i {
                 stats.hits++
@@ -248,7 +248,7 @@ fun Map_set(m *Map, key *const char, val *const void) {
         Slice_setLen(&m._pairs, newCap)
         m._len = 0
         for var i int = 0; i < Slice_len(&pairs); i++ {
-            var p *MapPair = Slice_ref(&pairs, i)
+            var p *MapPair = Slice_get(&pairs, i, NULL)
             if p.key {
                 set_unsafe(m, p.key, p.val)
             }
@@ -266,7 +266,7 @@ fun NewMapIter(m *const Map) MapIter {
 
 fun MapIter_next(m *MapIter, key **char, val *void) int {
     while m._idx < Slice_len(&m._map._pairs) {
-        var p *MapPair = typ *MapPair(Slice_ref(&m._map._pairs, m._idx))
+        var p *MapPair = typ *MapPair(Slice_get(&m._map._pairs, m._idx, NULL))
         m._idx++
         if p.key {
             if key {

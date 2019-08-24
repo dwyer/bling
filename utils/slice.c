@@ -7,13 +7,13 @@ extern utils$Slice utils$Slice_init(int size) {
         .size = size,
         .len = 0,
         .cap = 0,
-        .array = NULL,
+        ._array = NULL,
     };
     return s;
 }
 
 extern void utils$Slice_deinit(utils$Slice *s) {
-    free(s->array);
+    free(s->_array);
 }
 
 extern int utils$Slice_len(const utils$Slice *s) {
@@ -24,24 +24,24 @@ extern int utils$Slice_cap(const utils$Slice *s) {
     return s->cap;
 }
 
-extern void *utils$Slice_ref(const utils$Slice *s, int i) {
-    return &((char *)s->array)[i * s->size];
-}
-
-extern void utils$Slice_get(const utils$Slice *s, int i, void *dst) {
+extern void *utils$Slice_get(const utils$Slice *s, int i, void *dst) {
     if (i >= s->len) {
         panic(sys$sprintf("out of range: index=%d, len=%d", i, s->len));
     }
-    if (s->size == 1) {
-         *(char *)dst = ((char *)s->array)[i];
-    } else {
-        sys$memcpy(dst, utils$Slice_ref(s, i), s->size);
+    char *ref = &((char *)s->_array)[i * s->size];
+    if (dst) {
+        if (s->size == 1) {
+            *(char *)dst = *ref;
+        } else {
+            sys$memcpy(dst, ref, s->size);
+        }
     }
+    return ref;
 }
 
 static void utils$Slice_set_cap(utils$Slice *s, int cap) {
     s->cap = cap;
-    s->array = sys$realloc(s->array, s->cap * s->size);
+    s->_array = sys$realloc(s->_array, s->cap * s->size);
 }
 
 static void _set_len(utils$Slice *s, int len) {
@@ -55,7 +55,7 @@ static void _set_len(utils$Slice *s, int len) {
         cap *= 2;
         grow = true;
     }
-    if (s->array == NULL || grow) {
+    if (s->_array == NULL || grow) {
         utils$Slice_set_cap(s, cap);
     }
     s->len = len;
@@ -66,15 +66,15 @@ extern void utils$Slice_setLen(utils$Slice *s, int len) {
     _set_len(s, len);
     int diff = len - old;
     if (diff > 0) {
-        sys$memset(utils$Slice_ref(s, old), 0, diff * s->size);
+        sys$memset(utils$Slice_get(s, old, NULL), 0, diff * s->size);
     }
 }
 
 extern void utils$Slice_set(utils$Slice *s, int i, const void *x) {
     if (s->size == 1) {
-        ((char *)s->array)[i] = *(char *)x;
+        ((char *)s->_array)[i] = *(char *)x;
     } else {
-        sys$memcpy(utils$Slice_ref(s, i), x, s->size);
+        sys$memcpy(utils$Slice_get(s, i, NULL), x, s->size);
     }
 }
 
@@ -86,5 +86,5 @@ extern void utils$Slice_append(utils$Slice *s, const void *x) {
 extern void *utils$Slice_to_nil_array(utils$Slice s) {
     void *nil = NULL;
     utils$Slice_append(&s, &nil);
-    return s.array;
+    return s._array;
 }

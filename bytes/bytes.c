@@ -58,13 +58,13 @@ extern int bytes$Buffer_len(bytes$Buffer *b) {
 
 extern char *bytes$Buffer_bytes(bytes$Buffer *b) {
     bytes$Buffer_init(b);
-    return b->array;
+    return utils$Slice_get(b, 0, NULL);
 }
 
 extern char *bytes$Buffer_string(bytes$Buffer *b) {
     bytes$Buffer_init(b);
     char *s = malloc(bytes$Buffer_len(b) + 1);
-    sys$memcpy(s, b->array, bytes$Buffer_len(b));
+    sys$memcpy(s, utils$Slice_get(b, 0, NULL), bytes$Buffer_len(b));
     s[bytes$Buffer_len(b)] = '\0';
     return s;
 }

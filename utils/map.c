@@ -56,7 +56,7 @@ static MapPair *pair_ref(const utils$Map *m, const void *key) {
     for (int i = 0; i < utils$Slice_len(&m->_pairs); i++) {
         stats.iters++;
         int idx = (hash + i) % utils$Map_cap(m);
-        MapPair *p = (MapPair *)utils$Slice_ref(&m->_pairs, idx);
+        MapPair *p = utils$Slice_get(&m->_pairs, idx, NULL);
         if (!p->key || streq(key, p->key)) {
             if (!i) {
                 stats.hits++;
@@ -101,7 +101,7 @@ extern void utils$Map_set(utils$Map *m, const char *key, const void *val) {
         utils$Slice_setLen(&m->_pairs, newCap);
         m->_len = 0;
         for (int i = 0; i < utils$Slice_len(&pairs); i++) {
-            MapPair *p = utils$Slice_ref(&pairs, i);
+            MapPair *p = utils$Slice_get(&pairs, i, NULL);
             if (p->key) {
                 set_unsafe(m, p->key, p->val);
             }
@@ -117,7 +117,7 @@ extern utils$MapIter utils$NewMapIter(const utils$Map *m) {
 
 extern int utils$MapIter_next(utils$MapIter *m, char **key, void *val) {
     while (m->_idx < utils$Slice_len(&m->_map->_pairs)) {
-        MapPair *p = (MapPair *)utils$Slice_ref(&m->_map->_pairs, m->_idx);
+        MapPair *p = (MapPair *)utils$Slice_get(&m->_map->_pairs, m->_idx, NULL);
         m->_idx++;
         if (p->key) {
             if (key) {
