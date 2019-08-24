@@ -60,6 +60,7 @@ typedef enum {
     ast$TYPE_BUILTIN_FUNC,
     ast$TYPE_ELLIPSIS,
     ast$TYPE_ENUM,
+    ast$TYPE_MAP,
     ast$TYPE_NATIVE,
     ast$TYPE_FUNC,
     ast$TYPE_STRUCT,
@@ -165,6 +166,11 @@ typedef struct {
 } ast$KeyValueExpr;
 
 typedef struct {
+    token$Pos pos;
+    ast$Expr *val;
+} ast$MapType;
+
+typedef struct {
     char *name;
     int size;
 } ast$NativeType;
@@ -226,6 +232,7 @@ typedef struct ast$Expr {
         ast$Ident ident;
         ast$IndexExpr index;
         ast$KeyValueExpr key_value;
+        ast$MapType map_;
         ast$NativeType native;
         ast$ParenExpr paren;
         ast$SelectorExpr selector;

@@ -343,7 +343,7 @@ extern void build$buildPackage(char *argv[]) {
         .fset = token$newFileSet(),
         .info = types$newInfo(),
         .force = false,
-        .pkgs = utils$Map_init(sizeof(Package *)),
+        .pkgs = utils$Map_make(sizeof(Package *)),
     };
     _buildPackage(&builder, "bootstrap");
     _buildPackage(&builder, path);

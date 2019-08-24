@@ -370,6 +370,12 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitter.emitToken(e, token.RBRACE)
         }
         break
+    case ast.TYPE_MAP:
+        emitter.emitToken(e, token.MAP)
+        emitter.emitToken(e, token.LPAREN)
+        emitExpr(e, type.map_.val)
+        emitter.emitToken(e, token.RPAREN)
+        break
     case ast.EXPR_STAR:
         type = type.star.x
         if type.kind == ast.TYPE_FUNC {
@@ -536,7 +542,7 @@ fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
 }
 
 fun _emitPackage(e *emitter.Emitter, done *utils.Map, pkg *types.Package) {
-    if utils.Map_hasKey(done, pkg.path) {
+    if utils.Map_get(done, pkg.path, NULL) {
         return
     }
     utils.Map_set(done, pkg.path, &pkg.path)
@@ -552,7 +558,7 @@ fun _emitPackage(e *emitter.Emitter, done *utils.Map, pkg *types.Package) {
 }
 
 fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
-    var done utils.Map = utils.Map_init(sizeof(*char))
+    var done utils.Map = utils.Map_make(sizeof(*char))
     _emitPackage(e, &done, pkg)
     utils.Map_deinit(&done)
 }

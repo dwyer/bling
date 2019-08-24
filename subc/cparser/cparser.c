@@ -8,8 +8,6 @@ static ast$Expr *constant_expression(parser$Parser *p);
 static ast$Expr *initializer(parser$Parser *p);
 
 static ast$Expr *type_specifier(parser$Parser *p);
-static ast$Expr *struct_or_union_specifier(parser$Parser *p);
-static ast$Expr *enum_specifier(parser$Parser *p);
 static ast$Expr *pointer(parser$Parser *p, ast$Expr *type);
 static ast$Decl **parameter_type_list(parser$Parser *p);
 static ast$Expr *type_name(parser$Parser *p);
@@ -552,7 +550,7 @@ static ast$Decl **parameter_type_list(parser$Parser *p) {
             break;
         }
         if (p->tok == token$ELLIPSIS) {
-            token$Pos pos = parser$expect(p, token$ELLIPSIS); 
+            token$Pos pos = parser$expect(p, token$ELLIPSIS);
             ast$Expr type = {
                 .kind = ast$TYPE_ELLIPSIS,
                 .ellipsis = {
@@ -581,7 +579,9 @@ static ast$Expr *type_name(parser$Parser *p) {
     //         ;
     ast$Expr *type = specifier_qualifier_list(p);
     ast$Decl *decl = abstract_declarator(p, type);
-    return decl->field.type;
+    type = decl->field.type;
+    free(decl);
+    return type;
 }
 
 static ast$Decl *abstract_declarator(parser$Parser *p, ast$Expr *type) {
@@ -1066,6 +1066,22 @@ static ast$Decl *parameter_declaration(parser$Parser *p) {
     return esc(decl);
 }
 
+static ast$Expr *map_specifier(parser$Parser *p) {
+    token$Pos pos = p->pos;
+    parser$expect(p, token$MAP);
+    parser$expect(p, token$LPAREN);
+    ast$Expr *val = type_name(p);
+    parser$expect(p, token$RPAREN);
+    ast$Expr tmp = {
+        .kind = ast$TYPE_MAP,
+        .map_ = {
+            .pos = pos,
+            .val = val,
+        },
+    };
+    return esc(tmp);
+}
+
 static ast$Expr *type_specifier(parser$Parser *p) {
     // type_specifier
     //         : VOID
@@ -1093,6 +1109,9 @@ static ast$Expr *type_specifier(parser$Parser *p) {
         break;
     case token$ENUM:
         x = enum_specifier(p);
+        break;
+    case token$MAP:
+        x = map_specifier(p);
         break;
     default:
         if (is_type(p)) {

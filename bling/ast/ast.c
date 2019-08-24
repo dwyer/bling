@@ -17,7 +17,7 @@ extern ast$Object *ast$newObject(ast$ObjKind kind, char *name) {
 extern ast$Scope *ast$Scope_new(ast$Scope *outer) {
     ast$Scope s = {
         .outer = outer,
-        .objects = utils$Map_init(sizeof(ast$Object *)),
+        .objects = utils$Map_make(sizeof(ast$Object *)),
         .keys = utils$Slice_init(sizeof(char *)),
     };
     return esc(s);

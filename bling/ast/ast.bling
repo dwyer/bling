@@ -51,6 +51,7 @@ typ NodeKind enum {
     TYPE_BUILTIN_FUNC
     TYPE_ELLIPSIS
     TYPE_ENUM
+    TYPE_MAP
     TYPE_NATIVE
     TYPE_FUNC
     TYPE_STRUCT
@@ -147,6 +148,11 @@ typ KeyValueExpr struct {
     isArray bool
 }
 
+typ MapType struct {
+    pos token.Pos
+    val *Expr
+}
+
 typ NativeType struct {
     name *char
     size int
@@ -209,6 +215,7 @@ typ Expr struct {
         ident Ident
         index IndexExpr
         key_value KeyValueExpr
+        map_ MapType
         native NativeType
         paren ParenExpr
         selector SelectorExpr
@@ -392,7 +399,7 @@ fun newObject(kind ObjKind, name *char) *Object {
 fun Scope_new(outer *Scope) *Scope {
     var s Scope = {
         outer: outer,
-        objects: utils.Map_init(sizeof(*Object)),
+        objects: utils.Map_make(sizeof(*Object)),
         keys: utils.Slice_init(sizeof(*char)),
     }
     return &&s

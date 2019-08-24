@@ -152,6 +152,9 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
     if a == NULL || b == NULL {
         return false
     }
+    if a.kind == ast.TYPE_MAP || b.kind == ast.TYPE_MAP {
+        return true
+    }
     assert(a)
     assert(b)
     if a.kind == ast.EXPR_SELECTOR {
@@ -429,6 +432,11 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
         }
         if t.func.result {
             Checker_checkType(c, t.func.result)
+        }
+        break
+    case ast.TYPE_MAP:
+        if t.map_.val {
+            Checker_checkType(c, t.map_.val)
         }
         break
     case ast.EXPR_STAR:
@@ -845,7 +853,7 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) *Package {
     utils.Map_get(&c.info.imports, path, &pkg)
     if pkg == NULL {
         pkg = check(c.conf, path, c.fset, NULL, c.info)
-        assert(utils.Map_hasKey(&c.info.imports, path))
+        assert(utils.Map_get(&c.info.imports, path, NULL))
     }
     imp.imp.name = makeIdent(pkg.scope.pkg)
     Checker_declare(c, imp, pkg.scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
@@ -955,7 +963,7 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
 
 fun newInfo() *Info {
     var info Info = {
-        imports: utils.Map_init(sizeof(*Package)),
+        imports: utils.Map_make(sizeof(*Package)),
     }
     return &&info
 }

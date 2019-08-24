@@ -28,7 +28,7 @@ typedef struct {
     void *val;
 } MapPair;
 
-extern utils$Map utils$Map_init(int valSize) {
+extern utils$Map utils$Map_make(int valSize) {
     utils$Map m = {
         ._valSize = valSize,
         ._len = 0,
@@ -80,18 +80,15 @@ static void set_unsafe(utils$Map *m, const char *key, const void *val) {
     }
 }
 
-extern bool utils$Map_hasKey(utils$Map *m, const char *key) {
-    MapPair *p = pair_ref(m, key);
-    return p->key != NULL;
-}
-
-extern int utils$Map_get(const utils$Map *m, const char *key, void *val) {
+extern bool utils$Map_get(const utils$Map *m, const char *key, void *val) {
     MapPair *p = pair_ref(m, key);
     if (p->val) {
-        sys$memcpy(val, p->val, m->_valSize);
-        return 1;
+        if (val) {
+            sys$memcpy(val, p->val, m->_valSize);
+        }
+        return true;
     }
-    return 0;
+    return false;
 }
 
 extern void utils$Map_set(utils$Map *m, const char *key, const void *val) {
@@ -111,10 +108,6 @@ extern void utils$Map_set(utils$Map *m, const char *key, const void *val) {
         }
         utils$Slice_deinit(&pairs);
     }
-}
-
-extern bool utils$Map_isInitialized(utils$Map *m) {
-    return m->_valSize > 0;
 }
 
 extern utils$MapIter utils$NewMapIter(const utils$Map *m) {

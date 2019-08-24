@@ -403,6 +403,13 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
         }
         break;
 
+    case ast$TYPE_MAP:
+        emitter$emitToken(e, token$MAP);
+        emitter$emitToken(e, token$LPAREN);
+        cemitter$emitExpr(e, type->map_.val);
+        emitter$emitToken(e, token$RPAREN);
+        break;
+
     case ast$EXPR_STAR:
         type = type->star.x;
         if (type->kind == ast$TYPE_FUNC) {
@@ -583,7 +590,7 @@ extern void cemitter$emitScope(emitter$Emitter *e, ast$Scope *scope) {
 }
 
 extern void _emitPackage(emitter$Emitter *e, utils$Map *done, types$Package *pkg) {
-    if (utils$Map_hasKey(done, pkg->path)) {
+    if (utils$Map_get(done, pkg->path, NULL)) {
         return;
     }
     utils$Map_set(done, pkg->path, &pkg->path);
@@ -599,7 +606,7 @@ extern void _emitPackage(emitter$Emitter *e, utils$Map *done, types$Package *pkg
 }
 
 extern void cemitter$emitPackage(emitter$Emitter *e, types$Package *pkg) {
-    utils$Map done = utils$Map_init(sizeof(char *));
+    utils$Map done = utils$Map_make(sizeof(char *));
     _emitPackage(e, &done, pkg);
     utils$Map_deinit(&done);
 }

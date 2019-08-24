@@ -467,7 +467,9 @@ fun parameter_type_list(p *parser.Parser) **ast.Decl {
 fun type_name(p *parser.Parser) *ast.Expr {
     var type *ast.Expr = specifier_qualifier_list(p)
     var decl *ast.Decl = abstract_declarator(p, type)
-    return decl.field.type
+    type = decl.field.type
+    free(decl)
+    return type
 }
 
 fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
@@ -871,6 +873,22 @@ fun parameter_declaration(p *parser.Parser) *ast.Decl {
     return &&decl
 }
 
+fun map_specifier(p *parser.Parser) *ast.Expr {
+    var pos token.Pos = p.pos
+    parser.expect(p, token.MAP)
+    parser.expect(p, token.LPAREN)
+    var val *ast.Expr = type_name(p)
+    parser.expect(p, token.RPAREN)
+    var tmp ast.Expr = {
+        kind: ast.TYPE_MAP,
+        map_: {
+            pos: pos,
+            val: val,
+        },
+    }
+    return &&tmp
+}
+
 fun type_specifier(p *parser.Parser) *ast.Expr {
     var x *ast.Expr = NULL
     switch p.tok {
@@ -882,6 +900,9 @@ fun type_specifier(p *parser.Parser) *ast.Expr {
         break
     case token.ENUM:
         x = enum_specifier(p)
+        break
+    case token.MAP:
+        x = map_specifier(p)
         break
     default:
         if is_type(p) {

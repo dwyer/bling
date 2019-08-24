@@ -741,6 +741,19 @@ fun parseFuncType(p *Parser) *ast.Expr {
     return &&ptr
 }
 
+fun parseMapType(p *Parser) *ast.Expr {
+    var pos token.Pos = p.pos
+    expect(p, token.MAP)
+    var tmp ast.Expr = {
+        kind: ast.TYPE_MAP,
+        map_: {
+            pos: pos,
+            val: parseType(p),
+        },
+    }
+    return &&tmp
+}
+
 fun parseEnumType(p *Parser) *ast.Expr {
     var pos token.Pos = p.pos
     expect(p, token.ENUM)
@@ -796,6 +809,8 @@ fun tryIdentOrType(p *Parser) *ast.Expr {
         return parsePointerType(p)
     case token.FUNC:
         return parseFuncType(p)
+    case token.MAP:
+        return parseMapType(p)
     case token.ENUM:
         return parseEnumType(p)
     case token.CONST:

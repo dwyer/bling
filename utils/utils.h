@@ -43,14 +43,12 @@ typedef struct {
     utils$Slice _pairs;
 } utils$Map;
 
-extern utils$Map utils$Map_init(int valSize);
+extern utils$Map utils$Map_make(int valSize);
 extern void utils$Map_deinit(utils$Map *m);
 extern int utils$Map_len(const utils$Map *m);
 extern int utils$Map_cap(const utils$Map *m);
-extern int utils$Map_get(const utils$Map *m, const char *key, void *val);
-extern bool utils$Map_hasKey(utils$Map *m, const char *key);
+extern bool utils$Map_get(const utils$Map *m, const char *key, void *val);
 extern void utils$Map_set(utils$Map *m, const char *key, const void *val);
-extern bool utils$Map_isInitialized(utils$Map *m);
 
 typedef struct {
     int hits;

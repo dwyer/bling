@@ -12,6 +12,8 @@
         })
 #define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
 
+#define map(T) utils$Map
+
 #define fallthrough /**/
 #define typ typedef
 

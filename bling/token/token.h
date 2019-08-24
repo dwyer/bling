@@ -32,6 +32,7 @@ typedef enum {
     token$GOTO,
     token$IF,
     token$IMPORT,
+    token$MAP,
     token$PACKAGE,
     token$RETURN,
     token$SIZEOF,

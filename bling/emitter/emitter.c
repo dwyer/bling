@@ -451,6 +451,12 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         }
         break;
 
+    case ast$TYPE_MAP:
+        emitter$emitToken(e, token$MAP);
+        emitter$emitSpace(e);
+        emitter$emitType(e, type->map_.val);
+        break;
+
     case ast$EXPR_STAR:
         type = type->star.x;
         if (type->kind == ast$TYPE_FUNC) {

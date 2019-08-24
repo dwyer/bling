@@ -28,6 +28,7 @@ static char *tokens[] = {
     [token$GOTO] = "goto",
     [token$IF] = "if",
     [token$IMPORT] = "import",
+    [token$MAP] = "map",
     [token$PACKAGE] = "package",
     [token$RETURN] = "return",
     [token$SIGNED] = "signed",
@@ -112,8 +113,8 @@ extern char *token$string(token$Token tok) {
 static utils$Map keywords = {};
 
 extern token$Token token$lookup(char *ident) {
-    if (!utils$Map_isInitialized(&keywords)) {
-        keywords = utils$Map_init(sizeof(token$Token));
+    if (utils$Map_len(&keywords) == 0) {
+        keywords = utils$Map_make(sizeof(token$Token));
         for (int i = token$_keywordBeg + 1; i < token$_keywordEnd; i++) {
             char *s = token$string(i);
             utils$Map_set(&keywords, s, &i);

@@ -26,6 +26,7 @@ typ Token enum {
     GOTO
     IF
     IMPORT
+    MAP
     PACKAGE
     RETURN
     SIZEOF
@@ -156,6 +157,7 @@ var tokens []*char = {
     GOTO: "goto",
     IF: "if",
     IMPORT: "import",
+    MAP: "map",
     PACKAGE: "package",
     RETURN: "return",
     SIGNED: "signed",
@@ -238,8 +240,8 @@ fun string(tok Token) *char {
 var keywords utils.Map = {}
 
 fun lookup(ident *char) Token {
-    if !utils.Map_isInitialized(&keywords) {
-        keywords = utils.Map_init(sizeof(Token))
+    if utils.Map_len(&keywords) == 0 {
+        keywords = utils.Map_make(sizeof(Token))
         for var i int = _keywordBeg + 1; i < _keywordEnd; i++ {
             var s *char = string(i)
             utils.Map_set(&keywords, s, &i)

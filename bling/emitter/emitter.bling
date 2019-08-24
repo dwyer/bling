@@ -421,6 +421,11 @@ fun emitType(e *Emitter, type *ast.Expr) {
             emitToken(e, token.RBRACE)
         }
         break
+    case ast.TYPE_MAP:
+        emitToken(e, token.MAP)
+        emitSpace(e)
+        emitType(e, type.map_.val)
+        break
     case ast.EXPR_STAR:
         type = type.star.x
         if type.kind == ast.TYPE_FUNC {

@@ -175,7 +175,7 @@ typ MapPair struct {
     val *void
 }
 
-fun Map_init(valSize int) Map {
+fun Map_make(valSize int) Map {
     var m Map = {
         _valSize: valSize,
         _len: 0,
@@ -227,18 +227,15 @@ fun set_unsafe(m *Map, key *const char, val *const void) {
     }
 }
 
-fun Map_hasKey(m *Map, key *const char) bool {
-    var p *MapPair = pair_ref(m, key)
-    return p.key != NULL
-}
-
-fun Map_get(m *const Map, key *const char, val *void) int {
+fun Map_get(m *const Map, key *const char, val *void) bool {
     var p *MapPair = pair_ref(m, key)
     if p.val {
-        sys.memcpy(val, p.val, m._valSize)
-        return 1
+        if val {
+            sys.memcpy(val, p.val, m._valSize)
+        }
+        return true
     }
-    return 0
+    return false
 }
 
 fun Map_set(m *Map, key *const char, val *const void) {
@@ -258,10 +255,6 @@ fun Map_set(m *Map, key *const char, val *const void) {
         }
         Slice_deinit(&pairs)
     }
-}
-
-fun Map_isInitialized(m *Map) bool {
-    return m._valSize > 0
 }
 
 fun NewMapIter(m *const Map) MapIter {

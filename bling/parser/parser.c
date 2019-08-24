@@ -795,6 +795,19 @@ static ast$Expr *parseFuncType(parser$Parser *p) {
     return esc(ptr);
 }
 
+static ast$Expr *parseMapType(parser$Parser *p) {
+    token$Pos pos = p->pos;
+    parser$expect(p, token$MAP);
+    ast$Expr tmp = {
+        .kind = ast$TYPE_MAP,
+        .map_ = {
+            .pos = pos,
+            .val = parseType(p),
+        },
+    };
+    return esc(tmp);
+}
+
 static ast$Expr *parseEnumType(parser$Parser *p) {
     // enum_specifier
     //         : ENUM '{' enumerator_list '}'
@@ -856,6 +869,8 @@ static ast$Expr *tryIdentOrType(parser$Parser *p) {
         return parsePointerType(p);
     case token$FUNC:
         return parseFuncType(p);
+    case token$MAP:
+        return parseMapType(p);
     case token$ENUM:
         return parseEnumType(p);
     case token$CONST:

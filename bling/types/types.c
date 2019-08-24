@@ -143,6 +143,9 @@ static bool types$areIdentical(ast$Expr *a, ast$Expr *b) {
     if (a == NULL || b == NULL) {
         return false;
     }
+    if (a->kind == ast$TYPE_MAP || b->kind == ast$TYPE_MAP) {
+        return true;
+    }
     assert(a);
     assert(b);
     if (a->kind == ast$EXPR_SELECTOR) {
@@ -444,6 +447,12 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         }
         if (t->func.result) {
             Checker_checkType(c, t->func.result);
+        }
+        break;
+
+    case ast$TYPE_MAP:
+        if (t->map_.val) {
+            Checker_checkType(c, t->map_.val);
         }
         break;
 
@@ -942,7 +951,7 @@ static types$Package *Checker_checkImport(Checker *c, ast$Decl *imp) {
     utils$Map_get(&c->info->imports, path, &pkg);
     if (pkg == NULL) {
         pkg = types$check(c->conf, path, c->fset, NULL, c->info);
-        assert(utils$Map_hasKey(&c->info->imports, path));
+        assert(utils$Map_get(&c->info->imports, path, NULL));
     }
     imp->imp.name = types$makeIdent(pkg->scope->pkg);
     Checker_declare(c, imp, pkg->scope, c->pkg->scope, ast$ObjKind_PKG,
@@ -1060,7 +1069,7 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
 
 extern types$Info *types$newInfo() {
     types$Info info = {
-        .imports = utils$Map_init(sizeof(types$Package *)),
+        .imports = utils$Map_make(sizeof(types$Package *)),
     };
     return esc(info);
 }
