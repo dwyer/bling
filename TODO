@@ -11,6 +11,7 @@
 * Implement `import ( ... )` decl.
 * Make semicolons optional before `}` and `)'.
 * After we replace C code with Bling:
+    * ast: Replace CastExpr with CallExpr.
     * rename `esc` to `__bling_escape` or something similar.
     * Eventually we want to have switch cases to have an implicit break and to open
       a new scope by default. So the above example would be converted to:
