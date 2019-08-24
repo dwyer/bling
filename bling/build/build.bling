@@ -77,6 +77,7 @@ typ Package struct {
     libModTime os.Time
     srcModTime os.Time
     deps utils.Slice
+    isCmd bool
 }
 
 typ Builder struct {
@@ -154,11 +155,18 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
 
 fun newPackage(b *Builder, path *const char) Package {
     var base *char = paths.base(path)
+    var typesPkg *types.Package = types.check(&b.conf, path, b.fset, NULL, b.info)
+    var isCmd bool = typesPkg.name ? streq(typesPkg.name, "main") : false
     var genPath *char = paths.join2(GEN_PATH, path)
     var libPath *char = sys.sprintf("%s/%s.a", genPath, base)
+    if isCmd {
+        libPath = sys.sprintf("%s/%s", genPath, base)
+    } else {
+        libPath = sys.sprintf("%s/%s.a", genPath, base)
+    }
     var pkg Package = {
         path: strdup(path),
-        pkg: types.check(&b.conf, path, b.fset, NULL, b.info),
+        pkg: typesPkg,
         hPath: sys.sprintf("%s/%s.h", genPath, base),
         cPath: sys.sprintf("%s/%s.c", genPath, base),
         objPath: sys.sprintf("%s/%s.o", genPath, base),
@@ -168,6 +176,7 @@ fun newPackage(b *Builder, path *const char) Package {
         deps: {
             size: sizeof(*Package),
         },
+        isCmd: isCmd,
     }
     free(genPath)
     free(base)
@@ -296,13 +305,13 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         genObj(b, pkg.objPath, pkg.cPath)
         if VERBOSE {
         }
-        if streq(pkg.pkg.name, "main") {
+        if pkg.isCmd {
             var cmd utils.Slice = {
                 size: sizeof(*char),
             }
             Slice_appendStrLit(&cmd, CC_PATH)
             Slice_appendStrLit(&cmd, "-o")
-            Slice_appendStrLit(&cmd, "blingc.out")
+            Slice_appendStrLit(&cmd, pkg.libPath)
             Slice_appendStrLit(&cmd, pkg.objPath)
             var pkg *Package = NULL
             var iter utils.MapIter = utils.NewMapIter(&b.pkgs)

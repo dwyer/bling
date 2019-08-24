@@ -66,6 +66,7 @@ typedef struct {
     os$Time libModTime; // modtime of libPath
     os$Time srcModTime; // modtime of newest src or dep
     utils$Slice deps;
+    bool isCmd;
 } Package;
 
 typedef struct {
@@ -146,11 +147,18 @@ static Package *_buildPackage(Builder *b, const char *path);
 
 static Package newPackage(Builder *b, const char *path) {
     char *base = paths$base(path);
+    types$Package *typesPkg = types$check(&b->conf, path, b->fset, NULL, b->info);
+    bool isCmd = typesPkg->name ? streq(typesPkg->name, "main") : false;
     char *genPath = paths$join2(GEN_PATH, path);
     char *libPath = sys$sprintf("%s/%s.a", genPath, base);
+    if (isCmd) {
+        libPath = sys$sprintf("%s/%s", genPath, base);
+    } else {
+        libPath = sys$sprintf("%s/%s.a", genPath, base);
+    }
     Package pkg = {
         .path = strdup(path),
-        .pkg = types$check(&b->conf, path, b->fset, NULL, b->info),
+        .pkg = typesPkg,
         .hPath = sys$sprintf("%s/%s.h", genPath, base),
         .cPath = sys$sprintf("%s/%s.c", genPath, base),
         .objPath = sys$sprintf("%s/%s.o", genPath, base),
@@ -158,6 +166,7 @@ static Package newPackage(Builder *b, const char *path) {
         .libModTime = getFileModTime(libPath),
         .srcModTime = getSrcModTime(path),
         .deps = {.size = sizeof(Package *)},
+        .isCmd = isCmd,
     };
     free(genPath);
     free(base);
@@ -285,11 +294,11 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
         if (VERBOSE) {
             // sys$printf("%d > %d\n", pkg.srcModTime, pkg.libModTime);
         }
-        if (streq(pkg.pkg->name, "main")) {
+        if (pkg.isCmd) {
             utils$Slice cmd = {.size = sizeof(char *)};
             Slice_appendStrLit(&cmd, CC_PATH);
             Slice_appendStrLit(&cmd, "-o");
-            Slice_appendStrLit(&cmd, "blingc.out");
+            Slice_appendStrLit(&cmd, pkg.libPath);
             Slice_appendStrLit(&cmd, pkg.objPath);
             Package *pkg = NULL;
             utils$MapIter iter = utils$NewMapIter(&b->pkgs);

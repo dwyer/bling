@@ -57,7 +57,7 @@ CFILES=utils/error.c \
 
 hello: $(BLINGC) all.bling
 	$(BLINGC) build cmd/blingc
-	./blingc.out version
+	./gen/cmd/blingc/blingc version
 
 a.out: $(BLINGC) all.bling
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
