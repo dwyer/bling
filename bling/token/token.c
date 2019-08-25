@@ -245,7 +245,7 @@ extern char *token$File_lineString(token$File *f, int line) {
 extern token$FileSet *token$newFileSet() {
     token$FileSet fset = {
         .base = 1,
-        .files = utils$Slice_init(sizeof(token$File *)),
+        .files = utils$Slice_make(sizeof(token$File *)),
     };
     return esc(fset);
 }
@@ -258,7 +258,7 @@ extern token$File *token$FileSet_addFile(token$FileSet *s,
     if (base < s->base || size < 0) {
         panic("illegal base or size");
     }
-    utils$Slice lines = utils$Slice_init(sizeof(int));
+    utils$Slice lines = utils$Slice_make(sizeof(int));
     int zero = 0;
     utils$Slice_append(&lines, &zero);
     token$File file = {

@@ -608,7 +608,7 @@ extern void _emitPackage(emitter$Emitter *e, utils$Map *done, types$Package *pkg
 extern void cemitter$emitPackage(emitter$Emitter *e, types$Package *pkg) {
     utils$Map done = utils$Map_make(sizeof(char *));
     _emitPackage(e, &done, pkg);
-    utils$Map_deinit(&done);
+    utils$Map_unmake(&done);
 }
 
 extern void cemitter$emitHeader(emitter$Emitter *e, types$Package *pkg) {

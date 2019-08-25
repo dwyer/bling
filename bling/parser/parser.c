@@ -81,7 +81,7 @@ extern void parser$init(parser$Parser *p, token$FileSet *fset,
     scanner$init(&p->scanner, p->file, src);
     p->scanner.dontInsertSemis = !bytes$hasSuffix(filename, ".bling");
     p->exprLev = 0;
-    p->unresolved = utils$Slice_init(sizeof(ast$Expr *));
+    p->unresolved = utils$Slice_make(sizeof(ast$Expr *));
     parser$next(p);
 }
 
@@ -727,7 +727,7 @@ static ast$Decl *parseParam(parser$Parser *p, ast$Scope *scope, bool anon) {
 
 static ast$Decl **parseParameterList(parser$Parser *p, ast$Scope *scope,
         bool anon) {
-    utils$Slice params = utils$Slice_init(sizeof(ast$Decl *));
+    utils$Slice params = utils$Slice_make(sizeof(ast$Decl *));
     for (;;) {
         ast$Decl *param = parseParam(p, scope, false);
         utils$Slice_append(&params, &param);
@@ -1409,7 +1409,7 @@ extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
         utils$Error_move(err, first);
         return NULL;
     }
-    utils$Slice files = utils$Slice_init(sizeof(uintptr_t));
+    utils$Slice files = utils$Slice_make(sizeof(uintptr_t));
     for (int i = 0; infos[i]; i++) {
         char *name = os$FileInfo_name(infos[i]);
         if (isBlingFile(name) && !isTestFile(name)) {
@@ -1423,8 +1423,8 @@ extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
 
 static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
     ast$Expr *name = NULL;
-    utils$Slice imports = utils$Slice_init(sizeof(uintptr_t));
-    utils$Slice decls = utils$Slice_init(sizeof(ast$Decl *));
+    utils$Slice imports = utils$Slice_make(sizeof(uintptr_t));
+    utils$Slice decls = utils$Slice_make(sizeof(ast$Decl *));
     while (p->tok == token$HASH) {
         ast$Decl *lit = parser$parsePragma(p);
         utils$Slice_append(&decls, &lit);

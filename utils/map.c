@@ -32,14 +32,14 @@ extern utils$Map utils$Map_make(int valSize) {
     utils$Map m = {
         ._valSize = valSize,
         ._len = 0,
-        ._pairs = utils$Slice_init(sizeof(MapPair)),
+        ._pairs = utils$Slice_make(sizeof(MapPair)),
     };
     utils$Slice_setLen(&m._pairs, DEFAULT_CAP);
     return m;
 }
 
-extern void utils$Map_deinit(utils$Map *m) {
-    utils$Slice_deinit(&m->_pairs);
+extern void utils$Map_unmake(utils$Map *m) {
+    utils$Slice_unmake(&m->_pairs);
 }
 
 extern int utils$Map_len(const utils$Map *m) {
@@ -97,7 +97,7 @@ extern void utils$Map_set(utils$Map *m, const char *key, const void *val) {
     if (load_factor >= MAP_LOAD_FACTOR) {
         int newCap = utils$Map_cap(m) * 2;
         utils$Slice pairs = m->_pairs;
-        m->_pairs = utils$Slice_init(m->_pairs.size);
+        m->_pairs = utils$Slice_make(m->_pairs.size);
         utils$Slice_setLen(&m->_pairs, newCap);
         m->_len = 0;
         for (int i = 0; i < utils$Slice_len(&pairs); i++) {
@@ -106,7 +106,7 @@ extern void utils$Map_set(utils$Map *m, const char *key, const void *val) {
                 set_unsafe(m, p->key, p->val);
             }
         }
-        utils$Slice_deinit(&pairs);
+        utils$Slice_unmake(&pairs);
     }
 }
 

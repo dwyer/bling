@@ -62,7 +62,7 @@ fun Error_free(e *Error) {
     free(e)
 }
 
-fun Slice_init(size int) Slice {
+fun Slice_make(size int) Slice {
     var s Slice = {
         size: size,
         len: 0,
@@ -72,7 +72,7 @@ fun Slice_init(size int) Slice {
     return s
 }
 
-fun Slice_deinit(s *Slice) {
+fun Slice_unmake(s *Slice) {
     free(s._array)
 }
 
@@ -179,14 +179,14 @@ fun Map_make(valSize int) Map {
     var m Map = {
         _valSize: valSize,
         _len: 0,
-        _pairs: Slice_init(sizeof(MapPair)),
+        _pairs: Slice_make(sizeof(MapPair)),
     }
     Slice_setLen(&m._pairs, DEFAULT_CAP)
     return m
 }
 
-fun Map_deinit(m *Map) {
-    Slice_deinit(&m._pairs)
+fun Map_unmake(m *Map) {
+    Slice_unmake(&m._pairs)
 }
 
 fun Map_len(m *const Map) int {
@@ -244,7 +244,7 @@ fun Map_set(m *Map, key *const char, val *const void) {
     if load_factor >= MAP_LOAD_FACTOR {
         var newCap int = Map_cap(m) * 2
         var pairs Slice = m._pairs
-        m._pairs = Slice_init(m._pairs.size)
+        m._pairs = Slice_make(m._pairs.size)
         Slice_setLen(&m._pairs, newCap)
         m._len = 0
         for var i int = 0; i < Slice_len(&pairs); i++ {
@@ -253,7 +253,7 @@ fun Map_set(m *Map, key *const char, val *const void) {
                 set_unsafe(m, p.key, p.val)
             }
         }
-        Slice_deinit(&pairs)
+        Slice_unmake(&pairs)
     }
 }
 

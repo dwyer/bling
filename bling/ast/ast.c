@@ -18,15 +18,15 @@ extern ast$Scope *ast$Scope_new(ast$Scope *outer) {
     ast$Scope s = {
         .outer = outer,
         .objects = utils$Map_make(sizeof(ast$Object *)),
-        .keys = utils$Slice_init(sizeof(char *)),
+        .keys = utils$Slice_make(sizeof(char *)),
     };
     return esc(s);
 }
 
-extern void ast$Scope_deinit(ast$Scope *s) {
+extern void ast$Scope_unmake(ast$Scope *s) {
     if (s) {
-        utils$Map_deinit(&s->objects);
-        utils$Slice_deinit(&s->keys);
+        utils$Map_unmake(&s->objects);
+        utils$Slice_unmake(&s->keys);
     }
 }
 
@@ -73,7 +73,7 @@ extern bool ast$resolve(ast$Scope *scope, ast$Expr *ident) {
 }
 
 extern void ast$Scope_free(ast$Scope *s) {
-    utils$Map_deinit(&s->objects);
+    utils$Map_unmake(&s->objects);
     free(s);
 }
 

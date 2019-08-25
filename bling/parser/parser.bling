@@ -96,7 +96,7 @@ fun init(p *Parser, fset *token.FileSet, filename *const char, src *char) {
     scanner.init(&p.scanner, p.file, src)
     p.scanner.dontInsertSemis = !bytes.hasSuffix(filename, ".bling")
     p.exprLev = 0
-    p.unresolved = utils.Slice_init(sizeof(*ast.Expr))
+    p.unresolved = utils.Slice_make(sizeof(*ast.Expr))
     next(p)
 }
 
@@ -674,7 +674,7 @@ fun parseParam(p *Parser, scope *ast.Scope, anon bool) *ast.Decl {
 }
 
 fun parseParameterList(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
-    var params utils.Slice = utils.Slice_init(sizeof(*ast.Decl))
+    var params utils.Slice = utils.Slice_make(sizeof(*ast.Decl))
     for ;; {
         var param *ast.Decl = parseParam(p, scope, false)
         utils.Slice_append(&params, &param)
@@ -1300,7 +1300,7 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
         utils.Error_move(err, first)
         return NULL
     }
-    var files utils.Slice = utils.Slice_init(sizeof(uintptr_t))
+    var files utils.Slice = utils.Slice_make(sizeof(uintptr_t))
     for var i int = 0; infos[i]; i++ {
         var name *char = os.FileInfo_name(infos[i])
         if isBlingFile(name) && !isTestFile(name) {
@@ -1314,8 +1314,8 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
 
 fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
     var name *ast.Expr = NULL
-    var imports utils.Slice = utils.Slice_init(sizeof(uintptr_t))
-    var decls utils.Slice = utils.Slice_init(sizeof(*ast.Decl))
+    var imports utils.Slice = utils.Slice_make(sizeof(uintptr_t))
+    var decls utils.Slice = utils.Slice_make(sizeof(*ast.Decl))
     while p.tok == token.HASH {
         var lit *ast.Decl = parsePragma(p)
         utils.Slice_append(&decls, &lit)

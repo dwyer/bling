@@ -392,7 +392,7 @@ typedef struct ast$Scope {
 extern bool ast$isExprType(ast$Expr *x);
 
 extern ast$Scope *ast$Scope_new(ast$Scope *outer);
-extern void ast$Scope_deinit(ast$Scope *s);
+extern void ast$Scope_unmake(ast$Scope *s);
 extern ast$Object *ast$Scope_insert(ast$Scope *s, ast$Object *obj);
 extern ast$Object *ast$Scope_lookup(ast$Scope *s, char *name);
 

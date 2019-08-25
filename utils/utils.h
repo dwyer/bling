@@ -24,8 +24,8 @@ typedef struct {
     void *_array;
 } utils$Slice;
 
-extern utils$Slice utils$Slice_init(int size);
-extern void utils$Slice_deinit(utils$Slice *s);
+extern utils$Slice utils$Slice_make(int size);
+extern void utils$Slice_unmake(utils$Slice *s);
 
 extern int utils$Slice_len(const utils$Slice *s); // TODO replace with len()
 extern int utils$Slice_cap(const utils$Slice *s); // TODO replace with cap()
@@ -43,7 +43,7 @@ typedef struct {
 } utils$Map;
 
 extern utils$Map utils$Map_make(int valSize);
-extern void utils$Map_deinit(utils$Map *m);
+extern void utils$Map_unmake(utils$Map *m);
 extern int utils$Map_len(const utils$Map *m); // TODO replace with len()
 extern int utils$Map_cap(const utils$Map *m); // TODO replace with cap()
 extern bool utils$Map_get(const utils$Map *m, const char *key, void *val);

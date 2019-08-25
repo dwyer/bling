@@ -2,7 +2,7 @@
 
 #include "sys/sys.h"
 
-extern utils$Slice utils$Slice_init(int size) {
+extern utils$Slice utils$Slice_make(int size) {
     utils$Slice s = {
         .size = size,
         .len = 0,
@@ -12,7 +12,7 @@ extern utils$Slice utils$Slice_init(int size) {
     return s;
 }
 
-extern void utils$Slice_deinit(utils$Slice *s) {
+extern void utils$Slice_unmake(utils$Slice *s) {
     free(s->_array);
 }
 

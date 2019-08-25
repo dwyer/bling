@@ -400,15 +400,15 @@ fun Scope_new(outer *Scope) *Scope {
     var s Scope = {
         outer: outer,
         objects: utils.Map_make(sizeof(*Object)),
-        keys: utils.Slice_init(sizeof(*char)),
+        keys: utils.Slice_make(sizeof(*char)),
     }
     return &&s
 }
 
-fun Scope_deinit(s *Scope) {
+fun Scope_unmake(s *Scope) {
     if s {
-        utils.Map_deinit(&s.objects)
-        utils.Slice_deinit(&s.keys)
+        utils.Map_unmake(&s.objects)
+        utils.Slice_unmake(&s.keys)
     }
 }
 
@@ -455,7 +455,7 @@ fun resolve(scope *Scope, ident *Expr) bool {
 }
 
 fun Scope_free(s *Scope) {
-    utils.Map_deinit(&s.objects)
+    utils.Map_unmake(&s.objects)
     free(s)
 }
 
