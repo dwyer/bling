@@ -338,6 +338,42 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
         emitter$emitSpace(e);
     }
     switch (type->kind) {
+
+    case ast$EXPR_IDENT:
+        cemitter$emitExpr(e, type);
+        break;
+
+    case ast$EXPR_SELECTOR:
+        cemitter$emitExpr(e, type->selector.sel);
+        break;
+
+    case ast$EXPR_STAR:
+        type = type->star.x;
+        if (type->kind == ast$TYPE_FUNC) {
+            cemitter$emitType(e, type->func.result, NULL);
+            emitter$emitToken(e, token$LPAREN);
+            emitter$emitToken(e, token$MUL);
+            if (name != NULL) {
+                cemitter$emitExpr(e, name);
+            }
+            emitter$emitToken(e, token$RPAREN);
+            emitter$emitToken(e, token$LPAREN);
+            for (ast$Decl **params = type->func.params; params && *params; ) {
+                cemitter$emitDecl(e, *params);
+                params++;
+                if (*params != NULL) {
+                    emitter$emitToken(e, token$COMMA);
+                    emitter$emitSpace(e);
+                }
+            }
+            emitter$emitToken(e, token$RPAREN);
+            name = NULL;
+        } else {
+            cemitter$emitType(e, type, NULL);
+            emitter$emitToken(e, token$MUL);
+        }
+        break;
+
     case ast$TYPE_ARRAY:
         cemitter$emitType(e, type->array.elt, name);
         emitter$emitToken(e, token$LBRACK);
@@ -345,27 +381,6 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
             cemitter$emitExpr(e, type->array.len);
         }
         emitter$emitToken(e, token$RBRACK);
-        name = NULL;
-        break;
-
-    case ast$TYPE_FUNC:
-        if (type->func.result != NULL) {
-            cemitter$emitType(e, type->func.result, name);
-        } else {
-            emitter$emitString(e, "void");
-            emitter$emitSpace(e);
-            cemitter$emitExpr(e, name);
-        }
-        emitter$emitToken(e, token$LPAREN);
-        for (ast$Decl **params = type->func.params; params && *params; ) {
-            cemitter$emitDecl(e, *params);
-            params++;
-            if (*params != NULL) {
-                emitter$emitToken(e, token$COMMA);
-                emitter$emitSpace(e);
-            }
-        }
-        emitter$emitToken(e, token$RPAREN);
         name = NULL;
         break;
 
@@ -403,38 +418,32 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
         }
         break;
 
+    case ast$TYPE_FUNC:
+        if (type->func.result != NULL) {
+            cemitter$emitType(e, type->func.result, name);
+        } else {
+            emitter$emitString(e, "void");
+            emitter$emitSpace(e);
+            cemitter$emitExpr(e, name);
+        }
+        emitter$emitToken(e, token$LPAREN);
+        for (ast$Decl **params = type->func.params; params && *params; ) {
+            cemitter$emitDecl(e, *params);
+            params++;
+            if (*params != NULL) {
+                emitter$emitToken(e, token$COMMA);
+                emitter$emitSpace(e);
+            }
+        }
+        emitter$emitToken(e, token$RPAREN);
+        name = NULL;
+        break;
+
     case ast$TYPE_MAP:
         emitter$emitToken(e, token$MAP);
         emitter$emitToken(e, token$LPAREN);
         cemitter$emitExpr(e, type->map_.val);
         emitter$emitToken(e, token$RPAREN);
-        break;
-
-    case ast$EXPR_STAR:
-        type = type->star.x;
-        if (type->kind == ast$TYPE_FUNC) {
-            cemitter$emitType(e, type->func.result, NULL);
-            emitter$emitToken(e, token$LPAREN);
-            emitter$emitToken(e, token$MUL);
-            if (name != NULL) {
-                cemitter$emitExpr(e, name);
-            }
-            emitter$emitToken(e, token$RPAREN);
-            emitter$emitToken(e, token$LPAREN);
-            for (ast$Decl **params = type->func.params; params && *params; ) {
-                cemitter$emitDecl(e, *params);
-                params++;
-                if (*params != NULL) {
-                    emitter$emitToken(e, token$COMMA);
-                    emitter$emitSpace(e);
-                }
-            }
-            emitter$emitToken(e, token$RPAREN);
-            name = NULL;
-        } else {
-            cemitter$emitType(e, type, NULL);
-            emitter$emitToken(e, token$MUL);
-        }
         break;
 
     case ast$TYPE_STRUCT:
@@ -459,14 +468,6 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
             emitter$emitTabs(e);
             emitter$emitToken(e, token$RBRACE);
         }
-        break;
-
-    case ast$EXPR_IDENT:
-        cemitter$emitExpr(e, type);
-        break;
-
-    case ast$EXPR_SELECTOR:
-        cemitter$emitExpr(e, type->selector.sel);
         break;
 
     default:

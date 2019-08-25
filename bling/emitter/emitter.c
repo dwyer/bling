@@ -397,6 +397,30 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         emitter$emitExpr(e, type);
         break;
 
+    case ast$EXPR_STAR:
+        type = type->star.x;
+        if (type->kind == ast$TYPE_FUNC) {
+            emitter$emitToken(e, token$FUNC);
+            emitter$emitToken(e, token$LPAREN);
+            for (ast$Decl **params = type->func.params; params && *params; ) {
+                emitter$emitDecl(e, *params);
+                params++;
+                if (*params != NULL) {
+                    emitter$emitToken(e, token$COMMA);
+                    emitter$emitSpace(e);
+                }
+            }
+            emitter$emitToken(e, token$RPAREN);
+            if (!is_void(type->func.result)) {
+                emitter$emitSpace(e);
+                emitter$emitType(e, type->func.result);
+            }
+        } else {
+            emitter$emitToken(e, token$MUL);
+            emitter$emitType(e, type);
+        }
+        break;
+
     case ast$TYPE_ARRAY:
         emitter$emitToken(e, token$LBRACK);
         if (type->array.len) {
@@ -408,23 +432,6 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
 
     case ast$TYPE_ELLIPSIS:
         emitter$emitToken(e, token$ELLIPSIS);
-        break;
-
-    case ast$TYPE_FUNC:
-        emitter$emitToken(e, token$LPAREN);
-        for (ast$Decl **params = type->func.params; params && *params; ) {
-            emitter$emitDecl(e, *params);
-            params++;
-            if (*params != NULL) {
-                emitter$emitToken(e, token$COMMA);
-                emitter$emitSpace(e);
-            }
-        }
-        emitter$emitToken(e, token$RPAREN);
-        if (!is_void(type->func.result)) {
-            emitter$emitSpace(e);
-            emitter$emitType(e, type->func.result);
-        }
         break;
 
     case ast$TYPE_ENUM:
@@ -452,34 +459,27 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         }
         break;
 
+    case ast$TYPE_FUNC:
+        emitter$emitToken(e, token$LPAREN);
+        for (ast$Decl **params = type->func.params; params && *params; ) {
+            emitter$emitDecl(e, *params);
+            params++;
+            if (*params != NULL) {
+                emitter$emitToken(e, token$COMMA);
+                emitter$emitSpace(e);
+            }
+        }
+        emitter$emitToken(e, token$RPAREN);
+        if (!is_void(type->func.result)) {
+            emitter$emitSpace(e);
+            emitter$emitType(e, type->func.result);
+        }
+        break;
+
     case ast$TYPE_MAP:
         emitter$emitToken(e, token$MAP);
         emitter$emitSpace(e);
         emitter$emitType(e, type->map_.val);
-        break;
-
-    case ast$EXPR_STAR:
-        type = type->star.x;
-        if (type->kind == ast$TYPE_FUNC) {
-            emitter$emitToken(e, token$FUNC);
-            emitter$emitToken(e, token$LPAREN);
-            for (ast$Decl **params = type->func.params; params && *params; ) {
-                emitter$emitDecl(e, *params);
-                params++;
-                if (*params != NULL) {
-                    emitter$emitToken(e, token$COMMA);
-                    emitter$emitSpace(e);
-                }
-            }
-            emitter$emitToken(e, token$RPAREN);
-            if (!is_void(type->func.result)) {
-                emitter$emitSpace(e);
-                emitter$emitType(e, type->func.result);
-            }
-        } else {
-            emitter$emitToken(e, token$MUL);
-            emitter$emitType(e, type);
-        }
         break;
 
     case ast$TYPE_STRUCT:

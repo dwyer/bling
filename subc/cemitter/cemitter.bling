@@ -309,6 +309,38 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         emitter.emitSpace(e)
     }
     switch type.kind {
+    case ast.EXPR_IDENT:
+        emitExpr(e, type)
+        break
+    case ast.EXPR_SELECTOR:
+        emitExpr(e, type.selector.sel)
+        break
+    case ast.EXPR_STAR:
+        type = type.star.x
+        if type.kind == ast.TYPE_FUNC {
+            emitType(e, type.func.result, NULL)
+            emitter.emitToken(e, token.LPAREN)
+            emitter.emitToken(e, token.MUL)
+            if name != NULL {
+                emitExpr(e, name)
+            }
+            emitter.emitToken(e, token.RPAREN)
+            emitter.emitToken(e, token.LPAREN)
+            for var params **ast.Decl = type.func.params; params && *params; {
+                emitDecl(e, *params)
+                params++
+                if *params != NULL {
+                    emitter.emitToken(e, token.COMMA)
+                    emitter.emitSpace(e)
+                }
+            }
+            emitter.emitToken(e, token.RPAREN)
+            name = NULL
+        } else {
+            emitType(e, type, NULL)
+            emitter.emitToken(e, token.MUL)
+        }
+        break
     case ast.TYPE_ARRAY:
         emitType(e, type.array.elt, name)
         emitter.emitToken(e, token.LBRACK)
@@ -316,26 +348,6 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitExpr(e, type.array.len)
         }
         emitter.emitToken(e, token.RBRACK)
-        name = NULL
-        break
-    case ast.TYPE_FUNC:
-        if type.func.result != NULL {
-            emitType(e, type.func.result, name)
-        } else {
-            emitter.emitString(e, "void")
-            emitter.emitSpace(e)
-            emitExpr(e, name)
-        }
-        emitter.emitToken(e, token.LPAREN)
-        for var params **ast.Decl = type.func.params; params && *params; {
-            emitDecl(e, *params)
-            params++
-            if *params != NULL {
-                emitter.emitToken(e, token.COMMA)
-                emitter.emitSpace(e)
-            }
-        }
-        emitter.emitToken(e, token.RPAREN)
         name = NULL
         break
     case ast.TYPE_ELLIPSIS:
@@ -370,37 +382,31 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitter.emitToken(e, token.RBRACE)
         }
         break
+    case ast.TYPE_FUNC:
+        if type.func.result != NULL {
+            emitType(e, type.func.result, name)
+        } else {
+            emitter.emitString(e, "void")
+            emitter.emitSpace(e)
+            emitExpr(e, name)
+        }
+        emitter.emitToken(e, token.LPAREN)
+        for var params **ast.Decl = type.func.params; params && *params; {
+            emitDecl(e, *params)
+            params++
+            if *params != NULL {
+                emitter.emitToken(e, token.COMMA)
+                emitter.emitSpace(e)
+            }
+        }
+        emitter.emitToken(e, token.RPAREN)
+        name = NULL
+        break
     case ast.TYPE_MAP:
         emitter.emitToken(e, token.MAP)
         emitter.emitToken(e, token.LPAREN)
         emitExpr(e, type.map_.val)
         emitter.emitToken(e, token.RPAREN)
-        break
-    case ast.EXPR_STAR:
-        type = type.star.x
-        if type.kind == ast.TYPE_FUNC {
-            emitType(e, type.func.result, NULL)
-            emitter.emitToken(e, token.LPAREN)
-            emitter.emitToken(e, token.MUL)
-            if name != NULL {
-                emitExpr(e, name)
-            }
-            emitter.emitToken(e, token.RPAREN)
-            emitter.emitToken(e, token.LPAREN)
-            for var params **ast.Decl = type.func.params; params && *params; {
-                emitDecl(e, *params)
-                params++
-                if *params != NULL {
-                    emitter.emitToken(e, token.COMMA)
-                    emitter.emitSpace(e)
-                }
-            }
-            emitter.emitToken(e, token.RPAREN)
-            name = NULL
-        } else {
-            emitType(e, type, NULL)
-            emitter.emitToken(e, token.MUL)
-        }
         break
     case ast.TYPE_STRUCT:
         emitter.emitToken(e, type.struct_.tok)
@@ -423,12 +429,6 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitter.emitTabs(e)
             emitter.emitToken(e, token.RBRACE)
         }
-        break
-    case ast.EXPR_IDENT:
-        emitExpr(e, type)
-        break
-    case ast.EXPR_SELECTOR:
-        emitExpr(e, type.selector.sel)
         break
     default:
         panic(sys.sprintf("Unknown type: %d", type.kind))

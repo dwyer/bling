@@ -414,6 +414,10 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         }
         break;
 
+    case ast$EXPR_STAR:
+        Checker_checkType(c, t->star.x);
+        break;
+
     case ast$TYPE_ARRAY:
         Checker_checkType(c, t->array.elt);
         if (t->array.len) {
@@ -454,10 +458,6 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         if (t->map_.val) {
             Checker_checkType(c, t->map_.val);
         }
-        break;
-
-    case ast$EXPR_STAR:
-        Checker_checkType(c, t->star.x);
         break;
 
     case ast$TYPE_STRUCT:
