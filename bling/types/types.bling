@@ -138,6 +138,9 @@ fun makePtr(type *ast.Expr) *ast.Expr {
 }
 
 fun getUnderlyingType(ident *ast.Expr) *ast.Expr {
+    if ident.ident.obj == NULL {
+        panic(sys.sprintf("not resolved: %s", typeString(ident)))
+    }
     var decl *ast.Decl = ident.ident.obj.decl
     if decl.kind != ast.DECL_TYPEDEF {
         panic(sys.sprintf("not a type: %s", typeString(ident)))
@@ -615,7 +618,9 @@ fun Checker_lookupIdent(c *Checker, name *char) *ast.Expr {
     assert(obj)
     assert(obj.kind == ast.ObjKind_TYP)
     assert(obj.decl.kind == ast.DECL_TYPEDEF)
-    return obj.decl.typedef_.name
+    var t *ast.Expr = obj.decl.typedef_.name
+    assert(t.ident.obj)
+    return t
 }
 
 fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
@@ -770,7 +775,9 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             assert(isArithmetic(t1))
             var t2 *ast.Expr = expr.ternary.x ? Checker_checkExpr(c, expr.ternary.x) : t1
             var t3 *ast.Expr = Checker_checkExpr(c, expr.ternary.y)
-            assert(areIdentical(t2, t3))
+            if !areComparable(t2, t3) {
+                Checker_error(c, ast.Expr_pos(expr), "not comparable")
+            }
             return t2
         }
     case ast.EXPR_UNARY:
@@ -1288,6 +1295,7 @@ fun defPredeclaredConsts() {
             kind: ast.EXPR_CONST,
             const_: {
                 name: sys.strdup(predeclareConsts[i].name),
+                type: obj.decl.typedef_.name,
                 value: predeclareConsts[i].value,
             },
         }
@@ -1295,7 +1303,7 @@ fun defPredeclaredConsts() {
             kind: ast.DECL_VALUE,
             value: {
                 name: &&name,
-                type: obj.decl.typedef_.type,
+                type: obj.decl.typedef_.name,
                 value: &&expr,
             },
         }

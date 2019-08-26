@@ -84,6 +84,9 @@ static ast$Expr *types$makePtr(ast$Expr *type) {
 }
 
 static ast$Expr *getUnderlyingType(ast$Expr *ident) {
+    if (ident->ident.obj == NULL) {
+        panic(sys$sprintf("not resolved: %s", types$typeString(ident)));
+    }
     ast$Decl *decl = ident->ident.obj->decl;
     if (decl->kind != ast$DECL_TYPEDEF) {
         panic(sys$sprintf("not a type: %s", types$typeString(ident)));
@@ -606,7 +609,9 @@ extern ast$Expr *Checker_lookupIdent(Checker *c, char *name) {
     assert(obj);
     assert(obj->kind == ast$ObjKind_TYP);
     assert(obj->decl->kind == ast$DECL_TYPEDEF);
-    return obj->decl->typedef_.name;
+    ast$Expr *t = obj->decl->typedef_.name;
+    assert(t->ident.obj);
+    return t;
 }
 
 static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
@@ -798,7 +803,9 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                 ? Checker_checkExpr(c, expr->ternary.x)
                 : t1;
             ast$Expr *t3 = Checker_checkExpr(c, expr->ternary.y);
-            assert(types$areIdentical(t2, t3));
+            if (!types$areComparable(t2, t3)) {
+                Checker_error(c, ast$Expr_pos(expr), "not comparable");
+            }
             return t2;
         }
 

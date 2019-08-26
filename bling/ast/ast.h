@@ -144,6 +144,7 @@ typedef struct {
 
 typedef struct {
     char *name;
+    ast$Expr *type;
     int value;
 } ast$ConstExpr;
 

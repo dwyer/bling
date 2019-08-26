@@ -3,7 +3,7 @@
 #include "sys/sys.h"
 
 extern bool ast$isExprType(ast$Expr *x) {
-    return ast$_TYPE_START < x->kind && x->kind < ast$_DECL_END;
+    return ast$_TYPE_START < x->kind && x->kind < ast$_TYPE_END;
 }
 
 extern ast$Object *ast$newObject(ast$ObjKind kind, char *name) {
@@ -102,13 +102,22 @@ extern bool ast$isVoid(ast$Expr *x) {
 }
 
 extern bool ast$isVoidPtr(ast$Expr *x) {
-    switch (x->kind) {
-    case ast$EXPR_STAR:
-        return ast$isVoid(x->star.x);
-    case ast$TYPE_NATIVE:
-        return x->native.info == 0;
-    default:
-        return false;
+    for (;;) {
+        switch (x->kind) {
+        case ast$EXPR_IDENT:
+            if (x->ident.obj == NULL) {
+                return false;
+            }
+            assert(x->ident.obj->kind == ast$ObjKind_TYP);
+            x = x->ident.obj->decl->typedef_.type;
+            continue;
+        case ast$EXPR_STAR:
+            return ast$isVoid(x->star.x);
+        case ast$TYPE_NATIVE:
+            return x->native.info == 0;
+        default:
+            return false;
+        }
     }
 }
 

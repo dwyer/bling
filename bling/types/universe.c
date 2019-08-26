@@ -141,6 +141,7 @@ static void defPredeclaredConsts() {
             .kind = ast$EXPR_CONST,
             .const_ = {
                 .name = sys$strdup(predeclareConsts[i].name),
+                .type = obj->decl->typedef_.name,
                 .value = predeclareConsts[i].value,
             },
         };

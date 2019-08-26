@@ -1,3 +1,0 @@
-const false bool = 0
-const true bool = 1
-const NULL *void = 0

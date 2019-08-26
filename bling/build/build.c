@@ -82,6 +82,7 @@ static void genObj(Builder *b, const char *dst, const char *src) {
     Slice_appendStrLit(&cmd, CC_PATH);
     Slice_appendStrLit(&cmd, "-fms-extensions");
     Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag");
+    Slice_appendStrLit(&cmd, "-g");
     Slice_appendStrLit(&cmd, "-I");
     Slice_appendStrLit(&cmd, INCL_PATH);
     Slice_appendStrLit(&cmd, "-c");

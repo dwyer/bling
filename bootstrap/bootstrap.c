@@ -6,6 +6,9 @@
 #include <stdlib.h> // exit
 #include <unistd.h> // STDERR_FILENO
 
+typedef char *charptr;
+typedef void *voidptr;
+
 extern void print(const char *s) {
     fprintf(stderr, "%s\n", s);
 }

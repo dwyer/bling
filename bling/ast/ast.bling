@@ -126,6 +126,7 @@ typ CompositeLit struct {
 
 typ ConstExpr struct {
     name *char
+    type *Expr
     value int
 }
 
@@ -402,7 +403,7 @@ typ Package struct {
 }
 
 fun isExprType(x *Expr) bool {
-    return _TYPE_START < x.kind && x.kind < _DECL_END
+    return _TYPE_START < x.kind && x.kind < _TYPE_END
 }
 
 fun newObject(kind ObjKind, name *char) *Object {
@@ -501,13 +502,22 @@ fun isVoid(x *Expr) bool {
 }
 
 fun isVoidPtr(x *Expr) bool {
-    switch x.kind {
-    case EXPR_STAR:
-        return isVoid(x.star.x)
-    case TYPE_NATIVE:
-        return x.native.info == 0
-    default:
-        return false
+    for ;; {
+        switch x.kind {
+        case EXPR_IDENT:
+            if x.ident.obj == NULL {
+                return false
+            }
+            assert(x.ident.obj.kind == ObjKind_TYP)
+            x = x.ident.obj.decl.typedef_.type
+            continue
+        case EXPR_STAR:
+            return isVoid(x.star.x)
+        case TYPE_NATIVE:
+            return x.native.info == 0
+        default:
+            return false
+        }
     }
 }
 
