@@ -13,7 +13,7 @@ extern utils$Slice utils$Slice_make(int size) {
 }
 
 extern void utils$Slice_unmake(utils$Slice *s) {
-    free(s->_array);
+    sys$free(s->_array);
 }
 
 extern int utils$Slice_len(const utils$Slice *s) {

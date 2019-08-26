@@ -8,7 +8,7 @@
 #define esc(x) ({ \
         void *memcpy(void *, void const*, size_t); \
         typeof(x) $0 = (x); \
-        memcpy(malloc(sizeof $0), &$0, sizeof $0); \
+        memcpy(sys$malloc(sizeof $0), &$0, sizeof $0); \
         })
 #define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
 
@@ -24,9 +24,6 @@
 
 typedef char bool;
 typedef unsigned long int size_t;
-
-extern void free(void *);
-extern void *malloc(size_t);
 
 extern void print(const char *s);
 extern void _Noreturn panic0(void) __attribute__((noreturn));

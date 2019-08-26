@@ -29,6 +29,6 @@ extern void utils$clearError() {
 }
 
 extern void utils$Error_free(utils$Error *e) {
-    free(e->error);
-    free(e);
+    sys$free(e->error);
+    sys$free(e);
 }

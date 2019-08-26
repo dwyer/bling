@@ -20,7 +20,7 @@ static void emit_rawfile(emitter$Emitter *e, const char *filename) {
         panic(err->error);
     }
     emitter$emitString(e, src);
-    free(src);
+    sys$free(src);
 }
 
 static void printStrArray(char **s) {
@@ -42,7 +42,7 @@ static void execute(utils$Slice *cmd) {
     if (code != 0) {
         panic(sys$sprintf("- failed with code %d", code));
     }
-    free(args);
+    sys$free(args);
 }
 
 static void Slice_appendStrLit(utils$Slice *a, const char *s) {
@@ -52,7 +52,7 @@ static void Slice_appendStrLit(utils$Slice *a, const char *s) {
 static void mkdirForFile(const char *path) {
     char *dir = paths$dir(path);
     os$mkdirAll(dir, 0755, NULL);
-    free(dir);
+    sys$free(dir);
 }
 
 typedef struct {
@@ -115,7 +115,7 @@ static os$Time getSrcModTime(const char *path) {
         }
         os$FileInfo_free(files[i]);
     }
-    free(files);
+    sys$free(files);
     return t;
 }
 
@@ -128,7 +128,7 @@ static os$FileInfo *buildCFile(Builder *b, os$FileInfo *cFile) {
         char *base = sys$strdup(src);
         base[i] = '\0';
         dst = sys$sprintf("%s/%s.o", GEN_PATH, base);
-        free(base);
+        sys$free(base);
     }
     utils$Error *err = NULL;
     os$FileInfo *objFile = os$stat(dst, &err);
@@ -168,8 +168,8 @@ static Package newPackage(Builder *b, const char *path) {
         .deps = {.size = sizeof(Package *)},
         .isCmd = isCmd,
     };
-    free(genPath);
-    free(base);
+    sys$free(genPath);
+    sys$free(base);
     for (int i = 0; i < utils$Slice_len(&pkg.pkg->imports); i++) {
         types$Package *impt = NULL;
         utils$Slice_get(&pkg.pkg->imports, i, &impt);
@@ -201,7 +201,7 @@ extern bool SliceIter_next(SliceIter *iter, void *it) {
 static void emitInclude(emitter$Emitter *e, const char *path) {
     char *s = sys$sprintf("#include \"%s\"\n", path);
     emitter$emitString(e, s);
-    free(s);
+    sys$free(s);
 }
 
 static void writeFile(const char *path, const char *out) {
@@ -225,7 +225,7 @@ static void genHeader(Builder *b, Package *pkg) {
     cemitter$emitHeader(&e, pkg->pkg);
     char *out = emitter$Emitter_string(&e);
     writeFile(pkg->hPath, out);
-    free(out);
+    sys$free(out);
 }
 
 static void getCFile(Builder *b, Package *pkg) {
@@ -234,7 +234,7 @@ static void getCFile(Builder *b, Package *pkg) {
     cemitter$emitBody(&e, pkg->pkg);
     char *out = emitter$Emitter_string(&e);
     writeFile(pkg->cPath, out);
-    free(out);
+    sys$free(out);
 }
 
 static Package *buildCPackage(Builder *b, const char *path) {

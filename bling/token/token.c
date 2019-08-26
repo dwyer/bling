@@ -308,6 +308,6 @@ extern void token$FileSet_print(token$FileSet *fset) {
         utils$Slice_get(&fset->files, i, &f);
         char *s = sys$sprintf("%d: %s (base=%d, size=%d)", i, f->name, f->base, f->size);
         print(s);
-        free(s);
+        sys$free(s);
     }
 }

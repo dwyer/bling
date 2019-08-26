@@ -58,8 +58,8 @@ fun clearError() {
 }
 
 fun Error_free(e *Error) {
-    free(e.error)
-    free(e)
+    sys.free(e.error)
+    sys.free(e)
 }
 
 fun Slice_make(size int) Slice {
@@ -73,7 +73,7 @@ fun Slice_make(size int) Slice {
 }
 
 fun Slice_unmake(s *Slice) {
-    free(s._array)
+    sys.free(s._array)
 }
 
 fun Slice_len(s *const Slice) int {
@@ -167,7 +167,7 @@ fun djb2(s *const char) uintptr_t {
 }
 
 fun memdup(src *const void, size size_t) *void {
-    return sys.memcpy(malloc(size), src, size)
+    return sys.memcpy(sys.malloc(size), src, size)
 }
 
 typ MapPair struct {

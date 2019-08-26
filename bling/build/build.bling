@@ -31,7 +31,7 @@ fun emit_rawfile(e *emitter.Emitter, filename *const char) {
         panic(err.error)
     }
     emitter.emitString(e, src)
-    free(src)
+    sys.free(src)
 }
 
 fun printStrArray(s **char) {
@@ -53,7 +53,7 @@ fun execute(cmd *utils.Slice) {
     if code != 0 {
         panic(sys.sprintf("- failed with code %d", code))
     }
-    free(args)
+    sys.free(args)
 }
 
 fun Slice_appendStrLit(a *utils.Slice, s *const char) {
@@ -63,7 +63,7 @@ fun Slice_appendStrLit(a *utils.Slice, s *const char) {
 fun mkdirForFile(path *const char) {
     var dir *char = paths.dir(path)
     os.mkdirAll(dir, 0755, NULL)
-    free(dir)
+    sys.free(dir)
 }
 
 typ Package struct {
@@ -128,7 +128,7 @@ fun getSrcModTime(path *const char) os.Time {
         }
         os.FileInfo_free(files[i])
     }
-    free(files)
+    sys.free(files)
     return t
 }
 
@@ -140,7 +140,7 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
         var base *char = sys.strdup(src)
         base[i] = '\0'
         dst = sys.sprintf("%s/%s.o", GEN_PATH, base)
-        free(base)
+        sys.free(base)
     }
     var err *utils.Error = NULL
     var objFile *os.FileInfo = os.stat(dst, &err)
@@ -178,8 +178,8 @@ fun newPackage(b *Builder, path *const char) Package {
         },
         isCmd: isCmd,
     }
-    free(genPath)
-    free(base)
+    sys.free(genPath)
+    sys.free(base)
     for var i int = 0; i < utils.Slice_len(&pkg.pkg.imports); i++ {
         var impt *types.Package = NULL
         utils.Slice_get(&pkg.pkg.imports, i, &impt)
@@ -211,7 +211,7 @@ fun SliceIter_next(iter *SliceIter, it *void) bool {
 fun emitInclude(e *emitter.Emitter, path *const char) {
     var s *char = sys.sprintf("#include \"%s\"\n", path)
     emitter.emitString(e, s)
-    free(s)
+    sys.free(s)
 }
 
 fun writeFile(path *const char, out *const char) {
@@ -234,7 +234,7 @@ fun genHeader(b *Builder, pkg *Package) {
     cemitter.emitHeader(&e, pkg.pkg)
     var out *char = emitter.Emitter_string(&e)
     writeFile(pkg.hPath, out)
-    free(out)
+    sys.free(out)
 }
 
 fun getCFile(b *Builder, pkg *Package) {
@@ -243,7 +243,7 @@ fun getCFile(b *Builder, pkg *Package) {
     cemitter.emitBody(&e, pkg.pkg)
     var out *char = emitter.Emitter_string(&e)
     writeFile(pkg.cPath, out)
-    free(out)
+    sys.free(out)
 }
 
 fun buildCPackage(b *Builder, path *const char) *Package {

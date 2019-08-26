@@ -424,6 +424,6 @@ fun FileSet_print(fset *FileSet) {
         utils.Slice_get(&fset.files, i, &f)
         var s *char = sys.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
         print(s)
-        free(s)
+        sys.free(s)
     }
 }

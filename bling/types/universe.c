@@ -110,8 +110,8 @@ extern ast$Scope *types$universe() {
         _universe = file->scope;
         types$Config conf = {.strict = true};
         types$checkFile(&conf, "builtin", fset, file, NULL);
-        free(file->decls);
-        free(file);
+        sys$free(file->decls);
+        sys$free(file);
     }
     return _universe;
 }

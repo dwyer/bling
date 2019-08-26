@@ -59,7 +59,7 @@ static token$Token switch2(scanner$Scanner *s, token$Token tok0,
 
 static char *make_string_slice(scanner$Scanner *s, int start, int end) {
     size_t len = end - start + 1;
-    char *lit = malloc(len);
+    char *lit = sys$malloc(len);
     sys$strlcpy(lit, &s->src[start], len);
     return lit;
 }
@@ -175,7 +175,7 @@ scan_again:
         if (sys$strlen(*lit) > 1) {
             tok = token$lookup(*lit);
             if (tok != token$IDENT) {
-                free(*lit);
+                sys$free(*lit);
                 *lit = NULL;
             }
             switch (tok) {

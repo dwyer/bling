@@ -580,7 +580,7 @@ static ast$Expr *type_name(parser$Parser *p) {
     ast$Expr *type = specifier_qualifier_list(p);
     ast$Decl *decl = abstract_declarator(p, type);
     type = decl->field.type;
-    free(decl);
+    sys$free(decl);
     return type;
 }
 
@@ -1302,6 +1302,6 @@ extern ast$File *cparser$parseFile(token$FileSet *fset, const char *filename,
     p.c_mode = true;
     assert(scope);
     ast$File *file = parse_cfile(&p, scope);
-    free(src);
+    sys$free(src);
     return file;
 }

@@ -56,7 +56,7 @@ fun join2(a *const char, b *const char) *char {
 }
 
 fun split(path *const char) **char {
-    var names **char = malloc(sizeof(*char) * 2)
+    var names **char = sys.malloc(sizeof(*char) * 2)
     names[0] = dir(path)
     names[1] = base(path)
     return names

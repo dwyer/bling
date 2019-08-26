@@ -54,7 +54,7 @@ extern void ast$Scope_print(ast$Scope *s) {
         while (utils$MapIter_next(&iter, &key, NULL)) {
             char *s = sys$sprintf("%s- %s", bytes$Buffer_string(&buf), key);
             print(s);
-            free(s);
+            sys$free(s);
         }
         s = s->outer;
         bytes$Buffer_writeByte(&buf, '\t', NULL);
@@ -74,7 +74,7 @@ extern bool ast$resolve(ast$Scope *scope, ast$Expr *ident) {
 
 extern void ast$Scope_free(ast$Scope *s) {
     utils$Map_unmake(&s->objects);
-    free(s);
+    sys$free(s);
 }
 
 extern bool ast$isIdent(ast$Expr *x) {

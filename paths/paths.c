@@ -53,7 +53,7 @@ extern char *paths$join2(const char *a, const char *b) {
 }
 
 extern char **paths$split(const char *path) {
-    char **names = malloc(sizeof(char *) * 2);
+    char **names = sys$malloc(sizeof(char *) * 2);
     names[0] = paths$dir(path);
     names[1] = paths$base(path);
     return names;

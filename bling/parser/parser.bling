@@ -123,7 +123,7 @@ fun errorExpected(p *Parser, pos token.Pos, msg *char) {
     }
     msg = bytes.Buffer_string(&buf)
     error(p, pos, msg)
-    free(msg)
+    sys.free(msg)
 }
 
 fun accept(p *Parser, tok0 token.Token) bool {
@@ -1312,7 +1312,7 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
             utils.Slice_append(&files, &file)
         }
     }
-    free(infos)
+    sys.free(infos)
     return utils.nilArray(&files)
 }
 
@@ -1373,7 +1373,7 @@ fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.
     }
     var p Parser = {}
     init(&p, fset, filename, src)
-    free(src)
+    sys.free(src)
     var file *ast.File = _parseFile(&p, scope)
     return file
 }

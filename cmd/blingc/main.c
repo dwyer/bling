@@ -31,7 +31,7 @@ void emit_rawfile(emitter$Emitter *e, const char *filename) {
         panic(err->error);
     }
     emitter$emitString(e, src);
-    free(src);
+    sys$free(src);
 }
 
 static bool isForwardDecl(ast$Decl *decl) {

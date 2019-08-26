@@ -63,7 +63,7 @@ extern char *bytes$Buffer_bytes(bytes$Buffer *b) {
 
 extern char *bytes$Buffer_string(bytes$Buffer *b) {
     bytes$Buffer_init(b);
-    char *s = malloc(bytes$Buffer_len(b) + 1);
+    char *s = sys$malloc(bytes$Buffer_len(b) + 1);
     sys$memcpy(s, utils$Slice_get(b, 0, NULL), bytes$Buffer_len(b));
     s[bytes$Buffer_len(b)] = '\0';
     return s;

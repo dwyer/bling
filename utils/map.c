@@ -20,7 +20,7 @@ static uintptr_t djb2(const char *s) {
 }
 
 static void *memdup(const void *src, size_t size) {
-    return sys$memcpy(malloc(size), src, size);
+    return sys$memcpy(sys$malloc(size), src, size);
 }
 
 typedef struct {

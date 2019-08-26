@@ -68,7 +68,7 @@ fun switch2(s *Scanner, tok0 token.Token, tok1 token.Token) token.Token {
 
 fun make_string_slice(s *Scanner, start int, end int) *char {
     var len size_t = end - start + 1
-    var lit *char = malloc(len)
+    var lit *char = sys.malloc(len)
     sys.strlcpy(lit, &s.src[start], len)
     return lit
 }
@@ -182,7 +182,7 @@ scan_again:
         if sys.strlen(*lit) > 1 {
             tok = token.lookup(*lit)
             if tok != token.IDENT {
-                free(*lit)
+                sys.free(*lit)
                 *lit = NULL
             }
             switch tok {

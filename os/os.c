@@ -24,7 +24,7 @@ static void PathError_check(const char *path, utils$Error **error) {
     if (err) {
         char *msg = err->error;
         err->error = sys$sprintf("PathError: %s: %s", path, msg);
-        free(msg);
+        sys$free(msg);
         utils$Error_move(err, error);
     }
 }
@@ -95,9 +95,9 @@ extern os$FileInfo *os$stat(const char *name, utils$Error **error) {
 
 extern void os$FileInfo_free(os$FileInfo *info) {
     if (info) {
-        free(info->_name);
-        free(info->_sys);
-        free(info);
+        sys$free(info->_name);
+        sys$free(info->_sys);
+        sys$free(info);
     }
 }
 
@@ -140,7 +140,7 @@ extern os$FileInfo **os$readdir(os$File *file, utils$Error **error) {
     utils$Slice arr = {.size = sizeof(uintptr_t)};
     for (int i = 0; names[i] != NULL; i++) {
         char *path = paths$join2(file->name, names[i]);
-        free(names[i]);
+        sys$free(names[i]);
         os$FileInfo *info = os$stat(path, &err);
         if (err != NULL) {
             os$close(file, NULL);
@@ -149,7 +149,7 @@ extern os$FileInfo **os$readdir(os$File *file, utils$Error **error) {
         }
         utils$Slice_append(&arr, &info);
     }
-    free(names);
+    sys$free(names);
     return utils$nilArray(&arr);
 }
 
@@ -200,7 +200,7 @@ extern void os$mkdirAll(const char *path, uint32_t mode, utils$Error **error) {
     if (!streq(dir, ".")) {
         os$mkdirAll(dir, mode, error);
     }
-    free(dir);
+    sys$free(dir);
     utils$Error *err = NULL;
     os$mkdir(path, mode, &err);
     switch (sys$errno()) {

@@ -111,7 +111,7 @@ extern void parser$errorExpected(parser$Parser *p, token$Pos pos, char *msg) {
     }
     msg = bytes$Buffer_string(&buf);
     parser$error(p, pos, msg);
-    free(msg);
+    sys$free(msg);
 }
 
 extern bool parser$accept(parser$Parser *p, token$Token tok0) {
@@ -1421,7 +1421,7 @@ extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
             utils$Slice_append(&files, &file);
         }
     }
-    free(infos);
+    sys$free(infos);
     return utils$nilArray(&files);
 }
 
@@ -1484,7 +1484,7 @@ extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename,
     }
     parser$Parser p = {};
     parser$init(&p, fset, filename, src);
-    free(src);
+    sys$free(src);
     ast$File *file = _parseFile(&p, scope);
     // print(sys$sprintf("%s: %d/%d unresolved", filename,
     //             utils$Slice_len(&p.unresolved),

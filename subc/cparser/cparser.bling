@@ -468,7 +468,7 @@ fun type_name(p *parser.Parser) *ast.Expr {
     var type *ast.Expr = specifier_qualifier_list(p)
     var decl *ast.Decl = abstract_declarator(p, type)
     type = decl.field.type
-    free(decl)
+    sys.free(decl)
     return type
 }
 
@@ -1073,6 +1073,6 @@ fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.
     p.c_mode = true
     assert(scope)
     var file *ast.File = parse_cfile(&p, scope)
-    free(src)
+    sys.free(src)
     return file
 }
