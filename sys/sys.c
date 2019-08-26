@@ -61,6 +61,10 @@ extern void *sys$realloc(void *ptr, size_t n) {
     return realloc(ptr, n);
 }
 
+extern bool sys$streq(const char *a, const char *b) {
+    return strcmp(a, b) == 0;
+}
+
 extern int sys$run(char *const argv[]) {
     int status = -1;
     pid_t pid = fork();

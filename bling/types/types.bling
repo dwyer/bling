@@ -128,7 +128,7 @@ fun isArithmetic(type *ast.Expr) bool {
     case ast.EXPR_STAR, ast.TYPE_ENUM:
         return true
     case ast.TYPE_NATIVE:
-        return !streq(type.native.name, "void")
+        return !sys.streq(type.native.name, "void")
     default:
         return false
     }
@@ -137,7 +137,7 @@ fun isArithmetic(type *ast.Expr) bool {
 fun isNative(type *ast.Expr, name *const char) bool {
     switch type.kind {
     case ast.EXPR_IDENT:
-        return streq(type.ident.name, name)
+        return sys.streq(type.ident.name, name)
     case ast.TYPE_NATIVE:
         return true
     default:
@@ -306,7 +306,7 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
         var field *ast.Decl = type.struct_.fields[i]
         var fieldName *ast.Expr = field.field.name
         if fieldName {
-            if streq(name.ident.name, fieldName.ident.name) {
+            if sys.streq(name.ident.name, fieldName.ident.name) {
                 type = field.field.type
                 return field
             }

@@ -464,7 +464,7 @@ fun isIdent(x *Expr) bool {
 }
 
 fun isIdentNamed(x *Expr, name *const char) bool {
-    return isIdent(x) && streq(x.ident.name, name)
+    return isIdent(x) && sys.streq(x.ident.name, name)
 }
 
 fun isNil(x *Expr) bool {
@@ -472,7 +472,7 @@ fun isNil(x *Expr) bool {
 }
 
 fun isVoid(x *Expr) bool {
-    return isIdent(x) && streq(x.ident.name, "void")
+    return isIdent(x) && sys.streq(x.ident.name, "void")
 }
 
 fun isVoidPtr(x *Expr) bool {

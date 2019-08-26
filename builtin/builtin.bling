@@ -8,4 +8,3 @@ const NULL *void = 0
 fun assert(bool)
 fun panic(fmt *const char)
 fun print(fmt *const char)
-fun streq(a *const char, b *const char) bool

@@ -69,7 +69,7 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
             ast$Scope *scope = obj->scope;
             if (scope) {
                 char *pkg = scope->pkg;
-                if (pkg && !streq(pkg, "main")) {
+                if (pkg && !sys$streq(pkg, "main")) {
                     emitter$emitString(e, pkg);
                     emitter$emitToken(e, token$DOLLAR);
                 }

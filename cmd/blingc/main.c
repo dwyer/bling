@@ -60,7 +60,7 @@ static bool isForwardDecl(ast$Decl *decl) {
 void compile_c(char *argv[]) {
     const char *dst = NULL;
     while (**argv == '-') {
-        if (streq(*argv, "-o")) {
+        if (sys$streq(*argv, "-o")) {
             argv++;
             dst = *argv;
         } else {
@@ -117,7 +117,7 @@ void compile_bling(char *argv[]) {
     types$Config conf = {.strict = true};
     char *dst = NULL;
     while (**argv == '-') {
-        if (streq(*argv, "-o")) {
+        if (sys$streq(*argv, "-o")) {
             argv++;
             dst = *argv;
         } else {
@@ -177,14 +177,14 @@ int main(int argc, char *argv[]) {
     if (!*argv) {
         panic(sys$sprintf("usage: %s -o DST SRCS", progname));
     }
-    if (streq(*argv, "version")) {
+    if (sys$streq(*argv, "version")) {
         print("0.0.0-alpha");
         return 0;
     }
-    if (streq(*argv, "build")) {
+    if (sys$streq(*argv, "build")) {
         argv++;
         build$buildPackage(argv);
-    } else if (streq(*argv, "-c")) {
+    } else if (sys$streq(*argv, "-c")) {
         argv++;
         compile_c(argv);
     } else {

@@ -63,7 +63,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
             var scope *ast.Scope = obj.scope
             if scope {
                 var pkg *char = scope.pkg
-                if pkg && !streq(pkg, "main") {
+                if pkg && !sys.streq(pkg, "main") {
                     emitter.emitString(e, pkg)
                     emitter.emitToken(e, token.DOLLAR)
                 }

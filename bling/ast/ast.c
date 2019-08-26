@@ -82,7 +82,7 @@ extern bool ast$isIdent(ast$Expr *x) {
 }
 
 extern bool ast$isIdentNamed(ast$Expr *x, const char *name) {
-    return ast$isIdent(x) && streq(x->ident.name, name);
+    return ast$isIdent(x) && sys$streq(x->ident.name, name);
 }
 
 extern bool ast$isNil(ast$Expr *x) {
@@ -90,7 +90,7 @@ extern bool ast$isNil(ast$Expr *x) {
 }
 
 extern bool ast$isVoid(ast$Expr *x) {
-    return ast$isIdent(x) && streq(x->ident.name, "void");
+    return ast$isIdent(x) && sys$streq(x->ident.name, "void");
 }
 
 extern bool ast$isVoidPtr(ast$Expr *x) {

@@ -119,7 +119,7 @@ static bool types$isArithmetic(ast$Expr *type) {
     case ast$TYPE_ENUM:
         return true;
     case ast$TYPE_NATIVE:
-        return !streq(type->native.name, "void");
+        return !sys$streq(type->native.name, "void");
     default:
         return false;
     }
@@ -128,7 +128,7 @@ static bool types$isArithmetic(ast$Expr *type) {
 static bool types$isNative(ast$Expr *type, const char *name) {
     switch (type->kind) {
     case ast$EXPR_IDENT:
-        return streq(type->ident.name, name);
+        return sys$streq(type->ident.name, name);
     case ast$TYPE_NATIVE:
         return true;
     default:
@@ -300,7 +300,7 @@ static ast$Decl *getStructFieldByName(ast$Expr *type, ast$Expr *name) {
         ast$Decl *field = type->struct_.fields[i];
         ast$Expr *fieldName = field->field.name;
         if (fieldName) {
-            if (streq(name->ident.name, fieldName->ident.name)) {
+            if (sys$streq(name->ident.name, fieldName->ident.name)) {
                 type = field->field.type;
                 return field;
             }

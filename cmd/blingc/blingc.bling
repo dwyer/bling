@@ -50,7 +50,7 @@ fun isForwardDecl(decl *ast.Decl) bool {
 fun compile_c(argv []*char) {
     var dst *const char = NULL
     while **argv == '-' {
-        if streq(*argv, "-o") {
+        if sys.streq(*argv, "-o") {
             argv++
             dst = *argv
         } else {
@@ -105,7 +105,7 @@ fun compile_bling(argv []*char) {
     }
     var dst *char = NULL
     while **argv == '-' {
-        if streq(*argv, "-o") {
+        if sys.streq(*argv, "-o") {
             argv++
             dst = *argv
         } else {
@@ -165,14 +165,14 @@ fun main(argc int, argv []*char) int {
     if !*argv {
         panic(sys.sprintf("usage: %s -o DST SRCS", progname))
     }
-    if streq(*argv, "version") {
+    if sys.streq(*argv, "version") {
         print("0.0.0-alpha")
         return 0
     }
-    if streq(*argv, "build") {
+    if sys.streq(*argv, "build") {
         argv++
         build.buildPackage(argv)
-    } else if streq(*argv, "-c") {
+    } else if sys.streq(*argv, "-c") {
         argv++
         compile_c(argv)
     } else {

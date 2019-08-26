@@ -156,7 +156,7 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
 fun newPackage(b *Builder, path *const char) Package {
     var base *char = paths.base(path)
     var typesPkg *types.Package = types.check(&b.conf, path, b.fset, NULL, b.info)
-    var isCmd bool = typesPkg.name ? streq(typesPkg.name, "main") : false
+    var isCmd bool = typesPkg.name ? sys.streq(typesPkg.name, "main") : false
     var genPath *char = paths.join2(GEN_PATH, path)
     var libPath *char = sys.sprintf("%s/%s.a", genPath, base)
     if isCmd {
@@ -341,7 +341,7 @@ fun _buildPackage(b *Builder, path *const char) *Package {
     }
     if VERBOSE {
     }
-    if streq(path, "bootstrap") || streq(path, "os") || streq(path, "sys") {
+    if sys.streq(path, "bootstrap") || sys.streq(path, "os") || sys.streq(path, "sys") {
         pkg = buildCPackage(b, path)
     } else {
         pkg = buildBlingPackage(b, path)

@@ -10,19 +10,10 @@ extern void print(const char *s) {
     fprintf(stderr, "%s\n", s);
 }
 
-extern void panic0(void) {
+extern void panic(const char *s) {
+    print(s);
     void *buf[BUFSIZ];
     int n = backtrace(buf, BUFSIZ);
     backtrace_symbols_fd(buf, n, STDERR_FILENO);
     exit(1);
-}
-
-extern void panic(const char *s) {
-    print(s);
-    panic0();
-}
-
-extern int strcmp(const char *, const char *);
-extern bool streq(const char *a, const char *b) {
-    return strcmp(a, b) == 0;
 }

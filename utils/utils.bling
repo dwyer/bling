@@ -204,7 +204,7 @@ fun pair_ref(m *const Map, key *const void) *MapPair {
         stats.iters++
         var idx int = (hash + i) % Map_cap(m)
         var p *MapPair = Slice_get(&m._pairs, idx, NULL)
-        if !p.key || streq(key, p.key) {
+        if !p.key || sys.streq(key, p.key) {
             if !i {
                 stats.hits++
             } else {

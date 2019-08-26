@@ -57,7 +57,7 @@ static MapPair *pair_ref(const utils$Map *m, const void *key) {
         stats.iters++;
         int idx = (hash + i) % utils$Map_cap(m);
         MapPair *p = utils$Slice_get(&m->_pairs, idx, NULL);
-        if (!p->key || streq(key, p->key)) {
+        if (!p->key || sys$streq(key, p->key)) {
             if (!i) {
                 stats.hits++;
             } else {

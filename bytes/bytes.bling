@@ -7,7 +7,7 @@ typ Buffer utils.Slice
 
 fun hasSuffix(b *const char, suffix *const char) bool {
     for var i int = 0; b[i]; i++ {
-        if streq(&b[i], suffix) {
+        if sys.streq(&b[i], suffix) {
             return true
         }
     }

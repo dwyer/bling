@@ -148,7 +148,7 @@ static Package *_buildPackage(Builder *b, const char *path);
 static Package newPackage(Builder *b, const char *path) {
     char *base = paths$base(path);
     types$Package *typesPkg = types$check(&b->conf, path, b->fset, NULL, b->info);
-    bool isCmd = typesPkg->name ? streq(typesPkg->name, "main") : false;
+    bool isCmd = typesPkg->name ? sys$streq(typesPkg->name, "main") : false;
     char *genPath = paths$join2(GEN_PATH, path);
     char *libPath = sys$sprintf("%s/%s.a", genPath, base);
     if (isCmd) {
@@ -327,7 +327,8 @@ static Package *_buildPackage(Builder *b, const char *path) {
     if (VERBOSE) {
         // sys$printf("building %s\n", path);
     }
-    if (streq(path, "bootstrap") || streq(path, "os") || streq(path, "sys")) {
+    if (sys$streq(path, "bootstrap") || sys$streq(path, "os")
+            || sys$streq(path, "sys")) {
         pkg = buildCPackage(b, path);
     } else {
         pkg = buildBlingPackage(b, path);

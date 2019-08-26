@@ -359,7 +359,7 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
 }
 
 fun is_void(type *ast.Expr) bool {
-    return type == NULL || (type.kind == ast.EXPR_IDENT && streq(type.ident.name, "void"))
+    return type == NULL || (type.kind == ast.EXPR_IDENT && sys.streq(type.ident.name, "void"))
 }
 
 fun emitType(e *Emitter, type *ast.Expr) {

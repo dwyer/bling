@@ -4,7 +4,7 @@
 
 extern bool bytes$hasSuffix(const char *b, const char *suffix) {
     for (int i = 0; b[i]; i++) {
-        if (streq(&b[i], suffix)) {
+        if (sys$streq(&b[i], suffix)) {
             return true;
         }
     }

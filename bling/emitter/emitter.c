@@ -383,7 +383,8 @@ extern void emitter$emitStmt(emitter$Emitter *e, ast$Stmt *stmt) {
 }
 
 static bool is_void(ast$Expr *type) {
-    return type == NULL || (type->kind == ast$EXPR_IDENT && streq(type->ident.name, "void"));
+    return type == NULL || (type->kind == ast$EXPR_IDENT &&
+            sys$streq(type->ident.name, "void"));
 }
 
 extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {

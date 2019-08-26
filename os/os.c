@@ -197,7 +197,7 @@ extern void os$mkdir(const char *path, uint32_t mode, utils$Error **error) {
 
 extern void os$mkdirAll(const char *path, uint32_t mode, utils$Error **error) {
     char *dir = paths$dir(path);
-    if (!streq(dir, ".")) {
+    if (!sys$streq(dir, ".")) {
         os$mkdirAll(dir, mode, error);
     }
     sys$free(dir);
