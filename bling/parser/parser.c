@@ -250,7 +250,9 @@ extern ast$Expr *parser$parseOperand(parser$Parser *p, bool lhs) {
     case token$IDENT:
         {
             ast$Expr *x = parser$parseIdent(p);
-            parser$resolve(p, x);
+            if (!p->c_mode) {
+                parser$resolve(p, x);
+            }
             return x;
         }
     case token$CHAR:
@@ -279,10 +281,12 @@ extern ast$Expr *parser$parseOperand(parser$Parser *p, bool lhs) {
     default:
         break;
     }
-    ast$Expr *t = tryIdentOrType(p);
-    if (t) {
-        assert(t->kind != ast$EXPR_IDENT);
-        return t;
+    if (!p->c_mode) {
+        ast$Expr *t = tryIdentOrType(p);
+        if (t) {
+            assert(t->kind != ast$EXPR_IDENT);
+            return t;
+        }
     }
     parser$errorExpected(p, p->pos, "operand");
     return NULL;

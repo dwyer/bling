@@ -235,7 +235,9 @@ fun parseOperand(p *Parser, lhs bool) *ast.Expr {
     case token.IDENT:
         {
             var x *ast.Expr = parseIdent(p)
-            resolve(p, x)
+            if !p.c_mode {
+                resolve(p, x)
+            }
             return x
         }
     case token.CHAR, token.FLOAT, token.INT, token.STRING:
@@ -261,10 +263,12 @@ fun parseOperand(p *Parser, lhs bool) *ast.Expr {
     default:
         break
     }
-    var t *ast.Expr = tryIdentOrType(p)
-    if t {
-        assert(t.kind != ast.EXPR_IDENT)
-        return t
+    if !p.c_mode {
+        var t *ast.Expr = tryIdentOrType(p)
+        if t {
+            assert(t.kind != ast.EXPR_IDENT)
+            return t
+        }
     }
     errorExpected(p, p.pos, "operand")
     return NULL
