@@ -105,6 +105,7 @@ static ast$Expr *types$getBaseType(ast$Expr *type) {
             break;
         case ast$TYPE_ARRAY:
         case ast$TYPE_ENUM:
+        case ast$TYPE_MAP:
         case ast$TYPE_NATIVE:
         case ast$TYPE_STRUCT:
             return type;

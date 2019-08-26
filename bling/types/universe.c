@@ -64,6 +64,7 @@ static void defPredeclaredTypes() {
 
 typedef enum {
     _assert,
+    _mapmake,
     _panic,
     _print,
     numBuiltinIds,
@@ -81,6 +82,7 @@ static struct {
     exprKind kind;
 } predeclareFuncs[] = {
     [_assert]   = {"assert", 1, false, statement},
+    [_mapmake]  = {"mapmake", 1, false, expression},
     [_panic]    = {"panic", 1, false, statement},
     [_print]    = {"print", 1, false, statement},
 };

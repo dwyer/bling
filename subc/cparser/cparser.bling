@@ -10,7 +10,7 @@ import "sys"
 
 fun is_type(p *parser.Parser) bool {
     switch p.tok {
-    case token.CONST, token.ENUM, token.EXTERN, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED:
+    case token.CONST, token.ENUM, token.EXTERN, token.MAP, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED:
         return true
     case token.IDENT:
         {

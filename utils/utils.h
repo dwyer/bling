@@ -24,7 +24,7 @@ typedef struct {
     void *_array;
 } utils$Slice;
 
-extern utils$Slice utils$Slice_make(int size);
+extern utils$Slice utils$Slice_make(int size); // TODO replace with make
 extern void utils$Slice_unmake(utils$Slice *s);
 
 extern int utils$Slice_len(const utils$Slice *s); // TODO replace with len()
@@ -42,12 +42,12 @@ typedef struct {
     utils$Slice _pairs;
 } utils$Map;
 
-extern utils$Map utils$Map_make(int valSize);
-extern void utils$Map_unmake(utils$Map *m);
-extern int utils$Map_len(const utils$Map *m); // TODO replace with len()
-extern int utils$Map_cap(const utils$Map *m); // TODO replace with cap()
-extern bool utils$Map_get(const utils$Map *m, const char *key, void *val);
-extern void utils$Map_set(utils$Map *m, const char *key, const void *val);
+extern utils$Map utils$Map_make(int valSize); // TODO replace with make
+extern void utils$Map_unmake(void *m);
+extern int utils$Map_len(const void *m); // TODO replace with len()
+extern int utils$Map_cap(const void *m); // TODO replace with cap()
+extern bool utils$Map_get(const void *m, const char *key, void *val);
+extern void utils$Map_set(void *m, const char *key, const void *val);
 
 typedef struct {
     int hits;
@@ -61,5 +61,5 @@ typedef struct {
     int _idx;
 } utils$MapIter;
 
-extern utils$MapIter utils$NewMapIter(const utils$Map *m);
+extern utils$MapIter utils$NewMapIter(const void *m);
 extern int utils$MapIter_next(utils$MapIter *m, char **key, void *val);

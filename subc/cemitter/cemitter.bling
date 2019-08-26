@@ -543,7 +543,7 @@ fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
     emitObjects(e, scope, ast.ObjKind_FUN)
 }
 
-fun _emitPackage(e *emitter.Emitter, done *utils.Map, pkg *types.Package) {
+fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
     if utils.Map_get(done, pkg.path, NULL) {
         return
     }
@@ -560,7 +560,7 @@ fun _emitPackage(e *emitter.Emitter, done *utils.Map, pkg *types.Package) {
 }
 
 fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
-    var done utils.Map = utils.Map_make(sizeof(*char))
+    var done map *char = mapmake(sizeof(*char))
     _emitPackage(e, &done, pkg)
     utils.Map_unmake(&done)
 }

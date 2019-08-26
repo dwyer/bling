@@ -592,7 +592,7 @@ extern void cemitter$emitScope(emitter$Emitter *e, ast$Scope *scope) {
     emitObjects(e, scope, ast$ObjKind_FUN);
 }
 
-extern void _emitPackage(emitter$Emitter *e, utils$Map *done, types$Package *pkg) {
+static void _emitPackage(emitter$Emitter *e, map(char *) *done, types$Package *pkg) {
     if (utils$Map_get(done, pkg->path, NULL)) {
         return;
     }
@@ -609,7 +609,7 @@ extern void _emitPackage(emitter$Emitter *e, utils$Map *done, types$Package *pkg
 }
 
 extern void cemitter$emitPackage(emitter$Emitter *e, types$Package *pkg) {
-    utils$Map done = utils$Map_make(sizeof(char *));
+    map(char *) done = mapmake(sizeof(char *));
     _emitPackage(e, &done, pkg);
     utils$Map_unmake(&done);
 }

@@ -74,7 +74,7 @@ typedef struct {
     types$Info *info;
     bool force;
     types$Config conf;
-    utils$Map pkgs;
+    map(Package *) pkgs;
 } Builder;
 
 static void genObj(Builder *b, const char *dst, const char *src) {

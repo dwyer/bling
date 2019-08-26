@@ -185,16 +185,16 @@ fun Map_make(valSize int) Map {
     return m
 }
 
-fun Map_unmake(m *Map) {
-    Slice_unmake(&m._pairs)
+fun Map_unmake(m *void) {
+    Slice_unmake(&(typ *Map(m))._pairs)
 }
 
-fun Map_len(m *const Map) int {
-    return m._len
+fun Map_len(m *const void) int {
+    return (typ *Map(m))._len
 }
 
-fun Map_cap(m *const Map) int {
-    return Slice_len(&m._pairs)
+fun Map_cap(m *const void) int {
+    return Slice_len(&(typ *Map(m))._pairs)
 }
 
 fun pair_ref(m *const Map, key *const void) *MapPair {
@@ -227,37 +227,37 @@ fun set_unsafe(m *Map, key *const char, val *const void) {
     }
 }
 
-fun Map_get(m *const Map, key *const char, val *void) bool {
+fun Map_get(m *const void, key *const char, val *void) bool {
     var p *MapPair = pair_ref(m, key)
     if p.val {
         if val {
-            sys.memcpy(val, p.val, m._valSize)
+            sys.memcpy(val, p.val, (typ *Map(m))._valSize)
         }
         return true
     }
     return false
 }
 
-fun Map_set(m *Map, key *const char, val *const void) {
+fun Map_set(m *void, key *const char, val *const void) {
     set_unsafe(m, key, val)
     var load_factor float = typ float(Map_len(m)) / Map_cap(m)
     if load_factor >= MAP_LOAD_FACTOR {
         var newCap int = Map_cap(m) * 2
-        var pairs Slice = m._pairs
-        m._pairs = Slice_make(m._pairs.size)
-        Slice_setLen(&m._pairs, newCap)
-        m._len = 0
+        var pairs Slice = (typ *Map(m))._pairs
+        (typ *Map(m))._pairs = Slice_make((typ *Map(m))._pairs.size)
+        Slice_setLen(&(typ *Map(m))._pairs, newCap)
+        (typ *Map(m))._len = 0
         for var i int = 0; i < Slice_len(&pairs); i++ {
             var p *MapPair = Slice_get(&pairs, i, NULL)
             if p.key {
-                set_unsafe(m, p.key, p.val)
+                set_unsafe((typ *Map(m)), p.key, p.val)
             }
         }
         Slice_unmake(&pairs)
     }
 }
 
-fun NewMapIter(m *const Map) MapIter {
+fun NewMapIter(m *const void) MapIter {
     var iter MapIter = {
         _map: m,
     }

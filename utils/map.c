@@ -38,16 +38,16 @@ extern utils$Map utils$Map_make(int valSize) {
     return m;
 }
 
-extern void utils$Map_unmake(utils$Map *m) {
-    utils$Slice_unmake(&m->_pairs);
+extern void utils$Map_unmake(void *m) {
+    utils$Slice_unmake(&((utils$Map *)m)->_pairs);
 }
 
-extern int utils$Map_len(const utils$Map *m) {
-    return m->_len;
+extern int utils$Map_len(const void *m) {
+    return ((utils$Map *)m)->_len;
 }
 
-extern int utils$Map_cap(const utils$Map *m) {
-    return utils$Slice_len(&m->_pairs);
+extern int utils$Map_cap(const void *m) {
+    return utils$Slice_len(&((utils$Map *)m)->_pairs);
 }
 
 static MapPair *pair_ref(const utils$Map *m, const void *key) {
@@ -80,37 +80,37 @@ static void set_unsafe(utils$Map *m, const char *key, const void *val) {
     }
 }
 
-extern bool utils$Map_get(const utils$Map *m, const char *key, void *val) {
+extern bool utils$Map_get(const void *m, const char *key, void *val) {
     MapPair *p = pair_ref(m, key);
     if (p->val) {
         if (val) {
-            sys$memcpy(val, p->val, m->_valSize);
+            sys$memcpy(val, p->val, ((utils$Map *)m)->_valSize);
         }
         return true;
     }
     return false;
 }
 
-extern void utils$Map_set(utils$Map *m, const char *key, const void *val) {
+extern void utils$Map_set(void *m, const char *key, const void *val) {
     set_unsafe(m, key, val);
     float load_factor = (float)utils$Map_len(m) / utils$Map_cap(m);
     if (load_factor >= MAP_LOAD_FACTOR) {
         int newCap = utils$Map_cap(m) * 2;
-        utils$Slice pairs = m->_pairs;
-        m->_pairs = utils$Slice_make(m->_pairs.size);
-        utils$Slice_setLen(&m->_pairs, newCap);
-        m->_len = 0;
+        utils$Slice pairs = ((utils$Map *)m)->_pairs;
+        ((utils$Map *)m)->_pairs = utils$Slice_make(((utils$Map *)m)->_pairs.size);
+        utils$Slice_setLen(&((utils$Map *)m)->_pairs, newCap);
+        ((utils$Map *)m)->_len = 0;
         for (int i = 0; i < utils$Slice_len(&pairs); i++) {
             MapPair *p = utils$Slice_get(&pairs, i, NULL);
             if (p->key) {
-                set_unsafe(m, p->key, p->val);
+                set_unsafe(((utils$Map *)m), p->key, p->val);
             }
         }
         utils$Slice_unmake(&pairs);
     }
 }
 
-extern utils$MapIter utils$NewMapIter(const utils$Map *m) {
+extern utils$MapIter utils$NewMapIter(const void *m) {
     utils$MapIter iter = {._map = m};
     return iter;
 }

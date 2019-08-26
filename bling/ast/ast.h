@@ -403,7 +403,7 @@ extern ast$Object *ast$newObject(ast$ObjKind kind, char *name);
 
 typedef struct ast$Scope {
     ast$Scope *outer;
-    utils$Map objects;
+    map(ast$Object *) objects;
     utils$Slice keys;
     char *pkg;
 } ast$Scope;

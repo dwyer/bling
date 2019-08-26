@@ -27,17 +27,17 @@ typedef struct {
 } types$Config;
 
 typedef struct {
-    utils$Map imports; // map of types$Package
-} types$Info;
-
-extern types$Info *types$newInfo();
-
-typedef struct {
     char *path;
     char *name;
     ast$Scope *scope;
     utils$Slice imports;
 } types$Package;
+
+typedef struct {
+    map(types$Package) imports; // map of types$Package
+} types$Info;
+
+extern types$Info *types$newInfo();
 
 extern types$Package *types$checkFile(types$Config *conf, const char *path,
         token$FileSet *fset, ast$File *file, types$Info *info);

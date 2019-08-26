@@ -383,7 +383,7 @@ typ Stmt struct {
 
 typ Scope struct {
     outer *Scope
-    objects utils.Map
+    objects map *Object
     keys utils.Slice
     pkg *char
 }

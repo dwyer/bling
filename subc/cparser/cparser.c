@@ -29,6 +29,7 @@ static bool is_type(parser$Parser *p) {
     case token$CONST:
     case token$ENUM:
     case token$EXTERN:
+    case token$MAP:
     case token$SIGNED:
     case token$STATIC:
     case token$STRUCT:

@@ -17,6 +17,8 @@
 
 #define map(T) utils$Map
 
+#define mapmake(size) {._valSize = size}
+
 #define fallthrough /**/
 #define typ typedef
 

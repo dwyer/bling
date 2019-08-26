@@ -85,7 +85,7 @@ typ Builder struct {
     info *types.Info
     force bool
     conf types.Config
-    pkgs utils.Map
+    pkgs map *Package
 }
 
 fun genObj(b *Builder, dst *const char, src *const char) {

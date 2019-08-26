@@ -13,15 +13,15 @@ typ Config struct {
     ignoreFuncBodies bool
 }
 
-typ Info struct {
-    imports utils.Map
-}
-
 typ Package struct {
     path *char
     name *char
     scope *ast.Scope
     imports utils.Slice
+}
+
+typ Info struct {
+    imports map Package
 }
 
 typ BasicKind enum {
@@ -157,7 +157,7 @@ fun getBaseType(type *ast.Expr) *ast.Expr {
         case ast.EXPR_SELECTOR:
             type = type.selector.sel
             break
-        case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
+        case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_MAP, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
             return type
         default:
             panic(sys.sprintf("not a type: %s", typeString(type)))
@@ -1190,6 +1190,7 @@ fun defPredeclaredTypes() {
 
 typ builtinId enum {
     _assert
+    _mapmake
     _panic
     _print
     numBuiltinIds
@@ -1211,6 +1212,12 @@ var predeclareFuncs []struct {
         1,
         false,
         statement,
+    },
+    _mapmake: {
+        "mapmake",
+        1,
+        false,
+        expression,
     },
     _panic: {
         "panic",
