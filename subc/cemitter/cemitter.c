@@ -48,16 +48,18 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
 
     case ast$EXPR_COMPOSITE_LIT:
         emitter$emitToken(e, token$LBRACE);
-        emitter$emitNewline(e);
-        e->indent++;
-        for (ast$Expr **exprs = expr->composite.list; exprs && *exprs; exprs++) {
-            emitter$emitTabs(e);
-            cemitter$emitExpr(e, *exprs);
-            emitter$emitToken(e, token$COMMA);
+        if (expr->composite.list && expr->composite.list[0]) {
             emitter$emitNewline(e);
+            e->indent++;
+            for (int i = 0; expr->composite.list[i]; i++) {
+                emitter$emitTabs(e);
+                cemitter$emitExpr(e, expr->composite.list[i]);
+                emitter$emitToken(e, token$COMMA);
+                emitter$emitNewline(e);
+            }
+            e->indent--;
+            emitter$emitTabs(e);
         }
-        e->indent--;
-        emitter$emitTabs(e);
         emitter$emitToken(e, token$RBRACE);
         break;
 
