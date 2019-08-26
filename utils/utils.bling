@@ -33,7 +33,7 @@ typ MapIter struct {
 
 fun NewError(msg *const char) *Error {
     var err Error = {
-        error: strdup(msg),
+        error: sys.strdup(msg),
     }
     return &&err
 }
@@ -219,7 +219,7 @@ fun pair_ref(m *const Map, key *const void) *MapPair {
 fun set_unsafe(m *Map, key *const char, val *const void) {
     var p *MapPair = pair_ref(m, key)
     if p.key == NULL {
-        p.key = strdup(key)
+        p.key = sys.strdup(key)
         p.val = memdup(val, m._valSize)
         m._len++
     } else {

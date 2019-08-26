@@ -72,7 +72,7 @@ static MapPair *pair_ref(const utils$Map *m, const void *key) {
 static void set_unsafe(utils$Map *m, const char *key, const void *val) {
     MapPair *p = pair_ref(m, key);
     if (p->key == NULL) {
-        p->key = strdup(key);
+        p->key = sys$strdup(key);
         p->val = memdup(val, m->_valSize);
         m->_len++;
     } else {

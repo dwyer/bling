@@ -23,9 +23,9 @@ extern int bytes$indexByte(const char *b, char c) {
 extern char *bytes$join(const char *a[], int size, const char *sep) {
     switch (size) {
     case 0:
-        return strdup("");
+        return sys$strdup("");
     case 1:
-        return strdup(a[0]);
+        return sys$strdup(a[0]);
     }
     bytes$Buffer b = {};
     bytes$Buffer_write(&b, a[0], strlen(a[0]), NULL);

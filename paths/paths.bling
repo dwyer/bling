@@ -1,16 +1,17 @@
 package paths
 
 import "bytes"
+import "sys"
 
 fun base(path *const char) *char {
     if path == NULL || path[0] == '\0' {
-        return strdup(".")
+        return sys.strdup(".")
     }
     var i int = bytes.lastIndexByte(path, '/')
     if i > 0 {
         path = &path[i + 1]
     }
-    return strdup(path)
+    return sys.strdup(path)
 }
 
 fun clean(path *const char) *char {
@@ -19,15 +20,15 @@ fun clean(path *const char) *char {
 
 fun dir(path *const char) *char {
     if path == NULL || path[0] == '\0' {
-        return strdup(".")
+        return sys.strdup(".")
     }
     var i int = bytes.lastIndexByte(path, '/')
     if i > 0 {
-        var p *char = strdup(path)
+        var p *char = sys.strdup(path)
         p[i] = '\0'
         return p
     }
-    return strdup(".")
+    return sys.strdup(".")
 }
 
 fun ext(path *const char) *const char {

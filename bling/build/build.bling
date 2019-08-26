@@ -137,7 +137,7 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
     var dst *char = NULL
     {
         var i int = bytes.lastIndexByte(src, '.')
-        var base *char = strdup(src)
+        var base *char = sys.strdup(src)
         base[i] = '\0'
         dst = sys.sprintf("%s/%s.o", GEN_PATH, base)
         free(base)
@@ -165,7 +165,7 @@ fun newPackage(b *Builder, path *const char) Package {
         libPath = sys.sprintf("%s/%s.a", genPath, base)
     }
     var pkg Package = {
-        path: strdup(path),
+        path: sys.strdup(path),
         pkg: typesPkg,
         hPath: sys.sprintf("%s/%s.h", genPath, base),
         cPath: sys.sprintf("%s/%s.c", genPath, base),

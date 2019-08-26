@@ -262,7 +262,7 @@ extern token$File *token$FileSet_addFile(token$FileSet *s,
     int zero = 0;
     utils$Slice_append(&lines, &zero);
     token$File file = {
-        .name = strdup(filename),
+        .name = sys$strdup(filename),
         .base = base,
         .size = size,
         .lines = lines,

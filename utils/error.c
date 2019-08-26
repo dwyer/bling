@@ -4,7 +4,7 @@
 
 extern utils$Error *utils$NewError(const char *msg) {
     utils$Error err = {
-        .error = strdup(msg),
+        .error = sys$strdup(msg),
     };
     return esc(err);
 }

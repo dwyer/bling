@@ -5,7 +5,7 @@ typedef String struct {
 
 fun newString(str *char) String {
     var s String = {
-        _str: strdup(str),
+        _str: sys$strdup(str),
         _len: strlen(str),
     }
     return s

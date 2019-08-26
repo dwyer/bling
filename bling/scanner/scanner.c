@@ -333,7 +333,7 @@ scan_again:
 }
 
 extern void scanner$init(scanner$Scanner *s, token$File *file, char *src) {
-    file->src = strdup(src);
+    file->src = sys$strdup(src);
     s->file = file;
     s->src = file->src;
     s->rd_offset = 0;

@@ -1,16 +1,17 @@
 #include "paths/paths.h"
 
 #include "bytes/bytes.h"
+#include "sys/sys.h"
 
 extern char *paths$base(const char *path) {
     if (path == NULL || path[0] == '\0') {
-        return strdup(".");
+        return sys$strdup(".");
     }
     int i = bytes$lastIndexByte(path, '/');
     if (i > 0) {
         path = &path[i+1];
     }
-    return strdup(path);
+    return sys$strdup(path);
 }
 
 extern char *paths$clean(const char *path) {
@@ -19,15 +20,15 @@ extern char *paths$clean(const char *path) {
 
 extern char *paths$dir(const char *path) {
     if (path == NULL || path[0] == '\0') {
-        return strdup(".");
+        return sys$strdup(".");
     }
     int i = bytes$lastIndexByte(path, '/');
     if (i > 0) {
-        char *p = strdup(path);
+        char *p = sys$strdup(path);
         p[i] = '\0';
         return p;
     }
-    return strdup(".");
+    return sys$strdup(".");
 }
 
 extern const char *paths$ext(const char *path) {

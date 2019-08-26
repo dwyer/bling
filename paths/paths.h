@@ -4,6 +4,7 @@
 package(paths);
 
 import("bytes");
+import("sys");
 
 extern char *paths$base(const char *path);
 extern char *paths$clean(const char *path);

@@ -67,7 +67,7 @@ static ast$Expr *types$makeIdent(const char *name) {
     ast$Expr x = {
         .kind = ast$EXPR_IDENT,
         .ident = {
-            .name = strdup(name),
+            .name = sys$strdup(name),
         },
     };
     return esc(x);
@@ -1087,8 +1087,8 @@ extern types$Package *types$checkFile(types$Config *conf, const char *path,
     }
     // sys$printf("checking %s\n", path);
     types$Package pkg = {
-        .path = strdup(path),
-        .name = file->name ? strdup(file->name->ident.name) : NULL,
+        .path = sys$strdup(path),
+        .name = file->name ? sys$strdup(file->name->ident.name) : NULL,
         .scope = file->scope,
         .imports = {.size = sizeof(types$Package *)},
     };

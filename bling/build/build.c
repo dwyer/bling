@@ -125,7 +125,7 @@ static os$FileInfo *buildCFile(Builder *b, os$FileInfo *cFile) {
     char *dst = NULL;
     {
         int i = bytes$lastIndexByte(src, '.');
-        char *base = strdup(src);
+        char *base = sys$strdup(src);
         base[i] = '\0';
         dst = sys$sprintf("%s/%s.o", GEN_PATH, base);
         free(base);
@@ -157,7 +157,7 @@ static Package newPackage(Builder *b, const char *path) {
         libPath = sys$sprintf("%s/%s.a", genPath, base);
     }
     Package pkg = {
-        .path = strdup(path),
+        .path = sys$strdup(path),
         .pkg = typesPkg,
         .hPath = sys$sprintf("%s/%s.h", genPath, base),
         .cPath = sys$sprintf("%s/%s.c", genPath, base),

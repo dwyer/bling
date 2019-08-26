@@ -31,7 +31,7 @@ static void PathError_check(const char *path, utils$Error **error) {
 
 extern os$File *os$newFile(uintptr_t fd, const char *name) {
     os$File file = {
-        .name = strdup(name),
+        .name = sys$strdup(name),
         .fd = fd,
     };
     return esc(file);
@@ -87,7 +87,7 @@ extern os$FileInfo *os$stat(const char *name, utils$Error **error) {
         return NULL;
     }
     os$FileInfo info = {
-        ._name = strdup(name),
+        ._name = sys$strdup(name),
         ._sys = esc(st),
     };
     return esc(info);
@@ -123,7 +123,7 @@ extern char **os$readdirnames(os$File *file, utils$Error **error) {
         if (dirent->d_name[0] == '.') {
             continue;
         }
-        char *name = strdup(dirent->d_name);
+        char *name = sys$strdup(dirent->d_name);
         utils$Slice_append(&arr, &name);
     }
     return utils$nilArray(&arr);

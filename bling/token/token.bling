@@ -378,7 +378,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     var zero int = 0
     utils.Slice_append(&lines, &zero)
     var file File = {
-        name: strdup(filename),
+        name: sys.strdup(filename),
         base: base,
         size: size,
         lines: lines,

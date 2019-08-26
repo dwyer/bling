@@ -80,7 +80,7 @@ fun makeIdent(name *const char) *ast.Expr {
     var x ast.Expr = {
         kind: ast.EXPR_IDENT,
         ident: {
-            name: strdup(name),
+            name: sys.strdup(name),
         },
     }
     return &&x
@@ -979,8 +979,8 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
         info = newInfo()
     }
     var pkg Package = {
-        path: strdup(path),
-        name: file.name ? strdup(file.name.ident.name) : NULL,
+        path: sys.strdup(path),
+        name: file.name ? sys.strdup(file.name.ident.name) : NULL,
         scope: file.scope,
         imports: {
             size: sizeof(*Package),
@@ -1072,13 +1072,13 @@ var predeclareFuncs []struct {
         expression,
     },
     _streq: {
-        "strdup",
+        "streq",
         2,
         false,
         expression,
     },
     _strlen: {
-        "strdup",
+        "strlen",
         1,
         false,
         expression,
@@ -1179,14 +1179,14 @@ fun declareBuiltins(s *ast.Scope) {
         var _name ast.Expr = {
             kind: ast.EXPR_IDENT,
             ident: {
-                name: strdup(natives[i].name),
+                name: sys.strdup(natives[i].name),
             },
         }
         var name *ast.Expr = &&_name
         var type ast.Expr = {
             kind: ast.TYPE_NATIVE,
             native: {
-                name: strdup(natives[i].name),
+                name: sys.strdup(natives[i].name),
                 size: natives[i].size,
             },
         }

@@ -28,7 +28,6 @@ typedef unsigned long int size_t;
 extern void free(void *);
 extern void *malloc(size_t);
 
-extern char *strdup(char const *);
 extern size_t strlen(char const *);
 extern void print(const char *s);
 extern void _Noreturn panic0(void) __attribute__((noreturn));

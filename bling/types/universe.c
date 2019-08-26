@@ -1,6 +1,7 @@
 #include "bling/types/types.h"
 
 #include "bling/parser/parser.h"
+#include "sys/sys.h"
 
 typedef enum {
     _assert,
@@ -33,8 +34,8 @@ struct {
     [_panic]    = {"panic", 1, true, statement},
     [_print]    = {"print", 1, false, statement},
     [_strdup]   = {"strdup", 1, false, expression},
-    [_streq]    = {"strdup", 2, false, expression},
-    [_strlen]   = {"strdup", 1, false, expression},
+    [_streq]    = {"streq", 2, false, expression},
+    [_strlen]   = {"strlen", 1, false, expression},
 };
 
 void defPredeclareFuncs() {
@@ -73,14 +74,14 @@ static void declareBuiltins(ast$Scope *s) {
         ast$Expr _name = {
             .kind = ast$EXPR_IDENT,
             .ident = {
-                .name = strdup(natives[i].name),
+                .name = sys$strdup(natives[i].name),
             },
         };
         ast$Expr *name = esc(_name);
         ast$Expr type = {
             .kind = ast$TYPE_NATIVE,
             .native = {
-                .name = strdup(natives[i].name),
+                .name = sys$strdup(natives[i].name),
                 .size = natives[i].size,
             },
         };

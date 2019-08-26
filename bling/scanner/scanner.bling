@@ -330,7 +330,7 @@ scan_again:
 }
 
 fun init(s *Scanner, file *token.File, src *char) {
-    file.src = strdup(src)
+    file.src = sys.strdup(src)
     s.file = file
     s.src = file.src
     s.rd_offset = 0
