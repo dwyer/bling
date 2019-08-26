@@ -45,3 +45,50 @@ extern types$Package *types$check(types$Config *conf, const char *path,
         token$FileSet *fset, ast$File **files, types$Info *info);
 
 extern char *types$constant_stringVal(ast$Expr *x); // TODO move this to const pkg
+
+typedef enum {
+    types$INVALID,
+
+    types$BOOL,
+    types$CHAR,
+    types$INT,
+    types$INT8,
+    types$INT16,
+    types$INT32,
+    types$INT64,
+    types$UINT,
+    types$UINT8,
+    types$UINT16,
+    types$UINT32,
+    types$UINT64,
+    types$UINTPTR,
+    types$FLOAT32,
+    types$FLOAT64,
+    types$COMPLEX64,
+    types$COMPLEX128,
+    types$STRING,
+    types$UNSAFE_POINTER,
+
+} types$BasicKind;
+
+typedef enum {
+
+    types$IS_BOOLEAN    = 1 << 0,
+    types$IS_INTEGER    = 1 << 1,
+    types$IS_UNSIGNED   = 1 << 2,
+    types$IS_FLOAT      = 1 << 3,
+    types$IS_COMPLEX    = 1 << 4,
+    types$IS_STRING     = 1 << 5,
+    types$IS_UNTYPED    = 1 << 6,
+
+    types$IS_ORDERED    = types$IS_INTEGER | types$IS_FLOAT | types$IS_STRING,
+    types$IS_NUMERIC    = types$IS_INTEGER | types$IS_FLOAT | types$IS_COMPLEX,
+    types$IS_CONST_EXPR = types$IS_BOOLEAN | types$IS_NUMERIC | types$IS_STRING,
+
+} types$BasicInfo;
+
+typedef struct {
+    types$BasicKind kind;
+    types$BasicInfo info;
+    char *name;
+} types$Basic;
