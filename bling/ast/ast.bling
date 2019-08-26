@@ -8,6 +8,7 @@ import "utils"
 typ NodeKind enum {
     NODE_ILLEGAL = 0
     _DECL_START
+    DECL_BUILTIN
     DECL_FIELD
     DECL_FUNC
     DECL_IMPORT
@@ -21,6 +22,7 @@ typ NodeKind enum {
     EXPR_CALL
     EXPR_CAST
     EXPR_COMPOSITE_LIT
+    EXPR_CONST
     EXPR_IDENT
     EXPR_INDEX
     EXPR_KEY_VALUE
@@ -48,7 +50,7 @@ typ NodeKind enum {
     _STMT_END
     _TYPE_START
     TYPE_ARRAY
-    TYPE_BUILTIN_FUNC
+    TYPE_BUILTIN
     TYPE_ELLIPSIS
     TYPE_ENUM
     TYPE_MAP
@@ -76,7 +78,6 @@ typ Object struct {
     name *char
     decl *Decl
     data *void
-    type *void
     scope *Scope
 }
 
@@ -98,6 +99,14 @@ typ BinaryExpr struct {
     y *Expr
 }
 
+typ BuiltinType struct {
+    name *char
+    nargs int
+    variadic bool
+    isExpr bool
+    id int
+}
+
 typ CallExpr struct {
     func *Expr
     args **Expr
@@ -113,6 +122,11 @@ typ CompositeLit struct {
     pos token.Pos
     type *Expr
     list **Expr
+}
+
+typ ConstExpr struct {
+    name *char
+    value int
 }
 
 typ EllipsisType struct {
@@ -154,8 +168,9 @@ typ MapType struct {
 }
 
 typ NativeType struct {
+    kind int
+    info int
     name *char
-    size int
 }
 
 typ ParenExpr struct {
@@ -206,9 +221,11 @@ typ Expr struct {
         array ArrayType
         basic BasicLit
         binary BinaryExpr
+        builtin BuiltinType
         call CallExpr
         cast CastExpr
         composite CompositeLit
+        const_ ConstExpr
         ellipsis EllipsisType
         enum_ EnumType
         func FuncExpr
@@ -443,13 +460,21 @@ fun Scope_print(s *Scope) {
     }
 }
 
-fun resolve(scope *Scope, ident *Expr) bool {
-    for ; scope != NULL; scope = scope.outer {
-        var obj *Object = Scope_lookup(scope, ident.ident.name)
+fun Scope_deepLookup(s *Scope, name *char) *Object {
+    for ; s != NULL; s = s.outer {
+        var obj *Object = Scope_lookup(s, name)
         if obj != NULL {
-            ident.ident.obj = obj
-            return true
+            return obj
         }
+    }
+    return NULL
+}
+
+fun resolve(scope *Scope, ident *Expr) bool {
+    var obj *Object = Scope_deepLookup(scope, ident.ident.name)
+    if obj != NULL {
+        ident.ident.obj = obj
+        return true
     }
     return false
 }
@@ -476,10 +501,14 @@ fun isVoid(x *Expr) bool {
 }
 
 fun isVoidPtr(x *Expr) bool {
-    if x.kind == EXPR_STAR {
+    switch x.kind {
+    case EXPR_STAR:
         return isVoid(x.star.x)
+    case TYPE_NATIVE:
+        return x.native.info == 0
+    default:
+        return false
     }
-    return false
 }
 
 fun Decl_pos(d *Decl) token.Pos {

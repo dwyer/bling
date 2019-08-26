@@ -14,6 +14,7 @@ typedef enum {
     ast$NODE_ILLEGAL = 0,
 
     ast$_DECL_START,
+    ast$DECL_BUILTIN,
     ast$DECL_FIELD,
     ast$DECL_FUNC,
     ast$DECL_IMPORT,
@@ -28,6 +29,7 @@ typedef enum {
     ast$EXPR_CALL,
     ast$EXPR_CAST,
     ast$EXPR_COMPOSITE_LIT,
+    ast$EXPR_CONST,
     ast$EXPR_IDENT,
     ast$EXPR_INDEX,
     ast$EXPR_KEY_VALUE,
@@ -57,7 +59,7 @@ typedef enum {
 
     ast$_TYPE_START,
     ast$TYPE_ARRAY,
-    ast$TYPE_BUILTIN_FUNC,
+    ast$TYPE_BUILTIN,
     ast$TYPE_ELLIPSIS,
     ast$TYPE_ENUM,
     ast$TYPE_MAP,
@@ -93,7 +95,7 @@ typedef struct {
     char *name;
     ast$Decl *decl;
     void *data;
-    void *type;
+    // void *type;
     ast$Scope *scope;
 } ast$Object;
 
@@ -116,6 +118,14 @@ typedef struct {
 } ast$BinaryExpr;
 
 typedef struct {
+    char *name;
+    int nargs;
+    bool variadic;
+    bool isExpr;
+    int id;
+} ast$BuiltinType;
+
+typedef struct {
     ast$Expr *func;
     ast$Expr **args;
 } ast$CallExpr;
@@ -131,6 +141,11 @@ typedef struct {
     ast$Expr *type;
     ast$Expr **list;
 } ast$CompositeLit;
+
+typedef struct {
+    char *name;
+    int value;
+} ast$ConstExpr;
 
 typedef struct {
     token$Pos pos;
@@ -171,8 +186,9 @@ typedef struct {
 } ast$MapType;
 
 typedef struct {
+    int kind;
+    int info;
     char *name;
-    int size;
 } ast$NativeType;
 
 typedef struct {
@@ -223,9 +239,11 @@ typedef struct ast$Expr {
         ast$ArrayType array;
         ast$BasicLit basic;
         ast$BinaryExpr binary;
+        ast$BuiltinType builtin;
         ast$CallExpr call;
         ast$CastExpr cast;
         ast$CompositeLit composite;
+        ast$ConstExpr const_;
         ast$EllipsisType ellipsis;
         ast$EnumType enum_;
         ast$FuncExpr func;
@@ -395,6 +413,7 @@ extern ast$Scope *ast$Scope_new(ast$Scope *outer);
 extern void ast$Scope_unmake(ast$Scope *s);
 extern ast$Object *ast$Scope_insert(ast$Scope *s, ast$Object *obj);
 extern ast$Object *ast$Scope_lookup(ast$Scope *s, char *name);
+extern ast$Object *ast$Scope_deepLookup(ast$Scope *s, char *name);
 
 typedef struct {
     const char *filename;

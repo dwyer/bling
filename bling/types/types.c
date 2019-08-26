@@ -293,15 +293,14 @@ static ast$Expr *getDeclType(ast$Decl *decl) {
 }
 
 static ast$Decl *getStructFieldByName(ast$Expr *type, ast$Expr *name) {
-    type = types$getBaseType(type);
-    assert(type->kind == ast$TYPE_STRUCT);
+    ast$Expr *base = types$getBaseType(type);
+    assert(base->kind == ast$TYPE_STRUCT);
     assert(name->kind == ast$EXPR_IDENT);
-    for (int i = 0; type->struct_.fields && type->struct_.fields[i]; i++) {
-        ast$Decl *field = type->struct_.fields[i];
-        ast$Expr *fieldName = field->field.name;
-        if (fieldName) {
-            if (sys$streq(name->ident.name, fieldName->ident.name)) {
-                type = field->field.type;
+    for (int i = 0; base->struct_.fields && base->struct_.fields[i]; i++) {
+        ast$Decl *field = base->struct_.fields[i];
+        if (field->field.name) {
+            if (sys$streq(name->ident.name, field->field.name->ident.name)) {
+                base = field->field.type;
                 return field;
             }
         } else {
@@ -315,13 +314,16 @@ static ast$Decl *getStructFieldByName(ast$Expr *type, ast$Expr *name) {
 }
 
 static ast$Decl *getStructField(ast$Expr *type, int index) {
-    assert(type->kind == ast$TYPE_STRUCT);
-    if (type->struct_.fields == NULL) {
+    ast$Expr *base = types$getBaseType(type);
+    if (base->kind != ast$TYPE_STRUCT) {
+        panic(sys$sprintf("not a struct: %s", types$typeString(type)));
+    }
+    if (base->struct_.fields == NULL) {
         panic(sys$sprintf("incomplete field defn: %s", types$typeString(type)));
     }
-    for (int i = 0; type->struct_.fields[i]; i++) {
+    for (int i = 0; base->struct_.fields[i]; i++) {
         if (i == index) {
-            return type->struct_.fields[i];
+            return base->struct_.fields[i];
         }
     }
     return NULL;
@@ -592,10 +594,19 @@ static ast$Expr *Checker_checkCompositeLit(Checker *c, ast$Expr *x) {
         Checker_checkStructLit(c, x);
         break;
     default:
-        Checker_error(c, ast$Expr_pos(x), "composite type must be an array or a struct");
+        Checker_error(c, ast$Expr_pos(x),
+                "composite type must be an array or a struct");
         break;
     }
     return t;
+}
+
+extern ast$Expr *Checker_lookupIdent(Checker *c, char *name) {
+    ast$Object *obj = ast$Scope_deepLookup(c->pkg->scope, name);
+    assert(obj);
+    assert(obj->kind == ast$ObjKind_TYP);
+    assert(obj->decl->kind == ast$DECL_TYPEDEF);
+    return obj->decl->typedef_.name;
 }
 
 static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
@@ -621,36 +632,25 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             case token$LT:
             case token$LT_EQUAL:
             case token$NOT_EQUAL:
-                typ1 = types$makeIdent("bool");
-                Checker_checkType(c, typ1);
+                return Checker_lookupIdent(c, "bool");
             default:
                 return typ1;
             }
         }
 
     case ast$EXPR_BASIC_LIT:
-        {
-            token$Token kind = expr->basic.kind;
-            ast$Expr *type = NULL;
-            switch (kind) {
-            case token$CHAR:
-                type = types$makeIdent("char");
-                break;
-            case token$FLOAT:
-                type = types$makeIdent("float");
-                break;
-            case token$INT:
-                type = types$makeIdent("int");
-                break;
-            case token$STRING:
-                type = types$makePtr(types$makeIdent("char"));
-                break;
-            default:
-                Checker_error(c, ast$Expr_pos(expr), "unreachable");
-                break;
-            }
-            Checker_checkType(c, type);
-            return type;
+        switch (expr->basic.kind) {
+        case token$CHAR:
+            return Checker_lookupIdent(c, "char");
+        case token$FLOAT:
+            return Checker_lookupIdent(c, "float");
+        case token$INT:
+            return Checker_lookupIdent(c, "int");
+        case token$STRING:
+            return types$makePtr(Checker_lookupIdent(c, "char"));
+        default:
+            Checker_error(c, ast$Expr_pos(expr), "unreachable");
+            return NULL;
         }
 
     case ast$EXPR_CALL:
@@ -660,30 +660,43 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             if (type->kind == ast$EXPR_STAR) {
                 type = type->star.x;
             }
-            if (type->kind != ast$TYPE_FUNC) {
-                Checker_error(c, ast$Expr_pos(expr), sys$sprintf("`%s` is not a func",
+            if (type->kind == ast$TYPE_BUILTIN) {
+                int i = 0;
+                for (; expr->call.args[i]; i++) {
+                    Checker_checkExpr(c, expr->call.args[i]);
+                }
+                if (type->builtin.variadic) {
+                    assert(i == type->builtin.nargs);
+                } else {
+                    assert(i >= type->builtin.nargs);
+                }
+                return NULL; // TODO return correct type
+            } else if (type->kind == ast$TYPE_FUNC) {
+                int j = 0;
+                for (int i = 0; expr->call.args[i]; i++) {
+                    ast$Decl *param = type->func.params[j];
+                    if (param == NULL) {
+                        Checker_error(c, ast$Expr_pos(expr), "too many args");
+                        break;
+                    }
+                    ast$Expr *type = Checker_checkExpr(c, expr->call.args[i]);
+                    assert(param->kind == ast$DECL_FIELD);
+                    if (!types$areAssignable(param->field.type, type)) {
+                        Checker_error(c, ast$Expr_pos(expr), sys$sprintf(
+                                    "not assignable: %s and %s",
+                                    types$typeString(param->field.type),
+                                    types$typeString(type)));
+                    }
+                    if (param->field.type->kind != ast$TYPE_ELLIPSIS) {
+                        j++;
+                    }
+                }
+                return type->func.result;
+            } else {
+                Checker_error(c, ast$Expr_pos(expr),
+                        sys$sprintf("`%s` is not a func",
                             types$exprString(expr->call.func)));
             }
-            int j = 0;
-            for (int i = 0; expr->call.args[i]; i++) {
-                ast$Decl *param = type->func.params[j];
-                if (param == NULL) {
-                    Checker_error(c, ast$Expr_pos(expr), "too many args");
-                    break;
-                }
-                ast$Expr *type = Checker_checkExpr(c, expr->call.args[i]);
-                assert(param->kind == ast$DECL_FIELD);
-                if (!types$areAssignable(param->field.type, type)) {
-                    Checker_error(c, ast$Expr_pos(expr), sys$sprintf(
-                                "not assignable: %s and %s",
-                                types$typeString(param->field.type),
-                                types$typeString(type)));
-                }
-                if (param->field.type->kind != ast$TYPE_ELLIPSIS) {
-                    j++;
-                }
-            }
-            return type->func.result;
 
         }
 
@@ -758,12 +771,8 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
         }
 
     case ast$EXPR_SIZEOF:
-        {
-            Checker_checkType(c, expr->sizeof_.x);
-            ast$Expr *ident = types$makeIdent("size_t");
-            Checker_resolve(c, c->pkg->scope, ident);
-            return ident;
-        }
+        Checker_checkType(c, expr->sizeof_.x);
+        return Checker_lookupIdent(c, "size_t");
 
     case ast$EXPR_STAR:
         {

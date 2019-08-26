@@ -24,6 +24,47 @@ typ Package struct {
     imports utils.Slice
 }
 
+typ BasicKind enum {
+    INVALID
+    VOID
+    BOOL
+    CHAR
+    INT
+    INT8
+    INT16
+    INT32
+    INT64
+    UINT8
+    UINT16
+    UINT32
+    UINT64
+    UINTPTR
+    SIZE_T
+    FLOAT32
+    FLOAT64
+    VOID_POINTER
+    UNSAFE_POINTER
+}
+
+typ BasicInfo enum {
+    IS_BOOLEAN = 1 << 0
+    IS_INTEGER = 1 << 1
+    IS_UNSIGNED = 1 << 2
+    IS_FLOAT = 1 << 3
+    IS_COMPLEX = 1 << 4
+    IS_STRING = 1 << 5
+    IS_UNTYPED = 1 << 6
+    IS_ORDERED = IS_INTEGER | IS_FLOAT | IS_STRING
+    IS_NUMERIC = IS_INTEGER | IS_FLOAT | IS_COMPLEX
+    IS_CONST_EXPR = IS_BOOLEAN | IS_NUMERIC | IS_STRING
+}
+
+typ Basic struct {
+    kind BasicKind
+    info BasicInfo
+    name *char
+}
+
 fun constant_stringVal(x *ast.Expr) *char {
     assert(x.kind == ast.EXPR_BASIC_LIT)
     var lit *const char = x.basic.value
@@ -299,15 +340,14 @@ fun getDeclType(decl *ast.Decl) *ast.Expr {
 }
 
 fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
-    type = getBaseType(type)
-    assert(type.kind == ast.TYPE_STRUCT)
+    var base *ast.Expr = getBaseType(type)
+    assert(base.kind == ast.TYPE_STRUCT)
     assert(name.kind == ast.EXPR_IDENT)
-    for var i int = 0; type.struct_.fields && type.struct_.fields[i]; i++ {
-        var field *ast.Decl = type.struct_.fields[i]
-        var fieldName *ast.Expr = field.field.name
-        if fieldName {
-            if sys.streq(name.ident.name, fieldName.ident.name) {
-                type = field.field.type
+    for var i int = 0; base.struct_.fields && base.struct_.fields[i]; i++ {
+        var field *ast.Decl = base.struct_.fields[i]
+        if field.field.name {
+            if sys.streq(name.ident.name, field.field.name.ident.name) {
+                base = field.field.type
                 return field
             }
         } else {
@@ -321,13 +361,16 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
 }
 
 fun getStructField(type *ast.Expr, index int) *ast.Decl {
-    assert(type.kind == ast.TYPE_STRUCT)
-    if type.struct_.fields == NULL {
+    var base *ast.Expr = getBaseType(type)
+    if base.kind != ast.TYPE_STRUCT {
+        panic(sys.sprintf("not a struct: %s", typeString(type)))
+    }
+    if base.struct_.fields == NULL {
         panic(sys.sprintf("incomplete field defn: %s", typeString(type)))
     }
-    for var i int = 0; type.struct_.fields[i]; i++ {
+    for var i int = 0; base.struct_.fields[i]; i++ {
         if i == index {
-            return type.struct_.fields[i]
+            return base.struct_.fields[i]
         }
     }
     return NULL
@@ -567,6 +610,14 @@ fun Checker_checkCompositeLit(c *Checker, x *ast.Expr) *ast.Expr {
     return t
 }
 
+fun Checker_lookupIdent(c *Checker, name *char) *ast.Expr {
+    var obj *ast.Object = ast.Scope_deepLookup(c.pkg.scope, name)
+    assert(obj)
+    assert(obj.kind == ast.ObjKind_TYP)
+    assert(obj.decl.kind == ast.DECL_TYPEDEF)
+    return obj.decl.typedef_.name
+}
+
 fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     assert(expr)
     switch expr.kind {
@@ -579,35 +630,24 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             }
             switch expr.binary.op {
             case token.EQUAL, token.GT, token.GT_EQUAL, token.LAND, token.LOR, token.LT, token.LT_EQUAL, token.NOT_EQUAL:
-                typ1 = makeIdent("bool")
-                Checker_checkType(c, typ1)
+                return Checker_lookupIdent(c, "bool")
             default:
                 return typ1
             }
         }
     case ast.EXPR_BASIC_LIT:
-        {
-            var kind token.Token = expr.basic.kind
-            var type *ast.Expr = NULL
-            switch kind {
-            case token.CHAR:
-                type = makeIdent("char")
-                break
-            case token.FLOAT:
-                type = makeIdent("float")
-                break
-            case token.INT:
-                type = makeIdent("int")
-                break
-            case token.STRING:
-                type = makePtr(makeIdent("char"))
-                break
-            default:
-                Checker_error(c, ast.Expr_pos(expr), "unreachable")
-                break
-            }
-            Checker_checkType(c, type)
-            return type
+        switch expr.basic.kind {
+        case token.CHAR:
+            return Checker_lookupIdent(c, "char")
+        case token.FLOAT:
+            return Checker_lookupIdent(c, "float")
+        case token.INT:
+            return Checker_lookupIdent(c, "int")
+        case token.STRING:
+            return makePtr(Checker_lookupIdent(c, "char"))
+        default:
+            Checker_error(c, ast.Expr_pos(expr), "unreachable")
+            return NULL
         }
     case ast.EXPR_CALL:
         {
@@ -616,26 +656,38 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             if type.kind == ast.EXPR_STAR {
                 type = type.star.x
             }
-            if type.kind != ast.TYPE_FUNC {
+            if type.kind == ast.TYPE_BUILTIN {
+                var i int = 0
+                for ; expr.call.args[i]; i++ {
+                    Checker_checkExpr(c, expr.call.args[i])
+                }
+                if type.builtin.variadic {
+                    assert(i == type.builtin.nargs)
+                } else {
+                    assert(i >= type.builtin.nargs)
+                }
+                return NULL
+            } else if type.kind == ast.TYPE_FUNC {
+                var j int = 0
+                for var i int = 0; expr.call.args[i]; i++ {
+                    var param *ast.Decl = type.func.params[j]
+                    if param == NULL {
+                        Checker_error(c, ast.Expr_pos(expr), "too many args")
+                        break
+                    }
+                    var type *ast.Expr = Checker_checkExpr(c, expr.call.args[i])
+                    assert(param.kind == ast.DECL_FIELD)
+                    if !areAssignable(param.field.type, type) {
+                        Checker_error(c, ast.Expr_pos(expr), sys.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
+                    }
+                    if param.field.type.kind != ast.TYPE_ELLIPSIS {
+                        j++
+                    }
+                }
+                return type.func.result
+            } else {
                 Checker_error(c, ast.Expr_pos(expr), sys.sprintf("`%s` is not a func", exprString(expr.call.func)))
             }
-            var j int = 0
-            for var i int = 0; expr.call.args[i]; i++ {
-                var param *ast.Decl = type.func.params[j]
-                if param == NULL {
-                    Checker_error(c, ast.Expr_pos(expr), "too many args")
-                    break
-                }
-                var type *ast.Expr = Checker_checkExpr(c, expr.call.args[i])
-                assert(param.kind == ast.DECL_FIELD)
-                if !areAssignable(param.field.type, type) {
-                    Checker_error(c, ast.Expr_pos(expr), sys.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
-                }
-                if param.field.type.kind != ast.TYPE_ELLIPSIS {
-                    j++
-                }
-            }
-            return type.func.result
         }
     case ast.EXPR_COMPOSITE_LIT:
         Checker_checkType(c, expr.composite.type)
@@ -697,12 +749,8 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             return field.field.type
         }
     case ast.EXPR_SIZEOF:
-        {
-            Checker_checkType(c, expr.sizeof_.x)
-            var ident *ast.Expr = makeIdent("size_t")
-            Checker_resolve(c, c.pkg.scope, ident)
-            return ident
-        }
+        Checker_checkType(c, expr.sizeof_.x)
+        return Checker_lookupIdent(c, "size_t")
     case ast.EXPR_STAR:
         {
             var type *ast.Expr = Checker_checkExpr(c, expr.star.x)
@@ -1005,16 +1053,138 @@ fun check(conf *Config, path *const char, fset *token.FileSet, files **ast.File,
     return checkFile(conf, path, fset, files[0], info)
 }
 
+var _universe *ast.Scope = NULL
+
+var predeclaredTypes []const Basic = {
+    INVALID: {
+        INVALID,
+        0,
+        "invalid type",
+    },
+    VOID: {
+        VOID,
+        IS_UNTYPED,
+        "void",
+    },
+    BOOL: {
+        BOOL,
+        IS_BOOLEAN,
+        "bool",
+    },
+    CHAR: {
+        CHAR,
+        IS_INTEGER,
+        "char",
+    },
+    INT: {
+        INT,
+        IS_INTEGER,
+        "int",
+    },
+    INT8: {
+        INT8,
+        IS_INTEGER,
+        "int8_t",
+    },
+    INT16: {
+        INT16,
+        IS_INTEGER,
+        "int16_t",
+    },
+    INT32: {
+        INT32,
+        IS_INTEGER,
+        "int32_t",
+    },
+    INT64: {
+        INT64,
+        IS_INTEGER,
+        "int64_t",
+    },
+    UINT8: {
+        UINT8,
+        IS_INTEGER | IS_UNSIGNED,
+        "uint8_t",
+    },
+    UINT16: {
+        UINT16,
+        IS_INTEGER | IS_UNSIGNED,
+        "uint16_t",
+    },
+    UINT32: {
+        UINT32,
+        IS_INTEGER | IS_UNSIGNED,
+        "uint32_t",
+    },
+    UINT64: {
+        UINT64,
+        IS_INTEGER | IS_UNSIGNED,
+        "uint64_t",
+    },
+    UINTPTR: {
+        UINTPTR,
+        IS_INTEGER | IS_UNSIGNED,
+        "uintptr_t",
+    },
+    SIZE_T: {
+        SIZE_T,
+        IS_INTEGER | IS_UNSIGNED,
+        "size_t",
+    },
+    FLOAT32: {
+        FLOAT32,
+        IS_FLOAT,
+        "float",
+    },
+    FLOAT64: {
+        FLOAT64,
+        IS_FLOAT,
+        "double",
+    },
+    VOID_POINTER: {
+        VOID_POINTER,
+        0,
+        "voidptr",
+    },
+}
+
+fun defPredeclaredTypes() {
+    for var i int = 0; i < UNSAFE_POINTER; i++ {
+        if !predeclaredTypes[i].name {
+            continue
+        }
+        var obj *ast.Object = ast.newObject(ast.ObjKind_TYP, predeclaredTypes[i].name)
+        var name ast.Expr = {
+            kind: ast.EXPR_IDENT,
+            ident: {
+                name: sys.strdup(predeclaredTypes[i].name),
+                obj: obj,
+            },
+        }
+        var type ast.Expr = {
+            kind: ast.TYPE_NATIVE,
+            native: {
+                kind: predeclaredTypes[i].kind,
+                info: predeclaredTypes[i].info,
+                name: sys.strdup(predeclaredTypes[i].name),
+            },
+        }
+        var decl ast.Decl = {
+            kind: ast.DECL_TYPEDEF,
+            typedef_: {
+                name: &&name,
+                type: &&type,
+            },
+        }
+        obj.decl = &&decl
+        assert(ast.Scope_insert(_universe, obj) == NULL)
+    }
+}
+
 typ builtinId enum {
     _assert
-    _esc
-    _free
-    _malloc
     _panic
     _print
-    _strdup
-    _streq
-    _strlen
     numBuiltinIds
 }
 
@@ -1035,28 +1205,10 @@ var predeclareFuncs []struct {
         false,
         statement,
     },
-    _esc: {
-        "esc",
-        1,
-        false,
-        expression,
-    },
-    _free: {
-        "free",
-        1,
-        false,
-        statement,
-    },
-    _malloc: {
-        "malloc",
-        1,
-        false,
-        expression,
-    },
     _panic: {
         "panic",
         1,
-        true,
+        false,
         statement,
     },
     _print: {
@@ -1065,160 +1217,101 @@ var predeclareFuncs []struct {
         false,
         statement,
     },
-    _strdup: {
-        "strdup",
-        1,
-        false,
-        expression,
-    },
-    _streq: {
-        "streq",
-        2,
-        false,
-        expression,
-    },
-    _strlen: {
-        "strlen",
-        1,
-        false,
-        expression,
-    },
 }
 
-fun defPredeclareFuncs() {
+fun defPredeclaredFuncs() {
     for var i int = 0; i < numBuiltinIds; i++ {
+        var name ast.Expr = {
+            kind: ast.EXPR_IDENT,
+            ident: {
+                name: sys.strdup(predeclareFuncs[i].name),
+            },
+        }
+        var type ast.Expr = {
+            kind: ast.TYPE_BUILTIN,
+            builtin: {
+                name: sys.strdup(predeclareFuncs[i].name),
+                nargs: predeclareFuncs[i].nargs,
+                variadic: predeclareFuncs[i].variadic,
+                isExpr: predeclareFuncs[i].kind == expression,
+            },
+        }
+        var decl ast.Decl = {
+            kind: ast.DECL_FUNC,
+            func: {
+                name: &&name,
+                type: &&type,
+            },
+        }
+        var obj *ast.Object = ast.newObject(ast.ObjKind_FUN, name.ident.name)
+        obj.decl = &&decl
+        obj.decl.func.name.ident.obj = obj
+        assert(ast.Scope_insert(_universe, obj) == NULL)
     }
 }
 
-var natives []struct {
+var predeclareConsts []struct {
     name *char
-    size int
-    arith bool
+    type *char
+    value int
 } = {
     {
-        "char",
-        sizeof(char),
-        true,
+        "NULL",
+        "voidptr",
+        0,
     },
     {
-        "double",
-        sizeof(double),
-        true,
+        "false",
+        "bool",
+        0,
     },
     {
-        "float",
-        sizeof(float),
-        true,
-    },
-    {
-        "int",
-        sizeof(int),
-        true,
-    },
-    {
-        "void",
-        sizeof(void),
-    },
-    {
-        "int16_t",
-        sizeof(int16_t),
-        true,
-    },
-    {
-        "int32_t",
-        sizeof(int32_t),
-        true,
-    },
-    {
-        "int64_t",
-        sizeof(int64_t),
-        true,
-    },
-    {
-        "int8_t",
-        sizeof(int8_t),
-        true,
-    },
-    {
-        "size_t",
-        sizeof(size_t),
-        true,
-    },
-    {
-        "uint16_t",
-        sizeof(uint16_t),
-        true,
-    },
-    {
-        "uint32_t",
-        sizeof(uint32_t),
-        true,
-    },
-    {
-        "uint64_t",
-        sizeof(uint64_t),
-        true,
-    },
-    {
-        "uint8_t",
-        sizeof(uint8_t),
-        true,
-    },
-    {
-        "uintptr_t",
-        sizeof(uintptr_t),
-        true,
+        "true",
+        "bool",
+        1,
     },
     {
         NULL,
     },
 }
 
-fun declareBuiltins(s *ast.Scope) {
-    for var i int = 0; natives[i].name != NULL; i++ {
-        var _name ast.Expr = {
+fun defPredeclaredConsts() {
+    for var i int = 0; predeclareConsts[i].name; i++ {
+        var obj *ast.Object = ast.Scope_lookup(_universe, predeclareConsts[i].type)
+        var name ast.Expr = {
             kind: ast.EXPR_IDENT,
             ident: {
-                name: sys.strdup(natives[i].name),
+                name: sys.strdup(predeclareConsts[i].name),
             },
         }
-        var name *ast.Expr = &&_name
-        var type ast.Expr = {
-            kind: ast.TYPE_NATIVE,
-            native: {
-                name: sys.strdup(natives[i].name),
-                size: natives[i].size,
+        var expr ast.Expr = {
+            kind: ast.EXPR_CONST,
+            const_: {
+                name: sys.strdup(predeclareConsts[i].name),
+                value: predeclareConsts[i].value,
             },
         }
         var decl ast.Decl = {
-            kind: ast.DECL_TYPEDEF,
-            typedef_: {
-                name: name,
-                type: &&type,
+            kind: ast.DECL_VALUE,
+            value: {
+                name: &&name,
+                type: obj.decl.typedef_.type,
+                value: &&expr,
             },
         }
-        var obj *ast.Object = ast.newObject(ast.ObjKind_TYP, name.ident.name)
+        obj = ast.newObject(ast.ObjKind_CON, name.ident.name)
         obj.decl = &&decl
-        name.ident.obj = obj
-        assert(ast.Scope_insert(s, obj) == NULL)
+        obj.decl.value.name.ident.obj = obj
+        assert(ast.Scope_insert(_universe, obj) == NULL)
     }
 }
-
-var _universe *ast.Scope = NULL
 
 fun universe() *ast.Scope {
     if _universe == NULL {
         _universe = ast.Scope_new(NULL)
-        declareBuiltins(_universe)
-        var fset *token.FileSet = token.newFileSet()
-        var file *ast.File = parser.parseFile(fset, "builtin/builtin.bling", _universe)
-        _universe = file.scope
-        var conf Config = {
-            strict: true,
-        }
-        checkFile(&conf, "builtin", fset, file, NULL)
-        sys.free(file.decls)
-        sys.free(file)
+        defPredeclaredTypes()
+        defPredeclaredConsts()
+        defPredeclaredFuncs()
     }
     return _universe
 }

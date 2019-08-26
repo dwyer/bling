@@ -3,16 +3,69 @@
 #include "bling/parser/parser.h"
 #include "sys/sys.h"
 
+static ast$Scope *_universe = NULL;
+
+static const types$Basic predeclaredTypes[] = {
+    [types$INVALID] = {types$INVALID, 0, "invalid type"},
+    [types$VOID] = {types$VOID, types$IS_UNTYPED, "void"},
+    [types$BOOL] = {types$BOOL, types$IS_BOOLEAN, "bool"},
+    [types$CHAR] = {types$CHAR, types$IS_INTEGER, "char"},
+    [types$INT] = {types$INT, types$IS_INTEGER, "int"},
+    [types$INT8] = {types$INT8, types$IS_INTEGER, "int8_t"},
+    [types$INT16] = {types$INT16, types$IS_INTEGER, "int16_t"},
+    [types$INT32] = {types$INT32, types$IS_INTEGER, "int32_t"},
+    [types$INT64] = {types$INT64, types$IS_INTEGER, "int64_t"},
+    // [types$UINT] = {types$UINT, types$IS_INTEGER, "uint_t"},
+    [types$UINT8] = {types$UINT8, types$IS_INTEGER | types$IS_UNSIGNED, "uint8_t"},
+    [types$UINT16] = {types$UINT16, types$IS_INTEGER | types$IS_UNSIGNED, "uint16_t"},
+    [types$UINT32] = {types$UINT32, types$IS_INTEGER | types$IS_UNSIGNED, "uint32_t"},
+    [types$UINT64] = {types$UINT64, types$IS_INTEGER | types$IS_UNSIGNED, "uint64_t"},
+    [types$UINTPTR] = {types$UINTPTR, types$IS_INTEGER | types$IS_UNSIGNED, "uintptr_t"},
+    [types$SIZE_T] = {types$SIZE_T, types$IS_INTEGER | types$IS_UNSIGNED, "size_t"},
+    [types$FLOAT32] = {types$FLOAT32, types$IS_FLOAT, "float"},
+    [types$FLOAT64] = {types$FLOAT64, types$IS_FLOAT, "double"},
+    // [types$STRING] = {types$STRING, types$IS_STRING, "string"},
+    [types$VOID_POINTER] = {types$VOID_POINTER, 0, "voidptr"},
+};
+
+static void defPredeclaredTypes() {
+    for (int i = 0; i < types$UNSAFE_POINTER; i++) {
+        if (!predeclaredTypes[i].name) {
+            continue;
+        }
+        ast$Object *obj = ast$newObject(ast$ObjKind_TYP,
+                predeclaredTypes[i].name);
+        ast$Expr name = {
+            .kind = ast$EXPR_IDENT,
+            .ident = {
+                .name = sys$strdup(predeclaredTypes[i].name),
+                .obj = obj,
+            },
+        };
+        ast$Expr type = {
+            .kind = ast$TYPE_NATIVE,
+            .native = {
+                .kind = predeclaredTypes[i].kind,
+                .info = predeclaredTypes[i].info,
+                .name = sys$strdup(predeclaredTypes[i].name),
+            },
+        };
+        ast$Decl decl = {
+            .kind = ast$DECL_TYPEDEF,
+            .typedef_ = {
+                .name = esc(name),
+                .type = esc(type),
+            },
+        };
+        obj->decl = esc(decl);
+        assert(ast$Scope_insert(_universe, obj) == NULL);
+    }
+}
+
 typedef enum {
     _assert,
-    _esc,
-    _free,
-    _malloc,
     _panic,
     _print,
-    _strdup,
-    _streq,
-    _strlen,
     numBuiltinIds,
 } builtinId;
 
@@ -21,97 +74,97 @@ typedef enum {
     statement,
 } exprKind;
 
-struct {
+static struct {
     char *name;
     int nargs;
     bool variadic;
     exprKind kind;
 } predeclareFuncs[] = {
     [_assert]   = {"assert", 1, false, statement},
-    [_esc]      = {"esc", 1, false, expression},
-    [_free]     = {"free", 1, false, statement},
-    [_malloc]   = {"malloc", 1, false, expression},
-    [_panic]    = {"panic", 1, true, statement},
+    [_panic]    = {"panic", 1, false, statement},
     [_print]    = {"print", 1, false, statement},
-    [_strdup]   = {"strdup", 1, false, expression},
-    [_streq]    = {"streq", 2, false, expression},
-    [_strlen]   = {"strlen", 1, false, expression},
 };
 
-void defPredeclareFuncs() {
+static void defPredeclaredFuncs() {
     for (int i = 0; i < numBuiltinIds; i++) {
+        ast$Expr name = {
+            .kind = ast$EXPR_IDENT,
+            .ident = {
+                .name = sys$strdup(predeclareFuncs[i].name),
+            },
+        };
+        ast$Expr type = {
+            .kind = ast$TYPE_BUILTIN,
+            .builtin = {
+                .name = sys$strdup(predeclareFuncs[i].name),
+                .nargs = predeclareFuncs[i].nargs,
+                .variadic = predeclareFuncs[i].variadic,
+                .isExpr = predeclareFuncs[i].kind == expression,
+            },
+        };
+        ast$Decl decl = {
+            .kind = ast$DECL_FUNC,
+            .func = {
+                .name = esc(name),
+                .type = esc(type),
+            },
+        };
+        ast$Object *obj = ast$newObject(ast$ObjKind_FUN, name.ident.name);
+        obj->decl = esc(decl);
+        obj->decl->func.name->ident.obj = obj;
+        assert(ast$Scope_insert(_universe, obj) == NULL);
     }
 }
 
 static struct {
     char *name;
-    int size;
-    bool arith;
-} natives[] = {
-    // native types
-    {"char", sizeof(char), true},
-    {"double", sizeof(double), true},
-    {"float", sizeof(float), true},
-    {"int", sizeof(int), true},
-    {"void", sizeof(void)},
-    // libc types
-    {"int16_t", sizeof(int16_t), true},
-    {"int32_t", sizeof(int32_t), true},
-    {"int64_t", sizeof(int64_t), true},
-    {"int8_t", sizeof(int8_t), true},
-    {"size_t", sizeof(size_t), true},
-    {"uint16_t", sizeof(uint16_t), true},
-    {"uint32_t", sizeof(uint32_t), true},
-    {"uint64_t", sizeof(uint64_t), true},
-    {"uint8_t", sizeof(uint8_t), true},
-    {"uintptr_t", sizeof(uintptr_t), true},
-    // sentinel
+    char *type;
+    int value;
+} predeclareConsts[] = {
+    {"NULL", "voidptr", 0},
+    {"false", "bool", 0},
+    {"true", "bool", 1},
     {NULL},
 };
 
-static void declareBuiltins(ast$Scope *s) {
-    for (int i = 0; natives[i].name != NULL; i++) {
-        ast$Expr _name = {
+static void defPredeclaredConsts() {
+    for (int i = 0; predeclareConsts[i].name; i++) {
+        ast$Object *obj = ast$Scope_lookup(_universe,
+                predeclareConsts[i].type);
+        ast$Expr name = {
             .kind = ast$EXPR_IDENT,
             .ident = {
-                .name = sys$strdup(natives[i].name),
+                .name = sys$strdup(predeclareConsts[i].name),
             },
         };
-        ast$Expr *name = esc(_name);
-        ast$Expr type = {
-            .kind = ast$TYPE_NATIVE,
-            .native = {
-                .name = sys$strdup(natives[i].name),
-                .size = natives[i].size,
+        ast$Expr expr = {
+            .kind = ast$EXPR_CONST,
+            .const_ = {
+                .name = sys$strdup(predeclareConsts[i].name),
+                .value = predeclareConsts[i].value,
             },
         };
         ast$Decl decl = {
-            .kind = ast$DECL_TYPEDEF,
-            .typedef_ = {
-                .name = name,
-                .type = esc(type),
+            .kind = ast$DECL_VALUE,
+            .value = {
+                .name = esc(name),
+                .type = obj->decl->typedef_.name,
+                .value = esc(expr),
             },
         };
-        ast$Object *obj = ast$newObject(ast$ObjKind_TYP, name->ident.name);
+        obj = ast$newObject(ast$ObjKind_CON, name.ident.name);
         obj->decl = esc(decl);
-        name->ident.obj = obj;
-        assert(ast$Scope_insert(s, obj) == NULL);
+        obj->decl->value.name->ident.obj = obj;
+        assert(ast$Scope_insert(_universe, obj) == NULL);
     }
 }
-
-ast$Scope *_universe = NULL;
 
 extern ast$Scope *types$universe() {
     if (_universe == NULL) {
         _universe = ast$Scope_new(NULL);
-        declareBuiltins(_universe);
-        token$FileSet *fset = token$newFileSet();
-        ast$File *file = parser$parseFile(fset, "builtin/builtin.bling", _universe);
-        _universe = file->scope;
-        types$Config conf = {.strict = true};
-        types$checkFile(&conf, "builtin", fset, file, NULL);
-        sys$free(file->decls);
-        sys$free(file);
+        defPredeclaredTypes();
+        defPredeclaredConsts();
+        defPredeclaredFuncs();
     }
     return _universe;
 }

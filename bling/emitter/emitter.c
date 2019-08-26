@@ -431,6 +431,12 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         emitter$emitType(e, type->array.elt);
         break;
 
+    case ast$TYPE_BUILTIN:
+        emitter$emitString(e, "/* builtin func ");
+        emitter$emitString(e, type->builtin.name);
+        emitter$emitString(e, " */");
+        break;
+
     case ast$TYPE_ELLIPSIS:
         emitter$emitToken(e, token$ELLIPSIS);
         break;
@@ -481,6 +487,10 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         emitter$emitToken(e, token$MAP);
         emitter$emitSpace(e);
         emitter$emitType(e, type->map_.val);
+        break;
+
+    case ast$TYPE_NATIVE:
+        emitter$emitString(e, type->native.name);
         break;
 
     case ast$TYPE_STRUCT:

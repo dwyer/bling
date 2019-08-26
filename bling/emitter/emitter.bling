@@ -402,6 +402,11 @@ fun emitType(e *Emitter, type *ast.Expr) {
         emitToken(e, token.RBRACK)
         emitType(e, type.array.elt)
         break
+    case ast.TYPE_BUILTIN:
+        emitString(e, "/* builtin func ")
+        emitString(e, type.builtin.name)
+        emitString(e, " */")
+        break
     case ast.TYPE_ELLIPSIS:
         emitToken(e, token.ELLIPSIS)
         break
@@ -449,6 +454,9 @@ fun emitType(e *Emitter, type *ast.Expr) {
         emitToken(e, token.MAP)
         emitSpace(e)
         emitType(e, type.map_.val)
+        break
+    case ast.TYPE_NATIVE:
+        emitString(e, type.native.name)
         break
     case ast.TYPE_STRUCT:
         emitToken(e, type.struct_.tok)

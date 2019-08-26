@@ -61,13 +61,21 @@ extern void ast$Scope_print(ast$Scope *s) {
     }
 }
 
-extern bool ast$resolve(ast$Scope *scope, ast$Expr *ident) {
-    for (; scope != NULL; scope = scope->outer) {
-        ast$Object *obj = ast$Scope_lookup(scope, ident->ident.name);
+extern ast$Object *ast$Scope_deepLookup(ast$Scope *s, char *name) {
+    for (; s != NULL; s = s->outer) {
+        ast$Object *obj = ast$Scope_lookup(s, name);
         if (obj != NULL) {
-            ident->ident.obj = obj;
-            return true;
+            return obj;
         }
+    }
+    return NULL;
+}
+
+extern bool ast$resolve(ast$Scope *scope, ast$Expr *ident) {
+    ast$Object *obj = ast$Scope_deepLookup(scope, ident->ident.name);
+    if (obj != NULL) {
+        ident->ident.obj = obj;
+        return true;
     }
     return false;
 }
@@ -94,10 +102,14 @@ extern bool ast$isVoid(ast$Expr *x) {
 }
 
 extern bool ast$isVoidPtr(ast$Expr *x) {
-    if (x->kind == ast$EXPR_STAR) {
+    switch (x->kind) {
+    case ast$EXPR_STAR:
         return ast$isVoid(x->star.x);
+    case ast$TYPE_NATIVE:
+        return x->native.info == 0;
+    default:
+        return false;
     }
-    return false;
 }
 
 extern token$Pos ast$Decl_pos(ast$Decl *d) {

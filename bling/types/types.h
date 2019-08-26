@@ -49,6 +49,7 @@ extern char *types$constant_stringVal(ast$Expr *x); // TODO move this to const p
 typedef enum {
     types$INVALID,
 
+    types$VOID,
     types$BOOL,
     types$CHAR,
     types$INT,
@@ -56,17 +57,19 @@ typedef enum {
     types$INT16,
     types$INT32,
     types$INT64,
-    types$UINT,
+    // types$UINT,
     types$UINT8,
     types$UINT16,
     types$UINT32,
     types$UINT64,
     types$UINTPTR,
+    types$SIZE_T,
     types$FLOAT32,
     types$FLOAT64,
-    types$COMPLEX64,
-    types$COMPLEX128,
-    types$STRING,
+    // types$COMPLEX64,
+    // types$COMPLEX128,
+    // types$STRING,
+    types$VOID_POINTER,
     types$UNSAFE_POINTER,
 
 } types$BasicKind;
