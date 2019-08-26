@@ -12,7 +12,7 @@ static void emitter$emitBytes(emitter$Emitter *e, const char *s, int n) {
 }
 
 extern void emitter$emitString(emitter$Emitter *e, const char *s) {
-    emitter$emitBytes(e, s, strlen(s));
+    emitter$emitBytes(e, s, sys$strlen(s));
 }
 
 extern void emitter$emitSpace(emitter$Emitter *e) {
@@ -125,8 +125,8 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
     case ast$EXPR_IDENT:
         if (e->pkg
                 && hasPrefix(expr->ident.name, e->pkg)
-                && expr->ident.name[strlen(e->pkg)] == '$') {
-            emitter$emitString(e, &expr->ident.name[strlen(e->pkg)+1]);
+                && expr->ident.name[sys$strlen(e->pkg)] == '$') {
+            emitter$emitString(e, &expr->ident.name[sys$strlen(e->pkg)+1]);
         } else {
             int i = bytes$indexByte(expr->ident.name, '$');
             if (i >= 0) {

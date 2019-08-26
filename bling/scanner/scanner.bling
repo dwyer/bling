@@ -179,7 +179,7 @@ scan_again:
     *lit = NULL
     if is_letter(s.ch) {
         *lit = scan_ident(s)
-        if strlen(*lit) > 1 {
+        if sys.strlen(*lit) > 1 {
             tok = token.lookup(*lit)
             if tok != token.IDENT {
                 free(*lit)

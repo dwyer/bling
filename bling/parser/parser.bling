@@ -91,7 +91,7 @@ fun next(p *Parser) {
 
 fun init(p *Parser, fset *token.FileSet, filename *const char, src *char) {
     assert(fset)
-    p.file = token.FileSet_addFile(fset, filename, -1, strlen(src))
+    p.file = token.FileSet_addFile(fset, filename, -1, sys.strlen(src))
     p.lit = NULL
     scanner.init(&p.scanner, p.file, src)
     p.scanner.dontInsertSemis = !bytes.hasSuffix(filename, ".bling")

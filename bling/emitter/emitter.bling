@@ -22,7 +22,7 @@ fun emitBytes(e *Emitter, s *const char, n int) {
 }
 
 fun emitString(e *Emitter, s *const char) {
-    emitBytes(e, s, strlen(s))
+    emitBytes(e, s, sys.strlen(s))
 }
 
 fun emitSpace(e *Emitter) {
@@ -126,8 +126,8 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         emitToken(e, token.RBRACE)
         break
     case ast.EXPR_IDENT:
-        if e.pkg && hasPrefix(expr.ident.name, e.pkg) && expr.ident.name[strlen(e.pkg)] == '$' {
-            emitString(e, &expr.ident.name[strlen(e.pkg) + 1])
+        if e.pkg && hasPrefix(expr.ident.name, e.pkg) && expr.ident.name[sys.strlen(e.pkg)] == '$' {
+            emitString(e, &expr.ident.name[sys.strlen(e.pkg) + 1])
         } else {
             var i int = bytes.indexByte(expr.ident.name, '$')
             if i >= 0 {

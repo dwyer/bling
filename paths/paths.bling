@@ -32,7 +32,7 @@ fun dir(path *const char) *char {
 }
 
 fun ext(path *const char) *const char {
-    var n int = strlen(path) - 1
+    var n int = sys.strlen(path) - 1
     while n > 0 && path[n] != '.' {
         n--
     }

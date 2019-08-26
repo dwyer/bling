@@ -9,7 +9,7 @@ extern char *types$constant_stringVal(ast$Expr *x) {
     // TODO move this to const pkg
     assert(x->kind == ast$EXPR_BASIC_LIT);
     const char *lit = x->basic.value;
-    int n = strlen(lit) - 2;
+    int n = sys$strlen(lit) - 2;
     char *val = malloc(n + 1);
     for (int i = 0; i < n; i++) {
         val[i] = lit[i+1];

@@ -76,7 +76,7 @@ extern void parser$next(parser$Parser *p) {
 extern void parser$init(parser$Parser *p, token$FileSet *fset,
         const char *filename, char *src) {
     assert(fset);
-    p->file = token$FileSet_addFile(fset, filename, -1, strlen(src));
+    p->file = token$FileSet_addFile(fset, filename, -1, sys$strlen(src));
     p->lit = NULL;
     scanner$init(&p->scanner, p->file, src);
     p->scanner.dontInsertSemis = !bytes$hasSuffix(filename, ".bling");

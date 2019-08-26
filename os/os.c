@@ -64,7 +64,7 @@ extern int os$read(os$File *file, char *b, int n, utils$Error **error) {
 
 extern int os$write(os$File *file, const char *b, utils$Error **error) {
     utils$clearError();
-    int n = write(file->fd, b, strlen(b));
+    int n = write(file->fd, b, sys$strlen(b));
     PathError_check(file->name, error);
     return n;
 }

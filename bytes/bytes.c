@@ -28,16 +28,16 @@ extern char *bytes$join(const char *a[], int size, const char *sep) {
         return sys$strdup(a[0]);
     }
     bytes$Buffer b = {};
-    bytes$Buffer_write(&b, a[0], strlen(a[0]), NULL);
+    bytes$Buffer_write(&b, a[0], sys$strlen(a[0]), NULL);
     for (int i = 1; i < size; i++) {
-        bytes$Buffer_write(&b, sep, strlen(sep), NULL);
-        bytes$Buffer_write(&b, a[i], strlen(a[i]), NULL);
+        bytes$Buffer_write(&b, sep, sys$strlen(sep), NULL);
+        bytes$Buffer_write(&b, a[i], sys$strlen(a[i]), NULL);
     }
     return bytes$Buffer_string(&b);
 }
 
 extern int bytes$lastIndexByte(const char *b, char c) {
-    for (int i = strlen(b) - 1; i >= 0; i--) {
+    for (int i = sys$strlen(b) - 1; i >= 0; i--) {
         if (c == b[i]) {
             return i;
         }
@@ -72,7 +72,7 @@ extern char *bytes$Buffer_string(bytes$Buffer *b) {
 extern int bytes$Buffer_write(bytes$Buffer *b, const char *p, int size, utils$Error **error) {
     bytes$Buffer_init(b);
     if (size < 0) {
-        size = strlen(p);
+        size = sys$strlen(p);
     }
     for (int i = 0; i < size; i++) {
         utils$Slice_append(b, &p[i]);

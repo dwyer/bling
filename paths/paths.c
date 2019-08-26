@@ -32,7 +32,7 @@ extern char *paths$dir(const char *path) {
 }
 
 extern const char *paths$ext(const char *path) {
-    int n = strlen(path) - 1;
+    int n = sys$strlen(path) - 1;
     while (n > 0 && path[n] != '.') {
         n--;
     }

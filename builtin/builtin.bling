@@ -11,4 +11,3 @@ fun malloc(size_t) *void
 fun panic(fmt *const char)
 fun print(fmt *const char)
 fun streq(a *const char, b *const char) bool
-fun strlen(*const char) size_t
