@@ -170,9 +170,8 @@ static Package newPackage(Builder *b, const char *path) {
     sys$free(genPath);
     sys$free(base);
     for (int i = 0; i < len(pkg.pkg->imports); i++) {
-        types$Package *impt = NULL;
-        utils$Slice_get(&pkg.pkg->imports, i, &impt);
-        Package *dep = _buildPackage(b, impt->path);
+        Package *dep =
+            _buildPackage(b, get(types$Package *, pkg.pkg->imports, i)->path);
         append(pkg.deps, dep);
         if (pkg.srcModTime < dep->srcModTime) {
             pkg.srcModTime = dep->srcModTime;
@@ -201,9 +200,7 @@ static void genHeader(Builder *b, Package *pkg) {
     emitter$emitNewline(&e);
     emit_rawfile(&e, "bootstrap/bootstrap.h");
     for (int i = 0; i < len(pkg->deps); i++) {
-        Package *dep = NULL;
-        utils$Slice_get(&pkg->deps, i, &dep);
-        emitInclude(&e, dep->hPath);
+        emitInclude(&e, get(Package *, pkg->deps, i)->hPath);
     }
     cemitter$emitHeader(&e, pkg->pkg);
     char *out = emitter$Emitter_string(&e);
@@ -257,9 +254,7 @@ static Package *buildCPackage(Builder *b, const char *path) {
         append(cmd, (char *)"rsc");
         append(cmd, pkg.libPath);
         for (int i = 0; i < len(objFiles); i++) {
-            char *obj = NULL;
-            utils$Slice_get(&objFiles, i, &obj);
-            append(cmd, obj);
+            append(cmd, get(char *, objFiles, i));
         }
         mkdirForFile(pkg.libPath);
         execute(&cmd);

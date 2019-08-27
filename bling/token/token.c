@@ -165,9 +165,7 @@ extern char *token$Position_string(token$Position *p) {
 }
 
 static int getInt(array(int) *a, int i) {
-    int x;
-    utils$Slice_get(a, i, &x);
-    return x;
+    return get(int, *a, i);
 }
 
 extern void token$File_addLine(token$File *f, int offset) {
@@ -231,8 +229,7 @@ extern char *token$File_lineString(token$File *f, int line) {
         return NULL;
     }
     bytes$Buffer buf = {};
-    int i = 0;
-    utils$Slice_get(&f->lines, line-1, &i);
+    int i = get(int, f->lines, line-1);
     int ch = f->src[i];
     while (ch > 0 && ch != '\n') {
         bytes$Buffer_writeByte(&buf, ch, NULL);
@@ -277,8 +274,7 @@ extern token$File *token$FileSet_addFile(token$FileSet *s,
 
 static int searchFiles(array(token$File *) *files, int x) {
     for (int i = 0; i < len(*files); i++) {
-        token$File *f;
-        utils$Slice_get(files, i, &f);
+        token$File *f = get(token$File *, *files, i);
         if (f->base <= x && x <= f->base + f->size) {
             return i;
         }
@@ -293,7 +289,7 @@ extern token$File *token$FileSet_file(token$FileSet *s, token$Pos p) {
     }
     int i = searchFiles(&s->files, p);
     if (i >= 0) {
-        utils$Slice_get(&s->files, i, &f);
+        f = get(token$File *, s->files, i);
         if (p <= f->base + f->size) {
             s->last = f;
             return f;
@@ -304,8 +300,7 @@ extern token$File *token$FileSet_file(token$FileSet *s, token$Pos p) {
 
 extern void token$FileSet_print(token$FileSet *fset) {
     for (int i = 0; i < len(fset->files); i++) {
-        token$File *f;
-        utils$Slice_get(&fset->files, i, &f);
+        token$File *f = get(token$File *, fset->files, i);
         char *s = sys$sprintf("%d: %s (base=%d, size=%d)", i, f->name, f->base, f->size);
         print(s);
         sys$free(s);

@@ -174,9 +174,7 @@ fun newPackage(b *Builder, path *const char) Package {
     sys.free(genPath)
     sys.free(base)
     for var i int = 0; i < len(pkg.pkg.imports); i++ {
-        var impt *types.Package = NULL
-        utils.Slice_get(&pkg.pkg.imports, i, &impt)
-        var dep *Package = _buildPackage(b, impt.path)
+        var dep *Package = _buildPackage(b, get(*types.Package, pkg.pkg.imports, i).path)
         append(pkg.deps, dep)
         if pkg.srcModTime < dep.srcModTime {
             pkg.srcModTime = dep.srcModTime
@@ -204,9 +202,7 @@ fun genHeader(b *Builder, pkg *Package) {
     emitter.emitNewline(&e)
     emit_rawfile(&e, "bootstrap/bootstrap.h")
     for var i int = 0; i < len(pkg.deps); i++ {
-        var dep *Package = NULL
-        utils.Slice_get(&pkg.deps, i, &dep)
-        emitInclude(&e, dep.hPath)
+        emitInclude(&e, get(*Package, pkg.deps, i).hPath)
     }
     cemitter.emitHeader(&e, pkg.pkg)
     var out *char = emitter.Emitter_string(&e)
@@ -259,9 +255,7 @@ fun buildCPackage(b *Builder, path *const char) *Package {
         append(cmd, typ *char("rsc"))
         append(cmd, pkg.libPath)
         for var i int = 0; i < len(objFiles); i++ {
-            var obj *char = NULL
-            utils.Slice_get(&objFiles, i, &obj)
-            append(cmd, obj)
+            append(cmd, get(*char, objFiles, i))
         }
         mkdirForFile(pkg.libPath)
         execute(&cmd)

@@ -535,11 +535,9 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
 }
 
 fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
-    var key *char = NULL
     var obj *ast.Object = NULL
     for var i int = 0; i < len(scope.keys); i++ {
-        utils.Slice_get(&scope.keys, i, &key)
-        utils.Map_get(&scope.objects, key, &obj)
+        utils.Map_get(&scope.objects, get(*char, scope.keys, i), &obj)
         if obj.kind == kind {
             emitter.emitNewline(e)
             emitDecl(e, obj.decl)
@@ -560,9 +558,7 @@ fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
     }
     utils.Map_set(done, pkg.path, &pkg.path)
     for var i int = 0; i < len(pkg.imports); i++ {
-        var impt *types.Package = NULL
-        utils.Slice_get(&pkg.imports, i, &impt)
-        _emitPackage(e, done, impt)
+        _emitPackage(e, done, get(*types.Package, pkg.imports, i))
     }
     e.forwardDecl = true
     emitScope(e, pkg.scope)

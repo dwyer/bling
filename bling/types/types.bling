@@ -68,6 +68,7 @@ typ Basic struct {
 typ builtinId enum {
     APPEND
     ASSERT
+    GET
     LEN
     MAKEARRAY
     MAKEMAP
@@ -179,12 +180,17 @@ fun getBaseType(type *ast.Expr) *ast.Expr {
         case ast.EXPR_SELECTOR:
             type = type.selector.sel
             break
-        case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_MAP, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
+        case ast.EXPR_STAR, ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_MAP, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
             return type
         default:
             panic(sys.sprintf("not a type: %s", typeString(type)))
         }
     }
+}
+
+fun isDynamicArray(t *ast.Expr) bool {
+    t = getBaseType(t)
+    return t && t.kind == ast.TYPE_ARRAY && t.array_.dynamic
 }
 
 fun isArithmetic(type *ast.Expr) bool {
@@ -693,6 +699,20 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                     assert(len == type.builtin.nargs)
                 }
                 switch type.builtin.id {
+                case GET:
+                    {
+                        Checker_checkType(c, expr.call.args[0])
+                        var arr *ast.Expr = Checker_checkExpr(c, expr.call.args[1])
+                        if !isDynamicArray(arr) {
+                            Checker_error(c, ast.Expr_pos(expr.call.args[1]), sys.sprintf("expected dynamic array, got %s", typeString(arr)))
+                        }
+                        var elt *ast.Expr = arr.array_.elt
+                        var idx *ast.Expr = Checker_checkExpr(c, expr.call.args[2])
+                        idx = getBaseType(idx)
+                        assert(idx.kind == ast.TYPE_NATIVE)
+                        assert(idx.native.info | IS_INTEGER)
+                        return elt
+                    }
                 case LEN:
                     Checker_checkExpr(c, expr.call.args[0])
                     return Checker_lookupIdent(c, "int")
@@ -1267,6 +1287,12 @@ var predeclareFuncs []struct {
         1,
         false,
         statement,
+    },
+    GET: {
+        "get",
+        3,
+        false,
+        expression,
     },
     LEN: {
         "len",

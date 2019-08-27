@@ -101,6 +101,7 @@ typedef struct {
 typedef enum {
     types$APPEND,
     types$ASSERT,
+    types$GET,
     types$LEN,
     types$MAKEARRAY,
     types$MAKEMAP,

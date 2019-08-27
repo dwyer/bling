@@ -28,6 +28,8 @@
 #define makearray(T) (utils$Slice){.size = sizeof(T)}
 #define makemap(T) (utils$Map){._valSize = sizeof(T)}
 
+#define get(T, a, i) (*(T*)utils$Slice_get(&(a), (i), NULL))
+
 #define fallthrough /**/
 #define typ /**/
 

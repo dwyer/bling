@@ -110,6 +110,7 @@ static ast$Expr *types$getBaseType(ast$Expr *type) {
         case ast$EXPR_SELECTOR:
             type = type->selector.sel;
             break;
+        case ast$EXPR_STAR:
         case ast$TYPE_ARRAY:
         case ast$TYPE_ENUM:
         case ast$TYPE_MAP:
@@ -120,6 +121,11 @@ static ast$Expr *types$getBaseType(ast$Expr *type) {
             panic(sys$sprintf("not a type: %s", types$typeString(type)));
         }
     }
+}
+
+static bool types$isDynamicArray(ast$Expr *t) {
+    t = types$getBaseType(t);
+    return t && t->kind == ast$TYPE_ARRAY && t->array_.dynamic;
 }
 
 static bool types$isArithmetic(ast$Expr *type) {
@@ -682,6 +688,23 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                     assert(len == type->builtin.nargs);
                 }
                 switch (type->builtin.id) {
+                case types$GET:
+                    {
+                        Checker_checkType(c, expr->call.args[0]);
+                        ast$Expr *arr = Checker_checkExpr(c, expr->call.args[1]);
+                        if (!types$isDynamicArray(arr)) {
+                            Checker_error(c, ast$Expr_pos(expr->call.args[1]),
+                                    sys$sprintf(
+                                        "expected dynamic array, got %s",
+                                        types$typeString(arr)));
+                        }
+                        ast$Expr *elt = arr->array_.elt;
+                        ast$Expr *idx = Checker_checkExpr(c, expr->call.args[2]);
+                        idx = types$getBaseType(idx);
+                        assert(idx->kind == ast$TYPE_NATIVE);
+                        assert(idx->native.info | types$IS_INTEGER);
+                        return elt;
+                    }
                 case types$LEN:
                     Checker_checkExpr(c, expr->call.args[0]);
                     return Checker_lookupIdent(c, "int");
