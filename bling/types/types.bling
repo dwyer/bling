@@ -1190,7 +1190,8 @@ fun defPredeclaredTypes() {
 
 typ builtinId enum {
     _assert
-    _mapmake
+    _len
+    _makemap
     _panic
     _print
     numBuiltinIds
@@ -1213,7 +1214,13 @@ var predeclareFuncs []struct {
         false,
         statement,
     },
-    _mapmake: {
+    _len: {
+        "len",
+        1,
+        false,
+        expression,
+    },
+    _makemap: {
         "mapmake",
         1,
         false,
