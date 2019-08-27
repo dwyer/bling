@@ -52,6 +52,32 @@ static bool is_type(parser$Parser *p) {
     }
 }
 
+static ast$Expr *operand(parser$Parser *p) {
+    switch (p->tok) {
+    case token$GET:
+        {
+            parser$expect(p, token$GET);
+            parser$expect(p, token$LPAREN);
+            type_name(p);
+            parser$expect(p, token$COMMA);
+            ast$Expr *arr = expression(p);
+            parser$expect(p, token$COMMA);
+            ast$Expr *index = expression(p);
+            parser$expect(p, token$RPAREN);
+            ast$Expr y = {
+                .kind = ast$EXPR_INDEX,
+                .index = {
+                    .x = arr,
+                    .index = index,
+                },
+            };
+            return esc(y);
+        }
+    default:
+        return parser$parseOperand(p, true);
+    }
+}
+
 static ast$Expr *postfix_expression(parser$Parser *p, ast$Expr *x) {
     // postfix_expression
     //         : primary_expression
@@ -61,7 +87,7 @@ static ast$Expr *postfix_expression(parser$Parser *p, ast$Expr *x) {
     //         | postfix_expression '->' IDENTIFIER
     //         ;
     if (x == NULL) {
-        x = parser$parseOperand(p, true);
+        x = operand(p);
     }
     for (;;) {
         switch (p->tok) {

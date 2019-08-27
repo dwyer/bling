@@ -12,10 +12,14 @@ import("utils");
 
 extern ast$Scope *types$universe();
 
+extern ast$Expr *types$getType(ast$Expr *x);
+extern ast$Expr *types$getBaseType(ast$Expr *type);
+
 extern bool types$isType(ast$Expr *expr);
 extern bool types$isIdent(ast$Expr *expr);
 extern bool types$isVoid(ast$Expr *type);
 extern bool types$isVoidPtr(ast$Expr *type);
+extern bool types$isDynamicArray(ast$Expr *t);
 
 extern char *types$exprString(ast$Expr *expr);
 extern char *types$stmtString(ast$Stmt *stmt);
@@ -101,7 +105,6 @@ typedef struct {
 typedef enum {
     types$APPEND,
     types$ASSERT,
-    types$GET,
     types$LEN,
     types$MAKEARRAY,
     types$MAKEMAP,

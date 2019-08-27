@@ -76,10 +76,27 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitter.emitString(e, expr.ident.name)
         break
     case ast.EXPR_INDEX:
-        emitExpr(e, expr.index.x)
-        emitter.emitToken(e, token.LBRACK)
-        emitExpr(e, expr.index.index)
-        emitter.emitToken(e, token.RBRACK)
+        {
+            var t *ast.Expr = types.getType(expr.index.x)
+            assert(t)
+            t = types.getBaseType(t)
+            assert(t)
+            if types.isDynamicArray(t) {
+                emitter.emitToken(e, token.GET)
+                emitter.emitToken(e, token.LPAREN)
+                emitType(e, t.array_.elt, NULL)
+                emitter.emitToken(e, token.COMMA)
+                emitExpr(e, expr.index.x)
+                emitter.emitToken(e, token.COMMA)
+                emitExpr(e, expr.index.index)
+                emitter.emitToken(e, token.RPAREN)
+            } else {
+                emitExpr(e, expr.index.x)
+                emitter.emitToken(e, token.LBRACK)
+                emitExpr(e, expr.index.index)
+                emitter.emitToken(e, token.RBRACK)
+            }
+        }
         break
     case ast.EXPR_KEY_VALUE:
         if expr.key_value.isArray {
@@ -537,7 +554,7 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
 fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
     var obj *ast.Object = NULL
     for var i int = 0; i < len(scope.keys); i++ {
-        utils.Map_get(&scope.objects, get(*char, scope.keys, i), &obj)
+        utils.Map_get(&scope.objects, scope.keys[i], &obj)
         if obj.kind == kind {
             emitter.emitNewline(e)
             emitDecl(e, obj.decl)
@@ -558,7 +575,7 @@ fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
     }
     utils.Map_set(done, pkg.path, &pkg.path)
     for var i int = 0; i < len(pkg.imports); i++ {
-        _emitPackage(e, done, get(*types.Package, pkg.imports, i))
+        _emitPackage(e, done, pkg.imports[i])
     }
     e.forwardDecl = true
     emitScope(e, pkg.scope)

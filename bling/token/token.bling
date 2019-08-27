@@ -24,6 +24,7 @@ typ Token enum {
     FALLTHROUGH
     FOR
     FUNC
+    GET
     GOTO
     IF
     IMPORT
@@ -156,6 +157,7 @@ var tokens []*char = {
     FALLTHROUGH: "fallthrough",
     FOR: "for",
     FUNC: "fun",
+    GET: "get",
     GOTO: "goto",
     IF: "if",
     IMPORT: "import",
@@ -285,7 +287,7 @@ fun Position_string(p *Position) *char {
 }
 
 fun getInt(a *[array]int, i int) int {
-    return get(int, *a, i)
+    return (*a)[i]
 }
 
 fun File_addLine(f *File, offset int) {
@@ -347,7 +349,7 @@ fun File_lineString(f *File, line int) *char {
         return NULL
     }
     var buf bytes.Buffer = {}
-    var i int = get(int, f.lines, line - 1)
+    var i int = f.lines[line - 1]
     var ch int = f.src[i]
     while ch > 0 && ch != '\n' {
         bytes.Buffer_writeByte(&buf, ch, NULL)
@@ -391,7 +393,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
 
 fun searchFiles(files *[array]*File, x int) int {
     for var i int = 0; i < len(*files); i++ {
-        var f *File = get(*File, *files, i)
+        var f *File = (*files)[i]
         if f.base <= x && x <= f.base + f.size {
             return i
         }
@@ -406,7 +408,7 @@ fun FileSet_file(s *FileSet, p Pos) *File {
     }
     var i int = searchFiles(&s.files, p)
     if i >= 0 {
-        f = get(*File, s.files, i)
+        f = s.files[i]
         if p <= f.base + f.size {
             s.last = f
             return f
@@ -417,7 +419,7 @@ fun FileSet_file(s *FileSet, p Pos) *File {
 
 fun FileSet_print(fset *FileSet) {
     for var i int = 0; i < len(fset.files); i++ {
-        var f *File = get(*File, fset.files, i)
+        var f *File = fset.files[i]
         var s *char = sys.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
         print(s)
         sys.free(s)

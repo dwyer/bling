@@ -30,6 +30,7 @@ typedef enum {
     token$FALLTHROUGH,
     token$FOR,
     token$FUNC,
+    token$GET,
     token$GOTO,
     token$IF,
     token$IMPORT,

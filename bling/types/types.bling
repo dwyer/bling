@@ -68,7 +68,6 @@ typ Basic struct {
 typ builtinId enum {
     APPEND
     ASSERT
-    GET
     LEN
     MAKEARRAY
     MAKEMAP
@@ -191,6 +190,35 @@ fun getBaseType(type *ast.Expr) *ast.Expr {
 fun isDynamicArray(t *ast.Expr) bool {
     t = getBaseType(t)
     return t && t.kind == ast.TYPE_ARRAY && t.array_.dynamic
+}
+
+fun getType(x *ast.Expr) *ast.Expr {
+    switch x.kind {
+    case ast.EXPR_PAREN:
+        return getType(x.paren.x)
+    case ast.EXPR_CAST:
+        return x.cast.type
+    case ast.EXPR_IDENT:
+        switch x.ident.obj.kind {
+        case ast.ObjKind_CON, ast.ObjKind_VAL:
+            return x.ident.obj.decl.value.type
+        default:
+            break
+        }
+        break
+    case ast.EXPR_SELECTOR:
+        return getType(x.selector.sel)
+    case ast.EXPR_STAR:
+        {
+            var t *ast.Expr = getType(x.star.x)
+            assert(t.kind == ast.EXPR_STAR)
+            return t.star.x
+        }
+    default:
+        break
+    }
+    panic(exprString(x))
+    return NULL
 }
 
 fun isArithmetic(type *ast.Expr) bool {
@@ -699,20 +727,6 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                     assert(len == type.builtin.nargs)
                 }
                 switch type.builtin.id {
-                case GET:
-                    {
-                        Checker_checkType(c, expr.call.args[0])
-                        var arr *ast.Expr = Checker_checkExpr(c, expr.call.args[1])
-                        if !isDynamicArray(arr) {
-                            Checker_error(c, ast.Expr_pos(expr.call.args[1]), sys.sprintf("expected dynamic array, got %s", typeString(arr)))
-                        }
-                        var elt *ast.Expr = arr.array_.elt
-                        var idx *ast.Expr = Checker_checkExpr(c, expr.call.args[2])
-                        idx = getBaseType(idx)
-                        assert(idx.kind == ast.TYPE_NATIVE)
-                        assert(idx.native.info | IS_INTEGER)
-                        return elt
-                    }
                 case LEN:
                     Checker_checkExpr(c, expr.call.args[0])
                     return Checker_lookupIdent(c, "int")
@@ -1287,12 +1301,6 @@ var predeclareFuncs []struct {
         1,
         false,
         statement,
-    },
-    GET: {
-        "get",
-        3,
-        false,
-        expression,
     },
     LEN: {
         "len",

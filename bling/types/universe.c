@@ -69,7 +69,6 @@ static struct {
 } predeclareFuncs[] = {
     [types$APPEND]      = {"append", 2, false, statement},
     [types$ASSERT]      = {"assert", 1, false, statement},
-    [types$GET]         = {"get", 3, false, expression},
     [types$LEN]         = {"len", 1, false, expression},
     [types$MAKEARRAY]   = {"makearray", 1, false, expression},
     [types$MAKEMAP]     = {"makemap", 1, false, expression},

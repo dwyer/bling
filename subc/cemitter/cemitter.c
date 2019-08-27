@@ -84,10 +84,27 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_INDEX:
-        cemitter$emitExpr(e, expr->index.x);
-        emitter$emitToken(e, token$LBRACK);
-        cemitter$emitExpr(e, expr->index.index);
-        emitter$emitToken(e, token$RBRACK);
+        {
+            ast$Expr *t = types$getType(expr->index.x);
+            assert(t);
+            t = types$getBaseType(t);
+            assert(t);
+            if (types$isDynamicArray(t)) {
+                emitter$emitToken(e, token$GET);
+                emitter$emitToken(e, token$LPAREN);
+                cemitter$emitType(e, t->array_.elt, NULL);
+                emitter$emitToken(e, token$COMMA);
+                cemitter$emitExpr(e, expr->index.x);
+                emitter$emitToken(e, token$COMMA);
+                cemitter$emitExpr(e, expr->index.index);
+                emitter$emitToken(e, token$RPAREN);
+            } else {
+                cemitter$emitExpr(e, expr->index.x);
+                emitter$emitToken(e, token$LBRACK);
+                cemitter$emitExpr(e, expr->index.index);
+                emitter$emitToken(e, token$RBRACK);
+            }
+        }
         break;
 
     case ast$EXPR_KEY_VALUE:

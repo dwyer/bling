@@ -24,11 +24,11 @@ typedef struct {
     void *_array;
 } utils$Slice;
 
-extern utils$Slice utils$Slice_make(int size); // TODO replace with make
+extern utils$Slice utils$Slice_make(int size);
 extern void utils$Slice_unmake(void *s);
 
 extern int utils$Slice_len(const void *s);
-extern int utils$Slice_cap(const void *s); // TODO replace with cap()
+extern int utils$Slice_cap(const void *s);
 extern void *utils$Slice_get(const void *s, int i, void *dst);
 
 extern void utils$Slice_setLen(void *s, int len);

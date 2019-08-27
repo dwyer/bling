@@ -53,6 +53,7 @@ static bool isSimpleType(ast$Expr *t) {
         t = t->array_.elt;
     }
     switch (t->kind) {
+    case ast$EXPR_PAREN:
     case ast$EXPR_IDENT:
     case ast$EXPR_SELECTOR:
         return true;
@@ -140,7 +141,13 @@ extern void emitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         break;
 
     case ast$EXPR_INDEX:
-        emitter$emitExpr(e, expr->index.x);
+        if (isSimpleType(expr->index.x)) {
+            emitter$emitExpr(e, expr->index.x);
+        } else {
+            emitter$emitToken(e, token$LPAREN);
+            emitter$emitExpr(e, expr->index.x);
+            emitter$emitToken(e, token$RPAREN);
+        }
         emitter$emitToken(e, token$LBRACK);
         emitter$emitExpr(e, expr->index.index);
         emitter$emitToken(e, token$RBRACK);

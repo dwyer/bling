@@ -26,6 +26,7 @@ static char *tokens[] = {
     [token$FALLTHROUGH] = "fallthrough",
     [token$FOR] = "for",
     [token$FUNC] = "fun",
+    [token$GET] = "get",
     [token$GOTO] = "goto",
     [token$IF] = "if",
     [token$IMPORT] = "import",

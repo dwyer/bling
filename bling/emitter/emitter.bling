@@ -63,7 +63,7 @@ fun isSimpleType(t *ast.Expr) bool {
         t = t.array_.elt
     }
     switch t.kind {
-    case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
+    case ast.EXPR_PAREN, ast.EXPR_IDENT, ast.EXPR_SELECTOR:
         return true
     default:
         return false
@@ -140,7 +140,13 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         }
         break
     case ast.EXPR_INDEX:
-        emitExpr(e, expr.index.x)
+        if isSimpleType(expr.index.x) {
+            emitExpr(e, expr.index.x)
+        } else {
+            emitToken(e, token.LPAREN)
+            emitExpr(e, expr.index.x)
+            emitToken(e, token.RPAREN)
+        }
         emitToken(e, token.LBRACK)
         emitExpr(e, expr.index.index)
         emitToken(e, token.RBRACK)
