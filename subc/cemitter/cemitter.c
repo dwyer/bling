@@ -621,7 +621,7 @@ static void _emitPackage(emitter$Emitter *e, map(char *) *done, types$Package *p
 }
 
 extern void cemitter$emitPackage(emitter$Emitter *e, types$Package *pkg) {
-    map(char *) done = mapmake(sizeof(char *));
+    map(char *) done = makemap(char *);
     _emitPackage(e, &done, pkg);
     utils$Map_unmake(&done);
 }

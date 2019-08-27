@@ -21,7 +21,7 @@
         utils$Map: utils$Map_len)(&(x))
 
 #define makearray(T) {.size = sizeof(T)}
-#define mapmake(size) {._valSize = (size)}
+#define makemap(T) {._valSize = sizeof(T)}
 
 #define fallthrough /**/
 #define typ /**/

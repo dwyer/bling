@@ -111,7 +111,7 @@ extern char *token$string(token$Token tok) {
     return tokens[tok];
 }
 
-static map(char *) keywords = mapmake(sizeof(char *));
+static map(char *) keywords = makemap(char *);
 
 extern token$Token token$lookup(char *ident) {
     if (len(keywords) == 0) {

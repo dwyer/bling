@@ -704,8 +704,18 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                     Checker_checkType(c, type)
                     return type
                 case MAKEMAP:
-                    Checker_checkExpr(c, expr.call.args[0])
-                    return NULL
+                    type = expr.call.args[0]
+                    {
+                        var t ast.Expr = {
+                            kind: ast.TYPE_MAP,
+                            map_: {
+                                val: type,
+                            },
+                        }
+                        type = &&t
+                    }
+                    Checker_checkType(c, type)
+                    return type
                 default:
                     assert(!type.builtin.isExpr)
                     for var i int = 0; expr.call.args[i]; i++ {
@@ -1254,7 +1264,7 @@ var predeclareFuncs []struct {
         expression,
     },
     MAKEMAP: {
-        "mapmake",
+        "makemap",
         1,
         false,
         expression,

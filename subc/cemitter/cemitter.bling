@@ -571,7 +571,7 @@ fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
 }
 
 fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
-    var done map *char = mapmake(sizeof(*char))
+    var done map *char = makemap(*char)
     _emitPackage(e, &done, pkg)
     utils.Map_unmake(&done)
 }

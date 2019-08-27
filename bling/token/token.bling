@@ -239,7 +239,7 @@ fun string(tok Token) *char {
     return tokens[tok]
 }
 
-var keywords map *char = mapmake(sizeof(*char))
+var keywords map *char = makemap(*char)
 
 fun lookup(ident *char) Token {
     if len(keywords) == 0 {

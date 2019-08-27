@@ -693,8 +693,18 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                     Checker_checkType(c, type);
                     return type;
                 case types$MAKEMAP:
-                    Checker_checkExpr(c, expr->call.args[0]);
-                    return NULL;
+                    type = expr->call.args[0];
+                    {
+                        ast$Expr t = {
+                            .kind = ast$TYPE_MAP,
+                            .map_ = {
+                                .val = type,
+                            },
+                        };
+                        type = esc(t);
+                    }
+                    Checker_checkType(c, type);
+                    return type;
                 default:
                     assert(!type->builtin.isExpr);
                     for (int i = 0; expr->call.args[i]; i++) {
