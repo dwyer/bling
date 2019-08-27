@@ -99,6 +99,7 @@ typedef struct {
 } types$Basic;
 
 typedef enum {
+    types$APPEND,
     types$ASSERT,
     types$LEN,
     types$MAKEARRAY,

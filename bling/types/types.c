@@ -723,7 +723,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                     for (int i = 0; expr->call.args[i]; i++) {
                         Checker_checkExpr(c, expr->call.args[i]);
                     }
-                    return NULL; // TODO return correct type
+                    return NULL;
                 }
             } else if (type->kind == ast$TYPE_FUNC) {
                 int j = 0;
@@ -1108,7 +1108,7 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
 static void Checker_checkFile(Checker *c, ast$File *file) {
     for (int i = 0; file->imports[i] != NULL; i++) {
         types$Package *pkg = Checker_checkImport(c, file->imports[i]);
-        utils$Slice_append(&c->pkg->imports, &pkg);
+        append(c->pkg->imports, pkg);
     }
     for (int i = 0; file->decls[i] != NULL; i++) {
         ast$ObjKind kind = ast$ObjKind_BAD;

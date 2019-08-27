@@ -14,6 +14,11 @@
 #define array(T) utils$Slice
 #define map(T) utils$Map
 
+#define append(a, x) do { \
+    typeof(x) $0 = (x); \
+    utils$Slice_append(&(a), &$0); \
+} while (0)
+
 #define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
 
 #define len(x) _Generic((x), \

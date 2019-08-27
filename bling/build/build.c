@@ -45,10 +45,6 @@ static void execute(array(char *) *cmd) {
     sys$free(args);
 }
 
-static void Slice_appendStrLit(array(char *) *a, const char *s) {
-    utils$Slice_append(a, &s);
-}
-
 static void mkdirForFile(const char *path) {
     char *dir = paths$dir(path);
     os$mkdirAll(dir, 0755, NULL);
@@ -81,16 +77,16 @@ typedef struct {
 
 static void genObj(Builder *b, const char *dst, const char *src) {
     array(char *) cmd = makearray(char *);
-    Slice_appendStrLit(&cmd, CC_PATH);
-    Slice_appendStrLit(&cmd, "-fms-extensions");
-    Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag");
-    Slice_appendStrLit(&cmd, "-g");
-    Slice_appendStrLit(&cmd, "-I");
-    Slice_appendStrLit(&cmd, INCL_PATH);
-    Slice_appendStrLit(&cmd, "-c");
-    Slice_appendStrLit(&cmd, "-o");
-    Slice_appendStrLit(&cmd, dst);
-    Slice_appendStrLit(&cmd, src);
+    append(cmd, CC_PATH);
+    append(cmd, (char *)"-fms-extensions");
+    append(cmd, (char *)"-Wno-microsoft-anon-tag");
+    append(cmd, (char *)"-g");
+    append(cmd, (char *)"-I");
+    append(cmd, INCL_PATH);
+    append(cmd, (char *)"-c");
+    append(cmd, (char *)"-o");
+    append(cmd, dst);
+    append(cmd, src);
     mkdirForFile(dst);
     execute(&cmd);
 }
@@ -177,7 +173,7 @@ static Package newPackage(Builder *b, const char *path) {
         types$Package *impt = NULL;
         utils$Slice_get(&pkg.pkg->imports, i, &impt);
         Package *dep = _buildPackage(b, impt->path);
-        utils$Slice_append(&pkg.deps, &dep);
+        append(pkg.deps, dep);
         if (pkg.srcModTime < dep->srcModTime) {
             pkg.srcModTime = dep->srcModTime;
         }
@@ -241,7 +237,7 @@ static Package *buildCPackage(Builder *b, const char *path) {
                     pkg.srcModTime = modTime;
                 }
                 os$FileInfo *obj = buildCFile(b, files[i]);
-                utils$Slice_append(&objFiles, &obj->_name);
+                append(objFiles, obj->_name);
                 checkTime = true;
                 modTime = os$FileInfo_modTime(obj);
                 if (pkg.srcModTime < modTime) {
@@ -257,13 +253,13 @@ static Package *buildCPackage(Builder *b, const char *path) {
         }
         genHeader(b, &pkg);
         array(char *) cmd = makearray(char *);
-        Slice_appendStrLit(&cmd, AR_PATH);
-        Slice_appendStrLit(&cmd, "rsc");
-        Slice_appendStrLit(&cmd, pkg.libPath);
+        append(cmd, AR_PATH);
+        append(cmd, (char *)"rsc");
+        append(cmd, pkg.libPath);
         for (int i = 0; i < len(objFiles); i++) {
             char *obj = NULL;
             utils$Slice_get(&objFiles, i, &obj);
-            utils$Slice_append(&cmd, &obj);
+            append(cmd, obj);
         }
         mkdirForFile(pkg.libPath);
         execute(&cmd);
@@ -283,22 +279,22 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
         }
         if (pkg.isCmd) {
             array(char *) cmd = makearray(char *);
-            Slice_appendStrLit(&cmd, CC_PATH);
-            Slice_appendStrLit(&cmd, "-o");
-            Slice_appendStrLit(&cmd, pkg.libPath);
-            Slice_appendStrLit(&cmd, pkg.objPath);
+            append(cmd, CC_PATH);
+            append(cmd, (char *)"-o");
+            append(cmd, pkg.libPath);
+            append(cmd, pkg.objPath);
             Package *pkg = NULL;
             utils$MapIter iter = utils$NewMapIter(&b->pkgs);
             while (utils$MapIter_next(&iter, NULL, &pkg)) {
-                Slice_appendStrLit(&cmd, pkg->libPath);
+                append(cmd, pkg->libPath);
             }
             execute(&cmd);
         } else {
             array(char *) cmd = makearray(char *);
-            Slice_appendStrLit(&cmd, AR_PATH);
-            Slice_appendStrLit(&cmd, "rsc");
-            Slice_appendStrLit(&cmd, pkg.libPath);
-            Slice_appendStrLit(&cmd, pkg.objPath);
+            append(cmd, AR_PATH);
+            append(cmd, (char *)"rsc");
+            append(cmd, pkg.libPath);
+            append(cmd, pkg.objPath);
             execute(&cmd);
         }
     }

@@ -436,7 +436,7 @@ fun Scope_insert(s *Scope, obj *Object) *Object {
     utils.Map_get(&s.objects, obj.name, &alt)
     if alt == NULL {
         utils.Map_set(&s.objects, obj.name, &obj)
-        utils.Slice_append(&s.keys, &obj.name)
+        append(s.keys, obj.name)
     }
     return alt
 }

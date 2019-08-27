@@ -66,6 +66,7 @@ typ Basic struct {
 }
 
 typ builtinId enum {
+    APPEND
     ASSERT
     LEN
     MAKEARRAY
@@ -1056,7 +1057,7 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
 fun Checker_checkFile(c *Checker, file *ast.File) {
     for var i int = 0; file.imports[i] != NULL; i++ {
         var pkg *Package = Checker_checkImport(c, file.imports[i])
-        utils.Slice_append(&c.pkg.imports, &pkg)
+        append(c.pkg.imports, pkg)
     }
     for var i int = 0; file.decls[i] != NULL; i++ {
         var kind ast.ObjKind = ast.ObjKind_BAD
@@ -1255,6 +1256,12 @@ var predeclareFuncs []struct {
     variadic bool
     kind exprKind
 } = {
+    APPEND: {
+        "append",
+        2,
+        false,
+        statement,
+    },
     ASSERT: {
         "assert",
         1,

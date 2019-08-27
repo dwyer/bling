@@ -173,7 +173,7 @@ static int getInt(array(int) *a, int i) {
 extern void token$File_addLine(token$File *f, int offset) {
     int i = len(f->lines);
     if ((i == 0 || getInt(&f->lines, i-1) < offset) && offset < f->size) {
-        utils$Slice_append(&f->lines, &offset);
+        append(f->lines, offset);
     }
 }
 
@@ -260,7 +260,7 @@ extern token$File *token$FileSet_addFile(token$FileSet *s,
     }
     array(int) lines = makearray(int);
     int zero = 0;
-    utils$Slice_append(&lines, &zero);
+    append(lines, zero);
     token$File file = {
         .name = sys$strdup(filename),
         .base = base,
@@ -270,7 +270,7 @@ extern token$File *token$FileSet_addFile(token$FileSet *s,
     token$File *f = esc(file);
     base += size + 1;
     s->base = base;
-    utils$Slice_append(&s->files, &f);
+    append(s->files, f);
     s->last = f;
     return f;
 }

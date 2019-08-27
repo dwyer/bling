@@ -35,7 +35,7 @@ extern ast$Object *ast$Scope_insert(ast$Scope *s, ast$Object *obj) {
     utils$Map_get(&s->objects, obj->name, &alt);
     if (alt == NULL) {
         utils$Map_set(&s->objects, obj->name, &obj);
-        utils$Slice_append(&s->keys, &obj->name);
+        append(s->keys, obj->name);
     }
     return alt;
 }

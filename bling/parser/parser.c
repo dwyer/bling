@@ -61,7 +61,7 @@ static void parser$tryResolve(parser$Parser *p, ast$Expr *x,
     }
     if (collectUnresolved) {
         // x->ident.obj = &parser$unresolved;
-        utils$Slice_append(&p->unresolved, &x);
+        append(p->unresolved, x);
     }
 }
 
@@ -333,7 +333,7 @@ static ast$Expr **parseElementList(parser$Parser *p) {
     array(ast$Expr *) list = makearray(ast$Expr *);
     while (p->tok != token$RBRACE && p->tok != token$EOF) {
         ast$Expr *value = parseElement(p);
-        utils$Slice_append(&list, &value);
+        append(list, value);
         if (!parser$accept(p, token$COMMA)) {
             break;
         }
@@ -386,7 +386,7 @@ static ast$Expr *parseCallExpr(parser$Parser *p, ast$Expr *x) {
     //         ;
     while (p->tok != token$RPAREN) {
         ast$Expr *x = parseRhsOrType(p);
-        utils$Slice_append(&args, &x);
+        append(args, x);
         if (!parser$accept(p, token$COMMA)) {
             break;
         }
@@ -680,7 +680,7 @@ static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
         array(ast$Decl *) fieldSlice = makearray(ast$Decl *);
         for (;;) {
             ast$Decl *field = parseFieldDecl(p, scope);
-            utils$Slice_append(&fieldSlice, &field);
+            append(fieldSlice, field);
             if (p->tok == token$RBRACE) {
                 break;
             }
@@ -742,7 +742,7 @@ static ast$Decl **parseParameterList(parser$Parser *p, ast$Scope *scope,
     array(ast$Decl *) params = makearray(ast$Decl *);
     for (;;) {
         ast$Decl *param = parseParam(p, scope, false);
-        utils$Slice_append(&params, &param);
+        append(params, param);
         if (!parser$accept(p, token$COMMA)) {
             break;
         }
@@ -762,7 +762,7 @@ static ast$Decl **parseParameterList(parser$Parser *p, ast$Scope *scope,
                 },
             };
             ast$Decl *param = esc(decl);
-            utils$Slice_append(&params, &param);
+            append(params, param);
             break;
         }
     }
@@ -844,7 +844,7 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
                 decl.value.value = parseRhs(p);
             }
             ast$Decl *enumerator = esc(decl);
-            utils$Slice_append(&list, &enumerator);
+            append(list, enumerator);
             parser$expect(p, token$SEMICOLON);
         }
         enums = utils$nilArray(&list);
@@ -1098,7 +1098,7 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
         if (parser$accept(p, token$CASE)) {
             for (;;) {
                 ast$Expr *expr = parseRhs(p);
-                utils$Slice_append(&exprs, &expr);
+                append(exprs, expr);
                 if (!parser$accept(p, token$COMMA)) {
                     break;
                 }
@@ -1121,7 +1121,7 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
             }
             if (loop) {
                 ast$Stmt *stmt = parseStmt(p);
-                utils$Slice_append(&stmts, &stmt);
+                append(stmts, stmt);
             }
         }
         ast$Stmt stmt = {
@@ -1133,7 +1133,7 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
             },
         };
         ast$Stmt *clause = esc(stmt);
-        utils$Slice_append(&clauses, &clause);
+        append(clauses, clause);
     }
     parser$closeScope(p);
     parser$expect(p, token$RBRACE);
@@ -1250,7 +1250,7 @@ static ast$Stmt **parseStmtList(parser$Parser *p) {
     array(ast$Stmt *) stmts = makearray(ast$Stmt *);
     while (p->tok != token$RBRACE) {
         ast$Stmt *stmt = parseStmt(p);
-        utils$Slice_append(&stmts, &stmt);
+        append(stmts, stmt);
     }
     return utils$nilArray(&stmts);
 }
@@ -1426,7 +1426,7 @@ extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
         char *name = os$FileInfo_name(infos[i]);
         if (isBlingFile(name) && !isTestFile(name)) {
             ast$File *file = parser$parseFile(fset, name, scope);
-            utils$Slice_append(&files, &file);
+            append(files, file);
         }
     }
     sys$free(infos);
@@ -1439,7 +1439,7 @@ static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
     array(ast$Decl *) decls = makearray(ast$Decl *);
     while (p->tok == token$HASH) {
         ast$Decl *lit = parser$parsePragma(p);
-        utils$Slice_append(&decls, &lit);
+        append(decls, lit);
     }
     if (parser$accept(p, token$PACKAGE)) {
         name = parser$parseIdent(p);
@@ -1464,11 +1464,11 @@ static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
             },
         };
         ast$Decl *declp = esc(decl);
-        utils$Slice_append(&imports, &declp);
+        append(imports, declp);
     }
     while (p->tok != token$EOF) {
         ast$Decl *decl = parseDecl(p);
-        utils$Slice_append(&decls, &decl);
+        append(decls, decl);
     }
     parser$closeScope(p);
     assert(p->topScope == scope);

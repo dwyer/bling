@@ -56,10 +56,6 @@ fun execute(cmd *[array]*char) {
     sys.free(args)
 }
 
-fun Slice_appendStrLit(a *[array]*char, s *const char) {
-    utils.Slice_append(a, &s)
-}
-
 fun mkdirForFile(path *const char) {
     var dir *char = paths.dir(path)
     os.mkdirAll(dir, 0755, NULL)
@@ -90,16 +86,16 @@ typ Builder struct {
 
 fun genObj(b *Builder, dst *const char, src *const char) {
     var cmd [array]*char = makearray(*char)
-    Slice_appendStrLit(&cmd, CC_PATH)
-    Slice_appendStrLit(&cmd, "-fms-extensions")
-    Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag")
-    Slice_appendStrLit(&cmd, "-g")
-    Slice_appendStrLit(&cmd, "-I")
-    Slice_appendStrLit(&cmd, INCL_PATH)
-    Slice_appendStrLit(&cmd, "-c")
-    Slice_appendStrLit(&cmd, "-o")
-    Slice_appendStrLit(&cmd, dst)
-    Slice_appendStrLit(&cmd, src)
+    append(cmd, CC_PATH)
+    append(cmd, typ *char("-fms-extensions"))
+    append(cmd, typ *char("-Wno-microsoft-anon-tag"))
+    append(cmd, typ *char("-g"))
+    append(cmd, typ *char("-I"))
+    append(cmd, INCL_PATH)
+    append(cmd, typ *char("-c"))
+    append(cmd, typ *char("-o"))
+    append(cmd, dst)
+    append(cmd, src)
     mkdirForFile(dst)
     execute(&cmd)
 }
@@ -181,7 +177,7 @@ fun newPackage(b *Builder, path *const char) Package {
         var impt *types.Package = NULL
         utils.Slice_get(&pkg.pkg.imports, i, &impt)
         var dep *Package = _buildPackage(b, impt.path)
-        utils.Slice_append(&pkg.deps, &dep)
+        append(pkg.deps, dep)
         if pkg.srcModTime < dep.srcModTime {
             pkg.srcModTime = dep.srcModTime
         }
@@ -244,7 +240,7 @@ fun buildCPackage(b *Builder, path *const char) *Package {
                     pkg.srcModTime = modTime
                 }
                 var obj *os.FileInfo = buildCFile(b, files[i])
-                utils.Slice_append(&objFiles, &obj._name)
+                append(objFiles, obj._name)
                 checkTime = true
                 modTime = os.FileInfo_modTime(obj)
                 if pkg.srcModTime < modTime {
@@ -259,13 +255,13 @@ fun buildCPackage(b *Builder, path *const char) *Package {
         }
         genHeader(b, &pkg)
         var cmd [array]*char = makearray(*char)
-        Slice_appendStrLit(&cmd, AR_PATH)
-        Slice_appendStrLit(&cmd, "rsc")
-        Slice_appendStrLit(&cmd, pkg.libPath)
+        append(cmd, AR_PATH)
+        append(cmd, typ *char("rsc"))
+        append(cmd, pkg.libPath)
         for var i int = 0; i < len(objFiles); i++ {
             var obj *char = NULL
             utils.Slice_get(&objFiles, i, &obj)
-            utils.Slice_append(&cmd, &obj)
+            append(cmd, obj)
         }
         mkdirForFile(pkg.libPath)
         execute(&cmd)
@@ -284,22 +280,22 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         }
         if pkg.isCmd {
             var cmd [array]*char = makearray(*char)
-            Slice_appendStrLit(&cmd, CC_PATH)
-            Slice_appendStrLit(&cmd, "-o")
-            Slice_appendStrLit(&cmd, pkg.libPath)
-            Slice_appendStrLit(&cmd, pkg.objPath)
+            append(cmd, CC_PATH)
+            append(cmd, typ *char("-o"))
+            append(cmd, pkg.libPath)
+            append(cmd, pkg.objPath)
             var pkg *Package = NULL
             var iter utils.MapIter = utils.NewMapIter(&b.pkgs)
             while utils.MapIter_next(&iter, NULL, &pkg) {
-                Slice_appendStrLit(&cmd, pkg.libPath)
+                append(cmd, pkg.libPath)
             }
             execute(&cmd)
         } else {
             var cmd [array]*char = makearray(*char)
-            Slice_appendStrLit(&cmd, AR_PATH)
-            Slice_appendStrLit(&cmd, "rsc")
-            Slice_appendStrLit(&cmd, pkg.libPath)
-            Slice_appendStrLit(&cmd, pkg.objPath)
+            append(cmd, AR_PATH)
+            append(cmd, typ *char("rsc"))
+            append(cmd, pkg.libPath)
+            append(cmd, pkg.objPath)
             execute(&cmd)
         }
     }

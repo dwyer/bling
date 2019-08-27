@@ -293,7 +293,7 @@ fun getInt(a *[array]int, i int) int {
 fun File_addLine(f *File, offset int) {
     var i int = len(f.lines)
     if (i == 0 || getInt(&f.lines, i - 1) < offset) && offset < f.size {
-        utils.Slice_append(&f.lines, &offset)
+        append(f.lines, offset)
     }
 }
 
@@ -377,7 +377,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     }
     var lines [array]int = makearray(int)
     var zero int = 0
-    utils.Slice_append(&lines, &zero)
+    append(lines, zero)
     var file File = {
         name: sys.strdup(filename),
         base: base,
@@ -387,7 +387,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     var f *File = &&file
     base += size + 1
     s.base = base
-    utils.Slice_append(&s.files, &f)
+    append(s.files, f)
     s.last = f
     return f
 }

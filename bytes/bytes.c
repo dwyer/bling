@@ -74,12 +74,12 @@ extern int bytes$Buffer_write(bytes$Buffer *b, const char *p, int size, utils$Er
         size = sys$strlen(p);
     }
     for (int i = 0; i < size; i++) {
-        utils$Slice_append(b, &p[i]);
+        append(*b, p[i]);
     }
     return size;
 }
 
 extern void bytes$Buffer_writeByte(bytes$Buffer *b, char p, utils$Error **error) {
     bytes$Buffer_init(b);
-    utils$Slice_append(b, &p);
+    append(*b, p);
 }

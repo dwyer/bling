@@ -77,7 +77,7 @@ fun tryResolve(p *Parser, x *ast.Expr, collectUnresolved bool) {
         }
     }
     if collectUnresolved {
-        utils.Slice_append(&p.unresolved, &x)
+        append(p.unresolved, x)
     }
 }
 
@@ -307,7 +307,7 @@ fun parseElementList(p *Parser) **ast.Expr {
     var list [array]*ast.Expr = makearray(*ast.Expr)
     while p.tok != token.RBRACE && p.tok != token.EOF {
         var value *ast.Expr = parseElement(p)
-        utils.Slice_append(&list, &value)
+        append(list, value)
         if !accept(p, token.COMMA) {
             break
         }
@@ -356,7 +356,7 @@ fun parseCallExpr(p *Parser, x *ast.Expr) *ast.Expr {
     p.exprLev++
     while p.tok != token.RPAREN {
         var x *ast.Expr = parseRhsOrType(p)
-        utils.Slice_append(&args, &x)
+        append(args, x)
         if !accept(p, token.COMMA) {
             break
         }
@@ -624,7 +624,7 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
         var fieldSlice [array]*ast.Decl = makearray(*ast.Decl)
         for ;; {
             var field *ast.Decl = parseFieldDecl(p, scope)
-            utils.Slice_append(&fieldSlice, &field)
+            append(fieldSlice, field)
             if p.tok == token.RBRACE {
                 break
             }
@@ -683,7 +683,7 @@ fun parseParameterList(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
     var params [array]*ast.Decl = makearray(*ast.Decl)
     for ;; {
         var param *ast.Decl = parseParam(p, scope, false)
-        utils.Slice_append(&params, &param)
+        append(params, param)
         if !accept(p, token.COMMA) {
             break
         }
@@ -703,7 +703,7 @@ fun parseParameterList(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
                 },
             }
             var param *ast.Decl = &&decl
-            utils.Slice_append(&params, &param)
+            append(params, param)
             break
         }
     }
@@ -777,7 +777,7 @@ fun parseEnumType(p *Parser) *ast.Expr {
                 decl.value.value = parseRhs(p)
             }
             var enumerator *ast.Decl = &&decl
-            utils.Slice_append(&list, &enumerator)
+            append(list, enumerator)
             expect(p, token.SEMICOLON)
         }
         enums = utils.nilArray(&list)
@@ -990,7 +990,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
         if accept(p, token.CASE) {
             for ;; {
                 var expr *ast.Expr = parseRhs(p)
-                utils.Slice_append(&exprs, &expr)
+                append(exprs, expr)
                 if !accept(p, token.COMMA) {
                     break
                 }
@@ -1011,7 +1011,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
             }
             if loop {
                 var stmt *ast.Stmt = parseStmt(p)
-                utils.Slice_append(&stmts, &stmt)
+                append(stmts, stmt)
             }
         }
         var stmt ast.Stmt = {
@@ -1023,7 +1023,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
             },
         }
         var clause *ast.Stmt = &&stmt
-        utils.Slice_append(&clauses, &clause)
+        append(clauses, clause)
     }
     closeScope(p)
     expect(p, token.RBRACE)
@@ -1128,7 +1128,7 @@ fun parseStmtList(p *Parser) **ast.Stmt {
     var stmts [array]*ast.Stmt = makearray(*ast.Stmt)
     while p.tok != token.RBRACE {
         var stmt *ast.Stmt = parseStmt(p)
-        utils.Slice_append(&stmts, &stmt)
+        append(stmts, stmt)
     }
     return utils.nilArray(&stmts)
 }
@@ -1301,7 +1301,7 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
         var name *char = os.FileInfo_name(infos[i])
         if isBlingFile(name) && !isTestFile(name) {
             var file *ast.File = parseFile(fset, name, scope)
-            utils.Slice_append(&files, &file)
+            append(files, file)
         }
     }
     sys.free(infos)
@@ -1314,7 +1314,7 @@ fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
     var decls [array]*ast.Decl = makearray(*ast.Decl)
     while p.tok == token.HASH {
         var lit *ast.Decl = parsePragma(p)
-        utils.Slice_append(&decls, &lit)
+        append(decls, lit)
     }
     if accept(p, token.PACKAGE) {
         name = parseIdent(p)
@@ -1339,11 +1339,11 @@ fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
             },
         }
         var declp *ast.Decl = &&decl
-        utils.Slice_append(&imports, &declp)
+        append(imports, declp)
     }
     while p.tok != token.EOF {
         var decl *ast.Decl = parseDecl(p)
-        utils.Slice_append(&decls, &decl)
+        append(decls, decl)
     }
     closeScope(p)
     assert(p.topScope == scope)

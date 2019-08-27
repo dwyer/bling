@@ -58,7 +58,7 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
                     } else {
                         x = expression(p)
                     }
-                    utils.Slice_append(&args, &x)
+                    append(args, x)
                     if !parser.accept(p, token.COMMA) {
                         break
                     }
@@ -280,7 +280,7 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
             }
             parser.expect(p, token.SEMICOLON)
             var field *ast.Decl = &&f
-            utils.Slice_append(&fieldSlice, &field)
+            append(fieldSlice, field)
             if p.tok == token.RBRACE {
                 break
             }
@@ -322,7 +322,7 @@ fun enum_specifier(p *parser.Parser) *ast.Expr {
                 decl.value.value = constant_expression(p)
             }
             var enumerator *ast.Decl = &&decl
-            utils.Slice_append(&list, &enumerator)
+            append(list, enumerator)
             if !parser.accept(p, token.COMMA) || p.tok == token.RBRACE {
                 break
             }
@@ -434,7 +434,7 @@ fun parameter_type_list(p *parser.Parser) **ast.Decl {
     var params [array]*ast.Decl = makearray(*ast.Decl)
     while p.tok != token.RPAREN {
         var param *ast.Decl = parameter_declaration(p)
-        utils.Slice_append(&params, &param)
+        append(params, param)
         if !parser.accept(p, token.COMMA) {
             break
         }
@@ -454,7 +454,7 @@ fun parameter_type_list(p *parser.Parser) **ast.Decl {
                 },
             }
             var param *ast.Decl = &&decl
-            utils.Slice_append(&params, &param)
+            append(params, param)
             break
         }
     }
@@ -564,7 +564,7 @@ fun initializer(p *parser.Parser) *ast.Expr {
             }
             value = &&x
         }
-        utils.Slice_append(&list, &value)
+        append(list, value)
         if !parser.accept(p, token.COMMA) {
             break
         }
@@ -724,7 +724,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
             while parser.accept(p, token.CASE) {
                 var expr *ast.Expr = constant_expression(p)
                 parser.expect(p, token.COLON)
-                utils.Slice_append(&exprs, &expr)
+                append(exprs, expr)
             }
             if len(exprs) == 0 {
                 parser.expect(p, token.DEFAULT)
@@ -742,7 +742,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 }
                 if loop {
                     var stmt *ast.Stmt = statement(p)
-                    utils.Slice_append(&stmts, &stmt)
+                    append(stmts, stmt)
                 }
             }
             var stmt ast.Stmt = {
@@ -754,7 +754,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 },
             }
             var clause *ast.Stmt = &&stmt
-            utils.Slice_append(&clauses, &clause)
+            append(clauses, clause)
         }
         parser.expect(p, token.RBRACE)
         var stmt ast.Stmt = {
@@ -830,13 +830,13 @@ fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt {
     if allow_single && p.tok != token.LBRACE {
         var stmt *ast.Stmt = statement(p)
         assert(stmt.kind != ast.STMT_DECL)
-        utils.Slice_append(&stmts, &stmt)
+        append(stmts, stmt)
         pos = ast.Stmt_pos(stmt)
     } else {
         pos = parser.expect(p, token.LBRACE)
         while p.tok != token.RBRACE {
             var stmt *ast.Stmt = statement(p)
-            utils.Slice_append(&stmts, &stmt)
+            append(stmts, stmt)
         }
         parser.expect(p, token.RBRACE)
     }
@@ -1030,7 +1030,7 @@ fun parse_cfile(p *parser.Parser, scope *ast.Scope) *ast.File {
     var name *ast.Expr = NULL
     while p.tok == token.HASH {
         var lit *ast.Decl = parser.parsePragma(p)
-        utils.Slice_append(&decls, &lit)
+        append(decls, lit)
     }
     if parser.accept(p, token.PACKAGE) {
         parser.expect(p, token.LPAREN)
@@ -1053,11 +1053,11 @@ fun parse_cfile(p *parser.Parser, scope *ast.Scope) *ast.File {
             },
         }
         var declp *ast.Decl = &&decl
-        utils.Slice_append(&imports, &declp)
+        append(imports, declp)
     }
     while p.tok != token.EOF {
         var decl *ast.Decl = declaration(p, true)
-        utils.Slice_append(&decls, &decl)
+        append(decls, decl)
     }
     var file ast.File = {
         filename: p.file.name,

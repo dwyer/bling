@@ -67,6 +67,7 @@ static struct {
     bool variadic;
     types$exprKind kind;
 } predeclareFuncs[] = {
+    [types$APPEND]      = {"append", 2, false, statement},
     [types$ASSERT]      = {"assert", 1, false, statement},
     [types$LEN]         = {"len", 1, false, expression},
     [types$MAKEARRAY]   = {"makearray", 1, false, expression},

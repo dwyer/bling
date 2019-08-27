@@ -94,7 +94,7 @@ static ast$Expr *postfix_expression(parser$Parser *p, ast$Expr *x) {
                     } else {
                         x = expression(p);
                     }
-                    utils$Slice_append(&args, &x);
+                    append(args, x);
                     if (!parser$accept(p, token$COMMA)) {
                         break;
                     }
@@ -370,7 +370,7 @@ static ast$Expr *struct_or_union_specifier(parser$Parser *p) {
             };
             parser$expect(p, token$SEMICOLON);
             ast$Decl *field = esc(f);
-            utils$Slice_append(&fieldSlice, &field);
+            append(fieldSlice, field);
             if (p->tok == token$RBRACE) {
                 break;
             }
@@ -420,7 +420,7 @@ static ast$Expr *enum_specifier(parser$Parser *p) {
                 decl.value.value = constant_expression(p);
             }
             ast$Decl *enumerator = esc(decl);
-            utils$Slice_append(&list, &enumerator);
+            append(list, enumerator);
             if (!parser$accept(p, token$COMMA) || p->tok == token$RBRACE) {
                 break;
             }
@@ -552,7 +552,7 @@ static ast$Decl **parameter_type_list(parser$Parser *p) {
         //         : declaration_specifiers (declarator | abstract_declarator)?
         //         ;
         ast$Decl *param = parameter_declaration(p);
-        utils$Slice_append(&params, &param);
+        append(params, param);
         if (!parser$accept(p, token$COMMA)) {
             break;
         }
@@ -572,7 +572,7 @@ static ast$Decl **parameter_type_list(parser$Parser *p) {
                 },
             };
             ast$Decl *param = esc(decl);
-            utils$Slice_append(&params, &param);
+            append(params, param);
             break;
         }
     }
@@ -705,7 +705,7 @@ static ast$Expr *initializer(parser$Parser *p) {
             };
             value = esc(x);
         }
-        utils$Slice_append(&list, &value);
+        append(list, value);
         if (!parser$accept(p, token$COMMA)) {
             break;
         }
@@ -919,7 +919,7 @@ static ast$Stmt *statement(parser$Parser *p) {
             while (parser$accept(p, token$CASE)) {
                 ast$Expr *expr = constant_expression(p);
                 parser$expect(p, token$COLON);
-                utils$Slice_append(&exprs, &expr);
+                append(exprs, expr);
             }
             if (len(exprs) == 0) {
                 parser$expect(p, token$DEFAULT);
@@ -939,7 +939,7 @@ static ast$Stmt *statement(parser$Parser *p) {
                 }
                 if (loop) {
                     ast$Stmt *stmt = statement(p);
-                    utils$Slice_append(&stmts, &stmt);
+                    append(stmts, stmt);
                 }
             }
             ast$Stmt stmt = {
@@ -951,7 +951,7 @@ static ast$Stmt *statement(parser$Parser *p) {
                 },
             };
             ast$Stmt *clause = esc(stmt);
-            utils$Slice_append(&clauses, &clause);
+            append(clauses, clause);
         }
         parser$expect(p, token$RBRACE);
         ast$Stmt stmt = {
@@ -1043,13 +1043,13 @@ static ast$Stmt *compound_statement(parser$Parser *p, bool allow_single) {
     if (allow_single && p->tok != token$LBRACE) {
         ast$Stmt *stmt = statement(p);
         assert(stmt->kind != ast$STMT_DECL);
-        utils$Slice_append(&stmts, &stmt);
+        append(stmts, stmt);
         pos = ast$Stmt_pos(stmt);
     } else {
         pos = parser$expect(p, token$LBRACE);
         while (p->tok != token$RBRACE) {
             ast$Stmt *stmt = statement(p);
-            utils$Slice_append(&stmts, &stmt);
+            append(stmts, stmt);
         }
         parser$expect(p, token$RBRACE);
     }
@@ -1280,7 +1280,7 @@ static ast$File *parse_cfile(parser$Parser *p, ast$Scope *scope) {
     ast$Expr *name = NULL;
     while (p->tok == token$HASH) {
         ast$Decl *lit = parser$parsePragma(p);
-        utils$Slice_append(&decls, &lit);
+        append(decls, lit);
     }
     if (parser$accept(p, token$PACKAGE)) {
         parser$expect(p, token$LPAREN);
@@ -1303,14 +1303,14 @@ static ast$File *parse_cfile(parser$Parser *p, ast$Scope *scope) {
             },
         };
         ast$Decl *declp = esc(decl);
-        utils$Slice_append(&imports, &declp);
+        append(imports, declp);
     }
     while (p->tok != token$EOF) {
         // translation_unit
         //         : external_declaration+
         //         ;
         ast$Decl *decl = declaration(p, true);
-        utils$Slice_append(&decls, &decl);
+        append(decls, decl);
     }
     ast$File file = {
         .filename = p->file->name,
