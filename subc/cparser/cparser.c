@@ -915,7 +915,7 @@ static ast$Stmt *statement(parser$Parser *p) {
                 parser$expect(p, token$COLON);
                 utils$Slice_append(&exprs, &expr);
             }
-            if (utils$Slice_len(&exprs) == 0) {
+            if (len(exprs) == 0) {
                 parser$expect(p, token$DEFAULT);
                 parser$expect(p, token$COLON);
             }

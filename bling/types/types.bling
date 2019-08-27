@@ -65,6 +65,20 @@ typ Basic struct {
     name *char
 }
 
+typ builtinId enum {
+    ASSERT
+    LEN
+    MAKEMAP
+    PANIC
+    PRINT
+    numBuiltinIds
+}
+
+typ exprKind enum {
+    expression
+    statement
+}
+
 fun constant_stringVal(x *ast.Expr) *char {
     assert(x.kind == ast.EXPR_BASIC_LIT)
     var lit *const char = x.basic.value
@@ -671,7 +685,15 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 } else {
                     assert(i >= type.builtin.nargs)
                 }
-                return NULL
+                switch type.builtin.id {
+                case LEN:
+                    return Checker_lookupIdent(c, "int")
+                case MAKEMAP:
+                    return NULL
+                default:
+                    assert(!type.builtin.isExpr)
+                    return NULL
+                }
             } else if type.kind == ast.TYPE_FUNC {
                 var j int = 0
                 for var i int = 0; expr.call.args[i]; i++ {
@@ -1188,51 +1210,37 @@ fun defPredeclaredTypes() {
     }
 }
 
-typ builtinId enum {
-    _assert
-    _len
-    _makemap
-    _panic
-    _print
-    numBuiltinIds
-}
-
-typ exprKind enum {
-    expression
-    statement
-}
-
 var predeclareFuncs []struct {
     name *char
     nargs int
     variadic bool
     kind exprKind
 } = {
-    _assert: {
+    ASSERT: {
         "assert",
         1,
         false,
         statement,
     },
-    _len: {
+    LEN: {
         "len",
         1,
         false,
         expression,
     },
-    _makemap: {
+    MAKEMAP: {
         "mapmake",
         1,
         false,
         expression,
     },
-    _panic: {
+    PANIC: {
         "panic",
         1,
         false,
         statement,
     },
-    _print: {
+    PRINT: {
         "print",
         1,
         false,
@@ -1255,6 +1263,7 @@ fun defPredeclaredFuncs() {
                 nargs: predeclareFuncs[i].nargs,
                 variadic: predeclareFuncs[i].variadic,
                 isExpr: predeclareFuncs[i].kind == expression,
+                id: i,
             },
         }
         var decl ast.Decl = {

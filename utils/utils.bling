@@ -8,7 +8,7 @@ typ Error struct {
 
 typ Slice struct {
     size int
-    len int
+    _len int
     cap int
     _array *void
 }
@@ -65,7 +65,7 @@ fun Error_free(e *Error) {
 fun Slice_make(size int) Slice {
     var s Slice = {
         size: size,
-        len: 0,
+        _len: 0,
         cap: 0,
         _array: NULL,
     }
@@ -77,7 +77,7 @@ fun Slice_unmake(s *Slice) {
 }
 
 fun Slice_len(s *const Slice) int {
-    return s.len
+    return s._len
 }
 
 fun Slice_cap(s *const Slice) int {
@@ -85,8 +85,8 @@ fun Slice_cap(s *const Slice) int {
 }
 
 fun Slice_get(s *const Slice, i int, dst *void) *void {
-    if i >= s.len {
-        panic(sys.sprintf("out of range: index=%d, len=%d", i, s.len))
+    if i >= s._len {
+        panic(sys.sprintf("out of range: index=%d, len=%d", i, s._len))
     }
     var ref *char = &(typ *char(s._array))[i * s.size]
     if dst {
@@ -118,11 +118,11 @@ fun _setLen(s *Slice, len int) {
     if s._array == NULL || grow {
         _setCap(s, cap)
     }
-    s.len = len
+    s._len = len
 }
 
 fun Slice_setLen(s *Slice, len int) {
-    var old int = s.len
+    var old int = s._len
     _setLen(s, len)
     var diff int = len - old
     if diff > 0 {
@@ -139,8 +139,8 @@ fun Slice_set(s *Slice, i int, x *const void) {
 }
 
 fun Slice_append(s *Slice, x *const void) {
-    _setLen(s, s.len + 1)
-    Slice_set(s, s.len - 1, x)
+    _setLen(s, s._len + 1)
+    Slice_set(s, s._len - 1, x)
 }
 
 fun nilArray(s *Slice) *void {
@@ -194,13 +194,13 @@ fun Map_len(m *const void) int {
 }
 
 fun Map_cap(m *const void) int {
-    return Slice_len(&(typ *Map(m))._pairs)
+    return len((typ *Map(m))._pairs)
 }
 
 fun pair_ref(m *const Map, key *const void) *MapPair {
     var hash uintptr = djb2(key) % Map_cap(m)
     stats.lookups++
-    for var i int = 0; i < Slice_len(&m._pairs); i++ {
+    for var i int = 0; i < len(m._pairs); i++ {
         stats.iters++
         var idx int = (hash + i) % Map_cap(m)
         var p *MapPair = Slice_get(&m._pairs, idx, NULL)
@@ -247,7 +247,7 @@ fun Map_set(m *void, key *const char, val *const void) {
         (typ *Map(m))._pairs = Slice_make((typ *Map(m))._pairs.size)
         Slice_setLen(&(typ *Map(m))._pairs, newCap)
         (typ *Map(m))._len = 0
-        for var i int = 0; i < Slice_len(&pairs); i++ {
+        for var i int = 0; i < len(pairs); i++ {
             var p *MapPair = Slice_get(&pairs, i, NULL)
             if p.key {
                 set_unsafe((typ *Map(m)), p.key, p.val)
@@ -265,7 +265,7 @@ fun NewMapIter(m *const void) MapIter {
 }
 
 fun MapIter_next(m *MapIter, key **char, val *void) int {
-    while m._idx < Slice_len(&m._map._pairs) {
+    while m._idx < len(m._map._pairs) {
         var p *MapPair = typ *MapPair(Slice_get(&m._map._pairs, m._idx, NULL))
         m._idx++
         if p.key {

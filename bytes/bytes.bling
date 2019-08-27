@@ -56,7 +56,7 @@ fun Buffer_init(b *Buffer) {
 }
 
 fun Buffer_len(b *Buffer) int {
-    return utils.Slice_len(b)
+    return len(*b)
 }
 
 fun Buffer_bytes(b *Buffer) *char {

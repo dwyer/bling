@@ -240,7 +240,7 @@ fun string(tok Token) *char {
 var keywords map *char = mapmake(sizeof(*char))
 
 fun lookup(ident *char) Token {
-    if utils.Map_len(&keywords) == 0 {
+    if len(keywords) == 0 {
         keywords = utils.Map_make(sizeof(Token))
         for var i int = _keywordBeg + 1; i < _keywordEnd; i++ {
             var s *char = string(i)
@@ -290,7 +290,7 @@ fun getInt(a *utils.Slice, i int) int {
 }
 
 fun File_addLine(f *File, offset int) {
-    var i int = utils.Slice_len(&f.lines)
+    var i int = len(f.lines)
     if (i == 0 || getInt(&f.lines, i - 1) < offset) && offset < f.size {
         utils.Slice_append(&f.lines, &offset)
     }
@@ -302,7 +302,7 @@ fun File_pos(f *File, offset int) Pos {
 
 fun searchInts(a *utils.Slice, x int) int {
     var i int = 0
-    var j int = utils.Slice_len(a)
+    var j int = len(*a)
     while i < j {
         var h int = i + (j - i) / 2
         if getInt(a, h) <= x {
@@ -392,7 +392,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
 }
 
 fun searchFiles(files *utils.Slice, x int) int {
-    for var i int = 0; i < utils.Slice_len(files); i++ {
+    for var i int = 0; i < len(*files); i++ {
         var f *File
         utils.Slice_get(files, i, &f)
         if f.base <= x && x <= f.base + f.size {
@@ -419,7 +419,7 @@ fun FileSet_file(s *FileSet, p Pos) *File {
 }
 
 fun FileSet_print(fset *FileSet) {
-    for var i int = 0; i < utils.Slice_len(&fset.files); i++ {
+    for var i int = 0; i < len(fset.files); i++ {
         var f *File
         utils.Slice_get(&fset.files, i, &f)
         var s *char = sys.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)

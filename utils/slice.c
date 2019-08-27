@@ -5,7 +5,7 @@
 extern utils$Slice utils$Slice_make(int size) {
     utils$Slice s = {
         .size = size,
-        .len = 0,
+        ._len = 0,
         .cap = 0,
         ._array = NULL,
     };
@@ -17,7 +17,7 @@ extern void utils$Slice_unmake(utils$Slice *s) {
 }
 
 extern int utils$Slice_len(const utils$Slice *s) {
-    return s->len;
+    return s->_len;
 }
 
 extern int utils$Slice_cap(const utils$Slice *s) {
@@ -25,8 +25,8 @@ extern int utils$Slice_cap(const utils$Slice *s) {
 }
 
 extern void *utils$Slice_get(const utils$Slice *s, int i, void *dst) {
-    if (i >= s->len) {
-        panic(sys$sprintf("out of range: index=%d, len=%d", i, s->len));
+    if (i >= s->_len) {
+        panic(sys$sprintf("out of range: index=%d, len=%d", i, s->_len));
     }
     char *ref = &((char *)s->_array)[i * s->size];
     if (dst) {
@@ -58,11 +58,11 @@ static void _setLen(utils$Slice *s, int len) {
     if (s->_array == NULL || grow) {
         utils$_setCap(s, cap);
     }
-    s->len = len;
+    s->_len = len;
 }
 
 extern void utils$Slice_setLen(utils$Slice *s, int len) {
-    int old = s->len;
+    int old = s->_len;
     _setLen(s, len);
     int diff = len - old;
     if (diff > 0) {
@@ -79,8 +79,8 @@ extern void utils$Slice_set(utils$Slice *s, int i, const void *x) {
 }
 
 extern void utils$Slice_append(utils$Slice *s, const void *x) {
-    _setLen(s, s->len + 1);
-    utils$Slice_set(s, s->len - 1, x);
+    _setLen(s, s->_len + 1);
+    utils$Slice_set(s, s->_len - 1, x);
 }
 
 extern void *utils$nilArray(utils$Slice *s) {

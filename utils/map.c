@@ -47,13 +47,13 @@ extern int utils$Map_len(const void *m) {
 }
 
 extern int utils$Map_cap(const void *m) {
-    return utils$Slice_len(&((utils$Map *)m)->_pairs);
+    return len(((utils$Map *)m)->_pairs);
 }
 
 static MapPair *pair_ref(const utils$Map *m, const void *key) {
     uintptr hash = djb2(key) % utils$Map_cap(m);
     stats.lookups++;
-    for (int i = 0; i < utils$Slice_len(&m->_pairs); i++) {
+    for (int i = 0; i < len(m->_pairs); i++) {
         stats.iters++;
         int idx = (hash + i) % utils$Map_cap(m);
         MapPair *p = utils$Slice_get(&m->_pairs, idx, NULL);
@@ -100,7 +100,7 @@ extern void utils$Map_set(void *m, const char *key, const void *val) {
         ((utils$Map *)m)->_pairs = utils$Slice_make(((utils$Map *)m)->_pairs.size);
         utils$Slice_setLen(&((utils$Map *)m)->_pairs, newCap);
         ((utils$Map *)m)->_len = 0;
-        for (int i = 0; i < utils$Slice_len(&pairs); i++) {
+        for (int i = 0; i < len(pairs); i++) {
             MapPair *p = utils$Slice_get(&pairs, i, NULL);
             if (p->key) {
                 set_unsafe(((utils$Map *)m), p->key, p->val);
@@ -116,7 +116,7 @@ extern utils$MapIter utils$NewMapIter(const void *m) {
 }
 
 extern int utils$MapIter_next(utils$MapIter *m, char **key, void *val) {
-    while (m->_idx < utils$Slice_len(&m->_map->_pairs)) {
+    while (m->_idx < len(m->_map->_pairs)) {
         MapPair *p = (MapPair *)utils$Slice_get(&m->_map->_pairs, m->_idx, NULL);
         m->_idx++;
         if (p->key) {

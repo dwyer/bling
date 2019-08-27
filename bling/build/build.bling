@@ -181,7 +181,7 @@ fun newPackage(b *Builder, path *const char) Package {
     }
     sys.free(genPath)
     sys.free(base)
-    for var i int = 0; i < utils.Slice_len(&pkg.pkg.imports); i++ {
+    for var i int = 0; i < len(pkg.pkg.imports); i++ {
         var impt *types.Package = NULL
         utils.Slice_get(&pkg.pkg.imports, i, &impt)
         var dep *Package = _buildPackage(b, impt.path)
@@ -200,7 +200,7 @@ typ SliceIter struct {
 }
 
 fun SliceIter_next(iter *SliceIter, it *void) bool {
-    if iter.i < utils.Slice_len(iter.s) {
+    if iter.i < len(*iter.s) {
         utils.Slice_get(iter.s, iter.i, it)
         iter.it = it
         iter.i++
@@ -227,7 +227,7 @@ fun genHeader(b *Builder, pkg *Package) {
     emitter.emitString(&e, "#pragma once")
     emitter.emitNewline(&e)
     emit_rawfile(&e, "bootstrap/bootstrap.h")
-    for var i int = 0; i < utils.Slice_len(&pkg.deps); i++ {
+    for var i int = 0; i < len(pkg.deps); i++ {
         var dep *Package = NULL
         utils.Slice_get(&pkg.deps, i, &dep)
         emitInclude(&e, dep.hPath)
@@ -286,7 +286,7 @@ fun buildCPackage(b *Builder, path *const char) *Package {
         Slice_appendStrLit(&cmd, AR_PATH)
         Slice_appendStrLit(&cmd, "rsc")
         Slice_appendStrLit(&cmd, pkg.libPath)
-        for var i int = 0; i < utils.Slice_len(&objFiles); i++ {
+        for var i int = 0; i < len(objFiles); i++ {
             var obj *char = NULL
             utils.Slice_get(&objFiles, i, &obj)
             utils.Slice_append(&cmd, &obj)

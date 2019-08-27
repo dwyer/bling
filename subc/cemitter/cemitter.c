@@ -575,7 +575,7 @@ extern void cemitter$emitFile(emitter$Emitter *e, ast$File *file) {
 static void emitObjects(emitter$Emitter *e, ast$Scope *scope, ast$ObjKind kind) {
     char *key = NULL;
     ast$Object *obj = NULL;
-    for (int i = 0; i < utils$Slice_len(&scope->keys); i++) {
+    for (int i = 0; i < len(scope->keys); i++) {
         utils$Slice_get(&scope->keys, i, &key);
         utils$Map_get(&scope->objects, key, &obj);
         if (obj->kind == kind) {
@@ -597,7 +597,7 @@ static void _emitPackage(emitter$Emitter *e, map(char *) *done, types$Package *p
         return;
     }
     utils$Map_set(done, pkg->path, &pkg->path);
-    for (int i = 0; i < utils$Slice_len(&pkg->imports); i++) {
+    for (int i = 0; i < len(pkg->imports); i++) {
         types$Package *impt = NULL;
         utils$Slice_get(&pkg->imports, i, &impt);
         _emitPackage(e, done, impt);

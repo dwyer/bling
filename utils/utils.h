@@ -19,7 +19,7 @@ extern void utils$Error_check(utils$Error **e);
 
 typedef struct {
     int size;
-    int len;
+    int _len;
     int cap;
     void *_array;
 } utils$Slice;
@@ -27,7 +27,7 @@ typedef struct {
 extern utils$Slice utils$Slice_make(int size); // TODO replace with make
 extern void utils$Slice_unmake(utils$Slice *s);
 
-extern int utils$Slice_len(const utils$Slice *s); // TODO replace with len()
+extern int utils$Slice_len(const utils$Slice *s);
 extern int utils$Slice_cap(const utils$Slice *s); // TODO replace with cap()
 extern void *utils$Slice_get(const utils$Slice *s, int i, void *dst);
 
@@ -44,7 +44,7 @@ typedef struct {
 
 extern utils$Map utils$Map_make(int valSize); // TODO replace with make
 extern void utils$Map_unmake(void *m);
-extern int utils$Map_len(const void *m); // TODO replace with len()
+extern int utils$Map_len(const void *m);
 extern int utils$Map_cap(const void *m); // TODO replace with cap()
 extern bool utils$Map_get(const void *m, const char *key, void *val);
 extern void utils$Map_set(void *m, const char *key, const void *val);

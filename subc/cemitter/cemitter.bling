@@ -526,7 +526,7 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
 fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
     var key *char = NULL
     var obj *ast.Object = NULL
-    for var i int = 0; i < utils.Slice_len(&scope.keys); i++ {
+    for var i int = 0; i < len(scope.keys); i++ {
         utils.Slice_get(&scope.keys, i, &key)
         utils.Map_get(&scope.objects, key, &obj)
         if obj.kind == kind {
@@ -548,7 +548,7 @@ fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
         return
     }
     utils.Map_set(done, pkg.path, &pkg.path)
-    for var i int = 0; i < utils.Slice_len(&pkg.imports); i++ {
+    for var i int = 0; i < len(pkg.imports); i++ {
         var impt *types.Package = NULL
         utils.Slice_get(&pkg.imports, i, &impt)
         _emitPackage(e, done, impt)

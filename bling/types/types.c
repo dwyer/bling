@@ -676,7 +676,15 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                 } else {
                     assert(i >= type->builtin.nargs);
                 }
-                return NULL; // TODO return correct type
+                switch (type->builtin.id) {
+                case types$LEN:
+                    return Checker_lookupIdent(c, "int");
+                case types$MAKEMAP:
+                    return NULL;
+                default:
+                    assert(!type->builtin.isExpr);
+                    return NULL; // TODO return correct type
+                }
             } else if (type->kind == ast$TYPE_FUNC) {
                 int j = 0;
                 for (int i = 0; expr->call.args[i]; i++) {

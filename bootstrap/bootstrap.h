@@ -15,7 +15,11 @@
 #define map(T) utils$Map
 
 #define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
-#define len(x) (x)._len
+
+#define len(x) _Generic((x), \
+        utils$Slice: utils$Slice_len, \
+        utils$Map: utils$Map_len)(&(x))
+
 #define mapmake(size) {._valSize = size}
 #define makemap(T) {._valSize = sizeof(T)}
 #define makearray(T) {._size = sizeof(T)}

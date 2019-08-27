@@ -53,7 +53,7 @@ static void bytes$Buffer_init(bytes$Buffer *b) {
 }
 
 extern int bytes$Buffer_len(bytes$Buffer *b) {
-    return utils$Slice_len(b);
+    return len(*b);
 }
 
 extern char *bytes$Buffer_bytes(bytes$Buffer *b) {

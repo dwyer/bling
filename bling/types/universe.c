@@ -61,35 +61,21 @@ static void defPredeclaredTypes() {
     }
 }
 
-typedef enum {
-    _assert,
-    _len,
-    _makemap,
-    _panic,
-    _print,
-    numBuiltinIds,
-} builtinId;
-
-typedef enum {
-    expression,
-    statement,
-} exprKind;
-
 static struct {
     char *name;
     int nargs;
     bool variadic;
-    exprKind kind;
+    types$exprKind kind;
 } predeclareFuncs[] = {
-    [_assert]   = {"assert", 1, false, statement},
-    [_len]      = {"len", 1, false, expression},
-    [_makemap]  = {"mapmake", 1, false, expression},
-    [_panic]    = {"panic", 1, false, statement},
-    [_print]    = {"print", 1, false, statement},
+    [types$ASSERT]  = {"assert", 1, false, statement},
+    [types$LEN]     = {"len", 1, false, expression},
+    [types$MAKEMAP] = {"mapmake", 1, false, expression},
+    [types$PANIC]   = {"panic", 1, false, statement},
+    [types$PRINT]   = {"print", 1, false, statement},
 };
 
 static void defPredeclaredFuncs() {
-    for (int i = 0; i < numBuiltinIds; i++) {
+    for (int i = 0; i < types$numBuiltinIds; i++) {
         ast$Expr name = {
             .kind = ast$EXPR_IDENT,
             .ident = {
@@ -103,6 +89,7 @@ static void defPredeclaredFuncs() {
                 .nargs = predeclareFuncs[i].nargs,
                 .variadic = predeclareFuncs[i].variadic,
                 .isExpr = predeclareFuncs[i].kind == expression,
+                .id = i,
             },
         };
         ast$Decl decl = {

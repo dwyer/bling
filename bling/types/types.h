@@ -94,3 +94,17 @@ typedef struct {
     types$BasicInfo info;
     char *name;
 } types$Basic;
+
+typedef enum {
+    types$ASSERT,
+    types$LEN,
+    types$MAKEMAP,
+    types$PANIC,
+    types$PRINT,
+    types$numBuiltinIds,
+} types$builtinId;
+
+typedef enum {
+    expression,
+    statement,
+} types$exprKind;

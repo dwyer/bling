@@ -1487,7 +1487,7 @@ extern ast$File *parser$parseFile(token$FileSet *fset, const char *filename,
     sys$free(src);
     ast$File *file = _parseFile(&p, scope);
     // print(sys$sprintf("%s: %d/%d unresolved", filename,
-    //             utils$Slice_len(&p.unresolved),
+    //             len(&p.unresolved),
     //             p.numIdents));
     return file;
 }

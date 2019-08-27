@@ -171,7 +171,7 @@ static Package newPackage(Builder *b, const char *path) {
     };
     sys$free(genPath);
     sys$free(base);
-    for (int i = 0; i < utils$Slice_len(&pkg.pkg->imports); i++) {
+    for (int i = 0; i < len(pkg.pkg->imports); i++) {
         types$Package *impt = NULL;
         utils$Slice_get(&pkg.pkg->imports, i, &impt);
         Package *dep = _buildPackage(b, impt->path);
@@ -190,7 +190,7 @@ typedef struct {
 } SliceIter;
 
 extern bool SliceIter_next(SliceIter *iter, void *it) {
-    if (iter->i < utils$Slice_len(iter->s)) {
+    if (iter->i < len(*iter->s)) {
         utils$Slice_get(iter->s, iter->i, it);
         iter->it = it;
         iter->i++;
@@ -218,7 +218,7 @@ static void genHeader(Builder *b, Package *pkg) {
     emitter$emitString(&e, "#pragma once");
     emitter$emitNewline(&e);
     emit_rawfile(&e, "bootstrap/bootstrap.h");
-    for (int i = 0; i < utils$Slice_len(&pkg->deps); i++) {
+    for (int i = 0; i < len(pkg->deps); i++) {
         Package *dep = NULL;
         utils$Slice_get(&pkg->deps, i, &dep);
         emitInclude(&e, dep->hPath);
@@ -274,7 +274,7 @@ static Package *buildCPackage(Builder *b, const char *path) {
         Slice_appendStrLit(&cmd, AR_PATH);
         Slice_appendStrLit(&cmd, "rsc");
         Slice_appendStrLit(&cmd, pkg.libPath);
-        for (int i = 0; i < utils$Slice_len(&objFiles); i++) {
+        for (int i = 0; i < len(objFiles); i++) {
             char *obj = NULL;
             utils$Slice_get(&objFiles, i, &obj);
             utils$Slice_append(&cmd, &obj);
