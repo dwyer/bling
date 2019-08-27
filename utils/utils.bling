@@ -155,8 +155,8 @@ var DEFAULT_CAP const int = 8
 
 var stats MapStats = {}
 
-fun djb2(s *const char) uintptr_t {
-    var hash uintptr_t = 5381
+fun djb2(s *const char) uintptr {
+    var hash uintptr = 5381
     var ch int = *s
     while ch {
         hash = ((hash << 5) + hash) + ch
@@ -166,7 +166,7 @@ fun djb2(s *const char) uintptr_t {
     return hash
 }
 
-fun memdup(src *const void, size size_t) *void {
+fun memdup(src *const void, size sys.Size) *void {
     return sys.memcpy(sys.malloc(size), src, size)
 }
 
@@ -198,7 +198,7 @@ fun Map_cap(m *const void) int {
 }
 
 fun pair_ref(m *const Map, key *const void) *MapPair {
-    var hash uintptr_t = djb2(key) % Map_cap(m)
+    var hash uintptr = djb2(key) % Map_cap(m)
     stats.lookups++
     for var i int = 0; i < Slice_len(&m._pairs); i++ {
         stats.iters++

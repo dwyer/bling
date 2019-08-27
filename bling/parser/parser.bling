@@ -1304,7 +1304,7 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
         utils.Error_move(err, first)
         return NULL
     }
-    var files utils.Slice = utils.Slice_make(sizeof(uintptr_t))
+    var files utils.Slice = utils.Slice_make(sizeof(uintptr))
     for var i int = 0; infos[i]; i++ {
         var name *char = os.FileInfo_name(infos[i])
         if isBlingFile(name) && !isTestFile(name) {
@@ -1318,7 +1318,7 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
 
 fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
     var name *ast.Expr = NULL
-    var imports utils.Slice = utils.Slice_make(sizeof(uintptr_t))
+    var imports utils.Slice = utils.Slice_make(sizeof(uintptr))
     var decls utils.Slice = utils.Slice_make(sizeof(*ast.Decl))
     while p.tok == token.HASH {
         var lit *ast.Decl = parsePragma(p)

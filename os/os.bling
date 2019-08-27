@@ -9,12 +9,12 @@ import "utils"
 
 #include "utils/utils.h"
 
-typ Time uint64_t
+typ Time u64
 
-typ FileMode uint32_t
+typ FileMode u32
 
 typ File struct {
-    fd uintptr_t
+    fd uintptr
     name *char
     is_dir bool
 }
@@ -27,7 +27,7 @@ var stderr *File
 
 fun tempDir() *const char
 
-fun newFile(fd uintptr_t, name *const char) *File
+fun newFile(fd uintptr, name *const char) *File
 
 fun openFile(filename *const char, mode int, perm int, error **utils.Error) *File
 
@@ -48,7 +48,7 @@ typ FileInfo struct {
 
 fun FileInfo_name(info *FileInfo) *char
 
-fun FileInfo_size(info *FileInfo) uint64_t
+fun FileInfo_size(info *FileInfo) u64
 
 fun FileInfo_mode(info *FileInfo) FileMode
 
@@ -66,4 +66,4 @@ fun openDir(filename *const char, error **utils.Error) *File
 
 fun readdir(file *File, error **utils.Error) **FileInfo
 
-fun mkdirAll(path *const char, mode uint32_t, error **utils.Error)
+fun mkdirAll(path *const char, mode u32, error **utils.Error)

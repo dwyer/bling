@@ -1413,7 +1413,7 @@ extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
         utils$Error_move(err, first);
         return NULL;
     }
-    utils$Slice files = utils$Slice_make(sizeof(uintptr_t));
+    utils$Slice files = utils$Slice_make(sizeof(uintptr));
     for (int i = 0; infos[i]; i++) {
         char *name = os$FileInfo_name(infos[i]);
         if (isBlingFile(name) && !isTestFile(name)) {
@@ -1427,7 +1427,7 @@ extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
 
 static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
     ast$Expr *name = NULL;
-    utils$Slice imports = utils$Slice_make(sizeof(uintptr_t));
+    utils$Slice imports = utils$Slice_make(sizeof(uintptr));
     utils$Slice decls = utils$Slice_make(sizeof(ast$Decl *));
     while (p->tok == token$HASH) {
         ast$Decl *lit = parser$parsePragma(p);

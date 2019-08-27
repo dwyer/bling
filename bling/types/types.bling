@@ -34,12 +34,12 @@ typ BasicKind enum {
     INT16
     INT32
     INT64
+    UINT
     UINT8
     UINT16
     UINT32
     UINT64
     UINTPTR
-    SIZE_T
     FLOAT32
     FLOAT64
     VOID_POINTER
@@ -755,7 +755,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         }
     case ast.EXPR_SIZEOF:
         Checker_checkType(c, expr.sizeof_.x)
-        return Checker_lookupIdent(c, "size_t")
+        return Checker_lookupIdent(c, "u64")
     case ast.EXPR_STAR:
         {
             var type *ast.Expr = Checker_checkExpr(c, expr.star.x)
@@ -1091,52 +1091,52 @@ var predeclaredTypes []const Basic = {
     INT8: {
         INT8,
         IS_INTEGER,
-        "int8_t",
+        "i8",
     },
     INT16: {
         INT16,
         IS_INTEGER,
-        "int16_t",
+        "i16",
     },
     INT32: {
         INT32,
         IS_INTEGER,
-        "int32_t",
+        "i32",
     },
     INT64: {
         INT64,
         IS_INTEGER,
-        "int64_t",
+        "i64",
+    },
+    UINT: {
+        UINT,
+        IS_INTEGER | IS_UNSIGNED,
+        "uint",
     },
     UINT8: {
         UINT8,
         IS_INTEGER | IS_UNSIGNED,
-        "uint8_t",
+        "u8",
     },
     UINT16: {
         UINT16,
         IS_INTEGER | IS_UNSIGNED,
-        "uint16_t",
+        "u16",
     },
     UINT32: {
         UINT32,
         IS_INTEGER | IS_UNSIGNED,
-        "uint32_t",
+        "u32",
     },
     UINT64: {
         UINT64,
         IS_INTEGER | IS_UNSIGNED,
-        "uint64_t",
+        "u64",
     },
     UINTPTR: {
         UINTPTR,
         IS_INTEGER | IS_UNSIGNED,
-        "uintptr_t",
-    },
-    SIZE_T: {
-        SIZE_T,
-        IS_INTEGER | IS_UNSIGNED,
-        "size_t",
+        "uintptr",
     },
     FLOAT32: {
         FLOAT32,

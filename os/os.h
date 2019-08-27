@@ -7,12 +7,12 @@ package(os);
 import("paths");
 import("utils");
 
-typedef uint64_t os$Time;
+typedef u64 os$Time;
 
-typedef uint32_t os$FileMode;
+typedef u32 os$FileMode;
 
 typedef struct {
-    uintptr_t fd;
+    uintptr fd;
     char *name;
     bool is_dir;
 } os$File;
@@ -23,7 +23,7 @@ extern os$File *os$stderr;
 
 extern const char *os$tempDir();
 
-extern os$File *os$newFile(uintptr_t fd, const char *name);
+extern os$File *os$newFile(uintptr fd, const char *name);
 
 extern os$File *os$openFile(const char *filename, int mode, int perm, utils$Error **error);
 extern void os$close(os$File *file, utils$Error **error);
@@ -40,7 +40,7 @@ typedef struct {
 } os$FileInfo;
 
 extern char *os$FileInfo_name(os$FileInfo *info);
-extern uint64_t os$FileInfo_size(os$FileInfo *info);
+extern u64 os$FileInfo_size(os$FileInfo *info);
 extern os$FileMode os$FileInfo_mode(os$FileInfo *info);
 extern os$Time os$FileInfo_modTime(os$FileInfo *info);
 extern bool os$FileInfo_isDir(os$FileInfo *info);
@@ -53,4 +53,4 @@ extern os$FileInfo *os$stat(const char *filename, utils$Error **error);
 extern os$File *os$openDir(const char *filename, utils$Error **error);
 extern os$FileInfo **os$readdir(os$File *file, utils$Error **error);
 
-extern void os$mkdirAll(const char *path, uint32_t mode, utils$Error **error);
+extern void os$mkdirAll(const char *path, u32 mode, utils$Error **error);

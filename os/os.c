@@ -29,7 +29,7 @@ static void PathError_check(const char *path, utils$Error **error) {
     }
 }
 
-extern os$File *os$newFile(uintptr_t fd, const char *name) {
+extern os$File *os$newFile(uintptr fd, const char *name) {
     os$File file = {
         .name = sys$strdup(name),
         .fd = fd,
@@ -107,7 +107,7 @@ extern os$File *os$openDir(const char *name, utils$Error **error) {
         PathError_check(name, error);
         return NULL;
     }
-    os$File *file = os$newFile((uintptr_t)dp, name);
+    os$File *file = os$newFile((uintptr)dp, name);
     file->is_dir = true;
     return file;
 }
@@ -137,7 +137,7 @@ extern os$FileInfo **os$readdir(os$File *file, utils$Error **error) {
         utils$Error_move(err, error);
         return NULL;
     }
-    utils$Slice arr = {.size = sizeof(uintptr_t)};
+    utils$Slice arr = {.size = sizeof(uintptr)};
     for (int i = 0; names[i] != NULL; i++) {
         char *path = paths$join2(file->name, names[i]);
         sys$free(names[i]);
@@ -157,7 +157,7 @@ extern char *os$FileInfo_name(os$FileInfo *info) {
     return info->_name;
 }
 
-extern uint64_t os$FileInfo_size(os$FileInfo *info) {
+extern u64 os$FileInfo_size(os$FileInfo *info) {
     struct stat st = *(struct stat *)os$FileInfo_sys(info);
     return st.st_size;
 }
@@ -189,13 +189,13 @@ extern const char *os$tempDir() {
     return "/tmp";
 }
 
-extern void os$mkdir(const char *path, uint32_t mode, utils$Error **error) {
+extern void os$mkdir(const char *path, u32 mode, utils$Error **error) {
     utils$clearError();
     mkdir(path, mode);
     PathError_check(path, error);
 }
 
-extern void os$mkdirAll(const char *path, uint32_t mode, utils$Error **error) {
+extern void os$mkdirAll(const char *path, u32 mode, utils$Error **error) {
     char *dir = paths$dir(path);
     if (!sys$streq(dir, ".")) {
         os$mkdirAll(dir, mode, error);

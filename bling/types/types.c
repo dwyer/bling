@@ -778,7 +778,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
 
     case ast$EXPR_SIZEOF:
         Checker_checkType(c, expr->sizeof_.x);
-        return Checker_lookupIdent(c, "size_t");
+        return Checker_lookupIdent(c, "u64");
 
     case ast$EXPR_STAR:
         {

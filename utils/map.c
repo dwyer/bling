@@ -7,9 +7,9 @@ static const int DEFAULT_CAP = 8;
 
 static utils$MapStats stats = {};
 
-static uintptr_t djb2(const char *s) {
+static uintptr djb2(const char *s) {
     // http://www.cse.yorku.ca/~oz/hash.html
-    uintptr_t hash = 5381;
+    uintptr hash = 5381;
     int ch = *s;
     while (ch) {
         hash = ((hash << 5) + hash) + ch;
@@ -19,7 +19,7 @@ static uintptr_t djb2(const char *s) {
     return hash;
 }
 
-static void *memdup(const void *src, size_t size) {
+static void *memdup(const void *src, sys$Size size) {
     return sys$memcpy(sys$malloc(size), src, size);
 }
 
@@ -51,7 +51,7 @@ extern int utils$Map_cap(const void *m) {
 }
 
 static MapPair *pair_ref(const utils$Map *m, const void *key) {
-    uintptr_t hash = djb2(key) % utils$Map_cap(m);
+    uintptr hash = djb2(key) % utils$Map_cap(m);
     stats.lookups++;
     for (int i = 0; i < utils$Slice_len(&m->_pairs); i++) {
         stats.iters++;
