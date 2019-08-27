@@ -54,7 +54,12 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
                 }
                 parser.expect(p, token.LPAREN)
                 while p.tok != token.RPAREN {
-                    var x *ast.Expr = expression(p)
+                    var x *ast.Expr = NULL
+                    if is_type(p) {
+                        x = type_name(p)
+                    } else {
+                        x = expression(p)
+                    }
                     utils.Slice_append(&args, &x)
                     if !parser.accept(p, token.COMMA) {
                         break
@@ -962,7 +967,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
         return parser.parsePragma(p)
     }
     var pos token.Pos = p.pos
-    if p.tok == token.TYPE || p.tok == token.TYPEDEF {
+    if p.tok == token.TYPEDEF {
         var keyword token.Token = p.tok
         parser.expect(p, keyword)
         var type *ast.Expr = declaration_specifiers(p, true)

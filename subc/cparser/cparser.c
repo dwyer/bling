@@ -88,7 +88,12 @@ static ast$Expr *postfix_expression(parser$Parser *p, ast$Expr *x) {
                 //         | argument_expression_list ',' expression
                 //         ;
                 while (p->tok != token$RPAREN) {
-                    ast$Expr *x = expression(p);
+                    ast$Expr *x = NULL;
+                    if (is_type(p)) {
+                        x = type_name(p);
+                    } else {
+                        x = expression(p);
+                    }
                     utils$Slice_append(&args, &x);
                     if (!parser$accept(p, token$COMMA)) {
                         break;
@@ -1184,7 +1189,7 @@ static ast$Decl *declaration(parser$Parser *p, bool is_external) {
         return parser$parsePragma(p);
     }
     token$Pos pos = p->pos;
-    if (p->tok == token$TYPE || p->tok == token$TYPEDEF) {
+    if (p->tok == token$TYPEDEF) {
         token$Token keyword = p->tok;
         parser$expect(p, keyword);
         ast$Expr *type = declaration_specifiers(p, true);

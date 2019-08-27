@@ -12,6 +12,7 @@ import("utils");
 
 extern ast$Scope *types$universe();
 
+extern bool types$isType(ast$Expr *expr);
 extern bool types$isIdent(ast$Expr *expr);
 extern bool types$isVoid(ast$Expr *type);
 extern bool types$isVoidPtr(ast$Expr *type);

@@ -419,7 +419,7 @@ fun Scope_new(outer *Scope) *Scope {
     var s Scope = {
         outer: outer,
         objects: utils.Map_make(sizeof(*Object)),
-        keys: makearray(sizeof(*char)),
+        keys: makearray(*char),
     }
     return &&s
 }

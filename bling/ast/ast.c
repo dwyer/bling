@@ -18,7 +18,7 @@ extern ast$Scope *ast$Scope_new(ast$Scope *outer) {
     ast$Scope s = {
         .outer = outer,
         .objects = utils$Map_make(sizeof(ast$Object *)),
-        .keys = makearray(sizeof(char *)),
+        .keys = makearray(char *),
     };
     return esc(s);
 }

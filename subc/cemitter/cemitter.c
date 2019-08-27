@@ -1,5 +1,6 @@
 #include "subc/cemitter/cemitter.h"
 #include "bling/token/token.h"
+#include "bling/types/types.h"
 
 #include "sys/sys.h"
 
@@ -29,7 +30,11 @@ static void cemitter$emitExpr(emitter$Emitter *e, ast$Expr *expr) {
         cemitter$emitExpr(e, expr->call.func);
         emitter$emitToken(e, token$LPAREN);
         for (ast$Expr **args = expr->call.args; args && *args; ) {
-            cemitter$emitExpr(e, *args);
+            if (types$isType(*args)) {
+                cemitter$emitType(e, *args, NULL);
+            } else {
+                cemitter$emitExpr(e, *args);
+            }
             args++;
             if (*args) {
                 emitter$emitToken(e, token$COMMA);
@@ -518,7 +523,7 @@ static void cemitter$emitDecl(emitter$Emitter *e, ast$Decl *decl) {
         break;
 
     case ast$DECL_TYPEDEF:
-        emitter$emitToken(e, token$TYPE);
+        emitter$emitToken(e, token$TYPEDEF);
         emitter$emitSpace(e);
         cemitter$emitType(e, decl->typedef_.type, decl->typedef_.name);
         emitter$emitToken(e, token$SEMICOLON);

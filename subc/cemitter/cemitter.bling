@@ -26,7 +26,11 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitExpr(e, expr.call.func)
         emitter.emitToken(e, token.LPAREN)
         for var args **ast.Expr = expr.call.args; args && *args; {
-            emitExpr(e, *args)
+            if types.isType(*args) {
+                emitType(e, *args, NULL)
+            } else {
+                emitExpr(e, *args)
+            }
             args++
             if *args {
                 emitter.emitToken(e, token.COMMA)
@@ -472,7 +476,7 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
         emitter.emitString(e, decl.pragma.lit)
         break
     case ast.DECL_TYPEDEF:
-        emitter.emitToken(e, token.TYPE)
+        emitter.emitToken(e, token.TYPEDEF)
         emitter.emitSpace(e)
         emitType(e, decl.typedef_.type, decl.typedef_.name)
         emitter.emitToken(e, token.SEMICOLON)

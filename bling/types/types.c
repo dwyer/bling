@@ -667,37 +667,39 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                 type = type->star.x;
             }
             if (type->kind == ast$TYPE_BUILTIN) {
-                int i = 0;
-                for (; expr->call.args[i]; i++) {
-                    Checker_checkExpr(c, expr->call.args[i]);
-                }
+                int len = 0;
+                for (; expr->call.args[len]; len++) {}
                 if (type->builtin.variadic) {
-                    assert(i == type->builtin.nargs);
+                    assert(len >= type->builtin.nargs);
                 } else {
-                    assert(i >= type->builtin.nargs);
+                    assert(len == type->builtin.nargs);
                 }
                 switch (type->builtin.id) {
                 case types$LEN:
+                    Checker_checkExpr(c, expr->call.args[0]);
                     return Checker_lookupIdent(c, "int");
                 case types$MAKEARRAY:
+                    type = expr->call.args[0];
                     {
-                        expr = expr->call.args[0];
-                        assert(expr->kind == ast$EXPR_SIZEOF);
-                        expr = expr->sizeof_.x;
                         ast$Expr t = {
                             .kind = ast$TYPE_ARRAY,
                             .array_ = {
-                                .elt = expr,
+                                .elt = type,
                                 .dynamic = true,
                             },
                         };
-                        return esc(t);
+                        type = esc(t);
                     }
-                    return NULL;
+                    Checker_checkType(c, type);
+                    return type;
                 case types$MAKEMAP:
+                    Checker_checkExpr(c, expr->call.args[0]);
                     return NULL;
                 default:
                     assert(!type->builtin.isExpr);
+                    for (int i = 0; expr->call.args[i]; i++) {
+                        Checker_checkExpr(c, expr->call.args[i]);
+                    }
                     return NULL; // TODO return correct type
                 }
             } else if (type->kind == ast$TYPE_FUNC) {
