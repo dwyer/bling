@@ -6,7 +6,6 @@
   -fms-extensions.
 * Make `sizeof` a builtin func.
 * Remove '#' token from bling.
-* Replace  `*_t` types with `*` (e.g. `uint8_t` with `uint8`, etc).
 * Implement a const type (like `enum` value or #define directive).
 * Implement `import ( ... )` decl.
 * Make semicolons optional before `}` and `)'.
