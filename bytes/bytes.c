@@ -27,7 +27,7 @@ extern char *bytes$join(const char *a[], int size, const char *sep) {
     case 1:
         return sys$strdup(a[0]);
     }
-    bytes$Buffer b = {};
+    bytes$Buffer b = makearray(char);
     bytes$Buffer_write(&b, a[0], sys$strlen(a[0]), NULL);
     for (int i = 1; i < size; i++) {
         bytes$Buffer_write(&b, sep, sys$strlen(sep), NULL);
@@ -46,9 +46,8 @@ extern int bytes$lastIndexByte(const char *b, char c) {
 }
 
 static void bytes$Buffer_init(bytes$Buffer *b) {
-    if (b->size == 0) {
-        b->size = sizeof(char);
-        b->cap = 1024;
+    if (len(*b) == 0) {
+        *b = makearray(char);
     }
 }
 

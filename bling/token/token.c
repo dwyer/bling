@@ -111,11 +111,10 @@ extern char *token$string(token$Token tok) {
     return tokens[tok];
 }
 
-static map(char *) keywords = makemap(char *);
+static map(token$Token) keywords = makemap(token$Token);
 
 extern token$Token token$lookup(char *ident) {
     if (len(keywords) == 0) {
-        keywords = utils$Map_make(sizeof(token$Token));
         for (int i = token$_keywordBeg + 1; i < token$_keywordEnd; i++) {
             char *s = token$string(i);
             utils$Map_set(&keywords, s, &i);
@@ -165,7 +164,7 @@ extern char *token$Position_string(token$Position *p) {
     return sys$sprintf("%s:%d:%d", p->filename, p->line, p->column);
 }
 
-static int getInt(utils$Slice *a, int i) {
+static int getInt(array(int) *a, int i) {
     int x;
     utils$Slice_get(a, i, &x);
     return x;
@@ -182,7 +181,7 @@ extern token$Pos token$File_pos(token$File *f, int offset) {
     return f->base + offset;
 }
 
-static int searchInts(utils$Slice *a, int x) {
+static int searchInts(array(int) *a, int x) {
     int i = 0;
     int j = len(*a);
     while (i < j) {
@@ -246,7 +245,7 @@ extern char *token$File_lineString(token$File *f, int line) {
 extern token$FileSet *token$newFileSet() {
     token$FileSet fset = {
         .base = 1,
-        .files = utils$Slice_make(sizeof(token$File *)),
+        .files = makearray(token$File *),
     };
     return esc(fset);
 }
@@ -259,7 +258,7 @@ extern token$File *token$FileSet_addFile(token$FileSet *s,
     if (base < s->base || size < 0) {
         panic("illegal base or size");
     }
-    utils$Slice lines = utils$Slice_make(sizeof(int));
+    array(int) lines = makearray(int);
     int zero = 0;
     utils$Slice_append(&lines, &zero);
     token$File file = {
@@ -276,7 +275,7 @@ extern token$File *token$FileSet_addFile(token$FileSet *s,
     return f;
 }
 
-static int searchFiles(utils$Slice *files, int x) {
+static int searchFiles(array(token$File *) *files, int x) {
     for (int i = 0; i < len(*files); i++) {
         token$File *f;
         utils$Slice_get(files, i, &f);

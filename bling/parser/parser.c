@@ -81,7 +81,7 @@ extern void parser$init(parser$Parser *p, token$FileSet *fset,
     scanner$init(&p->scanner, p->file, src);
     p->scanner.dontInsertSemis = !bytes$hasSuffix(filename, ".bling");
     p->exprLev = 0;
-    p->unresolved = utils$Slice_make(sizeof(ast$Expr *));
+    p->unresolved = makearray(ast$Expr *);
     parser$next(p);
 }
 
@@ -330,7 +330,7 @@ static ast$Expr *parseElement(parser$Parser *p) {
 }
 
 static ast$Expr **parseElementList(parser$Parser *p) {
-    utils$Slice list = {.size = sizeof(ast$Expr *)};
+    array(ast$Expr *) list = makearray(ast$Expr *);
     while (p->tok != token$RBRACE && p->tok != token$EOF) {
         ast$Expr *value = parseElement(p);
         utils$Slice_append(&list, &value);
@@ -377,7 +377,7 @@ static ast$Expr *parseIndexExpr(parser$Parser *p, ast$Expr *x) {
 }
 
 static ast$Expr *parseCallExpr(parser$Parser *p, ast$Expr *x) {
-    utils$Slice args = {.size = sizeof(ast$Expr *)};
+    array(ast$Expr *) args = makearray(ast$Expr *);
     parser$expect(p, token$LPAREN);
     p->exprLev++;
     // argument_expression_list
@@ -683,7 +683,7 @@ static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
     ast$Decl **fields = NULL;
     if (parser$accept(p, token$LBRACE)) {
         ast$Scope *scope = ast$Scope_new(p->topScope);
-        utils$Slice fieldSlice = {.size = sizeof(ast$Decl *)};
+        array(ast$Decl *) fieldSlice = makearray(ast$Decl *);
         for (;;) {
             ast$Decl *field = parseFieldDecl(p, scope);
             utils$Slice_append(&fieldSlice, &field);
@@ -745,7 +745,7 @@ static ast$Decl *parseParam(parser$Parser *p, ast$Scope *scope, bool anon) {
 
 static ast$Decl **parseParameterList(parser$Parser *p, ast$Scope *scope,
         bool anon) {
-    utils$Slice params = utils$Slice_make(sizeof(ast$Decl *));
+    array(ast$Decl *) params = makearray(ast$Decl *);
     for (;;) {
         ast$Decl *param = parseParam(p, scope, false);
         utils$Slice_append(&params, &param);
@@ -836,7 +836,7 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
     ast$Decl **enums = NULL;
     if (parser$accept(p, token$LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
-        utils$Slice list = {.size = sizeof(ast$Decl *)};
+        array(ast$Decl *) list = makearray(ast$Decl *);
         while (p->tok != token$RBRACE) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             ast$Decl decl = {
@@ -1094,13 +1094,13 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
     p->exprLev = prevLev;
     parser$expect(p, token$LBRACE);
     parser$openScope(p);
-    utils$Slice clauses = {.size = sizeof(ast$Stmt *)};
+    array(ast$Stmt *) clauses = makearray(ast$Stmt *);
     while (p->tok == token$CASE || p->tok == token$DEFAULT) {
         // case_statement
         //         | CASE constant_expression ':' statement+
         //         | DEFAULT ':' statement+
         //         ;
-        utils$Slice exprs = {.size=sizeof(ast$Expr *)};
+        array(ast$Expr *) exprs = makearray(ast$Expr *);
         token$Pos pos = p->pos;
         if (parser$accept(p, token$CASE)) {
             for (;;) {
@@ -1114,7 +1114,7 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
             parser$expect(p, token$DEFAULT);
         }
         parser$expect(p, token$COLON);
-        utils$Slice stmts = {.size = sizeof(ast$Stmt *)};
+        array(ast$Stmt *) stmts = makearray(ast$Stmt *);
         bool loop = true;
         while (loop) {
             switch (p->tok) {
@@ -1254,7 +1254,7 @@ static ast$Stmt *parseStmt(parser$Parser *p) {
 }
 
 static ast$Stmt **parseStmtList(parser$Parser *p) {
-    utils$Slice stmts = {.size = sizeof(ast$Stmt *)};
+    array(ast$Stmt *) stmts = makearray(ast$Stmt *);
     while (p->tok != token$RBRACE) {
         ast$Stmt *stmt = parseStmt(p);
         utils$Slice_append(&stmts, &stmt);
@@ -1428,7 +1428,7 @@ extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
         utils$Error_move(err, first);
         return NULL;
     }
-    utils$Slice files = utils$Slice_make(sizeof(uintptr));
+    array(ast$File *) files = makearray(ast$File *);
     for (int i = 0; infos[i]; i++) {
         char *name = os$FileInfo_name(infos[i]);
         if (isBlingFile(name) && !isTestFile(name)) {
@@ -1442,8 +1442,8 @@ extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
 
 static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
     ast$Expr *name = NULL;
-    utils$Slice imports = utils$Slice_make(sizeof(uintptr));
-    utils$Slice decls = utils$Slice_make(sizeof(ast$Decl *));
+    array(ast$Decl *) imports = makearray(ast$Decl *);
+    array(ast$Decl *) decls = makearray(ast$Decl *);
     while (p->tok == token$HASH) {
         ast$Decl *lit = parser$parsePragma(p);
         utils$Slice_append(&decls, &lit);

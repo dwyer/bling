@@ -27,15 +27,17 @@ typedef struct {
     bool ignoreFuncBodies;
 } types$Config;
 
-typedef struct {
+typedef struct types$Package types$Package;
+
+typedef struct types$Package {
     char *path;
     char *name;
     ast$Scope *scope;
-    utils$Slice imports;
+    array(types$Package *) imports;
 } types$Package;
 
 typedef struct {
-    map(types$Package) imports; // map of types$Package
+    map(types$Package *) imports; // map of types$Package
 } types$Info;
 
 extern types$Info *types$newInfo();

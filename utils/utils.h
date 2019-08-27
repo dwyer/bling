@@ -37,9 +37,14 @@ extern void utils$Slice_append(void *s, const void *x);
 extern void *utils$nilArray(void *s);
 
 typedef struct {
+    void *key;
+    void *val;
+} utils$MapPair;
+
+typedef struct {
     int _valSize;
     int _len;
-    utils$Slice _pairs;
+    array(utils$MapPair) _pairs;
 } utils$Map;
 
 extern utils$Map utils$Map_make(int valSize); // TODO replace with make

@@ -11,7 +11,7 @@ extern int bytes$indexByte(const char *b, char c);
 extern char *bytes$join(const char *a[], int size, const char *sep);
 extern int bytes$lastIndexByte(const char *b, char c);
 
-typedef utils$Slice bytes$Buffer;
+typedef array(char) bytes$Buffer;
 
 extern char *bytes$Buffer_bytes(bytes$Buffer *b);
 extern int bytes$Buffer_len(bytes$Buffer *b);

@@ -118,14 +118,14 @@ typ File struct {
     name *char
     base int
     size int
-    lines utils.Slice
+    lines array int
     src *char
 }
 
 typ FileSet struct {
     fset *FileSet
     base int
-    files utils.Slice
+    files array *File
     last *File
 }
 
@@ -239,11 +239,10 @@ fun string(tok Token) *char {
     return tokens[tok]
 }
 
-var keywords map *char = makemap(*char)
+var keywords map Token = makemap(Token)
 
 fun lookup(ident *char) Token {
     if len(keywords) == 0 {
-        keywords = utils.Map_make(sizeof(Token))
         for var i int = _keywordBeg + 1; i < _keywordEnd; i++ {
             var s *char = string(i)
             utils.Map_set(&keywords, s, &i)
@@ -285,7 +284,7 @@ fun Position_string(p *Position) *char {
     return sys.sprintf("%s:%d:%d", p.filename, p.line, p.column)
 }
 
-fun getInt(a *utils.Slice, i int) int {
+fun getInt(a *array int, i int) int {
     var x int
     utils.Slice_get(a, i, &x)
     return x
@@ -302,7 +301,7 @@ fun File_pos(f *File, offset int) Pos {
     return f.base + offset
 }
 
-fun searchInts(a *utils.Slice, x int) int {
+fun searchInts(a *array int, x int) int {
     var i int = 0
     var j int = len(*a)
     while i < j {
@@ -364,7 +363,7 @@ fun File_lineString(f *File, line int) *char {
 fun newFileSet() *FileSet {
     var fset FileSet = {
         base: 1,
-        files: utils.Slice_make(sizeof(*File)),
+        files: makearray(*File),
     }
     return &&fset
 }
@@ -376,7 +375,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     if base < s.base || size < 0 {
         panic("illegal base or size")
     }
-    var lines utils.Slice = utils.Slice_make(sizeof(int))
+    var lines array int = makearray(int)
     var zero int = 0
     utils.Slice_append(&lines, &zero)
     var file File = {
@@ -393,7 +392,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     return f
 }
 
-fun searchFiles(files *utils.Slice, x int) int {
+fun searchFiles(files *array *File, x int) int {
     for var i int = 0; i < len(*files); i++ {
         var f *File
         utils.Slice_get(files, i, &f)

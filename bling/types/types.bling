@@ -17,11 +17,11 @@ typ Package struct {
     path *char
     name *char
     scope *ast.Scope
-    imports utils.Slice
+    imports array *Package
 }
 
 typ Info struct {
-    imports map Package
+    imports map *Package
 }
 
 typ BasicKind enum {
@@ -117,18 +117,24 @@ fun typeString(expr *ast.Expr) *char {
 }
 
 fun isType(expr *ast.Expr) bool {
-    switch expr.kind {
-    case ast.EXPR_IDENT:
-        if expr.ident.obj == NULL {
-            panic(sys.sprintf("types$isType: unresolved identifier %s", expr.ident.name))
+    for ;; {
+        switch expr.kind {
+        case ast.EXPR_IDENT:
+            if expr.ident.obj == NULL {
+                panic(sys.sprintf("types$isType: unresolved identifier %s", expr.ident.name))
+            }
+            return expr.ident.obj.kind == ast.ObjKind_TYP
+        case ast.EXPR_SELECTOR:
+            expr = expr.selector.sel
+            break
+        case ast.EXPR_STAR:
+            expr = expr.star.x
+            break
+        case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_FUNC, ast.TYPE_MAP, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
+            return true
+        default:
+            return false
         }
-        return expr.ident.obj.decl.kind == ast.DECL_TYPEDEF
-    case ast.EXPR_STAR:
-        return isType(expr.star.x)
-    case ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_FUNC, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
-        return true
-    default:
-        return false
     }
 }
 
@@ -691,6 +697,10 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                     return Checker_lookupIdent(c, "int")
                 case MAKEARRAY:
                     type = expr.call.args[0]
+                    Checker_checkType(c, type)
+                    if !isType(type) {
+                        Checker_error(c, ast.Expr_pos(type), "expected a type")
+                    }
                     {
                         var t ast.Expr = {
                             kind: ast.TYPE_ARRAY,
@@ -701,10 +711,13 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                         }
                         type = &&t
                     }
-                    Checker_checkType(c, type)
                     return type
                 case MAKEMAP:
                     type = expr.call.args[0]
+                    Checker_checkType(c, type)
+                    if !isType(type) {
+                        Checker_error(c, ast.Expr_pos(type), "expected a type")
+                    }
                     {
                         var t ast.Expr = {
                             kind: ast.TYPE_MAP,
@@ -714,7 +727,6 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                         }
                         type = &&t
                     }
-                    Checker_checkType(c, type)
                     return type
                 default:
                     assert(!type.builtin.isExpr)
@@ -1069,7 +1081,7 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
 
 fun newInfo() *Info {
     var info Info = {
-        imports: utils.Map_make(sizeof(*Package)),
+        imports: makemap(*Package),
     }
     return &&info
 }
@@ -1088,9 +1100,7 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
         path: sys.strdup(path),
         name: file.name ? sys.strdup(file.name.ident.name) : NULL,
         scope: file.scope,
-        imports: {
-            size: sizeof(*Package),
-        },
+        imports: makearray(*Package),
     }
     var c Checker = {
         info: info,

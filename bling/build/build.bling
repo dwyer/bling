@@ -44,7 +44,7 @@ fun printStrArray(s **char) {
     sys.printf("\n")
 }
 
-fun execute(cmd *utils.Slice) {
+fun execute(cmd *array *char) {
     var args **char = utils.nilArray(cmd)
     if VERBOSE {
         printStrArray(args)
@@ -56,7 +56,7 @@ fun execute(cmd *utils.Slice) {
     sys.free(args)
 }
 
-fun Slice_appendStrLit(a *utils.Slice, s *const char) {
+fun Slice_appendStrLit(a *array *char, s *const char) {
     utils.Slice_append(a, &s)
 }
 
@@ -72,11 +72,11 @@ typ Package struct {
     hPath *char
     cPath *char
     objPath *char
-    objPaths utils.Slice
+    objPaths array *char
     libPath *char
     libModTime os.Time
     srcModTime os.Time
-    deps utils.Slice
+    deps array *Package
     isCmd bool
 }
 
@@ -89,9 +89,7 @@ typ Builder struct {
 }
 
 fun genObj(b *Builder, dst *const char, src *const char) {
-    var cmd utils.Slice = {
-        size: sizeof(*char),
-    }
+    var cmd array *char = makearray(*char)
     Slice_appendStrLit(&cmd, CC_PATH)
     Slice_appendStrLit(&cmd, "-fms-extensions")
     Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag")
@@ -174,9 +172,7 @@ fun newPackage(b *Builder, path *const char) Package {
         libPath: libPath,
         libModTime: getFileModTime(libPath),
         srcModTime: getSrcModTime(path),
-        deps: {
-            size: sizeof(*Package),
-        },
+        deps: makearray(*Package),
         isCmd: isCmd,
     }
     sys.free(genPath)
@@ -191,22 +187,6 @@ fun newPackage(b *Builder, path *const char) Package {
         }
     }
     return pkg
-}
-
-typ SliceIter struct {
-    s *utils.Slice
-    i int
-    it *void
-}
-
-fun SliceIter_next(iter *SliceIter, it *void) bool {
-    if iter.i < len(*iter.s) {
-        utils.Slice_get(iter.s, iter.i, it)
-        iter.it = it
-        iter.i++
-        return true
-    }
-    return false
 }
 
 fun emitInclude(e *emitter.Emitter, path *const char) {
@@ -249,9 +229,7 @@ fun getCFile(b *Builder, pkg *Package) {
 
 fun buildCPackage(b *Builder, path *const char) *Package {
     var pkg Package = newPackage(b, path)
-    var objFiles utils.Slice = {
-        size: sizeof(*char),
-    }
+    var objFiles array *char = makearray(*char)
     {
         var files **os.FileInfo = ioutil.readDir(path, NULL)
         for var i int = 0; files[i]; i++ {
@@ -280,9 +258,7 @@ fun buildCPackage(b *Builder, path *const char) *Package {
         if VERBOSE {
         }
         genHeader(b, &pkg)
-        var cmd utils.Slice = {
-            size: sizeof(*char),
-        }
+        var cmd array *char = makearray(*char)
         Slice_appendStrLit(&cmd, AR_PATH)
         Slice_appendStrLit(&cmd, "rsc")
         Slice_appendStrLit(&cmd, pkg.libPath)
@@ -307,9 +283,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         if VERBOSE {
         }
         if pkg.isCmd {
-            var cmd utils.Slice = {
-                size: sizeof(*char),
-            }
+            var cmd array *char = makearray(*char)
             Slice_appendStrLit(&cmd, CC_PATH)
             Slice_appendStrLit(&cmd, "-o")
             Slice_appendStrLit(&cmd, pkg.libPath)
@@ -321,9 +295,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
             }
             execute(&cmd)
         } else {
-            var cmd utils.Slice = {
-                size: sizeof(*char),
-            }
+            var cmd array *char = makearray(*char)
             Slice_appendStrLit(&cmd, AR_PATH)
             Slice_appendStrLit(&cmd, "rsc")
             Slice_appendStrLit(&cmd, pkg.libPath)

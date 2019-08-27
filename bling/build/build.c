@@ -33,7 +33,7 @@ static void printStrArray(char **s) {
     sys$printf("\n");
 }
 
-static void execute(utils$Slice *cmd) {
+static void execute(array(char *) *cmd) {
     char **args = utils$nilArray(cmd);
     if (VERBOSE) {
         printStrArray(args);
@@ -45,7 +45,7 @@ static void execute(utils$Slice *cmd) {
     sys$free(args);
 }
 
-static void Slice_appendStrLit(utils$Slice *a, const char *s) {
+static void Slice_appendStrLit(array(char *) *a, const char *s) {
     utils$Slice_append(a, &s);
 }
 
@@ -55,17 +55,19 @@ static void mkdirForFile(const char *path) {
     sys$free(dir);
 }
 
-typedef struct {
+typedef struct Package Package;
+
+typedef struct Package {
     char *path;
     types$Package *pkg;
     char *hPath;
     char *cPath;
     char *objPath;
-    utils$Slice objPaths;
+    array(char *) objPaths;
     char *libPath;
     os$Time libModTime; // modtime of libPath
     os$Time srcModTime; // modtime of newest src or dep
-    utils$Slice deps;
+    array(Package *) deps;
     bool isCmd;
 } Package;
 
@@ -78,7 +80,7 @@ typedef struct {
 } Builder;
 
 static void genObj(Builder *b, const char *dst, const char *src) {
-    utils$Slice cmd = {.size = sizeof(char *)};
+    array(char *) cmd = makearray(char *);
     Slice_appendStrLit(&cmd, CC_PATH);
     Slice_appendStrLit(&cmd, "-fms-extensions");
     Slice_appendStrLit(&cmd, "-Wno-microsoft-anon-tag");
@@ -166,7 +168,7 @@ static Package newPackage(Builder *b, const char *path) {
         .libPath = libPath,
         .libModTime = getFileModTime(libPath),
         .srcModTime = getSrcModTime(path),
-        .deps = {.size = sizeof(Package *)},
+        .deps = makearray(Package *),
         .isCmd = isCmd,
     };
     sys$free(genPath);
@@ -181,22 +183,6 @@ static Package newPackage(Builder *b, const char *path) {
         }
     }
     return pkg;
-}
-
-typedef struct {
-    utils$Slice *s;
-    int i;
-    void *it;
-} SliceIter;
-
-extern bool SliceIter_next(SliceIter *iter, void *it) {
-    if (iter->i < len(*iter->s)) {
-        utils$Slice_get(iter->s, iter->i, it);
-        iter->it = it;
-        iter->i++;
-        return true;
-    }
-    return false;
 }
 
 static void emitInclude(emitter$Emitter *e, const char *path) {
@@ -240,7 +226,7 @@ static void getCFile(Builder *b, Package *pkg) {
 
 static Package *buildCPackage(Builder *b, const char *path) {
     Package pkg = newPackage(b, path);
-    utils$Slice objFiles = {.size = sizeof(char *)};
+    array(char *) objFiles = makearray(char *);
     {
         os$FileInfo **files = ioutil$readDir(path, NULL);
         for (int i = 0; files[i]; i++) {
@@ -270,7 +256,7 @@ static Package *buildCPackage(Builder *b, const char *path) {
             // sys$printf("%d > %d\n", pkg.srcModTime, pkg.libModTime);
         }
         genHeader(b, &pkg);
-        utils$Slice cmd = {.size = sizeof(char *)};
+        array(char *) cmd = makearray(char *);
         Slice_appendStrLit(&cmd, AR_PATH);
         Slice_appendStrLit(&cmd, "rsc");
         Slice_appendStrLit(&cmd, pkg.libPath);
@@ -296,7 +282,7 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
             // sys$printf("%d > %d\n", pkg.srcModTime, pkg.libModTime);
         }
         if (pkg.isCmd) {
-            utils$Slice cmd = {.size = sizeof(char *)};
+            array(char *) cmd = makearray(char *);
             Slice_appendStrLit(&cmd, CC_PATH);
             Slice_appendStrLit(&cmd, "-o");
             Slice_appendStrLit(&cmd, pkg.libPath);
@@ -308,7 +294,7 @@ static Package *buildBlingPackage(Builder *b, const char *path) {
             }
             execute(&cmd);
         } else {
-            utils$Slice cmd = {.size = sizeof(char *)};
+            array(char *) cmd = makearray(char *);
             Slice_appendStrLit(&cmd, AR_PATH);
             Slice_appendStrLit(&cmd, "rsc");
             Slice_appendStrLit(&cmd, pkg.libPath);

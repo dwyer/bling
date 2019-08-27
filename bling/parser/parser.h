@@ -35,7 +35,7 @@ typedef struct {
     char *pkgName;
     int exprLev;
     bool inRhs;
-    utils$Slice unresolved;
+    array(ast$Expr *) unresolved;
     int numIdents;
 } parser$Parser;
 

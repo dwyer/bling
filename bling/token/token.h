@@ -138,14 +138,14 @@ typedef struct {
     char *name;
     int base;
     int size;
-    utils$Slice lines;
+    array(int) lines;
     char *src;
 } token$File;
 
 typedef struct token$FileSet {
     token$FileSet *fset;
     int base;
-    utils$Slice files;
+    array(token$File *) files;
     token$File *last;
 } token$FileSet;
 

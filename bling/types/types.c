@@ -43,23 +43,30 @@ extern char *types$typeString(ast$Expr *expr) {
 }
 
 extern bool types$isType(ast$Expr *expr) {
-    switch (expr->kind) {
-    case ast$EXPR_IDENT:
-        if (expr->ident.obj == NULL) {
-            panic(sys$sprintf("types$isType: unresolved identifier %s",
-                        expr->ident.name));
+    for (;;) {
+        switch (expr->kind) {
+        case ast$EXPR_IDENT:
+            if (expr->ident.obj == NULL) {
+                panic(sys$sprintf("types$isType: unresolved identifier %s",
+                            expr->ident.name));
+            }
+            return expr->ident.obj->kind == ast$ObjKind_TYP;
+        case ast$EXPR_SELECTOR:
+            expr = expr->selector.sel;
+            break;
+        case ast$EXPR_STAR:
+            expr = expr->star.x;
+            break;
+        case ast$TYPE_ARRAY:
+        case ast$TYPE_ENUM:
+        case ast$TYPE_FUNC:
+        case ast$TYPE_MAP:
+        case ast$TYPE_NATIVE:
+        case ast$TYPE_STRUCT:
+            return true;
+        default:
+            return false;
         }
-        return expr->ident.obj->decl->kind == ast$DECL_TYPEDEF;
-    case ast$EXPR_STAR:
-        return types$isType(expr->star.x);
-    case ast$TYPE_ARRAY:
-    case ast$TYPE_ENUM:
-    case ast$TYPE_FUNC:
-    case ast$TYPE_NATIVE:
-    case ast$TYPE_STRUCT:
-        return true;
-    default:
-        return false;
     }
 }
 
@@ -680,6 +687,10 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                     return Checker_lookupIdent(c, "int");
                 case types$MAKEARRAY:
                     type = expr->call.args[0];
+                    Checker_checkType(c, type);
+                    if (!types$isType(type)) {
+                        Checker_error(c, ast$Expr_pos(type), "expected a type");
+                    }
                     {
                         ast$Expr t = {
                             .kind = ast$TYPE_ARRAY,
@@ -690,10 +701,13 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                         };
                         type = esc(t);
                     }
-                    Checker_checkType(c, type);
                     return type;
                 case types$MAKEMAP:
                     type = expr->call.args[0];
+                    Checker_checkType(c, type);
+                    if (!types$isType(type)) {
+                        Checker_error(c, ast$Expr_pos(type), "expected a type");
+                    }
                     {
                         ast$Expr t = {
                             .kind = ast$TYPE_MAP,
@@ -703,7 +717,6 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                         };
                         type = esc(t);
                     }
-                    Checker_checkType(c, type);
                     return type;
                 default:
                     assert(!type->builtin.isExpr);
@@ -1121,7 +1134,7 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
 
 extern types$Info *types$newInfo() {
     types$Info info = {
-        .imports = utils$Map_make(sizeof(types$Package *)),
+        .imports = makemap(types$Package *),
     };
     return esc(info);
 }
@@ -1142,7 +1155,7 @@ extern types$Package *types$checkFile(types$Config *conf, const char *path,
         .path = sys$strdup(path),
         .name = file->name ? sys$strdup(file->name->ident.name) : NULL,
         .scope = file->scope,
-        .imports = {.size = sizeof(types$Package *)},
+        .imports = makearray(types$Package *),
     };
     Checker c = {
         .info = info,

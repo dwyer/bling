@@ -20,8 +20,8 @@
         utils$Slice: utils$Slice_len, \
         utils$Map: utils$Map_len)(&(x))
 
-#define makearray(T) {.size = sizeof(T)}
-#define makemap(T) {._valSize = sizeof(T)}
+#define makearray(T) (utils$Slice){.size = sizeof(T)}
+#define makemap(T) (utils$Map){._valSize = sizeof(T)}
 
 #define fallthrough /**/
 #define typ /**/

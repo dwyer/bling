@@ -3,7 +3,7 @@ package bytes
 import "sys"
 import "utils"
 
-typ Buffer utils.Slice
+typ Buffer array char
 
 fun hasSuffix(b *const char, suffix *const char) bool {
     for var i int = 0; b[i]; i++ {
@@ -30,7 +30,7 @@ fun join(a []*const char, size int, sep *const char) *char {
     case 1:
         return sys.strdup(a[0])
     }
-    var b Buffer = {}
+    var b Buffer = makearray(char)
     Buffer_write(&b, a[0], sys.strlen(a[0]), NULL)
     for var i int = 1; i < size; i++ {
         Buffer_write(&b, sep, sys.strlen(sep), NULL)
@@ -49,9 +49,8 @@ fun lastIndexByte(b *const char, c char) int {
 }
 
 fun Buffer_init(b *Buffer) {
-    if b.size == 0 {
-        b.size = sizeof(char)
-        b.cap = 1024
+    if len(*b) == 0 {
+        *b = makearray(char)
     }
 }
 
