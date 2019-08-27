@@ -303,7 +303,7 @@ fun parseElement(p *Parser) *ast.Expr {
     return value
 }
 
-fun parseElementList(p *Parser) **ast.Expr {
+fun parseElementList(p *Parser) [array]*ast.Expr {
     var list [array]*ast.Expr = makearray(*ast.Expr)
     while p.tok != token.RBRACE && p.tok != token.EOF {
         var value *ast.Expr = parseElement(p)
@@ -312,7 +312,7 @@ fun parseElementList(p *Parser) **ast.Expr {
             break
         }
     }
-    return utils.nilArray(&list)
+    return list
 }
 
 fun parseLiteralValue(p *Parser, type *ast.Expr) *ast.Expr {
@@ -321,7 +321,7 @@ fun parseLiteralValue(p *Parser, type *ast.Expr) *ast.Expr {
         pos = ast.Expr_pos(type)
     }
     p.exprLev++
-    var list **ast.Expr = parseElementList(p)
+    var list [array]*ast.Expr = parseElementList(p)
     p.exprLev--
     expect(p, token.RBRACE)
     var expr ast.Expr = {
@@ -367,7 +367,7 @@ fun parseCallExpr(p *Parser, x *ast.Expr) *ast.Expr {
         kind: ast.EXPR_CALL,
         call: {
             func: x,
-            args: utils.nilArray(&args),
+            args: args,
         },
     }
     return &&call
@@ -618,19 +618,17 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
     var pos token.Pos = p.pos
     expect(p, keyword)
     openScope(p)
-    var fields **ast.Decl = NULL
+    var fields [array]*ast.Decl = makearray(*ast.Decl)
     if accept(p, token.LBRACE) {
         var scope *ast.Scope = ast.Scope_new(p.topScope)
-        var fieldSlice [array]*ast.Decl = makearray(*ast.Decl)
         for ;; {
             var field *ast.Decl = parseFieldDecl(p, scope)
-            append(fieldSlice, field)
+            append(fields, field)
             if p.tok == token.RBRACE {
                 break
             }
         }
         expect(p, token.RBRACE)
-        fields = utils.nilArray(&fieldSlice)
     }
     var x ast.Expr = {
         kind: ast.TYPE_STRUCT,
@@ -679,7 +677,7 @@ fun parseParam(p *Parser, scope *ast.Scope, anon bool) *ast.Decl {
     return d
 }
 
-fun parseParameterList(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
+fun parseParameterList(p *Parser, scope *ast.Scope, anon bool) [array]*ast.Decl {
     var params [array]*ast.Decl = makearray(*ast.Decl)
     for ;; {
         var param *ast.Decl = parseParam(p, scope, false)
@@ -707,11 +705,11 @@ fun parseParameterList(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
             break
         }
     }
-    return utils.nilArray(&params)
+    return params
 }
 
-fun parseParameters(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
-    var params **ast.Decl = NULL
+fun parseParameters(p *Parser, scope *ast.Scope, anon bool) [array]*ast.Decl {
+    var params [array]*ast.Decl = makearray(*ast.Decl)
     expect(p, token.LPAREN)
     if p.tok != token.RPAREN {
         params = parseParameterList(p, scope, anon)
@@ -723,7 +721,7 @@ fun parseParameters(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
 fun parseFuncType(p *Parser) *ast.Expr {
     var pos token.Pos = expect(p, token.FUNC)
     var scope *ast.Scope = ast.Scope_new(p.topScope)
-    var params **ast.Decl = parseParameters(p, scope, false)
+    var params [array]*ast.Decl = parseParameters(p, scope, false)
     var result *ast.Expr = NULL
     if p.tok != token.SEMICOLON {
         result = parseType(p)
@@ -762,9 +760,8 @@ fun parseMapType(p *Parser) *ast.Expr {
 fun parseEnumType(p *Parser) *ast.Expr {
     var pos token.Pos = p.pos
     expect(p, token.ENUM)
-    var enums **ast.Decl = NULL
+    var enums [array]*ast.Decl = makearray(*ast.Decl)
     if accept(p, token.LBRACE) {
-        var list [array]*ast.Decl = makearray(*ast.Decl)
         while p.tok != token.RBRACE {
             var decl ast.Decl = {
                 kind: ast.DECL_VALUE,
@@ -777,10 +774,9 @@ fun parseEnumType(p *Parser) *ast.Expr {
                 decl.value.value = parseRhs(p)
             }
             var enumerator *ast.Decl = &&decl
-            append(list, enumerator)
+            append(enums, enumerator)
             expect(p, token.SEMICOLON)
         }
-        enums = utils.nilArray(&list)
         expect(p, token.RBRACE)
     }
     var x ast.Expr = {
@@ -1018,8 +1014,8 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
             kind: ast.STMT_CASE,
             case_: {
                 pos: pos,
-                exprs: utils.nilArray(&exprs),
-                stmts: utils.nilArray(&stmts),
+                exprs: exprs,
+                stmts: stmts,
             },
         }
         var clause *ast.Stmt = &&stmt
@@ -1033,7 +1029,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
         switch_: {
             pos: pos,
             tag: tag,
-            stmts: utils.nilArray(&clauses),
+            stmts: clauses,
         },
     }
     return &&stmt
@@ -1124,20 +1120,20 @@ fun parseStmt(p *Parser) *ast.Stmt {
     return stmt
 }
 
-fun parseStmtList(p *Parser) **ast.Stmt {
+fun parseStmtList(p *Parser) [array]*ast.Stmt {
     var stmts [array]*ast.Stmt = makearray(*ast.Stmt)
     while p.tok != token.RBRACE {
         var stmt *ast.Stmt = parseStmt(p)
         append(stmts, stmt)
     }
-    return utils.nilArray(&stmts)
+    return stmts
 }
 
 fun parseBody(p *Parser, scope *ast.Scope) *ast.Stmt {
     var pos token.Pos = expect(p, token.LBRACE)
     assert(p.topScope == scope.outer)
     p.topScope = scope
-    var list **ast.Stmt = parseStmtList(p)
+    var list [array]*ast.Stmt = parseStmtList(p)
     closeScope(p)
     expect(p, token.RBRACE)
     accept(p, token.SEMICOLON)
@@ -1154,7 +1150,7 @@ fun parseBody(p *Parser, scope *ast.Scope) *ast.Stmt {
 fun parseBlockStmt(p *Parser) *ast.Stmt {
     var pos token.Pos = expect(p, token.LBRACE)
     openScope(p)
-    var list **ast.Stmt = parseStmtList(p)
+    var list [array]*ast.Stmt = parseStmtList(p)
     closeScope(p)
     expect(p, token.RBRACE)
     accept(p, token.SEMICOLON)
@@ -1291,20 +1287,20 @@ fun isTestFile(name *const char) bool {
 
 fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **utils.Error) **ast.File {
     var err *utils.Error = NULL
-    var infos **os.FileInfo = ioutil.readDir(path, &err)
+    var infos [array]*os.FileInfo = ioutil.readDir(path, &err)
     if err {
         utils.Error_move(err, first)
         return NULL
     }
     var files [array]*ast.File = makearray(*ast.File)
-    for var i int = 0; infos[i]; i++ {
+    for var i int = 0; i < len(infos); i++ {
         var name *char = os.FileInfo_name(infos[i])
         if isBlingFile(name) && !isTestFile(name) {
             var file *ast.File = parseFile(fset, name, scope)
             append(files, file)
         }
     }
-    sys.free(infos)
+    utils.Slice_unmake(&infos)
     return utils.nilArray(&files)
 }
 
@@ -1350,8 +1346,8 @@ fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
     var file ast.File = {
         filename: p.file.name,
         name: name,
-        imports: utils.nilArray(&imports),
-        decls: utils.nilArray(&decls),
+        imports: imports,
+        decls: decls,
         scope: p.pkgScope,
     }
     return &&file

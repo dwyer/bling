@@ -128,7 +128,7 @@ typedef struct {
 
 typedef struct {
     ast$Expr *func;
-    ast$Expr **args;
+    array(ast$Expr *) args;
 } ast$CallExpr;
 
 typedef struct {
@@ -140,7 +140,7 @@ typedef struct {
 typedef struct {
     token$Pos pos;
     ast$Expr *type;
-    ast$Expr **list;
+    array(ast$Expr *) list;
 } ast$CompositeLit;
 
 typedef struct {
@@ -156,13 +156,13 @@ typedef struct {
 typedef struct {
     token$Pos pos;
     ast$Expr *name;
-    ast$Decl **enums;
+    array(ast$Decl *) enums;
 } ast$EnumType;
 
 typedef struct {
     token$Pos pos;
     ast$Expr *result;
-    ast$Decl **params;
+    array(ast$Decl *) params;
 } ast$FuncExpr;
 
 typedef struct {
@@ -218,7 +218,7 @@ typedef struct {
     token$Pos pos;
     token$Token tok;
     ast$Expr *name;
-    ast$Decl **fields;
+    array(ast$Decl *) fields;
     ast$Scope *scope;
 } ast$StructType;
 
@@ -317,13 +317,13 @@ typedef struct {
 
 typedef struct {
     token$Pos pos;
-    ast$Stmt **stmts;
+    array(ast$Stmt *) stmts;
 } ast$BlockStmt;
 
 typedef struct {
     token$Pos pos;
-    ast$Expr **exprs;
-    ast$Stmt **stmts;
+    array(ast$Expr *) exprs;
+    array(ast$Stmt *) stmts;
 } ast$CaseStmt;
 
 typedef struct {
@@ -378,7 +378,7 @@ typedef struct {
 typedef struct {
     token$Pos pos;
     ast$Expr *tag;
-    ast$Stmt **stmts;
+    array(ast$Stmt *) stmts;
 } ast$SwitchStmt;
 
 typedef struct ast$Stmt {
@@ -420,15 +420,15 @@ extern ast$Object *ast$Scope_deepLookup(ast$Scope *s, char *name);
 typedef struct {
     const char *filename;
     ast$Expr *name;
-    ast$Decl **imports;
-    ast$Decl **decls;
+    array(ast$Decl *) imports;
+    array(ast$Decl *) decls;
     ast$Scope *scope;
 } ast$File;
 
 typedef struct {
     char *name;
     ast$Scope *scope;
-    ast$File **files;
+    array(ast$File *) files;
 } ast$Package;
 
 extern void ast$Scope_free(ast$Scope *s);

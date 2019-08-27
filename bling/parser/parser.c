@@ -329,7 +329,7 @@ static ast$Expr *parseElement(parser$Parser *p) {
     return value;
 }
 
-static ast$Expr **parseElementList(parser$Parser *p) {
+static array(ast$Expr *) parseElementList(parser$Parser *p) {
     array(ast$Expr *) list = makearray(ast$Expr *);
     while (p->tok != token$RBRACE && p->tok != token$EOF) {
         ast$Expr *value = parseElement(p);
@@ -338,7 +338,7 @@ static ast$Expr **parseElementList(parser$Parser *p) {
             break;
         }
     }
-    return utils$nilArray(&list);
+    return list;
 }
 
 static ast$Expr *parseLiteralValue(parser$Parser *p, ast$Expr *type) {
@@ -347,7 +347,7 @@ static ast$Expr *parseLiteralValue(parser$Parser *p, ast$Expr *type) {
         pos = ast$Expr_pos(type);
     }
     p->exprLev++;
-    ast$Expr **list = parseElementList(p);
+    array(ast$Expr *) list = parseElementList(p);
     p->exprLev--;
     parser$expect(p, token$RBRACE);
     ast$Expr expr = {
@@ -397,7 +397,7 @@ static ast$Expr *parseCallExpr(parser$Parser *p, ast$Expr *x) {
         .kind = ast$EXPR_CALL,
         .call = {
             .func = x,
-            .args = utils$nilArray(&args),
+            .args = args,
         },
     };
     return esc(call);
@@ -674,19 +674,17 @@ static ast$Expr *parseStructOrUnionType(parser$Parser *p, token$Token keyword) {
     token$Pos pos = p->pos;
     parser$expect(p, keyword);
     parser$openScope(p);
-    ast$Decl **fields = NULL;
+    array(ast$Decl *) fields = makearray(ast$Decl *);
     if (parser$accept(p, token$LBRACE)) {
         ast$Scope *scope = ast$Scope_new(p->topScope);
-        array(ast$Decl *) fieldSlice = makearray(ast$Decl *);
         for (;;) {
             ast$Decl *field = parseFieldDecl(p, scope);
-            append(fieldSlice, field);
+            append(fields, field);
             if (p->tok == token$RBRACE) {
                 break;
             }
         }
         parser$expect(p, token$RBRACE);
-        fields = utils$nilArray(&fieldSlice);
     }
     // TODO assert(name || fields)
     ast$Expr x = {
@@ -737,7 +735,7 @@ static ast$Decl *parseParam(parser$Parser *p, ast$Scope *scope, bool anon) {
     return d;
 }
 
-static ast$Decl **parseParameterList(parser$Parser *p, ast$Scope *scope,
+static array(ast$Decl *) parseParameterList(parser$Parser *p, ast$Scope *scope,
         bool anon) {
     array(ast$Decl *) params = makearray(ast$Decl *);
     for (;;) {
@@ -766,12 +764,12 @@ static ast$Decl **parseParameterList(parser$Parser *p, ast$Scope *scope,
             break;
         }
     }
-    return utils$nilArray(&params);
+    return params;
 }
 
-static ast$Decl **parseParameters(parser$Parser *p, ast$Scope *scope,
+static array(ast$Decl *) parseParameters(parser$Parser *p, ast$Scope *scope,
         bool anon) {
-    ast$Decl **params = NULL;
+    array(ast$Decl *) params = makearray(ast$Decl *);
     parser$expect(p, token$LPAREN);
     if (p->tok != token$RPAREN) {
         params = parseParameterList(p, scope, anon);
@@ -783,7 +781,7 @@ static ast$Decl **parseParameters(parser$Parser *p, ast$Scope *scope,
 static ast$Expr *parseFuncType(parser$Parser *p) {
     token$Pos pos = parser$expect(p, token$FUNC);
     ast$Scope *scope = ast$Scope_new(p->topScope);
-    ast$Decl **params = parseParameters(p, scope, false);
+    array(ast$Decl *) params = parseParameters(p, scope, false);
     ast$Expr *result = NULL;
     if (p->tok != token$SEMICOLON) {
         result = parseType(p);
@@ -827,10 +825,9 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
     //         ;
     token$Pos pos = p->pos;
     parser$expect(p, token$ENUM);
-    ast$Decl **enums = NULL;
+    array(ast$Decl *) enums = makearray(ast$Decl *);
     if (parser$accept(p, token$LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
-        array(ast$Decl *) list = makearray(ast$Decl *);
         while (p->tok != token$RBRACE) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             ast$Decl decl = {
@@ -844,10 +841,9 @@ static ast$Expr *parseEnumType(parser$Parser *p) {
                 decl.value.value = parseRhs(p);
             }
             ast$Decl *enumerator = esc(decl);
-            append(list, enumerator);
+            append(enums, enumerator);
             parser$expect(p, token$SEMICOLON);
         }
-        enums = utils$nilArray(&list);
         parser$expect(p, token$RBRACE);
     }
     ast$Expr x = {
@@ -1128,8 +1124,8 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
             .kind = ast$STMT_CASE,
             .case_ = {
                 .pos = pos,
-                .exprs = utils$nilArray(&exprs),
-                .stmts = utils$nilArray(&stmts),
+                .exprs = exprs,
+                .stmts = stmts,
             },
         };
         ast$Stmt *clause = esc(stmt);
@@ -1143,7 +1139,7 @@ static ast$Stmt *parseSwitchStmt(parser$Parser *p) {
         .switch_ = {
             .pos = pos,
             .tag = tag,
-            .stmts = utils$nilArray(&clauses),
+            .stmts = clauses,
         },
     };
     return esc(stmt);
@@ -1246,20 +1242,20 @@ static ast$Stmt *parseStmt(parser$Parser *p) {
     return stmt;
 }
 
-static ast$Stmt **parseStmtList(parser$Parser *p) {
+static array(ast$Stmt *) parseStmtList(parser$Parser *p) {
     array(ast$Stmt *) stmts = makearray(ast$Stmt *);
     while (p->tok != token$RBRACE) {
         ast$Stmt *stmt = parseStmt(p);
         append(stmts, stmt);
     }
-    return utils$nilArray(&stmts);
+    return stmts;
 }
 
 static ast$Stmt *parseBody(parser$Parser *p, ast$Scope *scope) {
     token$Pos pos = parser$expect(p, token$LBRACE);
     assert(p->topScope == scope->outer);
     p->topScope = scope;
-    ast$Stmt **list = parseStmtList(p);
+    array(ast$Stmt *) list = parseStmtList(p);
     parser$closeScope(p);
     parser$expect(p, token$RBRACE);
     parser$accept(p, token$SEMICOLON);
@@ -1276,7 +1272,7 @@ static ast$Stmt *parseBody(parser$Parser *p, ast$Scope *scope) {
 static ast$Stmt *parseBlockStmt(parser$Parser *p) {
     token$Pos pos = parser$expect(p, token$LBRACE);
     parser$openScope(p);
-    ast$Stmt **list = parseStmtList(p);
+    array(ast$Stmt *) list = parseStmtList(p);
     parser$closeScope(p);
     parser$expect(p, token$RBRACE);
     parser$accept(p, token$SEMICOLON);
@@ -1416,20 +1412,20 @@ static bool isTestFile(const char *name) {
 extern ast$File **parser$parseDir(token$FileSet *fset, const char *path,
         ast$Scope *scope, utils$Error **first) {
     utils$Error *err = NULL;
-    os$FileInfo **infos = ioutil$readDir(path, &err);
+    array(os$FileInfo *) infos = ioutil$readDir(path, &err);
     if (err) {
         utils$Error_move(err, first);
         return NULL;
     }
     array(ast$File *) files = makearray(ast$File *);
-    for (int i = 0; infos[i]; i++) {
-        char *name = os$FileInfo_name(infos[i]);
+    for (int i = 0; i < len(infos); i++) {
+        char *name = os$FileInfo_name(get(os$FileInfo *, infos, i));
         if (isBlingFile(name) && !isTestFile(name)) {
             ast$File *file = parser$parseFile(fset, name, scope);
             append(files, file);
         }
     }
-    sys$free(infos);
+    utils$Slice_unmake(&infos);
     return utils$nilArray(&files);
 }
 
@@ -1475,8 +1471,8 @@ static ast$File *_parseFile(parser$Parser *p, ast$Scope *scope) {
     ast$File file = {
         .filename = p->file->name,
         .name = name,
-        .imports = utils$nilArray(&imports),
-        .decls = utils$nilArray(&decls),
+        .imports = imports,
+        .decls = decls,
         .scope = p->pkgScope,
     };
     return esc(file);

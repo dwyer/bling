@@ -34,8 +34,8 @@ fun emit_rawfile(e *emitter.Emitter, filename *const char) {
     sys.free(src)
 }
 
-fun printStrArray(s **char) {
-    for var i int = 0; s[i]; i++ {
+fun printStrArray(s [array]*char) {
+    for var i int = 0; i < len(s); i++ {
         if i {
             sys.printf(" ")
         }
@@ -45,10 +45,10 @@ fun printStrArray(s **char) {
 }
 
 fun execute(cmd *[array]*char) {
-    var args **char = utils.nilArray(cmd)
     if VERBOSE {
-        printStrArray(args)
+        printStrArray(*cmd)
     }
+    var args **char = utils.nilArray(cmd)
     var code int = sys.run(args)
     if code != 0 {
         panic(sys.sprintf("- failed with code %d", code))
@@ -113,17 +113,18 @@ fun getFileModTime(path *const char) os.Time {
 
 fun getSrcModTime(path *const char) os.Time {
     var t os.Time = 0
-    var files **os.FileInfo = ioutil.readDir(path, NULL)
-    for var i int = 0; files[i]; i++ {
-        var modTime os.Time = os.FileInfo_modTime(files[i])
-        if bytes.hasSuffix(files[i]._name, ".bling") {
+    var files [array]*os.FileInfo = ioutil.readDir(path, NULL)
+    for var i int = 0; i < len(files); i++ {
+        var file *os.FileInfo = files[i]
+        var modTime os.Time = os.FileInfo_modTime(file)
+        if bytes.hasSuffix(os.FileInfo_name(file), ".bling") {
             if t < modTime {
                 t = modTime
             }
         }
-        os.FileInfo_free(files[i])
+        os.FileInfo_free(file)
     }
-    sys.free(files)
+    utils.Slice_unmake(&files)
     return t
 }
 
@@ -223,19 +224,20 @@ fun buildCPackage(b *Builder, path *const char) *Package {
     var pkg Package = newPackage(b, path)
     var objFiles [array]*char = makearray(*char)
     {
-        var files **os.FileInfo = ioutil.readDir(path, NULL)
-        for var i int = 0; files[i]; i++ {
+        var files [array]*os.FileInfo = ioutil.readDir(path, NULL)
+        for var i int = 0; i < len(files); i++ {
             var checkTime bool = false
-            var modTime os.Time = os.FileInfo_modTime(files[i])
-            if bytes.hasSuffix(files[i]._name, ".bling") {
+            var file *os.FileInfo = files[i]
+            var modTime os.Time = os.FileInfo_modTime(file)
+            if bytes.hasSuffix(os.FileInfo_name(file), ".bling") {
                 if pkg.srcModTime < modTime {
                     pkg.srcModTime = modTime
                 }
-            } else if bytes.hasSuffix(files[i]._name, ".c") {
+            } else if bytes.hasSuffix(os.FileInfo_name(file), ".c") {
                 if pkg.srcModTime < modTime {
                     pkg.srcModTime = modTime
                 }
-                var obj *os.FileInfo = buildCFile(b, files[i])
+                var obj *os.FileInfo = buildCFile(b, file)
                 append(objFiles, obj._name)
                 checkTime = true
                 modTime = os.FileInfo_modTime(obj)
@@ -243,7 +245,7 @@ fun buildCPackage(b *Builder, path *const char) *Package {
                     pkg.srcModTime = modTime
                 }
             }
-            os.FileInfo_free(files[i])
+            os.FileInfo_free(file)
         }
     }
     if b.force || pkg.srcModTime > pkg.libModTime {

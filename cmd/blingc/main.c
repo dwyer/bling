@@ -44,8 +44,7 @@ static bool isForwardDecl(ast$Decl *decl) {
         {
             switch (decl->typedef_.type->kind) {
             case ast$TYPE_STRUCT:
-                return decl->typedef_.type->struct_.fields == NULL
-                    || decl->typedef_.type->struct_.fields[0] == NULL;
+                return len(decl->typedef_.type->struct_.fields) == 0;
             default:
                 return false;
             }
@@ -79,13 +78,14 @@ void compile_c(char *argv[]) {
                 || ast$isIdentNamed(file->name, "sys"));
         if (!allowForward) {
             int i = 0;
-            for (int j = 0; file->decls[j]; j++) {
-                if (!isForwardDecl(file->decls[j])) {
-                    file->decls[i] = file->decls[j];
+            for (int j = 0; j < len(file->decls); j++) {
+                ast$Decl *d = get(ast$Decl *, file->decls, j);
+                if (!isForwardDecl(d)) {
+                    utils$Slice_set(&file->decls, i, &d);
                     i++;
                 }
             }
-            file->decls[i] = NULL;
+            utils$Slice_setLen(&file->decls, i);
         }
         emitter$emitFile(&e, file);
         argv++;

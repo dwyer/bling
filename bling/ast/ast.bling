@@ -110,7 +110,7 @@ typ BuiltinType struct {
 
 typ CallExpr struct {
     func *Expr
-    args **Expr
+    args [array]*Expr
 }
 
 typ CastExpr struct {
@@ -122,7 +122,7 @@ typ CastExpr struct {
 typ CompositeLit struct {
     pos token.Pos
     type *Expr
-    list **Expr
+    list [array]*Expr
 }
 
 typ ConstExpr struct {
@@ -138,13 +138,13 @@ typ EllipsisType struct {
 typ EnumType struct {
     pos token.Pos
     name *Expr
-    enums **Decl
+    enums [array]*Decl
 }
 
 typ FuncExpr struct {
     pos token.Pos
     result *Expr
-    params **Decl
+    params [array]*Decl
 }
 
 typ Ident struct {
@@ -200,7 +200,7 @@ typ StructType struct {
     pos token.Pos
     tok token.Token
     name *Expr
-    fields **Decl
+    fields [array]*Decl
     scope *Scope
 }
 
@@ -299,13 +299,13 @@ typ AssignStmt struct {
 
 typ BlockStmt struct {
     pos token.Pos
-    stmts **Stmt
+    stmts [array]*Stmt
 }
 
 typ CaseStmt struct {
     pos token.Pos
-    exprs **Expr
-    stmts **Stmt
+    exprs [array]*Expr
+    stmts [array]*Stmt
 }
 
 typ EmptyStmt struct {
@@ -360,7 +360,7 @@ typ ReturnStmt struct {
 typ SwitchStmt struct {
     pos token.Pos
     tag *Expr
-    stmts **Stmt
+    stmts [array]*Stmt
 }
 
 typ Stmt struct {
@@ -392,15 +392,15 @@ typ Scope struct {
 typ File struct {
     filename *const char
     name *Expr
-    imports **Decl
-    decls **Decl
+    imports [array]*Decl
+    decls [array]*Decl
     scope *Scope
 }
 
 typ Package struct {
     name *char
     scope *Scope
-    files **File
+    files [array]*File
 }
 
 fun isExprType(x *Expr) bool {

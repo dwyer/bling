@@ -218,10 +218,10 @@ static bool types$areIdentical(ast$Expr *a, ast$Expr *b) {
                 return false;
             }
             int i = 0;
-            if (a->func.params) {
-                for (; a->func.params[i]; i++) {
-                    ast$Decl *param1 = a->func.params[i];
-                    ast$Decl *param2 = b->func.params[i];
+            if (len(a->func.params)) {
+                for (; i < len(a->func.params); i++) {
+                    ast$Decl *param1 = get(ast$Decl *, a->func.params, i);
+                    ast$Decl *param2 = get(ast$Decl *, b->func.params, i);
                     if (param2 == NULL) {
                         return false;
                     }
@@ -229,7 +229,7 @@ static bool types$areIdentical(ast$Expr *a, ast$Expr *b) {
                         return false;
                     }
                 }
-                if (b->func.params[i]) {
+                if (get(ast$Decl *, b->func.params, i)) {
                     return false;
                 }
             }
@@ -343,8 +343,8 @@ static ast$Decl *getStructFieldByName(ast$Expr *type, ast$Expr *name) {
     ast$Expr *base = types$getBaseType(type);
     assert(base->kind == ast$TYPE_STRUCT);
     assert(name->kind == ast$EXPR_IDENT);
-    for (int i = 0; base->struct_.fields && base->struct_.fields[i]; i++) {
-        ast$Decl *field = base->struct_.fields[i];
+    for (int i = 0; i < len(base->struct_.fields); i++) {
+        ast$Decl *field = get(ast$Decl *, base->struct_.fields, i);
         if (field->field.name) {
             if (sys$streq(name->ident.name, field->field.name->ident.name)) {
                 base = field->field.type;
@@ -365,13 +365,11 @@ static ast$Decl *getStructField(ast$Expr *type, int index) {
     if (base->kind != ast$TYPE_STRUCT) {
         panic(sys$sprintf("not a struct: %s", types$typeString(type)));
     }
-    if (base->struct_.fields == NULL) {
+    if (len(base->struct_.fields) == 0) {
         panic(sys$sprintf("incomplete field defn: %s", types$typeString(type)));
     }
-    for (int i = 0; base->struct_.fields[i]; i++) {
-        if (i == index) {
-            return base->struct_.fields[i];
-        }
+    if (0 <= index && index < len(base->struct_.fields)) {
+        return get(ast$Decl *, base->struct_.fields, index);
     }
     return NULL;
 }
@@ -479,8 +477,8 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         break;
 
     case ast$TYPE_ENUM:
-        for (int i = 0; t->enum_.enums[i]; i++) {
-            ast$Decl *decl = t->enum_.enums[i];
+        for (int i = 0; i < len(t->enum_.enums); i++) {
+            ast$Decl *decl = get(ast$Decl *, t->enum_.enums, i);
             if (t->enum_.name) {
                 decl->value.type = t->enum_.name;
             }
@@ -493,8 +491,8 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         break;
 
     case ast$TYPE_FUNC:
-        for (int i = 0; t->func.params && t->func.params[i]; i++) {
-            ast$Decl *param = t->func.params[i];
+        for (int i = 0; i < len(t->func.params); i++) {
+            ast$Decl *param = get(ast$Decl *, t->func.params, i);
             assert(param->kind == ast$DECL_FIELD);
             Checker_checkType(c, param->field.type);
         }
@@ -510,14 +508,14 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         break;
 
     case ast$TYPE_STRUCT:
-        if (t->struct_.fields) {
+        if (len(t->struct_.fields) > 0) {
             Checker_openScope(c);
-            for (int i = 0; t->struct_.fields[i]; i++) {
-                ast$Decl *field = t->struct_.fields[i];
+            for (int i = 0; i < len(t->struct_.fields); i++) {
+                ast$Decl *field = get(ast$Decl *, t->struct_.fields, i);
                 Checker_checkType(c, field->field.type);
                 if (field->field.name) {
-                    Checker_declare(c, field, NULL, c->pkg->scope, ast$ObjKind_VAL,
-                            field->field.name);
+                    Checker_declare(c, field, NULL, c->pkg->scope,
+                            ast$ObjKind_VAL, field->field.name);
                 }
             }
             Checker_closeScope(c);
@@ -554,8 +552,8 @@ static ast$Expr *Checker_checkCompositeLit(Checker *c, ast$Expr *x);
 
 static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
     ast$Expr *baseT = types$getBaseType(x->composite.type);
-    for (int i = 0; x->composite.list[i]; i++) {
-        ast$Expr *elt = x->composite.list[i];
+    for (int i = 0; i < len(x->composite.list); i++) {
+        ast$Expr *elt = get(ast$Expr *, x->composite.list, i);
         if (elt->kind == ast$EXPR_KEY_VALUE) {
             elt->key_value.isArray = true;
             ast$Expr *indexT = Checker_checkExpr(c, elt->key_value.key);
@@ -582,8 +580,8 @@ static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
 static void Checker_checkStructLit(Checker *c, ast$Expr *x) {
     assert(x->composite.type);
     bool expectKV = false;
-    for (int i = 0; x->composite.list[i]; i++) {
-        ast$Expr *elt = x->composite.list[i];
+    for (int i = 0; i < len(x->composite.list); i++) {
+        ast$Expr *elt = get(ast$Expr *, x->composite.list, i);
         ast$Expr *fieldT = NULL;
         if (elt->kind == ast$EXPR_KEY_VALUE) {
             elt->key_value.isArray = false;
@@ -710,19 +708,18 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                 type = type->star.x;
             }
             if (type->kind == ast$TYPE_BUILTIN) {
-                int len = 0;
-                for (; expr->call.args[len]; len++) {}
+                int n = len(expr->call.args);
                 if (type->builtin.variadic) {
-                    assert(len >= type->builtin.nargs);
+                    assert(n >= type->builtin.nargs);
                 } else {
-                    assert(len == type->builtin.nargs);
+                    assert(n == type->builtin.nargs);
                 }
                 switch (type->builtin.id) {
                 case types$LEN:
-                    Checker_checkExpr(c, expr->call.args[0]);
+                    Checker_checkExpr(c, get(ast$Expr *, expr->call.args, 0));
                     return Checker_lookupIdent(c, "int");
                 case types$MAKEARRAY:
-                    type = expr->call.args[0];
+                    type = get(ast$Expr *, expr->call.args, 0);
                     Checker_checkType(c, type);
                     if (!types$isType(type)) {
                         Checker_error(c, ast$Expr_pos(type), "expected a type");
@@ -739,7 +736,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                     }
                     return type;
                 case types$MAKEMAP:
-                    type = expr->call.args[0];
+                    type = get(ast$Expr *, expr->call.args, 0);
                     Checker_checkType(c, type);
                     if (!types$isType(type)) {
                         Checker_error(c, ast$Expr_pos(type), "expected a type");
@@ -756,20 +753,21 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                     return type;
                 default:
                     assert(!type->builtin.isExpr);
-                    for (int i = 0; expr->call.args[i]; i++) {
-                        Checker_checkExpr(c, expr->call.args[i]);
+                    for (int i = 0; i < len(expr->call.args); i++) {
+                        Checker_checkExpr(c, get(ast$Expr *, expr->call.args, i));
                     }
                     return NULL;
                 }
             } else if (type->kind == ast$TYPE_FUNC) {
                 int j = 0;
-                for (int i = 0; expr->call.args[i]; i++) {
-                    ast$Decl *param = type->func.params[j];
+                for (int i = 0; i < len(expr->call.args); i++) {
+                    ast$Decl *param = get(ast$Decl *, type->func.params, j);
                     if (param == NULL) {
                         Checker_error(c, ast$Expr_pos(expr), "too many args");
                         break;
                     }
-                    ast$Expr *type = Checker_checkExpr(c, expr->call.args[i]);
+                    ast$Expr *type = Checker_checkExpr(c,
+                            get(ast$Expr *, expr->call.args, i));
                     assert(param->kind == ast$DECL_FIELD);
                     if (!types$areAssignable(param->field.type, type)) {
                         Checker_error(c, ast$Expr_pos(expr), sys$sprintf(
@@ -946,8 +944,8 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
 
     case ast$STMT_BLOCK:
         Checker_openScope(c);
-        for (int i = 0; stmt->block.stmts[i]; i++) {
-            Checker_checkStmt(c, stmt->block.stmts[i]);
+        for (int i = 0; i < len(stmt->block.stmts); i++) {
+            Checker_checkStmt(c, get(ast$Stmt *, stmt->block.stmts, i));
         }
         Checker_closeScope(c);
         break;
@@ -1022,11 +1020,12 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
     case ast$STMT_SWITCH:
         {
             ast$Expr *type1 = Checker_checkExpr(c, stmt->switch_.tag);
-            for (int i = 0; stmt->switch_.stmts[i]; i++) {
-                ast$Stmt *clause = stmt->switch_.stmts[i];
+            for (int i = 0; i < len(stmt->switch_.stmts); i++) {
+                ast$Stmt *clause = get(ast$Stmt *, stmt->switch_.stmts, i);
                 assert(clause->kind == ast$STMT_CASE);
-                for (int j = 0; clause->case_.exprs && clause->case_.exprs[j]; j++) {
-                    ast$Expr *type2 = Checker_checkExpr(c, clause->case_.exprs[j]);
+                for (int j = 0; j < len(clause->case_.exprs); j++) {
+                    ast$Expr *type2 = Checker_checkExpr(c,
+                            get(ast$Expr *, clause->case_.exprs, j));
                     if (!types$areComparable(type1, type2)) {
                         Checker_error(c, ast$Stmt_pos(stmt),
                                 sys$sprintf("not comparable: %s and %s",
@@ -1034,8 +1033,8 @@ static void Checker_checkStmt(Checker *c, ast$Stmt *stmt) {
                                     types$typeString(type2)));
                     }
                 }
-                for (int j = 0; clause->case_.stmts[j]; j++) {
-                    Checker_checkStmt(c, clause->case_.stmts[j]);
+                for (int j = 0; j < len(clause->case_.stmts); j++) {
+                    Checker_checkStmt(c, get(ast$Stmt *, clause->case_.stmts, j));
                 }
             }
         }
@@ -1070,8 +1069,8 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
             }
             Checker_openScope(c);
             ast$Expr *type = decl->func.type;
-            for (int i = 0; type->func.params && type->func.params[i]; i++) {
-                ast$Decl *param = type->func.params[i];
+            for (int i = 0; i < len(type->func.params); i++) {
+                ast$Decl *param = get(ast$Decl *, type->func.params, i);
                 assert(param->kind == ast$DECL_FIELD);
                 if (param->field.name) {
                     Checker_declare(c, param, NULL, c->pkg->scope,
@@ -1080,8 +1079,9 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
             }
             c->result = decl->func.type->func.result;
             // walk the block manually to avoid opening a new scope
-            for (int i = 0; decl->func.body->block.stmts[i]; i++) {
-                Checker_checkStmt(c, decl->func.body->block.stmts[i]);
+            for (int i = 0; i < len(decl->func.body->block.stmts); i++) {
+                Checker_checkStmt(c,
+                        get(ast$Stmt *, decl->func.body->block.stmts, i));
             }
             c->result = NULL;
             Checker_closeScope(c);
@@ -1142,13 +1142,15 @@ static void Checker_checkDecl(Checker *c, ast$Decl *decl) {
 }
 
 static void Checker_checkFile(Checker *c, ast$File *file) {
-    for (int i = 0; file->imports[i] != NULL; i++) {
-        types$Package *pkg = Checker_checkImport(c, file->imports[i]);
+    for (int i = 0; i < len(file->imports); i++) {
+        types$Package *pkg =
+            Checker_checkImport(c, get(ast$Decl *, file->imports, i));
         append(c->pkg->imports, pkg);
     }
-    for (int i = 0; file->decls[i] != NULL; i++) {
+    for (int i = 0; i < len(file->decls); i++) {
         ast$ObjKind kind = ast$ObjKind_BAD;
-        switch (file->decls[i]->kind) {
+        ast$Decl *d = get(ast$Decl *, file->decls, i);
+        switch (d->kind) {
         case ast$DECL_FUNC:
             kind = ast$ObjKind_FUN;
             break;
@@ -1159,12 +1161,11 @@ static void Checker_checkFile(Checker *c, ast$File *file) {
             break;
         }
         if (kind) {
-            Checker_declare(c, file->decls[i], NULL, c->pkg->scope, kind,
-                    file->decls[i]->typedef_.name);
+            Checker_declare(c, d, NULL, c->pkg->scope, kind, d->typedef_.name);
         }
     }
-    for (int i = 0; file->decls[i] != NULL; i++) {
-        Checker_checkDecl(c, file->decls[i]);
+    for (int i = 0; i < len(file->decls); i++) {
+        Checker_checkDecl(c, get(ast$Decl *, file->decls, i));
     }
 }
 

@@ -9,7 +9,7 @@ static ast$Expr *initializer(parser$Parser *p);
 
 static ast$Expr *type_specifier(parser$Parser *p);
 static ast$Expr *pointer(parser$Parser *p, ast$Expr *type);
-static ast$Decl **parameter_type_list(parser$Parser *p);
+static array(ast$Decl) parameter_type_list(parser$Parser *p);
 static ast$Expr *type_name(parser$Parser *p);
 
 static ast$Expr *declarator(parser$Parser *p, ast$Expr **type_ptr);
@@ -130,7 +130,7 @@ static ast$Expr *postfix_expression(parser$Parser *p, ast$Expr *x) {
                     .kind = ast$EXPR_CALL,
                     .call = {
                         .func = x,
-                        .args = utils$nilArray(&args),
+                        .args = args,
                     },
                 };
                 x = esc(call);
@@ -363,7 +363,7 @@ static ast$Expr *struct_or_union_specifier(parser$Parser *p) {
     if (p->tok == token$IDENT) {
         name = parser$parseIdent(p);
     }
-    ast$Decl **fields = NULL;
+    array(ast$Decl *) fields = makearray(ast$Decl *);
     if (parser$accept(p, token$LBRACE)) {
         // struct_declaration_list
         //         : struct_declaration
@@ -372,7 +372,6 @@ static ast$Expr *struct_or_union_specifier(parser$Parser *p) {
         // struct_declaration
         //         : specifier_qualifier_list struct_declarator_list ';'
         //         ;
-        array(ast$Decl *) fieldSlice = makearray(ast$Decl *);
         for (;;) {
             // struct_declarator_list
             //         : struct_declarator
@@ -396,13 +395,12 @@ static ast$Expr *struct_or_union_specifier(parser$Parser *p) {
             };
             parser$expect(p, token$SEMICOLON);
             ast$Decl *field = esc(f);
-            append(fieldSlice, field);
+            append(fields, field);
             if (p->tok == token$RBRACE) {
                 break;
             }
         }
         parser$expect(p, token$RBRACE);
-        fields = utils$nilArray(&fieldSlice);
     }
     // TODO assert name or fields
     ast$Expr x = {
@@ -428,10 +426,9 @@ static ast$Expr *enum_specifier(parser$Parser *p) {
     if (p->tok == token$IDENT) {
         name = parser$parseIdent(p);
     }
-    ast$Decl **enums = NULL;
+    array(ast$Decl *) enums = makearray(ast$Decl *);
     if (parser$accept(p, token$LBRACE)) {
         // enumerator_list : enumerator | enumerator_list ',' enumerator ;
-        array(ast$Decl *) list = makearray(ast$Decl *);
         for (;;) {
             // enumerator : IDENTIFIER | IDENTIFIER '=' constant_expression ;
             ast$Decl decl = {
@@ -446,12 +443,11 @@ static ast$Expr *enum_specifier(parser$Parser *p) {
                 decl.value.value = constant_expression(p);
             }
             ast$Decl *enumerator = esc(decl);
-            append(list, enumerator);
+            append(enums, enumerator);
             if (!parser$accept(p, token$COMMA) || p->tok == token$RBRACE) {
                 break;
             }
         }
-        enums = utils$nilArray(&list);
         parser$expect(p, token$RBRACE);
     }
     ast$Expr x = {
@@ -511,7 +507,7 @@ static ast$Expr *declarator(parser$Parser *p, ast$Expr **type_ptr) {
         parser$expect(p, token$RBRACK);
         *type_ptr = esc(type);
     } else if (parser$accept(p, token$LPAREN)) {
-        ast$Decl **params = NULL;
+        array(ast$Decl *) params = makearray(ast$Decl *);
         if (p->tok != token$RPAREN) {
             params = parameter_type_list(p);
         }
@@ -563,7 +559,7 @@ static ast$Expr *pointer(parser$Parser *p, ast$Expr *type) {
     return type;
 }
 
-static ast$Decl **parameter_type_list(parser$Parser *p) {
+static array(ast$Decl *) parameter_type_list(parser$Parser *p) {
     // parameter_type_list
     //         : parameter_list
     //         | parameter_list ',' '...'
@@ -602,7 +598,7 @@ static ast$Decl **parameter_type_list(parser$Parser *p) {
             break;
         }
     }
-    return utils$nilArray(&params);
+    return params;
 }
 
 static ast$Expr *type_name(parser$Parser *p) {
@@ -653,7 +649,7 @@ static ast$Decl *abstract_declarator(parser$Parser *p, ast$Expr *type) {
             parser$expect(p, token$RBRACK);
             type = esc(t);
         } else if (parser$accept(p, token$LPAREN)) {
-            ast$Decl **params = NULL;
+            array(ast$Decl *) params = makearray(ast$Decl *);
             if (p->tok != token$RPAREN) {
                 params = parameter_type_list(p);
             }
@@ -740,7 +736,7 @@ static ast$Expr *initializer(parser$Parser *p) {
         .kind = ast$EXPR_COMPOSITE_LIT,
         .composite = {
             .pos = parser$expect(p, token$RBRACE),
-            .list = utils$nilArray(&list),
+            .list = list,
         },
     };
     return esc(expr);
@@ -972,8 +968,8 @@ static ast$Stmt *statement(parser$Parser *p) {
                 .kind = ast$STMT_CASE,
                 .case_ = {
                     .pos = pos,
-                    .exprs = utils$nilArray(&exprs),
-                    .stmts = utils$nilArray(&stmts),
+                    .exprs = exprs,
+                    .stmts = stmts,
                 },
             };
             ast$Stmt *clause = esc(stmt);
@@ -985,7 +981,7 @@ static ast$Stmt *statement(parser$Parser *p) {
             .switch_ = {
                 .pos = pos,
                 .tag = tag,
-                .stmts = utils$nilArray(&clauses),
+                .stmts = clauses,
             },
         };
         return esc(stmt);
@@ -1083,7 +1079,7 @@ static ast$Stmt *compound_statement(parser$Parser *p, bool allow_single) {
         .kind = ast$STMT_BLOCK,
         .block = {
             .pos = pos,
-            .stmts = utils$nilArray(&stmts),
+            .stmts = stmts,
         },
     };
     return esc(stmt);
@@ -1341,8 +1337,8 @@ static ast$File *parse_cfile(parser$Parser *p, ast$Scope *scope) {
     ast$File file = {
         .filename = p->file->name,
         .name = name,
-        .decls = utils$nilArray(&decls),
-        .imports = utils$nilArray(&imports),
+        .decls = decls,
+        .imports = imports,
         .scope = p->pkgScope,
     };
     return esc(file);

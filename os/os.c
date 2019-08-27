@@ -112,7 +112,7 @@ extern os$File *os$openDir(const char *name, utils$Error **error) {
     return file;
 }
 
-extern char **os$readdirnames(os$File *file, utils$Error **error) {
+extern array(char *) os$readdirnames(os$File *file, utils$Error **error) {
     array(char *) arr = makearray(char *);
     DIR *dp = (DIR *)file->fd;
     for (;;) {
@@ -126,31 +126,31 @@ extern char **os$readdirnames(os$File *file, utils$Error **error) {
         char *name = sys$strdup(dirent->d_name);
         append(arr, name);
     }
-    return utils$nilArray(&arr);
+    return arr;
 }
 
-extern os$FileInfo **os$readdir(os$File *file, utils$Error **error) {
+extern array(os$FileInfo *) os$readdir(os$File *file, utils$Error **error) {
     utils$Error *err = NULL;
-    char **names = os$readdirnames(file, &err);
+    array(char *) names = os$readdirnames(file, &err);
     if (err != NULL) {
         os$close(file, NULL);
         utils$Error_move(err, error);
-        return NULL;
+        return names;
     }
     array(char *) arr = makearray(char *);
-    for (int i = 0; names[i] != NULL; i++) {
-        char *path = paths$join2(file->name, names[i]);
-        sys$free(names[i]);
+    for (int i = 0; i < len(names); i++) {
+        char *path = paths$join2(file->name, get(char *, names, i));
+        sys$free(get(char *, names, i));
         os$FileInfo *info = os$stat(path, &err);
         if (err != NULL) {
             os$close(file, NULL);
             utils$Error_move(err, error);
-            return NULL;
+            return names;
         }
         append(arr, info);
     }
-    sys$free(names);
-    return utils$nilArray(&arr);
+    utils$Slice_unmake(&names);
+    return arr;
 }
 
 extern char *os$FileInfo_name(os$FileInfo *info) {

@@ -94,7 +94,7 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
                     kind: ast.EXPR_CALL,
                     call: {
                         func: x,
-                        args: utils.nilArray(&args),
+                        args: args,
                     },
                 }
                 x = &&call
@@ -289,9 +289,8 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
     if p.tok == token.IDENT {
         name = parser.parseIdent(p)
     }
-    var fields **ast.Decl = NULL
+    var fields [array]*ast.Decl = makearray(*ast.Decl)
     if parser.accept(p, token.LBRACE) {
-        var fieldSlice [array]*ast.Decl = makearray(*ast.Decl)
         for ;; {
             var pos token.Pos = p.pos
             var type *ast.Expr = specifier_qualifier_list(p)
@@ -306,13 +305,12 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
             }
             parser.expect(p, token.SEMICOLON)
             var field *ast.Decl = &&f
-            append(fieldSlice, field)
+            append(fields, field)
             if p.tok == token.RBRACE {
                 break
             }
         }
         parser.expect(p, token.RBRACE)
-        fields = utils.nilArray(&fieldSlice)
     }
     var x ast.Expr = {
         kind: ast.TYPE_STRUCT,
@@ -332,9 +330,8 @@ fun enum_specifier(p *parser.Parser) *ast.Expr {
     if p.tok == token.IDENT {
         name = parser.parseIdent(p)
     }
-    var enums **ast.Decl = NULL
+    var enums [array]*ast.Decl = makearray(*ast.Decl)
     if parser.accept(p, token.LBRACE) {
-        var list [array]*ast.Decl = makearray(*ast.Decl)
         for ;; {
             var decl ast.Decl = {
                 kind: ast.DECL_VALUE,
@@ -348,12 +345,11 @@ fun enum_specifier(p *parser.Parser) *ast.Expr {
                 decl.value.value = constant_expression(p)
             }
             var enumerator *ast.Decl = &&decl
-            append(list, enumerator)
+            append(enums, enumerator)
             if !parser.accept(p, token.COMMA) || p.tok == token.RBRACE {
                 break
             }
         }
-        enums = utils.nilArray(&list)
         parser.expect(p, token.RBRACE)
     }
     var x ast.Expr = {
@@ -406,7 +402,7 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
         parser.expect(p, token.RBRACK)
         *type_ptr = &&type
     } else if parser.accept(p, token.LPAREN) {
-        var params **ast.Decl = NULL
+        var params [array]*ast.Decl = makearray(*ast.Decl)
         if p.tok != token.RPAREN {
             params = parameter_type_list(p)
         }
@@ -456,7 +452,7 @@ fun pointer(p *parser.Parser, type *ast.Expr) *ast.Expr {
     return type
 }
 
-fun parameter_type_list(p *parser.Parser) **ast.Decl {
+fun parameter_type_list(p *parser.Parser) [array]*ast.Decl {
     var params [array]*ast.Decl = makearray(*ast.Decl)
     while p.tok != token.RPAREN {
         var param *ast.Decl = parameter_declaration(p)
@@ -484,7 +480,7 @@ fun parameter_type_list(p *parser.Parser) **ast.Decl {
             break
         }
     }
-    return utils.nilArray(&params)
+    return params
 }
 
 fun type_name(p *parser.Parser) *ast.Expr {
@@ -523,7 +519,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
             parser.expect(p, token.RBRACK)
             type = &&t
         } else if parser.accept(p, token.LPAREN) {
-            var params **ast.Decl = NULL
+            var params [array]*ast.Decl = makearray(*ast.Decl)
             if p.tok != token.RPAREN {
                 params = parameter_type_list(p)
             }
@@ -599,7 +595,7 @@ fun initializer(p *parser.Parser) *ast.Expr {
         kind: ast.EXPR_COMPOSITE_LIT,
         composite: {
             pos: parser.expect(p, token.RBRACE),
-            list: utils.nilArray(&list),
+            list: list,
         },
     }
     return &&expr
@@ -775,8 +771,8 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 kind: ast.STMT_CASE,
                 case_: {
                     pos: pos,
-                    exprs: utils.nilArray(&exprs),
-                    stmts: utils.nilArray(&stmts),
+                    exprs: exprs,
+                    stmts: stmts,
                 },
             }
             var clause *ast.Stmt = &&stmt
@@ -788,7 +784,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
             switch_: {
                 pos: pos,
                 tag: tag,
-                stmts: utils.nilArray(&clauses),
+                stmts: clauses,
             },
         }
         return &&stmt
@@ -870,7 +866,7 @@ fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt {
         kind: ast.STMT_BLOCK,
         block: {
             pos: pos,
-            stmts: utils.nilArray(&stmts),
+            stmts: stmts,
         },
     }
     return &&stmt
@@ -1088,8 +1084,8 @@ fun parse_cfile(p *parser.Parser, scope *ast.Scope) *ast.File {
     var file ast.File = {
         filename: p.file.name,
         name: name,
-        decls: utils.nilArray(&decls),
-        imports: utils.nilArray(&imports),
+        decls: decls,
+        imports: imports,
         scope: p.pkgScope,
     }
     return &&file

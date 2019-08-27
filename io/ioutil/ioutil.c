@@ -27,10 +27,11 @@ end:
     return ret;
 }
 
-extern os$FileInfo **ioutil$readDir(const char *name, utils$Error **error) {
-    os$FileInfo **info = NULL;
+extern array(os$FileInfo *) ioutil$readDir(const char *name,
+        utils$Error **error) {
     utils$Error *err = NULL;
     os$File *file = os$openDir(name, &err);
+    array(os$FileInfo *) info = makearray(os$FileInfo *);
     if (err != NULL) {
         goto end;
     }

@@ -25,16 +25,16 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     case ast.EXPR_CALL:
         emitExpr(e, expr.call.func)
         emitter.emitToken(e, token.LPAREN)
-        for var args **ast.Expr = expr.call.args; args && *args; {
-            if types.isType(*args) {
-                emitType(e, *args, NULL)
-            } else {
-                emitExpr(e, *args)
-            }
-            args++
-            if *args {
+        for var i int = 0; i < len(expr.call.args); i++ {
+            if i > 0 {
                 emitter.emitToken(e, token.COMMA)
                 emitter.emitSpace(e)
+            }
+            var arg *ast.Expr = expr.call.args[i]
+            if types.isType(arg) {
+                emitType(e, arg, NULL)
+            } else {
+                emitExpr(e, arg)
             }
         }
         emitter.emitToken(e, token.RPAREN)
@@ -47,10 +47,10 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         break
     case ast.EXPR_COMPOSITE_LIT:
         emitter.emitToken(e, token.LBRACE)
-        if expr.composite.list && expr.composite.list[0] {
+        if len(expr.composite.list) > 0 {
             emitter.emitNewline(e)
             e.indent++
-            for var i int = 0; expr.composite.list[i]; i++ {
+            for var i int = 0; i < len(expr.composite.list); i++ {
                 emitter.emitTabs(e)
                 emitExpr(e, expr.composite.list[i])
                 emitter.emitToken(e, token.COMMA)
@@ -179,15 +179,15 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         emitter.emitToken(e, token.LBRACE)
         emitter.emitNewline(e)
         e.indent++
-        for var stmts **ast.Stmt = stmt.block.stmts; stmts && *stmts; stmts++ {
-            switch (*stmts).kind {
+        for var i int = 0; i < len(stmt.block.stmts); i++ {
+            switch stmt.block.stmts[i].kind {
             case ast.STMT_LABEL:
                 break
             default:
                 emitter.emitTabs(e)
                 break
             }
-            emitStmt(e, *stmts)
+            emitStmt(e, stmt.block.stmts[i])
             emitter.emitNewline(e)
         }
         e.indent--
@@ -195,8 +195,8 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         emitter.emitToken(e, token.RBRACE)
         break
     case ast.STMT_CASE:
-        if stmt.case_.exprs && *stmt.case_.exprs {
-            for var i int = 0; stmt.case_.exprs[i]; i++ {
+        if len(stmt.case_.exprs) > 0 {
+            for var i int = 0; i < len(stmt.case_.exprs); i++ {
                 if i > 0 {
                     emitter.emitToken(e, token.COLON)
                     emitter.emitNewline(e)
@@ -212,9 +212,9 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         emitter.emitToken(e, token.COLON)
         emitter.emitNewline(e)
         e.indent++
-        for var stmts **ast.Stmt = stmt.case_.stmts; stmts && *stmts; stmts++ {
+        for var i int = 0; i < len(stmt.case_.stmts); i++ {
             emitter.emitTabs(e)
-            emitStmt(e, *stmts)
+            emitStmt(e, stmt.case_.stmts[i])
             emitter.emitNewline(e)
         }
         e.indent--
@@ -310,9 +310,9 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         emitter.emitSpace(e)
         emitter.emitToken(e, token.LBRACE)
         emitter.emitNewline(e)
-        for var stmts **ast.Stmt = stmt.switch_.stmts; stmts && *stmts; stmts++ {
+        for var i int = 0; i < len(stmt.switch_.stmts); i++ {
             emitter.emitTabs(e)
-            emitStmt(e, *stmts)
+            emitStmt(e, stmt.switch_.stmts[i])
         }
         emitter.emitTabs(e)
         emitter.emitToken(e, token.RBRACE)
@@ -349,13 +349,12 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             }
             emitter.emitToken(e, token.RPAREN)
             emitter.emitToken(e, token.LPAREN)
-            for var params **ast.Decl = type.func.params; params && *params; {
-                emitDecl(e, *params)
-                params++
-                if *params != NULL {
+            for var i int = 0; i < len(type.func.params); i++ {
+                if i > 0 {
                     emitter.emitToken(e, token.COMMA)
                     emitter.emitSpace(e)
                 }
+                emitDecl(e, type.func.params[i])
             }
             emitter.emitToken(e, token.RPAREN)
             name = NULL
@@ -389,13 +388,13 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitter.emitSpace(e)
             emitExpr(e, type.enum_.name)
         }
-        if !e.forwardDecl && type.enum_.enums {
+        if !e.forwardDecl && len(type.enum_.enums) > 0 {
             emitter.emitSpace(e)
             emitter.emitToken(e, token.LBRACE)
             emitter.emitNewline(e)
             e.indent++
-            for var enums **ast.Decl = type.enum_.enums; enums && *enums; enums++ {
-                var decl *ast.Decl = *enums
+            for var i int = 0; i < len(type.enum_.enums); i++ {
+                var decl *ast.Decl = type.enum_.enums[i]
                 emitter.emitTabs(e)
                 emitExpr(e, decl.value.name)
                 if decl.value.value {
@@ -421,13 +420,12 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitExpr(e, name)
         }
         emitter.emitToken(e, token.LPAREN)
-        for var params **ast.Decl = type.func.params; params && *params; {
-            emitDecl(e, *params)
-            params++
-            if *params != NULL {
+        for var i int = 0; i < len(type.func.params); i++ {
+            if i > 0 {
                 emitter.emitToken(e, token.COMMA)
                 emitter.emitSpace(e)
             }
+            emitDecl(e, type.func.params[i])
         }
         emitter.emitToken(e, token.RPAREN)
         name = NULL
@@ -444,14 +442,14 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitter.emitSpace(e)
             emitExpr(e, type.struct_.name)
         }
-        if !e.forwardDecl && type.struct_.fields {
+        if !e.forwardDecl && len(type.struct_.fields) > 0 {
             emitter.emitSpace(e)
             emitter.emitToken(e, token.LBRACE)
             emitter.emitNewline(e)
             e.indent++
-            for var fields **ast.Decl = type.struct_.fields; fields && *fields; fields++ {
+            for var i int = 0; i < len(type.struct_.fields); i++ {
                 emitter.emitTabs(e)
-                emitDecl(e, *fields)
+                emitDecl(e, type.struct_.fields[i])
                 emitter.emitToken(e, token.SEMICOLON)
                 emitter.emitNewline(e)
             }
@@ -544,7 +542,7 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
         emitter.emitToken(e, token.SEMICOLON)
         emitter.emitNewline(e)
     }
-    for var i int = 0; file.decls[i]; i++ {
+    for var i int = 0; len(file.decls); i++ {
         emitter.emitNewline(e)
         emitDecl(e, file.decls[i])
         emitter.emitNewline(e)

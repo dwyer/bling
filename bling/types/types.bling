@@ -279,8 +279,8 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
                 return false
             }
             var i int = 0
-            if a.func.params {
-                for ; a.func.params[i]; i++ {
+            if len(a.func.params) {
+                for ; i < len(a.func.params); i++ {
                     var param1 *ast.Decl = a.func.params[i]
                     var param2 *ast.Decl = b.func.params[i]
                     if param2 == NULL {
@@ -402,7 +402,7 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
     var base *ast.Expr = getBaseType(type)
     assert(base.kind == ast.TYPE_STRUCT)
     assert(name.kind == ast.EXPR_IDENT)
-    for var i int = 0; base.struct_.fields && base.struct_.fields[i]; i++ {
+    for var i int = 0; i < len(base.struct_.fields); i++ {
         var field *ast.Decl = base.struct_.fields[i]
         if field.field.name {
             if sys.streq(name.ident.name, field.field.name.ident.name) {
@@ -424,13 +424,11 @@ fun getStructField(type *ast.Expr, index int) *ast.Decl {
     if base.kind != ast.TYPE_STRUCT {
         panic(sys.sprintf("not a struct: %s", typeString(type)))
     }
-    if base.struct_.fields == NULL {
+    if len(base.struct_.fields) == 0 {
         panic(sys.sprintf("incomplete field defn: %s", typeString(type)))
     }
-    for var i int = 0; base.struct_.fields[i]; i++ {
-        if i == index {
-            return base.struct_.fields[i]
-        }
+    if 0 <= index && index < len(base.struct_.fields) {
+        return base.struct_.fields[index]
     }
     return NULL
 }
@@ -518,7 +516,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
     case ast.TYPE_ELLIPSIS:
         break
     case ast.TYPE_ENUM:
-        for var i int = 0; t.enum_.enums[i]; i++ {
+        for var i int = 0; i < len(t.enum_.enums); i++ {
             var decl *ast.Decl = t.enum_.enums[i]
             if t.enum_.name {
                 decl.value.type = t.enum_.name
@@ -530,7 +528,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
         }
         break
     case ast.TYPE_FUNC:
-        for var i int = 0; t.func.params && t.func.params[i]; i++ {
+        for var i int = 0; i < len(t.func.params); i++ {
             var param *ast.Decl = t.func.params[i]
             assert(param.kind == ast.DECL_FIELD)
             Checker_checkType(c, param.field.type)
@@ -545,9 +543,9 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
         }
         break
     case ast.TYPE_STRUCT:
-        if t.struct_.fields {
+        if len(t.struct_.fields) > 0 {
             Checker_openScope(c)
-            for var i int = 0; t.struct_.fields[i]; i++ {
+            for var i int = 0; i < len(t.struct_.fields); i++ {
                 var field *ast.Decl = t.struct_.fields[i]
                 Checker_checkType(c, field.field.type)
                 if field.field.name {
@@ -584,7 +582,7 @@ fun isInteger(x *ast.Expr) bool {
 
 fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
     var baseT *ast.Expr = getBaseType(x.composite.type)
-    for var i int = 0; x.composite.list[i]; i++ {
+    for var i int = 0; i < len(x.composite.list); i++ {
         var elt *ast.Expr = x.composite.list[i]
         if elt.kind == ast.EXPR_KEY_VALUE {
             elt.key_value.isArray = true
@@ -610,7 +608,7 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
 fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
     assert(x.composite.type)
     var expectKV bool = false
-    for var i int = 0; x.composite.list[i]; i++ {
+    for var i int = 0; i < len(x.composite.list); i++ {
         var elt *ast.Expr = x.composite.list[i]
         var fieldT *ast.Expr = NULL
         if elt.kind == ast.EXPR_KEY_VALUE {
@@ -718,13 +716,11 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 type = type.star.x
             }
             if type.kind == ast.TYPE_BUILTIN {
-                var len int = 0
-                for ; expr.call.args[len]; len++ {
-                }
+                var n int = len(expr.call.args)
                 if type.builtin.variadic {
-                    assert(len >= type.builtin.nargs)
+                    assert(n >= type.builtin.nargs)
                 } else {
-                    assert(len == type.builtin.nargs)
+                    assert(n == type.builtin.nargs)
                 }
                 switch type.builtin.id {
                 case LEN:
@@ -765,14 +761,14 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                     return type
                 default:
                     assert(!type.builtin.isExpr)
-                    for var i int = 0; expr.call.args[i]; i++ {
+                    for var i int = 0; i < len(expr.call.args); i++ {
                         Checker_checkExpr(c, expr.call.args[i])
                     }
                     return NULL
                 }
             } else if type.kind == ast.TYPE_FUNC {
                 var j int = 0
-                for var i int = 0; expr.call.args[i]; i++ {
+                for var i int = 0; i < len(expr.call.args); i++ {
                     var param *ast.Decl = type.func.params[j]
                     if param == NULL {
                         Checker_error(c, ast.Expr_pos(expr), "too many args")
@@ -919,7 +915,7 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
         break
     case ast.STMT_BLOCK:
         Checker_openScope(c)
-        for var i int = 0; stmt.block.stmts[i]; i++ {
+        for var i int = 0; i < len(stmt.block.stmts); i++ {
             Checker_checkStmt(c, stmt.block.stmts[i])
         }
         Checker_closeScope(c)
@@ -980,16 +976,16 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
     case ast.STMT_SWITCH:
         {
             var type1 *ast.Expr = Checker_checkExpr(c, stmt.switch_.tag)
-            for var i int = 0; stmt.switch_.stmts[i]; i++ {
+            for var i int = 0; i < len(stmt.switch_.stmts); i++ {
                 var clause *ast.Stmt = stmt.switch_.stmts[i]
                 assert(clause.kind == ast.STMT_CASE)
-                for var j int = 0; clause.case_.exprs && clause.case_.exprs[j]; j++ {
+                for var j int = 0; j < len(clause.case_.exprs); j++ {
                     var type2 *ast.Expr = Checker_checkExpr(c, clause.case_.exprs[j])
                     if !areComparable(type1, type2) {
                         Checker_error(c, ast.Stmt_pos(stmt), sys.sprintf("not comparable: %s and %s", typeString(type1), typeString(type2)))
                     }
                 }
-                for var j int = 0; clause.case_.stmts[j]; j++ {
+                for var j int = 0; j < len(clause.case_.stmts); j++ {
                     Checker_checkStmt(c, clause.case_.stmts[j])
                 }
             }
@@ -1023,7 +1019,7 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
             }
             Checker_openScope(c)
             var type *ast.Expr = decl.func.type
-            for var i int = 0; type.func.params && type.func.params[i]; i++ {
+            for var i int = 0; i < len(type.func.params); i++ {
                 var param *ast.Decl = type.func.params[i]
                 assert(param.kind == ast.DECL_FIELD)
                 if param.field.name {
@@ -1031,7 +1027,7 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
                 }
             }
             c.result = decl.func.type.func.result
-            for var i int = 0; decl.func.body.block.stmts[i]; i++ {
+            for var i int = 0; i < len(decl.func.body.block.stmts); i++ {
                 Checker_checkStmt(c, decl.func.body.block.stmts[i])
             }
             c.result = NULL
@@ -1089,13 +1085,14 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
 }
 
 fun Checker_checkFile(c *Checker, file *ast.File) {
-    for var i int = 0; file.imports[i] != NULL; i++ {
+    for var i int = 0; i < len(file.imports); i++ {
         var pkg *Package = Checker_checkImport(c, file.imports[i])
         append(c.pkg.imports, pkg)
     }
-    for var i int = 0; file.decls[i] != NULL; i++ {
+    for var i int = 0; i < len(file.decls); i++ {
         var kind ast.ObjKind = ast.ObjKind_BAD
-        switch file.decls[i].kind {
+        var d *ast.Decl = file.decls[i]
+        switch d.kind {
         case ast.DECL_FUNC:
             kind = ast.ObjKind_FUN
             break
@@ -1106,10 +1103,10 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
             break
         }
         if kind {
-            Checker_declare(c, file.decls[i], NULL, c.pkg.scope, kind, file.decls[i].typedef_.name)
+            Checker_declare(c, d, NULL, c.pkg.scope, kind, d.typedef_.name)
         }
     }
-    for var i int = 0; file.decls[i] != NULL; i++ {
+    for var i int = 0; i < len(file.decls); i++ {
         Checker_checkDecl(c, file.decls[i])
     }
 }

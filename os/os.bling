@@ -64,6 +64,6 @@ fun stat(filename *const char, error **utils.Error) *FileInfo
 
 fun openDir(filename *const char, error **utils.Error) *File
 
-fun readdir(file *File, error **utils.Error) **FileInfo
+fun readdir(file *File, error **utils.Error) [array]*FileInfo
 
 fun mkdirAll(path *const char, mode u32, error **utils.Error)

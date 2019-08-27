@@ -35,7 +35,7 @@ fun isForwardDecl(decl *ast.Decl) bool {
         {
             switch decl.typedef_.type.kind {
             case ast.TYPE_STRUCT:
-                return decl.typedef_.type.struct_.fields == NULL || decl.typedef_.type.struct_.fields[0] == NULL
+                return len(decl.typedef_.type.struct_.fields) == 0
             default:
                 return false
             }
@@ -66,13 +66,14 @@ fun compile_c(argv []*char) {
         var allowForward bool = file.name && (ast.isIdentNamed(file.name, "os") || ast.isIdentNamed(file.name, "sys"))
         if !allowForward {
             var i int = 0
-            for var j int = 0; file.decls[j]; j++ {
-                if !isForwardDecl(file.decls[j]) {
-                    file.decls[i] = file.decls[j]
+            for var j int = 0; j < len(file.decls); j++ {
+                var d *ast.Decl = file.decls[j]
+                if !isForwardDecl(d) {
+                    utils.Slice_set(&file.decls, i, &d)
                     i++
                 }
             }
-            file.decls[i] = NULL
+            utils.Slice_setLen(&file.decls, i)
         }
         emitter.emitFile(&e, file)
         argv++

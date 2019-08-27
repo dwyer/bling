@@ -23,21 +23,21 @@ static void emit_rawfile(emitter$Emitter *e, const char *filename) {
     sys$free(src);
 }
 
-static void printStrArray(char **s) {
-    for (int i = 0; s[i]; i++) {
+static void printStrArray(array(char *) s) {
+    for (int i = 0; i < len(s); i++) {
         if (i) {
             sys$printf(" ");
         }
-        sys$printf("%s", s[i]);
+        sys$printf("%s", get(char *, s, i));
     }
     sys$printf("\n");
 }
 
 static void execute(array(char *) *cmd) {
-    char **args = utils$nilArray(cmd);
     if (VERBOSE) {
-        printStrArray(args);
+        printStrArray(*cmd);
     }
+    char **args = utils$nilArray(cmd);
     int code = sys$run(args);
     if (code != 0) {
         panic(sys$sprintf("- failed with code %d", code));
@@ -104,17 +104,18 @@ static os$Time getFileModTime(const char *path) {
 
 static os$Time getSrcModTime(const char *path) {
     os$Time t = 0;
-    os$FileInfo **files = ioutil$readDir(path, NULL);
-    for (int i = 0; files[i]; i++) {
-        os$Time modTime = os$FileInfo_modTime(files[i]);
-        if (bytes$hasSuffix(files[i]->_name, ".bling")) {
+    array(os$FileInfo *) files = ioutil$readDir(path, NULL);
+    for (int i = 0; i < len(files); i++) {
+        os$FileInfo *file = get(os$FileInfo *, files, i);
+        os$Time modTime = os$FileInfo_modTime(file);
+        if (bytes$hasSuffix(os$FileInfo_name(file), ".bling")) {
             if (t < modTime) {
                 t = modTime;
             }
         }
-        os$FileInfo_free(files[i]);
+        os$FileInfo_free(file);
     }
-    sys$free(files);
+    utils$Slice_unmake(&files);
     return t;
 }
 
@@ -221,19 +222,20 @@ static Package *buildCPackage(Builder *b, const char *path) {
     Package pkg = newPackage(b, path);
     array(char *) objFiles = makearray(char *);
     {
-        os$FileInfo **files = ioutil$readDir(path, NULL);
-        for (int i = 0; files[i]; i++) {
+        array(os$FileInfo *) files = ioutil$readDir(path, NULL);
+        for (int i = 0; i < len(files); i++) {
             bool checkTime = false;
-            os$Time modTime = os$FileInfo_modTime(files[i]);
-            if (bytes$hasSuffix(files[i]->_name, ".bling")) {
+            os$FileInfo *file = get(os$FileInfo *, files, i);
+            os$Time modTime = os$FileInfo_modTime(file);
+            if (bytes$hasSuffix(os$FileInfo_name(file), ".bling")) {
                 if (pkg.srcModTime < modTime) {
                     pkg.srcModTime = modTime;
                 }
-            } else if (bytes$hasSuffix(files[i]->_name, ".c")) {
+            } else if (bytes$hasSuffix(os$FileInfo_name(file), ".c")) {
                 if (pkg.srcModTime < modTime) {
                     pkg.srcModTime = modTime;
                 }
-                os$FileInfo *obj = buildCFile(b, files[i]);
+                os$FileInfo *obj = buildCFile(b, file);
                 append(objFiles, obj->_name);
                 checkTime = true;
                 modTime = os$FileInfo_modTime(obj);
@@ -241,7 +243,7 @@ static Package *buildCPackage(Builder *b, const char *path) {
                     pkg.srcModTime = modTime;
                 }
             }
-            os$FileInfo_free(files[i]);
+            os$FileInfo_free(file);
         }
     }
     if (b->force || pkg.srcModTime > pkg.libModTime) {

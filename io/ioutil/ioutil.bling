@@ -31,10 +31,10 @@ end:
     return ret
 }
 
-fun readDir(name *const char, error **utils.Error) **os.FileInfo {
-    var info **os.FileInfo = NULL
+fun readDir(name *const char, error **utils.Error) [array]*os.FileInfo {
     var err *utils.Error = NULL
     var file *os.File = os.openDir(name, &err)
+    var info [array]*os.FileInfo = makearray(*os.FileInfo)
     if err != NULL {
         goto end
     }
