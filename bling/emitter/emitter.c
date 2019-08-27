@@ -423,16 +423,13 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         break;
 
     case ast$TYPE_ARRAY:
+        emitter$emitToken(e, token$LBRACK);
         if (type->array_.dynamic) {
             emitter$emitToken(e, token$ARRAY);
-            emitter$emitSpace(e);
-        } else {
-            emitter$emitToken(e, token$LBRACK);
-            if (type->array_.len) {
-                emitter$emitExpr(e, type->array_.len);
-            }
-            emitter$emitToken(e, token$RBRACK);
+        } else if (type->array_.len) {
+            emitter$emitExpr(e, type->array_.len);
         }
+        emitter$emitToken(e, token$RBRACK);
         emitter$emitType(e, type->array_.elt);
         break;
 

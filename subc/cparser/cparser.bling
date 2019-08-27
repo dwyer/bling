@@ -49,7 +49,7 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
             break
         case token.LPAREN:
             {
-                var args array *ast.Expr = makearray(*ast.Expr)
+                var args [array]*ast.Expr = makearray(*ast.Expr)
                 parser.expect(p, token.LPAREN)
                 while p.tok != token.RPAREN {
                     var x *ast.Expr = NULL
@@ -265,7 +265,7 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
     }
     var fields **ast.Decl = NULL
     if parser.accept(p, token.LBRACE) {
-        var fieldSlice array *ast.Decl = makearray(*ast.Decl)
+        var fieldSlice [array]*ast.Decl = makearray(*ast.Decl)
         for ;; {
             var pos token.Pos = p.pos
             var type *ast.Expr = specifier_qualifier_list(p)
@@ -308,7 +308,7 @@ fun enum_specifier(p *parser.Parser) *ast.Expr {
     }
     var enums **ast.Decl = NULL
     if parser.accept(p, token.LBRACE) {
-        var list array *ast.Decl = makearray(*ast.Decl)
+        var list [array]*ast.Decl = makearray(*ast.Decl)
         for ;; {
             var decl ast.Decl = {
                 kind: ast.DECL_VALUE,
@@ -431,7 +431,7 @@ fun pointer(p *parser.Parser, type *ast.Expr) *ast.Expr {
 }
 
 fun parameter_type_list(p *parser.Parser) **ast.Decl {
-    var params array *ast.Decl = makearray(*ast.Decl)
+    var params [array]*ast.Decl = makearray(*ast.Decl)
     while p.tok != token.RPAREN {
         var param *ast.Decl = parameter_declaration(p)
         utils.Slice_append(&params, &param)
@@ -539,7 +539,7 @@ fun initializer(p *parser.Parser) *ast.Expr {
     if !parser.accept(p, token.LBRACE) {
         return expression(p)
     }
-    var list array *ast.Expr = makearray(*ast.Expr)
+    var list [array]*ast.Expr = makearray(*ast.Expr)
     while p.tok != token.RBRACE && p.tok != token.EOF {
         var key *ast.Expr = NULL
         var isArray bool = false
@@ -718,9 +718,9 @@ fun statement(p *parser.Parser) *ast.Stmt {
         var tag *ast.Expr = expression(p)
         parser.expect(p, token.RPAREN)
         parser.expect(p, token.LBRACE)
-        var clauses array *ast.Stmt = makearray(*ast.Stmt)
+        var clauses [array]*ast.Stmt = makearray(*ast.Stmt)
         while p.tok == token.CASE || p.tok == token.DEFAULT {
-            var exprs array *ast.Expr = makearray(*ast.Expr)
+            var exprs [array]*ast.Expr = makearray(*ast.Expr)
             while parser.accept(p, token.CASE) {
                 var expr *ast.Expr = constant_expression(p)
                 parser.expect(p, token.COLON)
@@ -730,7 +730,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 parser.expect(p, token.DEFAULT)
                 parser.expect(p, token.COLON)
             }
-            var stmts array *ast.Stmt = makearray(*ast.Stmt)
+            var stmts [array]*ast.Stmt = makearray(*ast.Stmt)
             var loop bool = true
             while loop {
                 switch p.tok {
@@ -825,7 +825,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
 }
 
 fun compound_statement(p *parser.Parser, allow_single bool) *ast.Stmt {
-    var stmts array *ast.Stmt = makearray(*ast.Stmt)
+    var stmts [array]*ast.Stmt = makearray(*ast.Stmt)
     var pos token.Pos = 0
     if allow_single && p.tok != token.LBRACE {
         var stmt *ast.Stmt = statement(p)
@@ -1025,8 +1025,8 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
 }
 
 fun parse_cfile(p *parser.Parser, scope *ast.Scope) *ast.File {
-    var decls array *ast.Decl = makearray(*ast.Decl)
-    var imports array *ast.Decl = makearray(*ast.Decl)
+    var decls [array]*ast.Decl = makearray(*ast.Decl)
+    var imports [array]*ast.Decl = makearray(*ast.Decl)
     var name *ast.Expr = NULL
     while p.tok == token.HASH {
         var lit *ast.Decl = parser.parsePragma(p)

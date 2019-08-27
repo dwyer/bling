@@ -395,16 +395,13 @@ fun emitType(e *Emitter, type *ast.Expr) {
         }
         break
     case ast.TYPE_ARRAY:
+        emitToken(e, token.LBRACK)
         if type.array_.dynamic {
             emitToken(e, token.ARRAY)
-            emitSpace(e)
-        } else {
-            emitToken(e, token.LBRACK)
-            if type.array_.len {
-                emitExpr(e, type.array_.len)
-            }
-            emitToken(e, token.RBRACK)
+        } else if type.array_.len {
+            emitExpr(e, type.array_.len)
         }
+        emitToken(e, token.RBRACK)
         emitType(e, type.array_.elt)
         break
     case ast.TYPE_BUILTIN:

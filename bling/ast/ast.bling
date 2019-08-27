@@ -385,7 +385,7 @@ typ Stmt struct {
 typ Scope struct {
     outer *Scope
     objects map *Object
-    keys array *char
+    keys [array]*char
     pkg *char
 }
 

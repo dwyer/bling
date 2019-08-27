@@ -618,35 +618,29 @@ static ast$Expr *parseTypeName(parser$Parser *p) {
 
 static ast$Expr *parseArrayType(parser$Parser *p) {
     token$Pos pos = p->pos;
-    if (parser$accept(p, token$LBRACK)) {
+    parser$expect(p, token$LBRACK);
+    ast$Expr *len = NULL;
+    bool dynamic = false;
+    if (parser$accept(p, token$ARRAY)) {
+        dynamic = true;
+    } else {
         p->exprLev++;
-        ast$Expr *len = NULL;
         if (p->tok != token$RBRACK) {
             len = parseRhs(p);
         }
         p->exprLev--;
-        parser$expect(p, token$RBRACK);
-        ast$Expr type = {
-            .kind = ast$TYPE_ARRAY,
-            .array_ = {
-                .pos = pos,
-                .elt = parseType(p),
-                .len = len,
-            },
-        };
-        return esc(type);
     }
-    if (parser$accept(p, token$ARRAY)) {
-        ast$Expr type = {
-            .kind = ast$TYPE_ARRAY,
-            .array_ = {
-                .pos = pos,
-                .elt = parseType(p),
-                .dynamic = true,
-            },
-        };
-        return esc(type);
-    }
+    parser$expect(p, token$RBRACK);
+    ast$Expr type = {
+        .kind = ast$TYPE_ARRAY,
+        .array_ = {
+            .pos = pos,
+            .elt = parseType(p),
+            .len = len,
+            .dynamic = dynamic,
+        },
+    };
+    return esc(type);
     return NULL;
 }
 
@@ -877,7 +871,6 @@ static ast$Expr *tryIdentOrType(parser$Parser *p) {
     switch (p->tok) {
     case token$IDENT:
         return parseTypeName(p);
-    case token$ARRAY:
     case token$LBRACK:
         return parseArrayType(p);
     case token$STRUCT:

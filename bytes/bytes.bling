@@ -3,7 +3,7 @@ package bytes
 import "sys"
 import "utils"
 
-typ Buffer array char
+typ Buffer [array]char
 
 fun hasSuffix(b *const char, suffix *const char) bool {
     for var i int = 0; b[i]; i++ {

@@ -22,7 +22,7 @@ typ Parser struct {
     pkgName *char
     exprLev int
     inRhs bool
-    unresolved array *ast.Expr
+    unresolved [array]*ast.Expr
     numIdents int
 }
 
@@ -304,7 +304,7 @@ fun parseElement(p *Parser) *ast.Expr {
 }
 
 fun parseElementList(p *Parser) **ast.Expr {
-    var list array *ast.Expr = makearray(*ast.Expr)
+    var list [array]*ast.Expr = makearray(*ast.Expr)
     while p.tok != token.RBRACE && p.tok != token.EOF {
         var value *ast.Expr = parseElement(p)
         utils.Slice_append(&list, &value)
@@ -351,7 +351,7 @@ fun parseIndexExpr(p *Parser, x *ast.Expr) *ast.Expr {
 }
 
 fun parseCallExpr(p *Parser, x *ast.Expr) *ast.Expr {
-    var args array *ast.Expr = makearray(*ast.Expr)
+    var args [array]*ast.Expr = makearray(*ast.Expr)
     expect(p, token.LPAREN)
     p.exprLev++
     while p.tok != token.RPAREN {
@@ -563,35 +563,29 @@ fun parseTypeName(p *Parser) *ast.Expr {
 
 fun parseArrayType(p *Parser) *ast.Expr {
     var pos token.Pos = p.pos
-    if accept(p, token.LBRACK) {
+    expect(p, token.LBRACK)
+    var len *ast.Expr = NULL
+    var dynamic bool = false
+    if accept(p, token.ARRAY) {
+        dynamic = true
+    } else {
         p.exprLev++
-        var len *ast.Expr = NULL
         if p.tok != token.RBRACK {
             len = parseRhs(p)
         }
         p.exprLev--
-        expect(p, token.RBRACK)
-        var type ast.Expr = {
-            kind: ast.TYPE_ARRAY,
-            array_: {
-                pos: pos,
-                elt: parseType(p),
-                len: len,
-            },
-        }
-        return &&type
     }
-    if accept(p, token.ARRAY) {
-        var type ast.Expr = {
-            kind: ast.TYPE_ARRAY,
-            array_: {
-                pos: pos,
-                elt: parseType(p),
-                dynamic: true,
-            },
-        }
-        return &&type
+    expect(p, token.RBRACK)
+    var type ast.Expr = {
+        kind: ast.TYPE_ARRAY,
+        array_: {
+            pos: pos,
+            elt: parseType(p),
+            len: len,
+            dynamic: dynamic,
+        },
     }
+    return &&type
     return NULL
 }
 
@@ -627,7 +621,7 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
     var fields **ast.Decl = NULL
     if accept(p, token.LBRACE) {
         var scope *ast.Scope = ast.Scope_new(p.topScope)
-        var fieldSlice array *ast.Decl = makearray(*ast.Decl)
+        var fieldSlice [array]*ast.Decl = makearray(*ast.Decl)
         for ;; {
             var field *ast.Decl = parseFieldDecl(p, scope)
             utils.Slice_append(&fieldSlice, &field)
@@ -686,7 +680,7 @@ fun parseParam(p *Parser, scope *ast.Scope, anon bool) *ast.Decl {
 }
 
 fun parseParameterList(p *Parser, scope *ast.Scope, anon bool) **ast.Decl {
-    var params array *ast.Decl = makearray(*ast.Decl)
+    var params [array]*ast.Decl = makearray(*ast.Decl)
     for ;; {
         var param *ast.Decl = parseParam(p, scope, false)
         utils.Slice_append(&params, &param)
@@ -770,7 +764,7 @@ fun parseEnumType(p *Parser) *ast.Expr {
     expect(p, token.ENUM)
     var enums **ast.Decl = NULL
     if accept(p, token.LBRACE) {
-        var list array *ast.Decl = makearray(*ast.Decl)
+        var list [array]*ast.Decl = makearray(*ast.Decl)
         while p.tok != token.RBRACE {
             var decl ast.Decl = {
                 kind: ast.DECL_VALUE,
@@ -810,7 +804,7 @@ fun tryIdentOrType(p *Parser) *ast.Expr {
     switch p.tok {
     case token.IDENT:
         return parseTypeName(p)
-    case token.ARRAY, token.LBRACK:
+    case token.LBRACK:
         return parseArrayType(p)
     case token.STRUCT, token.UNION:
         return parseStructOrUnionType(p, p.tok)
@@ -989,9 +983,9 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
     p.exprLev = prevLev
     expect(p, token.LBRACE)
     openScope(p)
-    var clauses array *ast.Stmt = makearray(*ast.Stmt)
+    var clauses [array]*ast.Stmt = makearray(*ast.Stmt)
     while p.tok == token.CASE || p.tok == token.DEFAULT {
-        var exprs array *ast.Expr = makearray(*ast.Expr)
+        var exprs [array]*ast.Expr = makearray(*ast.Expr)
         var pos token.Pos = p.pos
         if accept(p, token.CASE) {
             for ;; {
@@ -1005,7 +999,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
             expect(p, token.DEFAULT)
         }
         expect(p, token.COLON)
-        var stmts array *ast.Stmt = makearray(*ast.Stmt)
+        var stmts [array]*ast.Stmt = makearray(*ast.Stmt)
         var loop bool = true
         while loop {
             switch p.tok {
@@ -1131,7 +1125,7 @@ fun parseStmt(p *Parser) *ast.Stmt {
 }
 
 fun parseStmtList(p *Parser) **ast.Stmt {
-    var stmts array *ast.Stmt = makearray(*ast.Stmt)
+    var stmts [array]*ast.Stmt = makearray(*ast.Stmt)
     while p.tok != token.RBRACE {
         var stmt *ast.Stmt = parseStmt(p)
         utils.Slice_append(&stmts, &stmt)
@@ -1302,7 +1296,7 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
         utils.Error_move(err, first)
         return NULL
     }
-    var files array *ast.File = makearray(*ast.File)
+    var files [array]*ast.File = makearray(*ast.File)
     for var i int = 0; infos[i]; i++ {
         var name *char = os.FileInfo_name(infos[i])
         if isBlingFile(name) && !isTestFile(name) {
@@ -1316,8 +1310,8 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
 
 fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
     var name *ast.Expr = NULL
-    var imports array *ast.Decl = makearray(*ast.Decl)
-    var decls array *ast.Decl = makearray(*ast.Decl)
+    var imports [array]*ast.Decl = makearray(*ast.Decl)
+    var decls [array]*ast.Decl = makearray(*ast.Decl)
     while p.tok == token.HASH {
         var lit *ast.Decl = parsePragma(p)
         utils.Slice_append(&decls, &lit)

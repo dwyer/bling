@@ -118,14 +118,14 @@ typ File struct {
     name *char
     base int
     size int
-    lines array int
+    lines [array]int
     src *char
 }
 
 typ FileSet struct {
     fset *FileSet
     base int
-    files array *File
+    files [array]*File
     last *File
 }
 
@@ -284,7 +284,7 @@ fun Position_string(p *Position) *char {
     return sys.sprintf("%s:%d:%d", p.filename, p.line, p.column)
 }
 
-fun getInt(a *array int, i int) int {
+fun getInt(a *[array]int, i int) int {
     var x int
     utils.Slice_get(a, i, &x)
     return x
@@ -301,7 +301,7 @@ fun File_pos(f *File, offset int) Pos {
     return f.base + offset
 }
 
-fun searchInts(a *array int, x int) int {
+fun searchInts(a *[array]int, x int) int {
     var i int = 0
     var j int = len(*a)
     while i < j {
@@ -375,7 +375,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     if base < s.base || size < 0 {
         panic("illegal base or size")
     }
-    var lines array int = makearray(int)
+    var lines [array]int = makearray(int)
     var zero int = 0
     utils.Slice_append(&lines, &zero)
     var file File = {
@@ -392,7 +392,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     return f
 }
 
-fun searchFiles(files *array *File, x int) int {
+fun searchFiles(files *[array]*File, x int) int {
     for var i int = 0; i < len(*files); i++ {
         var f *File
         utils.Slice_get(files, i, &f)
