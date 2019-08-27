@@ -12,6 +12,7 @@ typ Token enum {
     INT
     STRING
     _keywordBeg
+    ARRAY
     BREAK
     CASE
     CONST
@@ -142,6 +143,7 @@ var tokens []*char = {
     IDENT: "IDENT",
     INT: "INT",
     STRING: "STRING",
+    ARRAY: "array",
     BREAK: "break",
     CASE: "case",
     CONST: "const",

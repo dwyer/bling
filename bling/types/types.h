@@ -98,6 +98,7 @@ typedef struct {
 typedef enum {
     types$ASSERT,
     types$LEN,
+    types$MAKEARRAY,
     types$MAKEMAP,
     types$PANIC,
     types$PRINT,

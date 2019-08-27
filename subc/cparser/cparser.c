@@ -26,6 +26,7 @@ static ast$Decl *parameter_declaration(parser$Parser *p);
 
 static bool is_type(parser$Parser *p) {
     switch (p->tok) {
+    case token$ARRAY:
     case token$CONST:
     case token$ENUM:
     case token$EXTERN:
@@ -470,7 +471,7 @@ static ast$Expr *declarator(parser$Parser *p, ast$Expr **type_ptr) {
         }
         ast$Expr type = {
             .kind = ast$TYPE_ARRAY,
-            .array = {
+            .array_ = {
                 .pos = pos,
                 .elt = *type_ptr,
                 .len = len,
@@ -612,7 +613,7 @@ static ast$Decl *abstract_declarator(parser$Parser *p, ast$Expr *type) {
             }
             ast$Expr t = {
                 .kind = ast$TYPE_ARRAY,
-                .array = {
+                .array_ = {
                     .pos = pos,
                     .elt = type,
                     .len = len,
@@ -1067,6 +1068,24 @@ static ast$Decl *parameter_declaration(parser$Parser *p) {
     return esc(decl);
 }
 
+static ast$Expr *array_specifier(parser$Parser *p) {
+    token$Pos pos = p->pos;
+    parser$expect(p, token$ARRAY);
+    parser$expect(p, token$LPAREN);
+    ast$Expr *elt = type_name(p);
+    parser$expect(p, token$RPAREN);
+    ast$Expr tmp = {
+        .kind = ast$TYPE_ARRAY,
+        .array_ = {
+            .pos = pos,
+            .elt = elt,
+            .dynamic = true,
+        },
+    };
+    return esc(tmp);
+}
+
+
 static ast$Expr *map_specifier(parser$Parser *p) {
     token$Pos pos = p->pos;
     parser$expect(p, token$MAP);
@@ -1110,6 +1129,9 @@ static ast$Expr *type_specifier(parser$Parser *p) {
         break;
     case token$ENUM:
         x = enum_specifier(p);
+        break;
+    case token$ARRAY:
+        x = array_specifier(p);
         break;
     case token$MAP:
         x = map_specifier(p);

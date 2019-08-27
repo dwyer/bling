@@ -11,7 +11,7 @@
         memcpy(sys$malloc(sizeof $0), &$0, sizeof $0); \
         })
 
-#define array(T) utils$Array
+#define array(T) utils$Slice
 #define map(T) utils$Map
 
 #define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
@@ -20,9 +20,8 @@
         utils$Slice: utils$Slice_len, \
         utils$Map: utils$Map_len)(&(x))
 
-#define mapmake(size) {._valSize = size}
-#define makemap(T) {._valSize = sizeof(T)}
-#define makearray(T) {._size = sizeof(T)}
+#define makearray(size_) {.size = (size_)}
+#define mapmake(size) {._valSize = (size)}
 
 #define fallthrough /**/
 #define typ typedef

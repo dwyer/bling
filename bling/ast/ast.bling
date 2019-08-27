@@ -85,6 +85,7 @@ typ ArrayType struct {
     pos token.Pos
     len *Expr
     elt *Expr
+    dynamic bool
 }
 
 typ BasicLit struct {
@@ -219,7 +220,7 @@ typ Expr struct {
     Node
     is_const bool
     union {
-        array ArrayType
+        array_ ArrayType
         basic BasicLit
         binary BinaryExpr
         builtin BuiltinType
@@ -384,7 +385,7 @@ typ Stmt struct {
 typ Scope struct {
     outer *Scope
     objects map *Object
-    keys utils.Slice
+    keys array *char
     pkg *char
 }
 
@@ -418,7 +419,7 @@ fun Scope_new(outer *Scope) *Scope {
     var s Scope = {
         outer: outer,
         objects: utils.Map_make(sizeof(*Object)),
-        keys: utils.Slice_make(sizeof(*char)),
+        keys: makearray(sizeof(*char)),
     }
     return &&s
 }
@@ -556,7 +557,7 @@ fun Expr_pos(x *Expr) token.Pos {
     case EXPR_UNARY:
         return x.unary.pos
     case TYPE_ARRAY:
-        return x.array.pos
+        return x.array_.pos
     case TYPE_ENUM:
         return x.enum_.pos
     case TYPE_NATIVE:

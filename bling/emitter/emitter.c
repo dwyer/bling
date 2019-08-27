@@ -49,8 +49,8 @@ static bool isSimpleType(ast$Expr *t) {
     if (t == NULL) {
         return false;
     }
-    if (t->kind == ast$TYPE_ARRAY) {
-        t = t->array.elt;
+    if (t->kind == ast$TYPE_ARRAY && !t->array_.dynamic) {
+        t = t->array_.elt;
     }
     switch (t->kind) {
     case ast$EXPR_IDENT:
@@ -423,12 +423,17 @@ extern void emitter$emitType(emitter$Emitter *e, ast$Expr *type) {
         break;
 
     case ast$TYPE_ARRAY:
-        emitter$emitToken(e, token$LBRACK);
-        if (type->array.len) {
-            emitter$emitExpr(e, type->array.len);
+        if (type->array_.dynamic) {
+            emitter$emitToken(e, token$ARRAY);
+            emitter$emitSpace(e);
+        } else {
+            emitter$emitToken(e, token$LBRACK);
+            if (type->array_.len) {
+                emitter$emitExpr(e, type->array_.len);
+            }
+            emitter$emitToken(e, token$RBRACK);
         }
-        emitter$emitToken(e, token$RBRACK);
-        emitter$emitType(e, type->array.elt);
+        emitter$emitType(e, type->array_.elt);
         break;
 
     case ast$TYPE_BUILTIN:

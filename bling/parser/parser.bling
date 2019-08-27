@@ -566,23 +566,37 @@ fun parseTypeName(p *Parser) *ast.Expr {
 }
 
 fun parseArrayType(p *Parser) *ast.Expr {
-    var pos token.Pos = expect(p, token.LBRACK)
-    p.exprLev++
-    var len *ast.Expr = NULL
-    if p.tok != token.RBRACK {
-        len = parseRhs(p)
+    var pos token.Pos = p.pos
+    if accept(p, token.LBRACK) {
+        p.exprLev++
+        var len *ast.Expr = NULL
+        if p.tok != token.RBRACK {
+            len = parseRhs(p)
+        }
+        p.exprLev--
+        expect(p, token.RBRACK)
+        var type ast.Expr = {
+            kind: ast.TYPE_ARRAY,
+            array_: {
+                pos: pos,
+                elt: parseType(p),
+                len: len,
+            },
+        }
+        return &&type
     }
-    p.exprLev--
-    expect(p, token.RBRACK)
-    var type ast.Expr = {
-        kind: ast.TYPE_ARRAY,
-        array: {
-            pos: pos,
-            elt: parseType(p),
-            len: len,
-        },
+    if accept(p, token.ARRAY) {
+        var type ast.Expr = {
+            kind: ast.TYPE_ARRAY,
+            array_: {
+                pos: pos,
+                elt: parseType(p),
+                dynamic: true,
+            },
+        }
+        return &&type
     }
-    return &&type
+    return NULL
 }
 
 fun parseFieldDecl(p *Parser, scope *ast.Scope) *ast.Decl {
@@ -804,7 +818,7 @@ fun tryIdentOrType(p *Parser) *ast.Expr {
     switch p.tok {
     case token.IDENT:
         return parseTypeName(p)
-    case token.LBRACK:
+    case token.ARRAY, token.LBRACK:
         return parseArrayType(p)
     case token.STRUCT, token.UNION:
         return parseStructOrUnionType(p, p.tok)

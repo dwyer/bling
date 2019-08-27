@@ -13,6 +13,7 @@ static char *tokens[] = {
     [token$INT] = "INT",
     [token$STRING] = "STRING",
 
+    [token$ARRAY] = "array",
     [token$BREAK] = "break",
     [token$CASE] = "case",
     [token$CONST] = "const",

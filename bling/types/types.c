@@ -168,7 +168,7 @@ static bool types$areIdentical(ast$Expr *a, ast$Expr *b) {
         return types$areIdentical(a->star.x, b->star.x);
     case ast$TYPE_ARRAY:
         // TODO check lengths
-        return types$areIdentical(a->array.elt, b->array.elt);
+        return types$areIdentical(a->array_.elt, b->array_.elt);
     case ast$TYPE_FUNC:
         {
             if (!types$areIdentical(a->func.result, b->func.result)) {
@@ -208,7 +208,7 @@ static ast$Expr *types$pointerBase(ast$Expr *t) {
     case ast$EXPR_STAR:
         return t->star.x;
     case ast$TYPE_ARRAY:
-        return t->array.elt;
+        return t->array_.elt;
     default:
         panic(sys$sprintf("not a pointer: %s", types$typeString(t)));
         return NULL;
@@ -425,9 +425,9 @@ static void Checker_checkType(Checker *c, ast$Expr *t) {
         break;
 
     case ast$TYPE_ARRAY:
-        Checker_checkType(c, t->array.elt);
-        if (t->array.len) {
-            ast$Expr *len = Checker_checkExpr(c, t->array.len);
+        Checker_checkType(c, t->array_.elt);
+        if (t->array_.len) {
+            ast$Expr *len = Checker_checkExpr(c, t->array_.len);
             (void)len; // TODO assert that len resolves to int
         }
         break;
@@ -525,7 +525,7 @@ static void Checker_checkArrayLit(Checker *c, ast$Expr *x) {
         }
         if (elt->kind == ast$EXPR_COMPOSITE_LIT) {
             if (elt->composite.type == NULL) {
-                elt->composite.type = baseT->array.elt;
+                elt->composite.type = baseT->array_.elt;
             } else {
                 Checker_checkType(c, elt->composite.type);
             }
@@ -679,6 +679,21 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
                 switch (type->builtin.id) {
                 case types$LEN:
                     return Checker_lookupIdent(c, "int");
+                case types$MAKEARRAY:
+                    {
+                        expr = expr->call.args[0];
+                        assert(expr->kind == ast$EXPR_SIZEOF);
+                        expr = expr->sizeof_.x;
+                        ast$Expr t = {
+                            .kind = ast$TYPE_ARRAY,
+                            .array_ = {
+                                .elt = expr,
+                                .dynamic = true,
+                            },
+                        };
+                        return esc(t);
+                    }
+                    return NULL;
                 case types$MAKEMAP:
                     return NULL;
                 default:
@@ -733,7 +748,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             ast$Expr *type = Checker_checkExpr(c, expr->index.x);
             switch (type->kind) {
             case ast$TYPE_ARRAY:
-                type = type->array.elt;
+                type = type->array_.elt;
                 break;
             case ast$EXPR_STAR:
                 type = type->star.x;
@@ -795,7 +810,7 @@ static ast$Expr *Checker_checkExpr(Checker *c, ast$Expr *expr) {
             case ast$EXPR_STAR:
                 return type->star.x;
             case ast$TYPE_ARRAY:
-                return type->array.elt;
+                return type->array_.elt;
             default:
                 Checker_error(c, ast$Expr_pos(expr),
                         sys$sprintf("derefencing a non-pointer `%s`",

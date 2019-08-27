@@ -377,13 +377,20 @@ static void cemitter$emitType(emitter$Emitter *e, ast$Expr *type, ast$Expr *name
         break;
 
     case ast$TYPE_ARRAY:
-        cemitter$emitType(e, type->array.elt, name);
-        emitter$emitToken(e, token$LBRACK);
-        if (type->array.len) {
-            cemitter$emitExpr(e, type->array.len);
+        if (type->array_.dynamic) {
+            emitter$emitToken(e, token$ARRAY);
+            emitter$emitToken(e, token$LPAREN);
+            cemitter$emitType(e, type->array_.elt, NULL);
+            emitter$emitToken(e, token$RPAREN);
+        } else {
+            cemitter$emitType(e, type->array_.elt, name);
+            emitter$emitToken(e, token$LBRACK);
+            if (type->array_.len) {
+                cemitter$emitExpr(e, type->array_.len);
+            }
+            emitter$emitToken(e, token$RBRACK);
+            name = NULL;
         }
-        emitter$emitToken(e, token$RBRACK);
-        name = NULL;
         break;
 
     case ast$TYPE_ELLIPSIS:

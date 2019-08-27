@@ -10,7 +10,7 @@ import "sys"
 
 fun is_type(p *parser.Parser) bool {
     switch p.tok {
-    case token.CONST, token.ENUM, token.EXTERN, token.MAP, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED:
+    case token.ARRAY, token.CONST, token.ENUM, token.EXTERN, token.MAP, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED:
         return true
     case token.IDENT:
         {
@@ -372,7 +372,7 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
         }
         var type ast.Expr = {
             kind: ast.TYPE_ARRAY,
-            array: {
+            array_: {
                 pos: pos,
                 elt: *type_ptr,
                 len: len,
@@ -491,7 +491,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
             }
             var t ast.Expr = {
                 kind: ast.TYPE_ARRAY,
-                array: {
+                array_: {
                     pos: pos,
                     elt: type,
                     len: len,
@@ -873,6 +873,23 @@ fun parameter_declaration(p *parser.Parser) *ast.Decl {
     return &&decl
 }
 
+fun array_specifier(p *parser.Parser) *ast.Expr {
+    var pos token.Pos = p.pos
+    parser.expect(p, token.ARRAY)
+    parser.expect(p, token.LPAREN)
+    var elt *ast.Expr = type_name(p)
+    parser.expect(p, token.RPAREN)
+    var tmp ast.Expr = {
+        kind: ast.TYPE_ARRAY,
+        array_: {
+            pos: pos,
+            elt: elt,
+            dynamic: true,
+        },
+    }
+    return &&tmp
+}
+
 fun map_specifier(p *parser.Parser) *ast.Expr {
     var pos token.Pos = p.pos
     parser.expect(p, token.MAP)
@@ -900,6 +917,9 @@ fun type_specifier(p *parser.Parser) *ast.Expr {
         break
     case token.ENUM:
         x = enum_specifier(p)
+        break
+    case token.ARRAY:
+        x = array_specifier(p)
         break
     case token.MAP:
         x = map_specifier(p)

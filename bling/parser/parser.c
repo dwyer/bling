@@ -617,23 +617,37 @@ static ast$Expr *parseTypeName(parser$Parser *p) {
 }
 
 static ast$Expr *parseArrayType(parser$Parser *p) {
-    token$Pos pos = parser$expect(p, token$LBRACK);
-    p->exprLev++;
-    ast$Expr *len = NULL;
-    if (p->tok != token$RBRACK) {
-        len = parseRhs(p);
+    token$Pos pos = p->pos;
+    if (parser$accept(p, token$LBRACK)) {
+        p->exprLev++;
+        ast$Expr *len = NULL;
+        if (p->tok != token$RBRACK) {
+            len = parseRhs(p);
+        }
+        p->exprLev--;
+        parser$expect(p, token$RBRACK);
+        ast$Expr type = {
+            .kind = ast$TYPE_ARRAY,
+            .array_ = {
+                .pos = pos,
+                .elt = parseType(p),
+                .len = len,
+            },
+        };
+        return esc(type);
     }
-    p->exprLev--;
-    parser$expect(p, token$RBRACK);
-    ast$Expr type = {
-        .kind = ast$TYPE_ARRAY,
-        .array = {
-            .pos = pos,
-            .elt = parseType(p),
-            .len = len,
-        },
-    };
-    return esc(type);
+    if (parser$accept(p, token$ARRAY)) {
+        ast$Expr type = {
+            .kind = ast$TYPE_ARRAY,
+            .array_ = {
+                .pos = pos,
+                .elt = parseType(p),
+                .dynamic = true,
+            },
+        };
+        return esc(type);
+    }
+    return NULL;
 }
 
 static ast$Decl *parseFieldDecl(parser$Parser *p, ast$Scope *scope) {
@@ -863,6 +877,7 @@ static ast$Expr *tryIdentOrType(parser$Parser *p) {
     switch (p->tok) {
     case token$IDENT:
         return parseTypeName(p);
+    case token$ARRAY:
     case token$LBRACK:
         return parseArrayType(p);
     case token$STRUCT:

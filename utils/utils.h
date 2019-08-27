@@ -25,16 +25,16 @@ typedef struct {
 } utils$Slice;
 
 extern utils$Slice utils$Slice_make(int size); // TODO replace with make
-extern void utils$Slice_unmake(utils$Slice *s);
+extern void utils$Slice_unmake(void *s);
 
-extern int utils$Slice_len(const utils$Slice *s);
-extern int utils$Slice_cap(const utils$Slice *s); // TODO replace with cap()
-extern void *utils$Slice_get(const utils$Slice *s, int i, void *dst);
+extern int utils$Slice_len(const void *s);
+extern int utils$Slice_cap(const void *s); // TODO replace with cap()
+extern void *utils$Slice_get(const void *s, int i, void *dst);
 
-extern void utils$Slice_setLen(utils$Slice *s, int len);
-extern void utils$Slice_set(utils$Slice *s, int i, const void *x);
-extern void utils$Slice_append(utils$Slice *s, const void *x);
-extern void *utils$nilArray(utils$Slice *s);
+extern void utils$Slice_setLen(void *s, int len);
+extern void utils$Slice_set(void *s, int i, const void *x);
+extern void utils$Slice_append(void *s, const void *x);
+extern void *utils$nilArray(void *s);
 
 typedef struct {
     int _valSize;

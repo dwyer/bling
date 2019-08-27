@@ -344,13 +344,20 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         }
         break
     case ast.TYPE_ARRAY:
-        emitType(e, type.array.elt, name)
-        emitter.emitToken(e, token.LBRACK)
-        if type.array.len {
-            emitExpr(e, type.array.len)
+        if type.array_.dynamic {
+            emitter.emitToken(e, token.ARRAY)
+            emitter.emitToken(e, token.LPAREN)
+            emitType(e, type.array_.elt, NULL)
+            emitter.emitToken(e, token.RPAREN)
+        } else {
+            emitType(e, type.array_.elt, name)
+            emitter.emitToken(e, token.LBRACK)
+            if type.array_.len {
+                emitExpr(e, type.array_.len)
+            }
+            emitter.emitToken(e, token.RBRACK)
+            name = NULL
         }
-        emitter.emitToken(e, token.RBRACK)
-        name = NULL
         break
     case ast.TYPE_ELLIPSIS:
         emitter.emitToken(e, token.ELLIPSIS)

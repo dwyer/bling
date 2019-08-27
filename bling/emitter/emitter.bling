@@ -59,8 +59,8 @@ fun isSimpleType(t *ast.Expr) bool {
     if t == NULL {
         return false
     }
-    if t.kind == ast.TYPE_ARRAY {
-        t = t.array.elt
+    if t.kind == ast.TYPE_ARRAY && !t.array_.dynamic {
+        t = t.array_.elt
     }
     switch t.kind {
     case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
@@ -395,12 +395,17 @@ fun emitType(e *Emitter, type *ast.Expr) {
         }
         break
     case ast.TYPE_ARRAY:
-        emitToken(e, token.LBRACK)
-        if type.array.len {
-            emitExpr(e, type.array.len)
+        if type.array_.dynamic {
+            emitToken(e, token.ARRAY)
+            emitSpace(e)
+        } else {
+            emitToken(e, token.LBRACK)
+            if type.array_.len {
+                emitExpr(e, type.array_.len)
+            }
+            emitToken(e, token.RBRACK)
         }
-        emitToken(e, token.RBRACK)
-        emitType(e, type.array.elt)
+        emitType(e, type.array_.elt)
         break
     case ast.TYPE_BUILTIN:
         emitString(e, "/* builtin func ")

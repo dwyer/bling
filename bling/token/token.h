@@ -18,6 +18,7 @@ typedef enum {
 
     token$_keywordBeg,
 
+    token$ARRAY,
     token$BREAK,
     token$CASE,
     token$CONST,

@@ -68,6 +68,7 @@ typ Basic struct {
 typ builtinId enum {
     ASSERT
     LEN
+    MAKEARRAY
     MAKEMAP
     PANIC
     PRINT
@@ -230,7 +231,7 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
     case ast.EXPR_STAR:
         return areIdentical(a.star.x, b.star.x)
     case ast.TYPE_ARRAY:
-        return areIdentical(a.array.elt, b.array.elt)
+        return areIdentical(a.array_.elt, b.array_.elt)
     case ast.TYPE_FUNC:
         {
             if !areIdentical(a.func.result, b.func.result) {
@@ -269,7 +270,7 @@ fun pointerBase(t *ast.Expr) *ast.Expr {
     case ast.EXPR_STAR:
         return t.star.x
     case ast.TYPE_ARRAY:
-        return t.array.elt
+        return t.array_.elt
     default:
         panic(sys.sprintf("not a pointer: %s", typeString(t)))
         return NULL
@@ -467,9 +468,9 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
         Checker_checkType(c, t.star.x)
         break
     case ast.TYPE_ARRAY:
-        Checker_checkType(c, t.array.elt)
-        if t.array.len {
-            var len *ast.Expr = Checker_checkExpr(c, t.array.len)
+        Checker_checkType(c, t.array_.elt)
+        if t.array_.len {
+            var len *ast.Expr = Checker_checkExpr(c, t.array_.len)
             typ void(len)
         }
         break
@@ -554,7 +555,7 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
         }
         if elt.kind == ast.EXPR_COMPOSITE_LIT {
             if elt.composite.type == NULL {
-                elt.composite.type = baseT.array.elt
+                elt.composite.type = baseT.array_.elt
             } else {
                 Checker_checkType(c, elt.composite.type)
             }
@@ -688,6 +689,21 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 switch type.builtin.id {
                 case LEN:
                     return Checker_lookupIdent(c, "int")
+                case MAKEARRAY:
+                    {
+                        expr = expr.call.args[0]
+                        assert(expr.kind == ast.EXPR_SIZEOF)
+                        expr = expr.sizeof_.x
+                        var t ast.Expr = {
+                            kind: ast.TYPE_ARRAY,
+                            array_: {
+                                elt: expr,
+                                dynamic: true,
+                            },
+                        }
+                        return &&t
+                    }
+                    return NULL
                 case MAKEMAP:
                     return NULL
                 default:
@@ -732,7 +748,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             var type *ast.Expr = Checker_checkExpr(c, expr.index.x)
             switch type.kind {
             case ast.TYPE_ARRAY:
-                type = type.array.elt
+                type = type.array_.elt
                 break
             case ast.EXPR_STAR:
                 type = type.star.x
@@ -785,7 +801,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             case ast.EXPR_STAR:
                 return type.star.x
             case ast.TYPE_ARRAY:
-                return type.array.elt
+                return type.array_.elt
             default:
                 Checker_error(c, ast.Expr_pos(expr), sys.sprintf("derefencing a non-pointer `%s`", typeString(type)))
                 return NULL
@@ -1224,6 +1240,12 @@ var predeclareFuncs []struct {
     },
     LEN: {
         "len",
+        1,
+        false,
+        expression,
+    },
+    MAKEARRAY: {
+        "makearray",
         1,
         false,
         expression,

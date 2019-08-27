@@ -18,7 +18,7 @@ extern ast$Scope *ast$Scope_new(ast$Scope *outer) {
     ast$Scope s = {
         .outer = outer,
         .objects = utils$Map_make(sizeof(ast$Object *)),
-        .keys = utils$Slice_make(sizeof(char *)),
+        .keys = makearray(sizeof(char *)),
     };
     return esc(s);
 }
@@ -141,7 +141,7 @@ extern token$Pos ast$Expr_pos(ast$Expr *x) {
     case ast$EXPR_STAR: return x->star.pos;
     case ast$EXPR_TERNARY: return ast$Expr_pos(x->ternary.cond);
     case ast$EXPR_UNARY: return x->unary.pos;
-    case ast$TYPE_ARRAY: return x->array.pos;
+    case ast$TYPE_ARRAY: return x->array_.pos;
     case ast$TYPE_ENUM: return x->enum_.pos;
     case ast$TYPE_NATIVE: return 0;
     case ast$TYPE_FUNC: return x->func.pos;

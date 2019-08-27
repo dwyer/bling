@@ -103,6 +103,7 @@ typedef struct {
     token$Pos pos;
     ast$Expr *len;
     ast$Expr *elt;
+    bool dynamic;
 } ast$ArrayType;
 
 typedef struct {
@@ -237,7 +238,7 @@ typedef struct ast$Expr {
     ast$Node;
     bool is_const;
     union {
-        ast$ArrayType array;
+        ast$ArrayType array_;
         ast$BasicLit basic;
         ast$BinaryExpr binary;
         ast$BuiltinType builtin;
@@ -404,7 +405,7 @@ extern ast$Object *ast$newObject(ast$ObjKind kind, char *name);
 typedef struct ast$Scope {
     ast$Scope *outer;
     map(ast$Object *) objects;
-    utils$Slice keys;
+    array(char *) keys;
     char *pkg;
 } ast$Scope;
 
