@@ -67,10 +67,7 @@ fun switch2(s *Scanner, tok0 token.Token, tok1 token.Token) token.Token {
 }
 
 fun make_string_slice(s *Scanner, start int, end int) *char {
-    var len u64 = end - start + 1
-    var lit *char = sys.malloc(len)
-    sys.strlcpy(lit, &s.src[start], len)
-    return lit
+    return sys.strndup(&s.src[start], end - start)
 }
 
 fun scan_ident(s *Scanner) *char {

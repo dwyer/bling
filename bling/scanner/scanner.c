@@ -58,10 +58,7 @@ static token$Token switch2(scanner$Scanner *s, token$Token tok0,
 }
 
 static char *make_string_slice(scanner$Scanner *s, int start, int end) {
-    u64 len = end - start + 1;
-    char *lit = sys$malloc(len);
-    sys$strlcpy(lit, &s->src[start], len);
-    return lit;
+    return sys$strndup(&s->src[start], end - start);
 }
 
 static char *scan_ident(scanner$Scanner *s) {

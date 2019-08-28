@@ -35,7 +35,7 @@ fun memset(dst *void, c int, n Size) *void
 
 fun strdup(s *const char) *char
 
-fun strlcpy(dst *char, src *const char, n Size) Size
+fun strndup(s *const char, n Size) *char
 
 fun strlen(s *const char) Size
 

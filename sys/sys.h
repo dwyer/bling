@@ -27,7 +27,7 @@ extern int sys$memcmp(const void *dst, const void *src, sys$Size n);
 extern void *sys$memcpy(void *dst, const void *src, sys$Size n);
 extern void *sys$memset(void *dst, int c, sys$Size n);
 extern char *sys$strdup(const char *s);
-extern sys$Size sys$strlcpy(char *dst, const char *src, sys$Size n);
+extern char *sys$strndup(const char *s, sys$Size n);
 extern sys$Size sys$strlen(const char *s);
 
 extern bool sys$streq(const char *a, const char *b);

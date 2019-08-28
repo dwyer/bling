@@ -2,7 +2,8 @@
 
 #include <errno.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 extern int sys$errno() {
@@ -25,15 +26,15 @@ extern char *sys$getenv(const char *key) {
     return getenv(key);
 }
 
-extern int sys$memcmp(const void *dst, const void *src, u64 n) {
+extern int sys$memcmp(const void *dst, const void *src, sys$Size n) {
     return memcmp(dst, src, n);
 }
 
-extern void *sys$memcpy(void *dst, const void *src, u64 n) {
+extern void *sys$memcpy(void *dst, const void *src, sys$Size n) {
     return memcpy(dst, src, n);
 }
 
-extern void *sys$memset(void *dst, int c, u64 n) {
+extern void *sys$memset(void *dst, int c, sys$Size n) {
     return memset(dst, c, n);
 }
 
@@ -41,15 +42,15 @@ extern char *sys$strdup(const char *s) {
     return strdup(s);
 }
 
-extern u64 sys$strlcpy(char *dst, const char *src, u64 n) {
-    return strlcpy(dst, src, n);
+extern char *sys$strndup(const char *s, sys$Size n) {
+    return strndup(s, n);
 }
 
-extern u64 sys$strlen(const char *s) {
+extern sys$Size sys$strlen(const char *s) {
     return strlen(s);
 }
 
-extern void *sys$malloc(u64 n) {
+extern void *sys$malloc(sys$Size n) {
     return malloc(n);
 }
 
@@ -57,7 +58,7 @@ extern void sys$free(void *ptr) {
     free(ptr);
 }
 
-extern void *sys$realloc(void *ptr, u64 n) {
+extern void *sys$realloc(void *ptr, sys$Size n) {
     return realloc(ptr, n);
 }
 
