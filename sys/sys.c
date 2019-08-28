@@ -66,13 +66,14 @@ extern bool sys$streq(const char *a, const char *b) {
 }
 
 extern int sys$run(char *const argv[]) {
+    extern char **environ;
     int status = -1;
     pid_t pid = fork();
     switch (pid) {
     case -1:
         return -1;
     case 0:
-        execve(argv[0], argv, NULL);
+        execve(argv[0], argv, environ);
         return errno;
     default:
         waitpid(pid, &status, 0);
