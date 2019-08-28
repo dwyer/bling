@@ -184,11 +184,13 @@ int main(int argc, char *argv[]) {
     if (sys$streq(*argv, "build")) {
         argv++;
         build$buildPackage(argv);
-    } else if (sys$streq(*argv, "-c")) {
+        return 0;
+    }
+    if (sys$streq(*argv, "-c")) {
         argv++;
         compile_c(argv);
-    } else {
-        compile_bling(argv);
+        return 0;
     }
+    compile_bling(argv);
     return 0;
 }
