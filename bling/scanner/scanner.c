@@ -78,23 +78,55 @@ static char *scan_pragma(scanner$Scanner *s) {
     return make_string_slice(s, offs, s->offset);
 }
 
+typedef enum {
+    NumKind_DECINT,
+    NumKind_HEXINT,
+    NumKind_FLOAT,
+} NumKind;
+
+static bool isNumeric(int ch, NumKind kind) {
+    switch (kind) {
+    case NumKind_HEXINT:
+        return ('0' <= ch && ch <= '9')
+            || ('a' <= ch && ch <= 'f')
+            || ('A' <= ch && ch <= 'F');
+    case NumKind_DECINT:
+    case NumKind_FLOAT:
+        return '0' <= ch && ch <= '9';
+    }
+}
+
 static char *scan_number(scanner$Scanner *s, token$Token *tokp) {
     int offs = s->offset;
-    bool is_float = false;
-    while (is_digit(s->ch) || s->ch == '.') {
+    NumKind kind = NumKind_DECINT;
+    if (s->ch == '0') {
+        next0(s);
+        if (s->ch == 'x') {
+            kind = NumKind_HEXINT;
+            next0(s);
+        }
+    }
+    for (;;) {
+        if (!(isNumeric(s->ch, kind) || s->ch == '.')) {
+            break;
+        }
         if (s->ch == '.') {
-            if (!is_float) {
-                is_float = true;
+            if (kind == NumKind_DECINT) {
+                kind = NumKind_FLOAT;
             } else {
-                // TODO error
+                break; // TODO error?
             }
         }
         next0(s);
     }
-    if (is_float) {
-        *tokp = token$FLOAT;
-    } else {
+    switch (kind) {
+    case NumKind_DECINT:
+    case NumKind_HEXINT:
         *tokp = token$INT;
+        break;
+    case NumKind_FLOAT:
+        *tokp = token$FLOAT;
+        break;
     }
     return make_string_slice(s, offs, s->offset);
 }
