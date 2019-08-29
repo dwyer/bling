@@ -1,13 +1,8 @@
 package os
 
 import "paths"
+import "sys"
 import "utils"
-
-#pragma once
-
-#include "bootstrap/bootstrap.h"
-
-#include "utils/utils.h"
 
 typ Time u64
 
@@ -19,51 +14,222 @@ typ File struct {
     is_dir bool
 }
 
-var stdin *File
-
-var stdout *File
-
-var stderr *File
-
-fun tempDir() *const char
-
-fun newFile(fd uintptr, name *const char) *File
-
-fun openFile(filename *const char, mode int, perm int, error **utils.Error) *File
-
-fun close(file *File, error **utils.Error)
-
-fun open(filename *const char, error **utils.Error) *File
-
-fun create(filename *const char, error **utils.Error) *File
-
-fun read(file *File, b *char, n int, error **utils.Error) int
-
-fun write(file *File, b *const char, error **utils.Error) int
-
 typ FileInfo struct {
     _name *char
     _sys *void
 }
 
-fun FileInfo_name(info *FileInfo) *char
+var _stdin File = {
+    fd: sys.STDIN_FILENO,
+    name: "/dev/stdin",
+}
 
-fun FileInfo_size(info *FileInfo) u64
+var _stdout File = {
+    fd: sys.STDOUT_FILENO,
+    name: "/dev/stdout",
+}
 
-fun FileInfo_mode(info *FileInfo) FileMode
+var _stderr File = {
+    fd: sys.STDERR_FILENO,
+    name: "/dev/stderr",
+}
 
-fun FileInfo_modTime(info *FileInfo) Time
+var stdin *File = &_stdin
 
-fun FileInfo_isDir(info *FileInfo) bool
+var stdout *File = &_stdout
 
-fun FileInfo_sys(info *FileInfo) *void
+var stderr *File = &_stderr
 
-fun FileInfo_free(info *FileInfo)
+fun PathError_check(path *const char, error **utils.Error) {
+    var err *utils.Error = NULL
+    utils.Error_check(&err)
+    if err {
+        var msg *char = err.error
+        err.error = sys.sprintf("PathError: %s: %s", path, msg)
+        sys.free(msg)
+        utils.Error_move(err, error)
+    }
+}
 
-fun stat(filename *const char, error **utils.Error) *FileInfo
+fun newFile(fd uintptr, name *const char) *File {
+    var file File = {
+        name: sys.strdup(name),
+        fd: fd,
+    }
+    return &&file
+}
 
-fun openDir(filename *const char, error **utils.Error) *File
+fun openFile(filename *const char, mode int, perm int, error **utils.Error) *File {
+    utils.clearError()
+    var fd int = sys.open(filename, mode, perm)
+    if fd == -1 {
+        PathError_check(filename, error)
+        return NULL
+    }
+    return newFile(fd, filename)
+}
 
-fun readdir(file *File, error **utils.Error) [array]*FileInfo
+fun open(filename *const char, error **utils.Error) *File {
+    return openFile(filename, sys.O_RDONLY, 0, error)
+}
 
-fun mkdirAll(path *const char, mode u32, error **utils.Error)
+fun create(filename *const char, error **utils.Error) *File {
+    return openFile(filename, sys.O_CREAT | sys.O_TRUNC | sys.O_RDWR, 0644, error)
+}
+
+fun read(file *File, b *char, n int, error **utils.Error) int {
+    utils.clearError()
+    n = sys.read(file.fd, b, n)
+    PathError_check(file.name, error)
+    return n
+}
+
+fun write(file *File, b *const char, error **utils.Error) int {
+    utils.clearError()
+    var n int = sys.write(file.fd, b, sys.strlen(b))
+    PathError_check(file.name, error)
+    return n
+}
+
+fun close(file *File, error **utils.Error) {
+    utils.clearError()
+    if file.is_dir {
+        sys.closedir(typ *void(file.fd))
+    } else {
+        sys.close(file.fd)
+    }
+    PathError_check(file.name, error)
+}
+
+fun stat(name *const char, error **utils.Error) *FileInfo {
+    var st sys.Stat = {}
+    utils.clearError()
+    if sys.stat(name, &st) != 0 {
+        PathError_check(name, error)
+        return NULL
+    }
+    var info FileInfo = {
+        _name: sys.strdup(name),
+        _sys: &&st,
+    }
+    return &&info
+}
+
+fun FileInfo_free(info *FileInfo) {
+    if info {
+        sys.free(info._name)
+        sys.free(info._sys)
+        sys.free(info)
+    }
+}
+
+fun openDir(name *const char, error **utils.Error) *File {
+    var dp *void = sys.opendir(name)
+    if dp == NULL {
+        PathError_check(name, error)
+        return NULL
+    }
+    var file *File = newFile(typ uintptr(dp), name)
+    file.is_dir = true
+    return file
+}
+
+fun readdirnames(file *File, error **utils.Error) [array]*char {
+    var arr [array]*char = makearray(*char)
+    var dp sys.Dir = typ sys.Dir(file.fd)
+    for ;; {
+        var dirent sys.Dirent = sys.readdir(dp)
+        if dirent == NULL {
+            break
+        }
+        var name *const char = sys.Dirent_name(dirent)
+        if name[0] == '.' {
+            continue
+        }
+        append(arr, sys.strdup(name))
+    }
+    return arr
+}
+
+fun readdir(file *File, error **utils.Error) [array]*FileInfo {
+    var err *utils.Error = NULL
+    var names [array]*char = readdirnames(file, &err)
+    if err != NULL {
+        close(file, NULL)
+        utils.Error_move(err, error)
+        return names
+    }
+    var arr [array]*char = makearray(*char)
+    for var i int = 0; i < len(names); i++ {
+        var path *char = paths.join2(file.name, names[i])
+        sys.free(names[i])
+        var info *FileInfo = stat(path, &err)
+        if err != NULL {
+            close(file, NULL)
+            utils.Error_move(err, error)
+            return names
+        }
+        append(arr, info)
+    }
+    utils.Slice_unmake(&names)
+    return arr
+}
+
+fun FileInfo_name(info *FileInfo) *char {
+    return info._name
+}
+
+fun FileInfo_size(info *FileInfo) u64 {
+    var st *sys.Stat = typ *sys.Stat(FileInfo_sys(info))
+    return st.size
+}
+
+fun FileInfo_mode(info *FileInfo) FileMode {
+    var st *sys.Stat = typ *sys.Stat(FileInfo_sys(info))
+    return st.mode
+}
+
+fun FileInfo_modTime(info *FileInfo) Time {
+    var st *sys.Stat = typ *sys.Stat(FileInfo_sys(info))
+    return st.mtime
+}
+
+fun FileInfo_isDir(info *FileInfo) bool {
+    var st *sys.Stat = typ *sys.Stat(FileInfo_sys(info))
+    return ((st.mode & 0170000) == 0040000)
+}
+
+fun FileInfo_sys(info *FileInfo) *void {
+    return info._sys
+}
+
+fun tempDir() *const char {
+    var tmpdir *char = sys.getenv("TMPDIR")
+    if tmpdir {
+        return tmpdir
+    }
+    return "/tmp"
+}
+
+fun mkdir(path *const char, mode u32, error **utils.Error) {
+    utils.clearError()
+    sys.mkdir(path, mode)
+    PathError_check(path, error)
+}
+
+fun mkdirAll(path *const char, mode u32, error **utils.Error) {
+    var dir *char = paths.dir(path)
+    if !sys.streq(dir, ".") {
+        mkdirAll(dir, mode, error)
+    }
+    sys.free(dir)
+    var err *utils.Error = NULL
+    mkdir(path, mode, &err)
+    switch sys.errno() {
+    case 0, sys.EEXIST:
+        break
+    default:
+        utils.Error_move(err, error)
+        break
+    }
+}

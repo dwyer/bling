@@ -14,6 +14,7 @@ SRCS=sys/sys.h \
      paths/paths.h \
      paths/paths.c \
      os/os.h \
+     os/os.c \
      io/ioutil/ioutil.h \
      io/ioutil/ioutil.c \
      bling/token/token.h \
@@ -42,6 +43,7 @@ CFILES=utils/error.c \
      utils/map.c \
      bytes/bytes.c \
      paths/paths.c \
+     os/os.c \
      io/ioutil/ioutil.c \
      bling/token/token.c \
      bling/ast/ast.c \
@@ -72,7 +74,7 @@ all.bling: $(BLINGC)
 
 debug:
 	$(CC) -g -I. $(CFLAGS) $(CFILES) \
-	    bootstrap/bootstrap.c os/os.c sys/fmt.c sys/sys.c
+	    bootstrap/bootstrap.c sys/fmt.c sys/sys.c
 	lldb a.out
 
 $(BLINGC):

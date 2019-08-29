@@ -81,3 +81,56 @@ extern int sys$run(char *const argv[]) {
         return status;
     }
 }
+
+#include <fcntl.h> // open
+
+extern int sys$open(const char *filename, int oflag, int perm) {
+    return open(filename, oflag, perm);
+}
+
+extern int sys$close(int fd) {
+    return close(fd);
+}
+
+extern int sys$read(int fd, void *b, sys$Size n) {
+    return read(fd, b, n);
+}
+
+extern int sys$write(int fd, const void *b, sys$Size n) {
+    return write(fd, b, n);
+}
+
+#include <dirent.h> // DIR, dirent, opendir, readdir, closedir
+
+extern sys$Dir sys$opendir(const char *filename) {
+    return opendir(filename);
+}
+
+extern int sys$closedir(sys$Dir dir) {
+    return closedir(dir);
+}
+
+extern sys$Dirent sys$readdir(sys$Dir dir) {
+    return readdir(dir);
+}
+
+extern char *sys$Dirent_name(sys$Dirent dirent) {
+    return ((struct dirent *)dirent)->d_name;
+}
+
+#include <sys/stat.h> // stat
+
+extern int sys$stat(const char *path, sys$Stat *s) {
+    struct stat st = {};
+    int res = stat(path, &st);
+    s->size = st.st_size;
+    s->mode = st.st_mode;
+    s->atime = st.st_atime;
+    s->mtime = st.st_mtime;
+    s->ctime = st.st_ctime;
+    return res;
+}
+
+extern int sys$mkdir(const char *path, u32 mode) {
+    return mkdir(path, mode);
+}

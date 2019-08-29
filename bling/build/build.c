@@ -307,8 +307,7 @@ static Package *_buildPackage(Builder *b, const char *path) {
     if (VERBOSE) {
         // sys$printf("building %s\n", path);
     }
-    if (sys$streq(path, "bootstrap") || sys$streq(path, "os")
-            || sys$streq(path, "sys")) {
+    if (sys$streq(path, "bootstrap") || sys$streq(path, "sys")) {
         pkg = buildCPackage(b, path);
     } else {
         pkg = buildBlingPackage(b, path);

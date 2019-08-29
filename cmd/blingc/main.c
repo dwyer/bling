@@ -74,8 +74,7 @@ void compile_c(char *argv[]) {
         ast$File *file = cparser$parseFile(fset, filename, types$universe());
         // types$Config conf = {.strict = true, .cMode = true};
         // types$checkFile(&conf, fset, file, NULL);
-        bool allowForward = file->name && (ast$isIdentNamed(file->name, "os")
-                || ast$isIdentNamed(file->name, "sys"));
+        bool allowForward = file->name && ast$isIdentNamed(file->name, "sys");
         if (!allowForward) {
             int i = 0;
             for (int j = 0; j < len(file->decls); j++) {

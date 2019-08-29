@@ -4,15 +4,9 @@
 #include "sys/sys.h"
 #include "utils/utils.h"
 
-#include <dirent.h> // DIR, dirent, opendir, readdir, closedir
-#include <errno.h>
-#include <fcntl.h> // open
-#include <sys/stat.h> // stat
-#include <unistd.h> // read, close, write, STD*_FILENO
-
-static os$File _stdin = {.fd = STDIN_FILENO, .name = "/dev/stdin"};
-static os$File _stdout = {.fd = STDOUT_FILENO, .name = "/dev/stdout"};
-static os$File _stderr = {.fd = STDERR_FILENO, .name = "/dev/stderr"};
+static os$File _stdin = {.fd = sys$STDIN_FILENO, .name = "/dev/stdin"};
+static os$File _stdout = {.fd = sys$STDOUT_FILENO, .name = "/dev/stdout"};
+static os$File _stderr = {.fd = sys$STDERR_FILENO, .name = "/dev/stderr"};
 
 os$File *os$stdin = &_stdin;
 os$File *os$stdout = &_stdout;
@@ -37,9 +31,10 @@ extern os$File *os$newFile(uintptr fd, const char *name) {
     return esc(file);
 }
 
-extern os$File *os$openFile(const char *filename, int mode, int perm, utils$Error **error) {
+extern os$File *os$openFile(const char *filename, int mode, int perm,
+        utils$Error **error) {
     utils$clearError();
-    int fd = open(filename, mode, perm);
+    int fd = sys$open(filename, mode, perm);
     if (fd == -1) {
         PathError_check(filename, error);
         return NULL;
@@ -48,23 +43,24 @@ extern os$File *os$openFile(const char *filename, int mode, int perm, utils$Erro
 }
 
 extern os$File *os$open(const char *filename, utils$Error **error) {
-    return os$openFile(filename, O_RDONLY, 0, error);
+    return os$openFile(filename, sys$O_RDONLY, 0, error);
 }
 
 extern os$File *os$create(const char *filename, utils$Error **error) {
-    return os$openFile(filename, O_CREAT | O_TRUNC | O_RDWR, DEFFILEMODE, error);
+    return os$openFile(filename, sys$O_CREAT | sys$O_TRUNC | sys$O_RDWR, 0644,
+            error);
 }
 
 extern int os$read(os$File *file, char *b, int n, utils$Error **error) {
     utils$clearError();
-    n = read(file->fd, b, n);
+    n = sys$read(file->fd, b, n);
     PathError_check(file->name, error);
     return n;
 }
 
 extern int os$write(os$File *file, const char *b, utils$Error **error) {
     utils$clearError();
-    int n = write(file->fd, b, sys$strlen(b));
+    int n = sys$write(file->fd, b, sys$strlen(b));
     PathError_check(file->name, error);
     return n;
 }
@@ -72,17 +68,17 @@ extern int os$write(os$File *file, const char *b, utils$Error **error) {
 extern void os$close(os$File *file, utils$Error **error) {
     utils$clearError();
     if (file->is_dir) {
-        closedir((DIR *)file->fd);
+        sys$closedir((void *)file->fd);
     } else {
-        close(file->fd);
+        sys$close(file->fd);
     }
     PathError_check(file->name, error);
 }
 
 extern os$FileInfo *os$stat(const char *name, utils$Error **error) {
-    struct stat st;
+    sys$Stat st = {};
     utils$clearError();
-    if (stat(name, &st) != 0) {
+    if (sys$stat(name, &st) != 0) {
         PathError_check(name, error);
         return NULL;
     }
@@ -102,7 +98,7 @@ extern void os$FileInfo_free(os$FileInfo *info) {
 }
 
 extern os$File *os$openDir(const char *name, utils$Error **error) {
-    DIR *dp = opendir(name);
+    void *dp = sys$opendir(name);
     if (dp == NULL) {
         PathError_check(name, error);
         return NULL;
@@ -114,17 +110,17 @@ extern os$File *os$openDir(const char *name, utils$Error **error) {
 
 extern array(char *) os$readdirnames(os$File *file, utils$Error **error) {
     array(char *) arr = makearray(char *);
-    DIR *dp = (DIR *)file->fd;
+    sys$Dir dp = (sys$Dir)file->fd;
     for (;;) {
-        struct dirent *dirent = readdir(dp);
+        sys$Dirent dirent = sys$readdir(dp);
         if (dirent == NULL) {
             break;
         }
-        if (dirent->d_name[0] == '.') {
+        const char *name = sys$Dirent_name(dirent);
+        if (name[0] == '.') {
             continue;
         }
-        char *name = sys$strdup(dirent->d_name);
-        append(arr, name);
+        append(arr, sys$strdup(name));
     }
     return arr;
 }
@@ -158,23 +154,23 @@ extern char *os$FileInfo_name(os$FileInfo *info) {
 }
 
 extern u64 os$FileInfo_size(os$FileInfo *info) {
-    struct stat st = *(struct stat *)os$FileInfo_sys(info);
-    return st.st_size;
+    sys$Stat *st = (sys$Stat *)os$FileInfo_sys(info);
+    return st->size;
 }
 
 extern os$FileMode os$FileInfo_mode(os$FileInfo *info) {
-    struct stat st = *(struct stat *)os$FileInfo_sys(info);
-    return st.st_mode;
+    sys$Stat *st = (sys$Stat *)os$FileInfo_sys(info);
+    return st->mode;
 }
 
 extern os$Time os$FileInfo_modTime(os$FileInfo *info) {
-    struct stat st = *(struct stat *)os$FileInfo_sys(info);
-    return st.st_mtime;
+    sys$Stat *st = (sys$Stat *)os$FileInfo_sys(info);
+    return st->mtime;
 }
 
 extern bool os$FileInfo_isDir(os$FileInfo *info) {
-    struct stat st = *(struct stat *)os$FileInfo_sys(info);
-    return S_ISDIR(st.st_mode);
+    sys$Stat *st = (sys$Stat *)os$FileInfo_sys(info);
+    return ((st->mode & 0170000) == 0040000);
 }
 
 extern void *os$FileInfo_sys(os$FileInfo *info) {
@@ -191,7 +187,7 @@ extern const char *os$tempDir() {
 
 extern void os$mkdir(const char *path, u32 mode, utils$Error **error) {
     utils$clearError();
-    mkdir(path, mode);
+    sys$mkdir(path, mode);
     PathError_check(path, error);
 }
 
@@ -205,7 +201,7 @@ extern void os$mkdirAll(const char *path, u32 mode, utils$Error **error) {
     os$mkdir(path, mode, &err);
     switch (sys$errno()) {
     case 0:
-    case EEXIST:
+    case sys$EEXIST:
         break;
     default:
         utils$Error_move(err, error);

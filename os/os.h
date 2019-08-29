@@ -5,6 +5,7 @@
 package(os);
 
 import("paths");
+import("sys");
 import("utils");
 
 typedef u64 os$Time;
