@@ -2,6 +2,8 @@ CFLAGS=-fms-extensions -Wno-microsoft-anon-tag
 
 BLINGC=blingc
 BUILDFLAGS=
+BACKUP_DIR=$(HOME)/.bling.bkup
+BACKUP_FILE=$(BACKUP_DIR)/blingc-$(shell date +%s)
 
 .PHONY: test $(BLINGC) all.bling
 
@@ -24,5 +26,9 @@ debug:
 clean:
 	$(RM) -r ./gen
 
-install:
+install: $(BACKUP_DIR)
+	install ./gen/cmd/blingc/blingc $(BACKUP_FILE)
 	install ./gen/cmd/blingc/blingc $(HOME)/bin
+
+$(BACKUP_DIR):
+	mkdir -p $@
