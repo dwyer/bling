@@ -307,7 +307,7 @@ fun _buildPackage(b *Builder, path *const char) *Package {
     }
     if VERBOSE {
     }
-    if sys.streq(path, "bootstrap") || sys.streq(path, "sys") {
+    if sys.streq(path, "C") || sys.streq(path, "bootstrap") || sys.streq(path, "sys") {
         pkg = buildCPackage(b, path)
     } else {
         pkg = buildBlingPackage(b, path)

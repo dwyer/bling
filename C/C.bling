@@ -1,0 +1,77 @@
+package C
+
+typ Size u64
+
+fun errno() int
+
+fun errnoReset()
+
+fun errnoString() *char
+
+fun getenv(key *const char) *char
+
+fun printf(s *const char, ...)
+
+fun sprintf(s *const char, ...) *char
+
+fun malloc(n Size) *void
+
+fun free(ptr *void)
+
+fun realloc(ptr *void, n Size) *void
+
+fun memcmp(dst *const void, src *const void, n Size) int
+
+fun memcpy(dst *void, src *const void, n Size) *void
+
+fun memset(dst *void, c int, n Size) *void
+
+fun strdup(s *const char) *char
+
+fun strndup(s *const char, n Size) *char
+
+fun strlen(s *const char) Size
+
+fun streq(a *const char, b *const char) bool
+
+fun open(filename *const char, oflag int, perm int) int
+
+fun close(fd int) int
+
+fun read(fd int, b *void, n Size) int
+
+fun write(fd int, b *const void, n Size) int
+
+typ Dir *void
+
+fun opendir(filename *const char) Dir
+
+fun closedir(dir Dir) int
+
+typ Dirent *void
+
+fun readdir(dir Dir) Dirent
+
+fun Dirent_name(dirent Dirent) *char
+
+typ Stat struct {
+    mode u32
+    size i32
+    atime u64
+    mtime u64
+    ctime u64
+}
+
+fun stat(path *const char, s *Stat) int
+
+fun mkdir(path *const char, mode u32) int
+
+fun environ() **char
+
+typ Pid int
+
+fun execve(path *const char, argv []const *char, envp []const *char) int
+
+fun fork() Pid
+
+fun waitpid(pid Pid, status *int, opts int) Pid
