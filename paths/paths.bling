@@ -15,16 +15,47 @@ fun base(path *const char) *char {
 }
 
 fun clean(path *const char) *char {
-    return NULL
+    if sys.streq(path, "") {
+        return sys.strdup(".")
+    }
+    var r = 0
+    var n = sys.strlen(path)
+    var out = bytes.Buffer{}
+    var rooted = path[0] == '/'
+    if rooted {
+        bytes.Buffer_writeByte(&out, '/', NULL)
+        r++
+    }
+    for ; r < n; {
+        if path[r] == '/' {
+            r++
+        } else if path[r] == '.' && (r+1 == n || path[r+1] == '/') {
+            r++
+        } else if path[r] == '.' && path[r+1] == '.' && (r+2 == n || path[r+2] == '/') {
+            r += 2
+            panic("not implemented")
+        } else {
+            if (rooted && bytes.Buffer_len(&out) != 1) || (!rooted && bytes.Buffer_len(&out) != 0) {
+                bytes.Buffer_writeByte(&out, '/', NULL)
+            }
+            for ; r < n && path[r] != '/'; r++ {
+                bytes.Buffer_writeByte(&out, path[r], NULL)
+            }
+        }
+    }
+    if bytes.Buffer_len(&out) == 0 {
+        return sys.strdup(".")
+    }
+    return bytes.Buffer_string(&out)
 }
 
 fun dir(path *const char) *char {
     if path == NULL || path[0] == '\0' {
         return sys.strdup(".")
     }
-    var i int = bytes.lastIndexByte(path, '/')
+    var i = bytes.lastIndexByte(path, '/')
     if i > 0 {
-        var p *char = sys.strdup(path)
+        var p = sys.strdup(path)
         p[i] = '\0'
         return p
     }

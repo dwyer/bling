@@ -327,6 +327,8 @@ fun _buildPackage(b *Builder, path *const char) *Package {
 }
 
 fun buildPackage(b *Builder, path *const char) {
+    var clean = paths.clean(path)
     _buildPackage(b, "bootstrap")
-    _buildPackage(b, path)
+    _buildPackage(b, clean)
+    sys.free(clean)
 }

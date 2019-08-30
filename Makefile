@@ -1,6 +1,7 @@
 CFLAGS=-fms-extensions -Wno-microsoft-anon-tag
 
 BLINGC=blingc
+BUILDFLAGS=
 
 .PHONY: test $(BLINGC) all.bling
 
@@ -58,7 +59,7 @@ CFILES=utils/error.c \
      cmd/blingc/main.c
 
 hello:
-	$(BLINGC) build cmd/blingc
+	$(BLINGC) build $(BUILDFLAGS) cmd/blingc
 	./gen/cmd/blingc/blingc version
 
 a.out:
