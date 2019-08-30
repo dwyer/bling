@@ -1,5 +1,6 @@
 package cparser
 
+import "C"
 import "bling/ast"
 import "bling/parser"
 import "bling/scanner"
@@ -183,7 +184,7 @@ fun unary_expression(p *parser.Parser) *ast.Expr {
             return &&y
         }
     case token.DEC, token.INC:
-        parser.error(p, p.pos, sys.sprintf("unary `%s` not supported in subc", token.string(p.tok)))
+        parser.error(p, p.pos, C.sprintf("unary `%s` not supported in subc", token.string(p.tok)))
         return NULL
     default:
         return postfix_expression(p, NULL)
@@ -919,7 +920,7 @@ fun type_specifier(p *parser.Parser) *ast.Expr {
     var x *ast.Expr = NULL
     switch p.tok {
     case token.SIGNED, token.UNSIGNED:
-        parser.error(p, p.pos, sys.sprintf("`%s` is not supported in subc", token.string(p.tok)))
+        parser.error(p, p.pos, C.sprintf("`%s` is not supported in subc", token.string(p.tok)))
         break
     case token.STRUCT, token.UNION:
         x = struct_or_union_specifier(p)
@@ -1031,7 +1032,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
             name = type.struct_.name
             break
         default:
-            panic(sys.sprintf("bad kind: %d", type.kind))
+            panic(C.sprintf("bad kind: %d", type.kind))
             break
         }
         var decl ast.Decl = {

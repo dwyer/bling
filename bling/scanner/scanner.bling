@@ -1,5 +1,6 @@
 package scanner
 
+import "C"
 import "bling/token"
 import "sys"
 
@@ -168,7 +169,7 @@ fun scan_string(s *Scanner) *char {
 }
 
 fun error(s *Scanner, offs int, msg *const char) {
-    panic(sys.sprintf("scanner error: offset %d: %s", offs, msg))
+    panic(C.sprintf("scanner error: offset %d: %s", offs, msg))
 }
 
 fun scan_comment(s *Scanner) {

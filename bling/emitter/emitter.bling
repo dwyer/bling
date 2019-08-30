@@ -1,5 +1,6 @@
 package emitter
 
+import "C"
 import "bling/ast"
 import "bling/token"
 import "bytes"
@@ -477,7 +478,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
         }
         break
     default:
-        panic(sys.sprintf("Unknown type: %d", type.kind))
+        panic(C.sprintf("Unknown type: %d", type.kind))
     }
 }
 
@@ -552,7 +553,7 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
             emitExpr(e, decl.value.value)
             break
         default:
-            panic(sys.sprintf("bad kind for ast$DECL_VALUE: %s", token.string(decl.value.kind)))
+            panic(C.sprintf("bad kind for ast$DECL_VALUE: %s", token.string(decl.value.kind)))
             break
         }
         break

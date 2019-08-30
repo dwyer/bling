@@ -1,8 +1,9 @@
 package os
 
+import "C"
 import "paths"
-import "sys"
 import "runtime"
+import "sys"
 
 typ O enum {
     O_RDONLY = sys.O_RDONLY
@@ -55,7 +56,7 @@ fun PathError_check(path *const char, error **runtime.Error) {
     runtime.Error_check(&err)
     if err {
         var msg *char = err.error
-        err.error = sys.sprintf("PathError: %s: %s", path, msg)
+        err.error = C.sprintf("PathError: %s: %s", path, msg)
         sys.free(msg)
         runtime.Error_move(err, error)
     }

@@ -1,5 +1,6 @@
 package main
 
+import "C"
 import "bling/ast"
 import "bling/build"
 import "bling/emitter"
@@ -10,10 +11,10 @@ import "bytes"
 import "io/ioutil"
 import "os"
 import "paths"
+import "runtime"
 import "subc/cemitter"
 import "subc/cparser"
 import "sys"
-import "runtime"
 
 fun emit_rawfile(e *emitter.Emitter, filename *const char) {
     var err *runtime.Error = NULL
@@ -54,7 +55,7 @@ fun compile_c(argv []*char) {
             argv++
             dst = *argv
         } else {
-            panic(sys.sprintf("unknown option: %s", *argv))
+            panic(C.sprintf("unknown option: %s", *argv))
         }
         argv++
     }
@@ -110,7 +111,7 @@ fun compile_bling(argv []*char) {
             argv++
             dst = *argv
         } else {
-            panic(sys.sprintf("unknown option: %s", *argv))
+            panic(C.sprintf("unknown option: %s", *argv))
         }
         argv++
     }
@@ -127,7 +128,7 @@ fun compile_bling(argv []*char) {
     } else if bytes.hasSuffix(filename, ".c") {
         file = cparser.parseFile(fset, filename, types.universe())
     } else {
-        panic(sys.sprintf("unknown file type: %s", filename))
+        panic(C.sprintf("unknown file type: %s", filename))
     }
     var pkg *types.Package = types.checkFile(&conf, paths.dir(filename), fset, file, NULL)
     cemitter.emitPackage(&e, pkg)
@@ -150,7 +151,7 @@ fun compile_bling(argv []*char) {
             }
             var code int = os.exec(args, NULL)
             if code != 0 {
-                panic(sys.sprintf("- failed with code %d", code))
+                panic(C.sprintf("- failed with code %d", code))
             }
         } else {
             ioutil.writeFile(dst, out, 0644, NULL)
@@ -176,7 +177,7 @@ fun main(argc int, argv []*char) int {
     var progname *char = *argv
     argv++
     if !*argv {
-        panic(sys.sprintf("usage: %s -o DST SRCS", progname))
+        panic(C.sprintf("usage: %s -o DST SRCS", progname))
     }
     if sys.streq(*argv, "version") {
         print("0.0.0-alpha")

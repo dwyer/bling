@@ -1,5 +1,6 @@
 package runtime
 
+import "C"
 import "sys"
 
 fun malloc(n sys.Size) *void {
@@ -55,7 +56,7 @@ fun Error_move(src *Error, dst **Error) {
     if dst != NULL {
         *dst = src
     } else {
-        panic(sys.sprintf("Unhandled error: %s", src.error))
+        panic(C.sprintf("Unhandled error: %s", src.error))
     }
 }
 
@@ -99,7 +100,7 @@ fun Slice_cap(s *const void) int {
 
 fun Slice_get(s *const void, i int, dst *void) *void {
     if i >= (typ *Slice(s))._len {
-        panic(sys.sprintf("out of range: index=%d, len=%d", i, (typ *Slice(s))._len))
+        panic(C.sprintf("out of range: index=%d, len=%d", i, (typ *Slice(s))._len))
     }
     var ref *char = &(typ *char((typ *Slice(s))._array))[i * (typ *Slice(s)).size]
     if dst {

@@ -1,5 +1,6 @@
 package token
 
+import "C"
 import "bytes"
 import "sys"
 import "runtime"
@@ -283,7 +284,7 @@ fun precedence(op Token) int {
 }
 
 fun Position_string(p *Position) *char {
-    return sys.sprintf("%s:%d:%d", p.filename, p.line, p.column)
+    return C.sprintf("%s:%d:%d", p.filename, p.line, p.column)
 }
 
 fun getInt(a *[array]int, i int) int {
@@ -420,7 +421,7 @@ fun FileSet_file(s *FileSet, p Pos) *File {
 fun FileSet_print(fset *FileSet) {
     for var i int = 0; i < len(fset.files); i++ {
         var f *File = fset.files[i]
-        var s *char = sys.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
+        var s *char = C.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
         print(s)
         sys.free(s)
     }

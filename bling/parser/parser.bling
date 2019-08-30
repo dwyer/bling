@@ -1,5 +1,6 @@
 package parser
 
+import "C"
 import "bling/ast"
 import "bling/scanner"
 import "bling/token"
@@ -104,7 +105,7 @@ fun error(p *Parser, pos token.Pos, msg *char) {
     var position token.Position = token.File_position(p.file, pos)
     assert(p.topScope)
     assert(p.pkgScope)
-    panic(sys.sprintf("%s: %s\n%s", token.Position_string(&position), msg, token.File_lineString(p.file, position.line)))
+    panic(C.sprintf("%s: %s\n%s", token.Position_string(&position), msg, token.File_lineString(p.file, position.line)))
 }
 
 fun errorExpected(p *Parser, pos token.Pos, msg *char) {
@@ -168,7 +169,7 @@ fun checkExprOrType(p *Parser, x *ast.Expr) *ast.Expr {
 fun declare(p *Parser, decl *ast.Decl, data *void, scope *ast.Scope, kind ast.ObjKind, ident *ast.Expr) {
     return
     if ident.ident.obj != NULL {
-        error(p, decl.pos, sys.sprintf("identifier already declared or resolved: %s", ident.ident.name))
+        error(p, decl.pos, C.sprintf("identifier already declared or resolved: %s", ident.ident.name))
     }
     var obj *ast.Object = ast.newObject(kind, ident.ident.name)
     obj.decl = decl
@@ -177,7 +178,7 @@ fun declare(p *Parser, decl *ast.Decl, data *void, scope *ast.Scope, kind ast.Ob
     ident.ident.obj = obj
     var alt *ast.Object = ast.Scope_insert(scope, obj)
     if alt != NULL {
-        error(p, ast.Expr_pos(ident), sys.sprintf("%s redeclared in this block", ident.ident.name))
+        error(p, ast.Expr_pos(ident), C.sprintf("%s redeclared in this block", ident.ident.name))
     }
 }
 
@@ -1272,7 +1273,7 @@ fun parseDecl(p *Parser) *ast.Decl {
     case token.FUNC:
         return parseFuncDecl(p)
     default:
-        error(p, p.pos, sys.sprintf("cant handle it: %s", token.string(p.tok)))
+        error(p, p.pos, C.sprintf("cant handle it: %s", token.string(p.tok)))
         return NULL
     }
 }
@@ -1357,7 +1358,7 @@ fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.
     var err *runtime.Error = NULL
     var src *char = ioutil.readFile(filename, &err)
     if err {
-        panic(sys.sprintf("%s: %s", filename, err.error))
+        panic(C.sprintf("%s: %s", filename, err.error))
     }
     var p Parser = {}
     init(&p, fset, filename, src)

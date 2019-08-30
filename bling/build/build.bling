@@ -1,5 +1,6 @@
 package build
 
+import "C"
 import "bling/ast"
 import "bling/emitter"
 import "bling/parser"
@@ -9,10 +10,10 @@ import "bytes"
 import "io/ioutil"
 import "os"
 import "paths"
+import "runtime"
 import "subc/cemitter"
 import "subc/cparser"
 import "sys"
-import "runtime"
 
 var AR_PATH *const char = "/usr/bin/ar"
 
@@ -37,11 +38,11 @@ fun emit_rawfile(e *emitter.Emitter, filename *const char) {
 fun printStrArray(s [array]*char) {
     for var i int = 0; i < len(s); i++ {
         if i {
-            sys.printf(" ")
+            C.printf(" ")
         }
-        sys.printf("%s", s[i])
+        C.printf("%s", s[i])
     }
-    sys.printf("\n")
+    C.printf("\n")
 }
 
 fun execute(cmd *[array]*char) {
@@ -51,7 +52,7 @@ fun execute(cmd *[array]*char) {
     var args **char = runtime.nilArray(cmd)
     var code int = os.exec(args, NULL)
     if code != 0 {
-        panic(sys.sprintf("- failed with code %d", code))
+        panic(C.sprintf("- failed with code %d", code))
     }
     sys.free(args)
 }
@@ -143,7 +144,7 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
         var i int = bytes.lastIndexByte(src, '.')
         var base *char = sys.strdup(src)
         base[i] = '\0'
-        dst = sys.sprintf("%s/%s.o", GEN_PATH, base)
+        dst = C.sprintf("%s/%s.o", GEN_PATH, base)
         sys.free(base)
     }
     var err *runtime.Error = NULL
@@ -162,18 +163,18 @@ fun newPackage(b *Builder, path *const char) Package {
     var typesPkg *types.Package = types.check(&b.conf, path, b.fset, NULL, b.info)
     var isCmd bool = typesPkg.name ? sys.streq(typesPkg.name, "main") : false
     var genPath *char = paths.join2(GEN_PATH, path)
-    var libPath *char = sys.sprintf("%s/%s.a", genPath, base)
+    var libPath *char = C.sprintf("%s/%s.a", genPath, base)
     if isCmd {
-        libPath = sys.sprintf("%s/%s", genPath, base)
+        libPath = C.sprintf("%s/%s", genPath, base)
     } else {
-        libPath = sys.sprintf("%s/%s.a", genPath, base)
+        libPath = C.sprintf("%s/%s.a", genPath, base)
     }
     var pkg Package = {
         path: sys.strdup(path),
         pkg: typesPkg,
-        hPath: sys.sprintf("%s/%s.h", genPath, base),
-        cPath: sys.sprintf("%s/%s.c", genPath, base),
-        objPath: sys.sprintf("%s/%s.o", genPath, base),
+        hPath: C.sprintf("%s/%s.h", genPath, base),
+        cPath: C.sprintf("%s/%s.c", genPath, base),
+        objPath: C.sprintf("%s/%s.o", genPath, base),
         libPath: libPath,
         libModTime: getFileModTime(libPath),
         srcModTime: getSrcModTime(path),
@@ -193,7 +194,7 @@ fun newPackage(b *Builder, path *const char) Package {
 }
 
 fun emitInclude(e *emitter.Emitter, path *const char) {
-    var s *char = sys.sprintf("#include \"%s\"\n", path)
+    var s *char = C.sprintf("#include \"%s\"\n", path)
     emitter.emitString(e, s)
     sys.free(s)
 }

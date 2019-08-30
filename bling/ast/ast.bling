@@ -1,9 +1,10 @@
 package ast
 
+import "C"
 import "bling/token"
 import "bytes"
-import "sys"
 import "runtime"
+import "sys"
 
 typ NodeKind enum {
     NODE_ILLEGAL = 0
@@ -453,7 +454,7 @@ fun Scope_print(s *Scope) {
         var iter runtime.MapIter = runtime.NewMapIter(&s.objects)
         var key *char = NULL
         while runtime.MapIter_next(&iter, &key, NULL) {
-            var s *char = sys.sprintf("%s- %s", bytes.Buffer_string(&buf), key)
+            var s *char = C.sprintf("%s- %s", bytes.Buffer_string(&buf), key)
             print(s)
             sys.free(s)
         }

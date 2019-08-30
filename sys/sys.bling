@@ -1,10 +1,5 @@
 package sys
 
-
-#pragma once
-
-#include "bootstrap/bootstrap.h"
-
 typ Size u64
 
 fun errno() int
@@ -14,10 +9,6 @@ fun errnoReset()
 fun errnoString() *char
 
 fun getenv(key *const char) *char
-
-fun printf(s *const char, ...)
-
-fun sprintf(s *const char, ...) *char
 
 fun malloc(n Size) *void
 
