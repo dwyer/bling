@@ -160,6 +160,18 @@ fun compile_bling(argv []*char) {
     }
 }
 
+fun buildPackage(argv []*char) {
+    assert(*argv)
+    var builder = build.newBuilder(token.newFileSet())
+    if sys.streq(*argv, "-f") {
+        builder.force = true
+        argv++
+    }
+    assert(*argv)
+    var path *char = *argv
+    build.buildPackage(builder, path)
+}
+
 fun main(argc int, argv []*char) int {
     var progname *char = *argv
     argv++
@@ -172,7 +184,7 @@ fun main(argc int, argv []*char) int {
     }
     if sys.streq(*argv, "build") {
         argv++
-        build.buildPackage(argv)
+        buildPackage(argv)
         return 0
     }
     if sys.streq(*argv, "-c") {

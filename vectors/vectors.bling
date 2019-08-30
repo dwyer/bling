@@ -1,8 +1,8 @@
 package vectors
 
-typedef Unit float
+typ Unit float
 
-typedef Vec2 struct {
+typ Vec2 struct {
     x Unit
     y Unit
 }
@@ -23,7 +23,7 @@ fun V2_scale(u Vec2, s Unit) Vec2 {
     return w
 }
 
-typedef Vec3 struct {
+typ Vec3 struct {
     Vec2
     z Unit
 }
@@ -37,7 +37,7 @@ fun V3_add(u Vec3, v Vec3) Vec3 {
     return w
 }
 
-fun V3_scale(u Vec2, s Unit) Vec3 {
+fun V3_scale(u Vec3, s Unit) Vec3 {
     var w Vec3 = {
         x: u.x * s,
         y: u.y * s,

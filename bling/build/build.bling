@@ -84,6 +84,16 @@ typ Builder struct {
     pkgs map *Package
 }
 
+fun newBuilder(fset *token.FileSet) *Builder {
+    var builder Builder = {
+        fset: fset,
+        info: types.newInfo(),
+        force: false,
+        pkgs: utils.Map_make(sizeof(*Package)),
+    }
+    return &&builder
+}
+
 fun genObj(b *Builder, dst *const char, src *const char) {
     var cmd [array]*char = makearray(*char)
     append(cmd, CC_PATH)
@@ -277,6 +287,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
         if pkg.isCmd {
             var cmd [array]*char = makearray(*char)
             append(cmd, CC_PATH)
+            append(cmd, typ *char("-g"))
             append(cmd, typ *char("-o"))
             append(cmd, pkg.libPath)
             append(cmd, pkg.objPath)
@@ -315,15 +326,7 @@ fun _buildPackage(b *Builder, path *const char) *Package {
     return pkg
 }
 
-fun buildPackage(argv []*char) {
-    assert(*argv)
-    var path *char = *argv
-    var builder Builder = {
-        fset: token.newFileSet(),
-        info: types.newInfo(),
-        force: false,
-        pkgs: utils.Map_make(sizeof(*Package)),
-    }
-    _buildPackage(&builder, "bootstrap")
-    _buildPackage(&builder, path)
+fun buildPackage(b *Builder, path *const char) {
+    _buildPackage(b, "bootstrap")
+    _buildPackage(b, path)
 }
