@@ -35,8 +35,8 @@
 
 #define NULL ((void*)0)
 
-#define false (0)
-#define true (!false)
+#define false 0
+#define true 1
 
 typedef char bool;
 
@@ -54,6 +54,6 @@ typedef u32 uint;
 typedef u64 uintptr;
 
 extern void print(const char *s);
-extern void _Noreturn panic(const char *s) __attribute__((noreturn));
+extern void _Noreturn panic(const char *s);
 
 #endif
