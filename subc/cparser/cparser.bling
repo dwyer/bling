@@ -5,7 +5,7 @@ import "bling/parser"
 import "bling/scanner"
 import "bling/token"
 import "io/ioutil"
-import "utils"
+import "runtime"
 import "sys"
 
 fun is_type(p *parser.Parser) bool {

@@ -5,7 +5,7 @@ import "bling/emitter"
 import "bling/parser"
 import "bling/token"
 import "sys"
-import "utils"
+import "runtime"
 
 typ Config struct {
     strict bool
@@ -999,10 +999,10 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
 fun Checker_checkImport(c *Checker, imp *ast.Decl) *Package {
     var path *char = constant_stringVal(imp.imp.path)
     var pkg *Package = NULL
-    utils.Map_get(&c.info.imports, path, &pkg)
+    runtime.Map_get(&c.info.imports, path, &pkg)
     if pkg == NULL {
         pkg = check(c.conf, path, c.fset, NULL, c.info)
-        assert(utils.Map_get(&c.info.imports, path, NULL))
+        assert(runtime.Map_get(&c.info.imports, path, NULL))
     }
     imp.imp.name = makeIdent(pkg.scope.pkg)
     Checker_declare(c, imp, pkg.scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
@@ -1121,7 +1121,7 @@ fun newInfo() *Info {
 fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.File, info *Info) *Package {
     if info {
         var pkg *Package = NULL
-        utils.Map_get(&info.imports, path, &pkg)
+        runtime.Map_get(&info.imports, path, &pkg)
         if pkg {
             return pkg
         }
@@ -1140,7 +1140,7 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
         conf: conf,
         pkg: &&pkg,
     }
-    utils.Map_set(&info.imports, path, &c.pkg)
+    runtime.Map_set(&info.imports, path, &c.pkg)
     Checker_checkFile(&c, file)
     return c.pkg
 }

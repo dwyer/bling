@@ -1,13 +1,13 @@
 package ioutil
 
 import "bytes"
-import "utils"
+import "runtime"
 import "os"
 
-fun readAll(file *os.File, error **utils.Error) *char {
+fun readAll(file *os.File, error **runtime.Error) *char {
     var bufsiz const int = 1024
     var ret *char = NULL
-    var err *utils.Error = NULL
+    var err *runtime.Error = NULL
     if err != NULL {
         goto end
     }
@@ -26,13 +26,13 @@ fun readAll(file *os.File, error **utils.Error) *char {
     ret = bytes.Buffer_string(&b)
 end:
     if err != NULL {
-        utils.Error_move(err, error)
+        runtime.Error_move(err, error)
     }
     return ret
 }
 
-fun readDir(name *const char, error **utils.Error) [array]*os.FileInfo {
-    var err *utils.Error = NULL
+fun readDir(name *const char, error **runtime.Error) [array]*os.FileInfo {
+    var err *runtime.Error = NULL
     var file *os.File = os.openDir(name, &err)
     var info [array]*os.FileInfo = makearray(*os.FileInfo)
     if err != NULL {
@@ -46,13 +46,13 @@ fun readDir(name *const char, error **utils.Error) [array]*os.FileInfo {
     os.close(file, &err)
 end:
     if err != NULL {
-        utils.Error_move(err, error)
+        runtime.Error_move(err, error)
     }
     return info
 }
 
-fun readFile(name *const char, error **utils.Error) *char {
-    var err *utils.Error = NULL
+fun readFile(name *const char, error **runtime.Error) *char {
+    var err *runtime.Error = NULL
     var ret *char = NULL
     var file *os.File = os.open(name, &err)
     if err {
@@ -66,14 +66,14 @@ fun readFile(name *const char, error **utils.Error) *char {
     os.close(file, &err)
 end:
     if err != NULL {
-        utils.Error_move(err, error)
+        runtime.Error_move(err, error)
     }
     return ret
 }
 
-fun writeFile(filename *const char, data *const char, perm int, error **utils.Error) {
+fun writeFile(filename *const char, data *const char, perm int, error **runtime.Error) {
     typ void(perm)
-    var err *utils.Error = NULL
+    var err *runtime.Error = NULL
     var file *os.File = os.create(filename, &err)
     if err {
         goto end
@@ -86,6 +86,6 @@ fun writeFile(filename *const char, data *const char, perm int, error **utils.Er
     os.close(file, NULL)
 end:
     if err {
-        utils.Error_move(err, error)
+        runtime.Error_move(err, error)
     }
 }

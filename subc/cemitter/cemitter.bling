@@ -5,7 +5,7 @@ import "bling/emitter"
 import "bling/token"
 import "bling/types"
 import "sys"
-import "utils"
+import "runtime"
 
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     if !expr {
@@ -556,7 +556,7 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
 fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
     var obj *ast.Object = NULL
     for var i int = 0; i < len(scope.keys); i++ {
-        utils.Map_get(&scope.objects, scope.keys[i], &obj)
+        runtime.Map_get(&scope.objects, scope.keys[i], &obj)
         if obj.kind == kind {
             emitter.emitNewline(e)
             emitDecl(e, obj.decl)
@@ -572,10 +572,10 @@ fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
 }
 
 fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
-    if utils.Map_get(done, pkg.path, NULL) {
+    if runtime.Map_get(done, pkg.path, NULL) {
         return
     }
-    utils.Map_set(done, pkg.path, &pkg.path)
+    runtime.Map_set(done, pkg.path, &pkg.path)
     for var i int = 0; i < len(pkg.imports); i++ {
         _emitPackage(e, done, pkg.imports[i])
     }
@@ -588,7 +588,7 @@ fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
 fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
     var done map *char = makemap(*char)
     _emitPackage(e, &done, pkg)
-    utils.Map_unmake(&done)
+    runtime.Map_unmake(&done)
 }
 
 fun emitHeader(e *emitter.Emitter, pkg *types.Package) {

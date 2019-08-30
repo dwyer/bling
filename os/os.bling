@@ -2,7 +2,7 @@ package os
 
 import "paths"
 import "sys"
-import "utils"
+import "runtime"
 
 typ O enum {
     O_RDONLY = sys.O_RDONLY
@@ -50,14 +50,14 @@ var stdout *File = &_stdout
 
 var stderr *File = &_stderr
 
-fun PathError_check(path *const char, error **utils.Error) {
-    var err *utils.Error = NULL
-    utils.Error_check(&err)
+fun PathError_check(path *const char, error **runtime.Error) {
+    var err *runtime.Error = NULL
+    runtime.Error_check(&err)
     if err {
         var msg *char = err.error
         err.error = sys.sprintf("PathError: %s: %s", path, msg)
         sys.free(msg)
-        utils.Error_move(err, error)
+        runtime.Error_move(err, error)
     }
 }
 
@@ -69,8 +69,8 @@ fun newFile(fd uintptr, name *const char) *File {
     return &&file
 }
 
-fun openFile(filename *const char, mode int, perm int, error **utils.Error) *File {
-    utils.clearError()
+fun openFile(filename *const char, mode int, perm int, error **runtime.Error) *File {
+    runtime.clearError()
     var fd int = sys.open(filename, mode, perm)
     if fd == -1 {
         PathError_check(filename, error)
@@ -79,30 +79,30 @@ fun openFile(filename *const char, mode int, perm int, error **utils.Error) *Fil
     return newFile(fd, filename)
 }
 
-fun open(filename *const char, error **utils.Error) *File {
+fun open(filename *const char, error **runtime.Error) *File {
     return openFile(filename, O_RDONLY, 0, error)
 }
 
-fun create(filename *const char, error **utils.Error) *File {
+fun create(filename *const char, error **runtime.Error) *File {
     return openFile(filename, O_CREAT | O_TRUNC | O_RDWR, 0644, error)
 }
 
-fun read(file *File, b *char, n int, error **utils.Error) int {
-    utils.clearError()
+fun read(file *File, b *char, n int, error **runtime.Error) int {
+    runtime.clearError()
     n = sys.read(file.fd, b, n)
     PathError_check(file.name, error)
     return n
 }
 
-fun write(file *File, b *const char, error **utils.Error) int {
-    utils.clearError()
+fun write(file *File, b *const char, error **runtime.Error) int {
+    runtime.clearError()
     var n int = sys.write(file.fd, b, sys.strlen(b))
     PathError_check(file.name, error)
     return n
 }
 
-fun close(file *File, error **utils.Error) {
-    utils.clearError()
+fun close(file *File, error **runtime.Error) {
+    runtime.clearError()
     if file.is_dir {
         sys.closedir(typ *void(file.fd))
     } else {
@@ -111,9 +111,9 @@ fun close(file *File, error **utils.Error) {
     PathError_check(file.name, error)
 }
 
-fun stat(name *const char, error **utils.Error) *FileInfo {
+fun stat(name *const char, error **runtime.Error) *FileInfo {
     var st sys.Stat = {}
-    utils.clearError()
+    runtime.clearError()
     if sys.stat(name, &st) != 0 {
         PathError_check(name, error)
         return NULL
@@ -133,7 +133,7 @@ fun FileInfo_free(info *FileInfo) {
     }
 }
 
-fun openDir(name *const char, error **utils.Error) *File {
+fun openDir(name *const char, error **runtime.Error) *File {
     var dp *void = sys.opendir(name)
     if dp == NULL {
         PathError_check(name, error)
@@ -144,7 +144,7 @@ fun openDir(name *const char, error **utils.Error) *File {
     return file
 }
 
-fun readdirnames(file *File, error **utils.Error) [array]*char {
+fun readdirnames(file *File, error **runtime.Error) [array]*char {
     var arr [array]*char = makearray(*char)
     var dp sys.Dir = typ sys.Dir(file.fd)
     for ;; {
@@ -161,12 +161,12 @@ fun readdirnames(file *File, error **utils.Error) [array]*char {
     return arr
 }
 
-fun readdir(file *File, error **utils.Error) [array]*FileInfo {
-    var err *utils.Error = NULL
+fun readdir(file *File, error **runtime.Error) [array]*FileInfo {
+    var err *runtime.Error = NULL
     var names [array]*char = readdirnames(file, &err)
     if err != NULL {
         close(file, NULL)
-        utils.Error_move(err, error)
+        runtime.Error_move(err, error)
         return names
     }
     var arr [array]*char = makearray(*char)
@@ -176,12 +176,12 @@ fun readdir(file *File, error **utils.Error) [array]*FileInfo {
         var info *FileInfo = stat(path, &err)
         if err != NULL {
             close(file, NULL)
-            utils.Error_move(err, error)
+            runtime.Error_move(err, error)
             return names
         }
         append(arr, info)
     }
-    utils.Slice_unmake(&names)
+    runtime.Slice_unmake(&names)
     return arr
 }
 
@@ -221,39 +221,39 @@ fun tempDir() *const char {
     return "/tmp"
 }
 
-fun mkdir(path *const char, mode u32, error **utils.Error) {
-    utils.clearError()
+fun mkdir(path *const char, mode u32, error **runtime.Error) {
+    runtime.clearError()
     sys.mkdir(path, mode)
     PathError_check(path, error)
 }
 
-fun mkdirAll(path *const char, mode u32, error **utils.Error) {
+fun mkdirAll(path *const char, mode u32, error **runtime.Error) {
     var dir *char = paths.dir(path)
     if !sys.streq(dir, ".") {
         mkdirAll(dir, mode, error)
     }
     sys.free(dir)
-    var err *utils.Error = NULL
+    var err *runtime.Error = NULL
     mkdir(path, mode, &err)
     switch sys.errno() {
     case 0, sys.EEXIST:
         break
     default:
-        utils.Error_move(err, error)
+        runtime.Error_move(err, error)
         break
     }
 }
 
-fun exec(argv []const *char, error **utils.Error) int {
+fun exec(argv []const *char, error **runtime.Error) int {
     var status int = -1
     var pid sys.Pid = sys.fork()
     switch pid {
     case -1:
-        utils.Error_check(error)
+        runtime.Error_check(error)
         return -1
     case 0:
         sys.execve(argv[0], argv, sys.environ())
-        utils.Error_check(error)
+        runtime.Error_check(error)
         return -1
     default:
         sys.waitpid(pid, &status, 0)

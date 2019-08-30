@@ -12,7 +12,7 @@ import "paths"
 import "subc/cemitter"
 import "subc/cparser"
 import "sys"
-import "utils"
+import "runtime"
 
 var AR_PATH *const char = "/usr/bin/ar"
 
@@ -25,7 +25,7 @@ var INCL_PATH *const char = "."
 var VERBOSE const bool = true
 
 fun emit_rawfile(e *emitter.Emitter, filename *const char) {
-    var err *utils.Error = NULL
+    var err *runtime.Error = NULL
     var src *char = ioutil.readFile(filename, &err)
     if err {
         panic(err.error)
@@ -48,7 +48,7 @@ fun execute(cmd *[array]*char) {
     if VERBOSE {
         printStrArray(*cmd)
     }
-    var args **char = utils.nilArray(cmd)
+    var args **char = runtime.nilArray(cmd)
     var code int = os.exec(args, NULL)
     if code != 0 {
         panic(sys.sprintf("- failed with code %d", code))
@@ -89,7 +89,7 @@ fun newBuilder(fset *token.FileSet) *Builder {
         fset: fset,
         info: types.newInfo(),
         force: false,
-        pkgs: utils.Map_make(sizeof(*Package)),
+        pkgs: runtime.Map_make(sizeof(*Package)),
     }
     return &&builder
 }
@@ -110,7 +110,7 @@ fun genObj(b *Builder, dst *const char, src *const char) {
 
 fun getFileModTime(path *const char) os.Time {
     var t os.Time = 0
-    var err *utils.Error = NULL
+    var err *runtime.Error = NULL
     var info *os.FileInfo = os.stat(path, &err)
     if info {
         t = os.FileInfo_modTime(info)
@@ -132,7 +132,7 @@ fun getSrcModTime(path *const char) os.Time {
         }
         os.FileInfo_free(file)
     }
-    utils.Slice_unmake(&files)
+    runtime.Slice_unmake(&files)
     return t
 }
 
@@ -146,7 +146,7 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
         dst = sys.sprintf("%s/%s.o", GEN_PATH, base)
         sys.free(base)
     }
-    var err *utils.Error = NULL
+    var err *runtime.Error = NULL
     var objFile *os.FileInfo = os.stat(dst, &err)
     var doBuild bool = objFile == NULL || os.FileInfo_modTime(cFile) > os.FileInfo_modTime(objFile)
     if b.force || doBuild {
@@ -290,8 +290,8 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
             append(cmd, pkg.libPath)
             append(cmd, pkg.objPath)
             var pkg *Package = NULL
-            var iter utils.MapIter = utils.NewMapIter(&b.pkgs)
-            while utils.MapIter_next(&iter, NULL, &pkg) {
+            var iter runtime.MapIter = runtime.NewMapIter(&b.pkgs)
+            while runtime.MapIter_next(&iter, NULL, &pkg) {
                 append(cmd, pkg.libPath)
             }
             execute(&cmd)
@@ -309,7 +309,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
 
 fun _buildPackage(b *Builder, path *const char) *Package {
     var pkg *Package = NULL
-    utils.Map_get(&b.pkgs, path, &pkg)
+    runtime.Map_get(&b.pkgs, path, &pkg)
     if pkg {
         return pkg
     }
@@ -320,7 +320,7 @@ fun _buildPackage(b *Builder, path *const char) *Package {
     } else {
         pkg = buildBlingPackage(b, path)
     }
-    utils.Map_set(&b.pkgs, path, &pkg)
+    runtime.Map_set(&b.pkgs, path, &pkg)
     return pkg
 }
 

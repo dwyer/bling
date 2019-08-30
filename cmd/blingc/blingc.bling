@@ -13,10 +13,10 @@ import "paths"
 import "subc/cemitter"
 import "subc/cparser"
 import "sys"
-import "utils"
+import "runtime"
 
 fun emit_rawfile(e *emitter.Emitter, filename *const char) {
-    var err *utils.Error = NULL
+    var err *runtime.Error = NULL
     var src *char = ioutil.readFile(filename, &err)
     if err {
         panic(err.error)
@@ -69,18 +69,18 @@ fun compile_c(argv []*char) {
             for var j int = 0; j < len(file.decls); j++ {
                 var d *ast.Decl = file.decls[j]
                 if !isForwardDecl(d) {
-                    utils.Slice_set(&file.decls, i, &d)
+                    runtime.Slice_set(&file.decls, i, &d)
                     i++
                 }
             }
-            utils.Slice_setLen(&file.decls, i)
+            runtime.Slice_setLen(&file.decls, i)
         }
         emitter.emitFile(&e, file)
         argv++
     }
     var out *char = emitter.Emitter_string(&e)
     var file *os.File = os.stdout
-    var err *utils.Error = NULL
+    var err *runtime.Error = NULL
     if dst {
         file = os.create(dst, &err)
         if err {
@@ -100,7 +100,7 @@ fun compile_c(argv []*char) {
 }
 
 fun compile_bling(argv []*char) {
-    var err *utils.Error = NULL
+    var err *runtime.Error = NULL
     var conf types.Config = {
         strict: true,
     }

@@ -7,7 +7,7 @@ import "bytes"
 import "io/ioutil"
 import "os"
 import "paths"
-import "utils"
+import "runtime"
 import "sys"
 
 typ Parser struct {
@@ -1285,11 +1285,11 @@ fun isTestFile(name *const char) bool {
     return paths.match("*_test.bling", name)
 }
 
-fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **utils.Error) **ast.File {
-    var err *utils.Error = NULL
+fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **runtime.Error) **ast.File {
+    var err *runtime.Error = NULL
     var infos [array]*os.FileInfo = ioutil.readDir(path, &err)
     if err {
-        utils.Error_move(err, first)
+        runtime.Error_move(err, first)
         return NULL
     }
     var files [array]*ast.File = makearray(*ast.File)
@@ -1300,8 +1300,8 @@ fun parseDir(fset *token.FileSet, path *const char, scope *ast.Scope, first **ut
             append(files, file)
         }
     }
-    utils.Slice_unmake(&infos)
-    return utils.nilArray(&files)
+    runtime.Slice_unmake(&infos)
+    return runtime.nilArray(&files)
 }
 
 fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
@@ -1354,7 +1354,7 @@ fun _parseFile(p *Parser, scope *ast.Scope) *ast.File {
 }
 
 fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.File {
-    var err *utils.Error = NULL
+    var err *runtime.Error = NULL
     var src *char = ioutil.readFile(filename, &err)
     if err {
         panic(sys.sprintf("%s: %s", filename, err.error))

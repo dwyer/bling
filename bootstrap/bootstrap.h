@@ -11,24 +11,24 @@
         memcpy(sys$malloc(sizeof $0), &$0, sizeof $0); \
         })
 
-#define array(T) utils$Slice
-#define map(T) utils$Map
+#define array(T) runtime$Slice
+#define map(T) runtime$Map
 
 #define append(a, x) do { \
     typeof(x) $0 = (x); \
-    utils$Slice_append(&(a), &$0); \
+    runtime$Slice_append(&(a), &$0); \
 } while (0)
 
 #define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
 
 #define len(x) _Generic((x), \
-        utils$Slice: utils$Slice_len, \
-        utils$Map: utils$Map_len)(&(x))
+        runtime$Slice: runtime$Slice_len, \
+        runtime$Map: runtime$Map_len)(&(x))
 
-#define makearray(T) (utils$Slice){.size = sizeof(T)}
-#define makemap(T) (utils$Map){._valSize = sizeof(T)}
+#define makearray(T) (runtime$Slice){.size = sizeof(T)}
+#define makemap(T) (runtime$Map){._valSize = sizeof(T)}
 
-#define get(T, a, i) (*(T*)utils$Slice_get(&(a), (i), NULL))
+#define get(T, a, i) (*(T*)runtime$Slice_get(&(a), (i), NULL))
 
 #define fallthrough /**/
 #define typ /**/

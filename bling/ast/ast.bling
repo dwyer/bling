@@ -3,7 +3,7 @@ package ast
 import "bling/token"
 import "bytes"
 import "sys"
-import "utils"
+import "runtime"
 
 typ NodeKind enum {
     NODE_ILLEGAL = 0
@@ -418,7 +418,7 @@ fun newObject(kind ObjKind, name *char) *Object {
 fun Scope_new(outer *Scope) *Scope {
     var s Scope = {
         outer: outer,
-        objects: utils.Map_make(sizeof(*Object)),
+        objects: runtime.Map_make(sizeof(*Object)),
         keys: makearray(*char),
     }
     return &&s
@@ -426,16 +426,16 @@ fun Scope_new(outer *Scope) *Scope {
 
 fun Scope_unmake(s *Scope) {
     if s {
-        utils.Map_unmake(&s.objects)
-        utils.Slice_unmake(&s.keys)
+        runtime.Map_unmake(&s.objects)
+        runtime.Slice_unmake(&s.keys)
     }
 }
 
 fun Scope_insert(s *Scope, obj *Object) *Object {
     var alt *Object = NULL
-    utils.Map_get(&s.objects, obj.name, &alt)
+    runtime.Map_get(&s.objects, obj.name, &alt)
     if alt == NULL {
-        utils.Map_set(&s.objects, obj.name, &obj)
+        runtime.Map_set(&s.objects, obj.name, &obj)
         append(s.keys, obj.name)
     }
     return alt
@@ -443,16 +443,16 @@ fun Scope_insert(s *Scope, obj *Object) *Object {
 
 fun Scope_lookup(s *Scope, name *char) *Object {
     var obj *Object = NULL
-    utils.Map_get(&s.objects, name, &obj)
+    runtime.Map_get(&s.objects, name, &obj)
     return obj
 }
 
 fun Scope_print(s *Scope) {
     var buf bytes.Buffer = {}
     while s {
-        var iter utils.MapIter = utils.NewMapIter(&s.objects)
+        var iter runtime.MapIter = runtime.NewMapIter(&s.objects)
         var key *char = NULL
-        while utils.MapIter_next(&iter, &key, NULL) {
+        while runtime.MapIter_next(&iter, &key, NULL) {
             var s *char = sys.sprintf("%s- %s", bytes.Buffer_string(&buf), key)
             print(s)
             sys.free(s)
@@ -482,7 +482,7 @@ fun resolve(scope *Scope, ident *Expr) bool {
 }
 
 fun Scope_free(s *Scope) {
-    utils.Map_unmake(&s.objects)
+    runtime.Map_unmake(&s.objects)
     sys.free(s)
 }
 

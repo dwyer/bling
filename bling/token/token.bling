@@ -2,7 +2,7 @@ package token
 
 import "bytes"
 import "sys"
-import "utils"
+import "runtime"
 
 typ Token enum {
     ILLEGAL = 0
@@ -247,11 +247,11 @@ fun lookup(ident *char) Token {
     if len(keywords) == 0 {
         for var i int = _keywordBeg + 1; i < _keywordEnd; i++ {
             var s *char = string(i)
-            utils.Map_set(&keywords, s, &i)
+            runtime.Map_set(&keywords, s, &i)
         }
     }
     var tok Token = IDENT
-    utils.Map_get(&keywords, ident, &tok)
+    runtime.Map_get(&keywords, ident, &tok)
     return tok
 }
 

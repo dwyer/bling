@@ -1,7 +1,7 @@
 package bytes
 
 import "sys"
-import "utils"
+import "runtime"
 
 typ Buffer [array]char
 
@@ -60,18 +60,18 @@ fun Buffer_len(b *Buffer) int {
 
 fun Buffer_bytes(b *Buffer) *char {
     Buffer_init(b)
-    return utils.Slice_get(b, 0, NULL)
+    return runtime.Slice_get(b, 0, NULL)
 }
 
 fun Buffer_string(b *Buffer) *char {
     Buffer_init(b)
     var s *char = sys.malloc(Buffer_len(b) + 1)
-    sys.memcpy(s, utils.Slice_get(b, 0, NULL), Buffer_len(b))
+    sys.memcpy(s, runtime.Slice_get(b, 0, NULL), Buffer_len(b))
     s[Buffer_len(b)] = '\0'
     return s
 }
 
-fun Buffer_write(b *Buffer, p *const char, size int, error **utils.Error) int {
+fun Buffer_write(b *Buffer, p *const char, size int, error **runtime.Error) int {
     Buffer_init(b)
     if size < 0 {
         size = sys.strlen(p)
@@ -82,7 +82,7 @@ fun Buffer_write(b *Buffer, p *const char, size int, error **utils.Error) int {
     return size
 }
 
-fun Buffer_writeByte(b *Buffer, p char, error **utils.Error) {
+fun Buffer_writeByte(b *Buffer, p char, error **runtime.Error) {
     Buffer_init(b)
     append(*b, p)
 }
