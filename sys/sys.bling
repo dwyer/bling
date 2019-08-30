@@ -1,42 +1,80 @@
 package sys
 
+import "C"
+
 typ Size u64
 
-fun errno() int
+fun errno() int {
+    return C.errno()
+}
 
-fun errnoReset()
+fun errnoReset() {
+    C.errnoReset()
+}
 
-fun errnoString() *char
+fun errnoString() *char {
+    return C.errnoString()
+}
 
-fun getenv(key *const char) *char
+fun getenv(key *const char) *char {
+    return C.getenv(key)
+}
 
-fun malloc(n Size) *void
+fun malloc(n Size) *void {
+    return C.malloc(n)
+}
 
-fun free(ptr *void)
+fun free(ptr *void) {
+    C.free(ptr)
+}
 
-fun realloc(ptr *void, n Size) *void
+fun realloc(ptr *void, n Size) *void {
+    return C.realloc(ptr, n)
+}
 
-fun memcmp(dst *const void, src *const void, n Size) int
+fun memcmp(dst *const void, src *const void, n Size) int {
+    return C.memcmp(dst, src, n)
+}
 
-fun memcpy(dst *void, src *const void, n Size) *void
+fun memcpy(dst *void, src *const void, n Size) *void {
+    return C.memcpy(dst, src, n)
+}
 
-fun memset(dst *void, c int, n Size) *void
+fun memset(dst *void, c int, n Size) *void {
+    return C.memset(dst, c, n)
+}
 
-fun strdup(s *const char) *char
+fun strdup(s *const char) *char {
+    return C.strdup(s)
+}
 
-fun strndup(s *const char, n Size) *char
+fun strndup(s *const char, n Size) *char {
+    return C.strndup(s, n)
+}
 
-fun strlen(s *const char) Size
+fun strlen(s *const char) Size {
+    return C.strlen(s)
+}
 
-fun streq(a *const char, b *const char) bool
+fun streq(a *const char, b *const char) bool {
+    return C.streq(a, b)
+}
 
-fun open(filename *const char, oflag int, perm int) int
+fun open(filename *const char, oflag int, perm int) int {
+    return C.open(filename, oflag, perm)
+}
 
-fun close(fd int) int
+fun close(fd int) int {
+    return C.close(fd)
+}
 
-fun read(fd int, b *void, n Size) int
+fun read(fd int, b *void, n Size) int {
+    return C.read(fd, b, n)
+}
 
-fun write(fd int, b *const void, n Size) int
+fun write(fd int, b *const void, n Size) int {
+    return C.write(fd, b, n)
+}
 
 typ FileOpenMode enum {
     O_RDONLY = 0x0000
@@ -192,25 +230,29 @@ typ Errno enum {
 
 typ Dir *void
 
-fun opendir(filename *const char) Dir
+fun opendir(filename *const char) Dir {
+    return C.opendir(filename)
+}
 
-fun closedir(dir Dir) int
+fun closedir(dir Dir) int {
+    return C.closedir(dir)
+}
 
 typ Dirent *void
 
-fun readdir(dir Dir) Dirent
-
-fun Dirent_name(dirent Dirent) *char
-
-typ Stat struct {
-    mode u32
-    size i32
-    atime u64
-    mtime u64
-    ctime u64
+fun readdir(dir Dir) Dirent {
+    return C.readdir(dir)
 }
 
-fun stat(path *const char, s *Stat) int
+fun Dirent_name(dirent Dirent) *char {
+    return C.Dirent_name(dirent)
+}
+
+typ Stat C.Stat
+
+fun stat(path *const char, s *Stat) int {
+    return C.stat(path, s)
+}
 
 typ S enum {
     S_IXOTH = 0001
@@ -242,14 +284,24 @@ typ S enum {
     S_IFMT = 0xf000
 }
 
-fun mkdir(path *const char, mode u32) int
+fun mkdir(path *const char, mode u32) int {
+    return C.mkdir(path, mode)
+}
 
-fun environ() **char
+fun environ() **char {
+    return C.environ()
+}
 
 typ Pid int
 
-fun execve(path *const char, argv []const *char, envp []const *char) int
+fun execve(path *const char, argv []const *char, envp []const *char) int {
+    return C.execve(path, argv, envp)
+}
 
-fun fork() Pid
+fun fork() Pid {
+    return C.fork()
+}
 
-fun waitpid(pid Pid, status *int, opts int) Pid
+fun waitpid(pid Pid, status *int, opts int) Pid {
+    return C.waitpid(pid, status, opts)
+}

@@ -15,7 +15,7 @@ $(EXEC):
 	$(EXEC) version
 
 debug:
-	$(CC) -g -I. $(CFLAGS) $(shell find bootstrap sys gen -name \*.c)
+	$(CC) -g -I. $(CFLAGS) $(shell find C bootstrap gen sys -name \*.c)
 	lldb a.out
 
 clean:

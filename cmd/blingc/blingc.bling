@@ -64,7 +64,7 @@ fun compile_c(argv []*char) {
     while *argv {
         var filename *char = *argv
         var file *ast.File = cparser.parseFile(fset, filename, types.universe())
-        var allowForward bool = file.name && (ast.isIdentNamed(file.name, "C") || ast.isIdentNamed(file.name, "sys"))
+        var allowForward = file.name && ast.isIdentNamed(file.name, "C")
         if !allowForward {
             var i int = 0
             for var j int = 0; j < len(file.decls); j++ {
