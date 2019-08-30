@@ -1,6 +1,6 @@
 CFLAGS=-fms-extensions -Wno-microsoft-anon-tag
 
-BLINGC=bazel-bin/cmd/blingc/blingc
+BLINGC=blingc
 
 .PHONY: test $(BLINGC) all.bling
 
@@ -57,36 +57,21 @@ CFILES=utils/error.c \
      bling/build/build.c \
      cmd/blingc/main.c
 
-hello: $(BLINGC) all.bling
+hello:
 	$(BLINGC) build cmd/blingc
 	./gen/cmd/blingc/blingc version
 
-a.out: $(BLINGC) all.bling
+a.out:
 	$(BLINGC) -o all.c cmd/blingc/blingc.bling
 	$(BLINGC) build cmd/blingc
 
-test_compiler: $(BLINGC)
+test_compiler:
 	./test_compiler.sh
-
-all.bling: $(BLINGC)
-	$(BLINGC) -c -o all.bling $(SRCS)
-	./splitall.py
 
 debug:
 	$(CC) -g -I. $(CFLAGS) $(CFILES) \
 	    bootstrap/bootstrap.c sys/fmt.c sys/sys.c
 	lldb a.out
-
-$(BLINGC):
-	bazel build \
-	    --copt="-std=gnu99" \
-	    --copt="-Wno-implicit-function-declaration" \
-	    --copt="-Wall" \
-	    --copt="-Werror" \
-	    --copt="-Wimplicit-fallthrough" \
-	    --copt="-fms-extensions" \
-	    --copt="-Wno-microsoft-anon-tag" \
-	    cmd/blingc
 
 clean:
 	bazel clean
