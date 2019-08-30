@@ -67,7 +67,7 @@ extern bool sys$streq(const char *a, const char *b) {
 }
 
 extern sys$Pid sys$waitpid(sys$Pid pid, int *status, int opts) {
-    return waitpid(pid, status, opts);
+    return wait4(pid, status, opts, NULL);
 }
 
 extern sys$Pid sys$fork() {

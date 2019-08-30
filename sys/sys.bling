@@ -13,8 +13,6 @@ fun errnoReset()
 
 fun errnoString() *char
 
-fun execve(path *const char, argv []const *char, envp []*char) int
-
 fun getenv(key *const char) *char
 
 fun printf(s *const char, ...)
@@ -255,10 +253,12 @@ typ S enum {
 
 fun mkdir(path *const char, mode u32) int
 
+fun environ() **char
+
 typ Pid int
 
-fun waitpid(pid Pid, status *int, opts int) Pid
+fun execve(path *const char, argv []const *char, envp []*char) int
 
 fun fork() Pid
 
-fun environ() **char
+fun waitpid(pid Pid, status *int, opts int) Pid

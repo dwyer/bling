@@ -9,8 +9,6 @@ extern int sys$errno();
 extern void sys$errnoReset();
 extern char *sys$errnoString();
 
-extern int sys$execve(const char *path, char *const argv[], char *envp[]);
-
 extern char *sys$getenv(const char *key);
 
 // stdio
@@ -247,9 +245,9 @@ typedef enum {
 } sys$S;
 
 extern int sys$mkdir(const char *path, u32 mode);
-
+extern char **sys$environ();
 
 typedef int sys$Pid;
-extern sys$Pid sys$waitpid(sys$Pid pid, int *status, int opts);
+extern int sys$execve(const char *path, char *const argv[], char *envp[]);
 extern sys$Pid sys$fork();
-extern char **sys$environ();
+extern sys$Pid sys$waitpid(sys$Pid pid, int *status, int opts);
