@@ -229,48 +229,40 @@ fun getCFile(b *Builder, pkg *Package) {
 }
 
 fun buildCPackage(b *Builder, path *const char) *Package {
-    var pkg Package = newPackage(b, path)
-    var objFiles [array]*char = makearray(*char)
-    {
-        var files [array]*os.FileInfo = ioutil.readDir(path, NULL)
-        for var i int = 0; i < len(files); i++ {
-            var checkTime bool = false
-            var file *os.FileInfo = files[i]
-            var modTime os.Time = os.FileInfo_modTime(file)
-            if bytes.hasSuffix(os.FileInfo_name(file), ".bling") {
-                if pkg.srcModTime < modTime {
-                    pkg.srcModTime = modTime
-                }
-            } else if bytes.hasSuffix(os.FileInfo_name(file), ".c") {
-                if pkg.srcModTime < modTime {
-                    pkg.srcModTime = modTime
-                }
-                var obj *os.FileInfo = buildCFile(b, file)
-                append(objFiles, obj._name)
-                checkTime = true
-                modTime = os.FileInfo_modTime(obj)
-                if pkg.srcModTime < modTime {
-                    pkg.srcModTime = modTime
-                }
+    var pkg = newPackage(b, path)
+    var files = ioutil.readDir(path, NULL)
+    for var i = 0; i < len(files); i++ {
+        var checkTime = false
+        var file = files[i]
+        var modTime = os.FileInfo_modTime(file)
+        var name = os.FileInfo_name(file)
+        if bytes.hasSuffix(name, ".bling") || bytes.hasSuffix(name, ".c") {
+            if pkg.srcModTime < modTime {
+                pkg.srcModTime = modTime
             }
-            os.FileInfo_free(file)
         }
     }
     if b.force || pkg.srcModTime > pkg.libModTime {
-        if VERBOSE {
-        }
         genHeader(b, &pkg)
-        var cmd [array]*char = makearray(*char)
+        var cmd = makearray(*char)
         append(cmd, AR_PATH)
         append(cmd, typ *char("rsc"))
         append(cmd, pkg.libPath)
-        for var i int = 0; i < len(objFiles); i++ {
-            append(cmd, objFiles[i])
+        for var i = 0; i < len(files); i++ {
+            var file = files[i]
+            if bytes.hasSuffix(os.FileInfo_name(file), ".c") {
+                var obj = buildCFile(b, file)
+                append(cmd, os.FileInfo_name(obj))
+            }
         }
         mkdirForFile(pkg.libPath)
         execute(&cmd)
         pkg.libModTime = getFileModTime(pkg.libPath)
     }
+    for var i = 0; i < len(files); i++ {
+        os.FileInfo_free(files[i])
+    }
+    runtime.Slice_unmake(&files)
     return &&pkg
 }
 
