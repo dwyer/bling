@@ -74,7 +74,7 @@ debug:
 	lldb a.out
 
 clean:
-	bazel clean
+	$(RM) -r ./gen
 
 install:
 	install ./gen/cmd/blingc/blingc $(HOME)/bin
