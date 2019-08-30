@@ -18,7 +18,7 @@ extern char *sys$errnoString() {
     return strerror(errno);
 }
 
-extern int sys$execve(const char *path, char *const argv[], char *envp[]) {
+extern int sys$execve(const char *path, char *const argv[], char *const envp[]) {
     return execve(path, argv, envp);
 }
 

@@ -248,6 +248,6 @@ extern int sys$mkdir(const char *path, u32 mode);
 extern char **sys$environ();
 
 typedef int sys$Pid;
-extern int sys$execve(const char *path, char *const argv[], char *envp[]);
+extern int sys$execve(const char *path, char *const argv[], char *const envp[]);
 extern sys$Pid sys$fork();
 extern sys$Pid sys$waitpid(sys$Pid pid, int *status, int opts);

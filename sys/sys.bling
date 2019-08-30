@@ -257,7 +257,7 @@ fun environ() **char
 
 typ Pid int
 
-fun execve(path *const char, argv []const *char, envp []*char) int
+fun execve(path *const char, argv []const *char, envp []const *char) int
 
 fun fork() Pid
 
