@@ -19,8 +19,7 @@ test_compiler:
 	./test_compiler.sh
 
 debug:
-	$(CC) -g -I. $(CFLAGS) $(CFILES) \
-	    bootstrap/bootstrap.c sys/fmt.c sys/sys.c
+	$(CC) -g -I. $(CFLAGS) $(shell find bootstrap sys gen -name \*.c)
 	lldb a.out
 
 clean:
