@@ -2,6 +2,14 @@ package runtime
 
 import "sys"
 
+fun malloc(n sys.Size) *void {
+    return sys.malloc(n)
+}
+
+fun memcpy(dst *void, src *const void, n sys.Size) *void {
+    return sys.memcpy(dst, src, n)
+}
+
 typ Error struct {
     error *char
 }

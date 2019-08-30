@@ -1,14 +1,9 @@
 #ifndef BLING_BOOTSTRAP_H
 #define BLING_BOOTSTRAP_H
 
-#define import(_) /* noop in C */
-
-#define package(_) /* noop in C */
-
 #define esc(x) ({ \
-        void *memcpy(void *, void const*, unsigned long); \
         typeof(x) $0 = (x); \
-        memcpy(sys$malloc(sizeof $0), &$0, sizeof $0); \
+        runtime$memcpy(runtime$malloc(sizeof $0), &$0, sizeof $0); \
         })
 
 #define array(T) runtime$Slice
@@ -29,9 +24,6 @@
 #define makemap(T) (runtime$Map){._valSize = sizeof(T)}
 
 #define get(T, a, i) (*(T*)runtime$Slice_get(&(a), (i), NULL))
-
-#define fallthrough /**/
-#define typ /**/
 
 #define NULL ((void*)0)
 
