@@ -75,3 +75,6 @@ debug:
 
 clean:
 	bazel clean
+
+install:
+	install ./gen/cmd/blingc/blingc $(HOME)/bin
