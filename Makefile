@@ -1,4 +1,4 @@
-CFLAGS=-fms-extensions -Wno-microsoft-anon-tag
+CFLAGS=
 
 BLINGC=blingc
 BUILDFLAGS=

@@ -2,8 +2,6 @@
 * Implement native maps and dynamic arrays.
 * if and switch: allow init expr
 * Change cast syntax from `<T>x` to `typ(T) x`;
-* Emit field names of anonymous tags to eliminate the dependency on
-  -fms-extensions.
 * Make `sizeof` a builtin func.
 * Remove '#' token from bling.
 * Implement a const type (like `enum` value or #define directive).

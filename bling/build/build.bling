@@ -97,8 +97,6 @@ fun newBuilder(fset *token.FileSet) *Builder {
 fun genObj(b *Builder, dst *const char, src *const char) {
     var cmd [array]*char = makearray(*char)
     append(cmd, CC_PATH)
-    append(cmd, typ *char("-fms-extensions"))
-    append(cmd, typ *char("-Wno-microsoft-anon-tag"))
     append(cmd, typ *char("-g"))
     append(cmd, typ *char("-I"))
     append(cmd, INCL_PATH)

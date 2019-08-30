@@ -318,6 +318,22 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
     }
 }
 
+fun _emitFields(e *emitter.Emitter, fields [array]*ast.Decl) {
+    for var i = 0; i < len(fields); i++ {
+        var field = fields[i]
+        if field.field.name || field.field.type.kind == ast.TYPE_STRUCT {
+            emitter.emitTabs(e)
+            emitDecl(e, field)
+            emitter.emitToken(e, token.SEMICOLON)
+            emitter.emitNewline(e)
+        } else {
+            var base = types.getBaseType(field.field.type)
+            assert(base.kind == ast.TYPE_STRUCT)
+            _emitFields(e, base.struct_.fields)
+        }
+    }
+}
+
 fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
     if type == NULL {
         panic("cemitter$emitType: type is nil")
@@ -440,12 +456,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitter.emitToken(e, token.LBRACE)
             emitter.emitNewline(e)
             e.indent++
-            for var i int = 0; i < len(type.struct_.fields); i++ {
-                emitter.emitTabs(e)
-                emitDecl(e, type.struct_.fields[i])
-                emitter.emitToken(e, token.SEMICOLON)
-                emitter.emitNewline(e)
-            }
+            _emitFields(e, type.struct_.fields)
             e.indent--
             emitter.emitTabs(e)
             emitter.emitToken(e, token.RBRACE)
