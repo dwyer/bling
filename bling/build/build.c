@@ -38,7 +38,7 @@ static void execute(array(char *) *cmd) {
         printStrArray(*cmd);
     }
     char **args = utils$nilArray(cmd);
-    int code = sys$run(args);
+    int code = os$exec(args, NULL);
     if (code != 0) {
         panic(sys$sprintf("- failed with code %d", code));
     }

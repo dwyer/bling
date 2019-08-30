@@ -1,5 +1,7 @@
 #pragma once
 #include "bootstrap/bootstrap.h"
+
+#include "sys/sys.h"
 #include "utils/utils.h"
 
 package(os);
@@ -7,6 +9,17 @@ package(os);
 import("paths");
 import("sys");
 import("utils");
+
+typedef enum {
+    os$O_RDONLY = sys$O_RDONLY,
+    os$O_WRONLY = sys$O_WRONLY,
+    os$O_RDWR   = sys$O_RDWR,
+
+    os$O_APPEND = sys$O_APPEND,
+    os$O_CREAT  = sys$O_CREAT,
+    os$O_TRUNC  = sys$O_TRUNC,
+    os$O_EXCL   = sys$O_EXCL,
+} os$O;
 
 typedef u64 os$Time;
 
@@ -55,3 +68,5 @@ extern os$File *os$openDir(const char *filename, utils$Error **error);
 extern array(os$FileInfo *) os$readdir(os$File *file, utils$Error **error);
 
 extern void os$mkdirAll(const char *path, u32 mode, utils$Error **error);
+
+extern int os$exec(char *const argv[], utils$Error **error);

@@ -4,6 +4,16 @@ import "paths"
 import "sys"
 import "utils"
 
+typ O enum {
+    O_RDONLY = sys.O_RDONLY
+    O_WRONLY = sys.O_WRONLY
+    O_RDWR = sys.O_RDWR
+    O_APPEND = sys.O_APPEND
+    O_CREAT = sys.O_CREAT
+    O_TRUNC = sys.O_TRUNC
+    O_EXCL = sys.O_EXCL
+}
+
 typ Time u64
 
 typ FileMode u32
@@ -70,11 +80,11 @@ fun openFile(filename *const char, mode int, perm int, error **utils.Error) *Fil
 }
 
 fun open(filename *const char, error **utils.Error) *File {
-    return openFile(filename, sys.O_RDONLY, 0, error)
+    return openFile(filename, O_RDONLY, 0, error)
 }
 
 fun create(filename *const char, error **utils.Error) *File {
-    return openFile(filename, sys.O_CREAT | sys.O_TRUNC | sys.O_RDWR, 0644, error)
+    return openFile(filename, O_CREAT | O_TRUNC | O_RDWR, 0644, error)
 }
 
 fun read(file *File, b *char, n int, error **utils.Error) int {
@@ -231,5 +241,22 @@ fun mkdirAll(path *const char, mode u32, error **utils.Error) {
     default:
         utils.Error_move(err, error)
         break
+    }
+}
+
+fun exec(argv []const *char, error **utils.Error) int {
+    var status int = -1
+    var pid sys.Pid = sys.fork()
+    switch pid {
+    case -1:
+        utils.Error_check(error)
+        return -1
+    case 0:
+        sys.execve(argv[0], argv, sys.environ())
+        utils.Error_check(error)
+        return -1
+    default:
+        sys.waitpid(pid, &status, 0)
+        return status
     }
 }

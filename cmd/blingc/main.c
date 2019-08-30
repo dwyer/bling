@@ -158,7 +158,7 @@ void compile_bling(char *argv[]) {
                 "bazel-bin/sys/libsys.a",
                 NULL,
             };
-            int code = sys$run(args);
+            int code = os$exec(args, NULL);
             if (code != 0) {
                 panic(sys$sprintf("- failed with code %d", code));
             }

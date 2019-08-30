@@ -66,20 +66,17 @@ extern bool sys$streq(const char *a, const char *b) {
     return strcmp(a, b) == 0;
 }
 
-extern int sys$run(char *const argv[]) {
+extern sys$Pid sys$waitpid(sys$Pid pid, int *status, int opts) {
+    return waitpid(pid, status, opts);
+}
+
+extern sys$Pid sys$fork() {
+    return fork();
+}
+
+extern char **sys$environ() {
     extern char **environ;
-    int status = -1;
-    pid_t pid = fork();
-    switch (pid) {
-    case -1:
-        return -1;
-    case 0:
-        execve(argv[0], argv, environ);
-        return errno;
-    default:
-        waitpid(pid, &status, 0);
-        return status;
-    }
+    return environ;
 }
 
 #include <fcntl.h> // open

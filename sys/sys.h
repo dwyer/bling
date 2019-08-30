@@ -32,8 +32,6 @@ extern sys$Size sys$strlen(const char *s);
 
 extern bool sys$streq(const char *a, const char *b);
 
-extern int sys$run(char *const argv[]);
-
 extern int sys$open(const char *filename, int oflag, int perm);
 extern int sys$close(int fd);
 extern int sys$read(int fd, void *b, sys$Size n);
@@ -41,15 +39,14 @@ extern int sys$write(int fd, const void *b, sys$Size n);
 
 typedef enum {
 
-    sys$O_RDONLY    = 0x0,
-    sys$O_WRONLY    = 0x1,
-    sys$O_RDWR      = 0x2,
-    sys$O_ACCMODE   = 0x3,
+    sys$O_RDONLY    = 0x0000,
+    sys$O_WRONLY    = 0x0001,
+    sys$O_RDWR      = 0x0002,
 
-    sys$O_NOFOLLOW  = 0x100,
-    sys$O_CREAT     = 0x200,
-    sys$O_TRUNC     = 0x400,
-    sys$O_EXCL      = 0x800,
+    sys$O_APPEND   =  0x0008,
+    sys$O_CREAT     = 0x0200,
+    sys$O_TRUNC     = 0x0400,
+    sys$O_EXCL      = 0x0800,
 
 } sys$FileOpenMode;
 
@@ -250,3 +247,9 @@ typedef enum {
 } sys$S;
 
 extern int sys$mkdir(const char *path, u32 mode);
+
+
+typedef int sys$Pid;
+extern sys$Pid sys$waitpid(sys$Pid pid, int *status, int opts);
+extern sys$Pid sys$fork();
+extern char **sys$environ();

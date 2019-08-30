@@ -49,7 +49,7 @@ fun execute(cmd *[array]*char) {
         printStrArray(*cmd)
     }
     var args **char = utils.nilArray(cmd)
-    var code int = sys.run(args)
+    var code int = os.exec(args, NULL)
     if code != 0 {
         panic(sys.sprintf("- failed with code %d", code))
     }

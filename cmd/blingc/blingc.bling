@@ -148,7 +148,7 @@ fun compile_bling(argv []*char) {
                 "bazel-bin/sys/libsys.a",
                 NULL,
             }
-            var code int = sys.run(args)
+            var code int = os.exec(args, NULL)
             if code != 0 {
                 panic(sys.sprintf("- failed with code %d", code))
             }

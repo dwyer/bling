@@ -43,12 +43,11 @@ extern os$File *os$openFile(const char *filename, int mode, int perm,
 }
 
 extern os$File *os$open(const char *filename, utils$Error **error) {
-    return os$openFile(filename, sys$O_RDONLY, 0, error);
+    return os$openFile(filename, os$O_RDONLY, 0, error);
 }
 
 extern os$File *os$create(const char *filename, utils$Error **error) {
-    return os$openFile(filename, sys$O_CREAT | sys$O_TRUNC | sys$O_RDWR, 0644,
-            error);
+    return os$openFile(filename, os$O_CREAT|os$O_TRUNC|os$O_RDWR, 0644, error);
 }
 
 extern int os$read(os$File *file, char *b, int n, utils$Error **error) {
@@ -206,5 +205,22 @@ extern void os$mkdirAll(const char *path, u32 mode, utils$Error **error) {
     default:
         utils$Error_move(err, error);
         break;
+    }
+}
+
+extern int os$exec(char *const argv[], utils$Error **error) {
+    int status = -1;
+    sys$Pid pid = sys$fork();
+    switch (pid) {
+    case -1:
+        utils$Error_check(error);
+        return -1;
+    case 0:
+        sys$execve(argv[0], argv, sys$environ());
+        utils$Error_check(error);
+        return -1;
+    default:
+        sys$waitpid(pid, &status, 0);
+        return status;
     }
 }
