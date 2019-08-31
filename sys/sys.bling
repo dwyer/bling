@@ -20,18 +20,6 @@ fun getenv(key *const char) *char {
     return C.getenv(key)
 }
 
-fun malloc(n Size) *void {
-    return C.malloc(n)
-}
-
-fun free(ptr *void) {
-    C.free(ptr)
-}
-
-fun realloc(ptr *void, n Size) *void {
-    return C.realloc(ptr, n)
-}
-
 fun memcmp(dst *const void, src *const void, n Size) int {
     return C.memcmp(dst, src, n)
 }

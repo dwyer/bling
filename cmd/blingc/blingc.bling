@@ -23,7 +23,7 @@ fun emit_rawfile(e *emitter.Emitter, filename *const char) {
         panic(err.error)
     }
     emitter.emitString(e, src)
-    sys.free(src)
+    runtime.free(src)
 }
 
 fun isForwardDecl(decl *ast.Decl) bool {

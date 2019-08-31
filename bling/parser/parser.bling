@@ -124,7 +124,7 @@ fun errorExpected(p *Parser, pos token.Pos, msg *char) {
     }
     msg = bytes.Buffer_string(&buf)
     error(p, pos, msg)
-    sys.free(msg)
+    runtime.free(msg)
 }
 
 fun accept(p *Parser, tok0 token.Token) bool {
@@ -1362,7 +1362,7 @@ fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.
     }
     var p Parser = {}
     init(&p, fset, filename, src)
-    sys.free(src)
+    runtime.free(src)
     var file *ast.File = _parseFile(&p, scope)
     return file
 }

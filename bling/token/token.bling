@@ -423,6 +423,6 @@ fun FileSet_print(fset *FileSet) {
         var f *File = fset.files[i]
         var s *char = C.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
         print(s)
-        sys.free(s)
+        runtime.free(s)
     }
 }

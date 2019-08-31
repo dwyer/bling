@@ -44,13 +44,13 @@ fun execute(cmd *[array]*char) {
     if code != 0 {
         panic(C.sprintf("- failed with code %d", code))
     }
-    sys.free(args)
+    runtime.free(args)
 }
 
 fun mkdirForFile(path *const char) {
     var dir *char = paths.dir(path)
     os.mkdirAll(dir, 0755, NULL)
-    sys.free(dir)
+    runtime.free(dir)
 }
 
 typ Package struct {
@@ -135,7 +135,7 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
         var base *char = sys.strdup(src)
         base[i] = '\0'
         dst = C.sprintf("%s/%s.o", GEN_PATH, base)
-        sys.free(base)
+        runtime.free(base)
     }
     var err *runtime.Error = NULL
     var objFile *os.FileInfo = os.stat(dst, &err)
@@ -171,8 +171,8 @@ fun newPackage(b *Builder, path *const char) Package {
         deps: makearray(*Package),
         isCmd: isCmd,
     }
-    sys.free(genPath)
-    sys.free(base)
+    runtime.free(genPath)
+    runtime.free(base)
     for var i int = 0; i < len(pkg.pkg.imports); i++ {
         var dep *Package = _buildPackage(b, pkg.pkg.imports[i].path)
         append(pkg.deps, dep)
@@ -186,7 +186,7 @@ fun newPackage(b *Builder, path *const char) Package {
 fun emitInclude(e *emitter.Emitter, path *const char) {
     var s *char = C.sprintf("#include \"%s\"\n", path)
     emitter.emitString(e, s)
-    sys.free(s)
+    runtime.free(s)
 }
 
 fun writeFile(path *const char, out *const char) {
@@ -207,7 +207,7 @@ fun genHeader(b *Builder, pkg *Package) {
     cemitter.emitHeader(&e, pkg.pkg)
     var out *char = emitter.Emitter_string(&e)
     writeFile(pkg.hPath, out)
-    sys.free(out)
+    runtime.free(out)
 }
 
 fun getCFile(b *Builder, pkg *Package) {
@@ -216,7 +216,7 @@ fun getCFile(b *Builder, pkg *Package) {
     cemitter.emitBody(&e, pkg.pkg)
     var out *char = emitter.Emitter_string(&e)
     writeFile(pkg.cPath, out)
-    sys.free(out)
+    runtime.free(out)
 }
 
 fun buildCPackage(b *Builder, path *const char) *Package {
@@ -311,5 +311,5 @@ fun buildPackage(b *Builder, path *const char) {
     var clean = paths.clean(path)
     _buildPackage(b, "runtime")
     _buildPackage(b, clean)
-    sys.free(clean)
+    runtime.free(clean)
 }

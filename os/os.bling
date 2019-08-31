@@ -57,7 +57,7 @@ fun PathError_check(path *const char, error **runtime.Error) {
     if err {
         var msg *char = err.error
         err.error = C.sprintf("PathError: %s: %s", path, msg)
-        sys.free(msg)
+        runtime.free(msg)
         runtime.Error_move(err, error)
     }
 }
@@ -128,9 +128,9 @@ fun stat(name *const char, error **runtime.Error) *FileInfo {
 
 fun FileInfo_free(info *FileInfo) {
     if info {
-        sys.free(info._name)
-        sys.free(info._sys)
-        sys.free(info)
+        runtime.free(info._name)
+        runtime.free(info._sys)
+        runtime.free(info)
     }
 }
 
@@ -173,7 +173,7 @@ fun readdir(file *File, error **runtime.Error) [array]*FileInfo {
     var arr [array]*char = makearray(*char)
     for var i int = 0; i < len(names); i++ {
         var path *char = paths.join2(file.name, names[i])
-        sys.free(names[i])
+        runtime.free(names[i])
         var info *FileInfo = stat(path, &err)
         if err != NULL {
             close(file, NULL)
@@ -233,7 +233,7 @@ fun mkdirAll(path *const char, mode u32, error **runtime.Error) {
     if !sys.streq(dir, ".") {
         mkdirAll(dir, mode, error)
     }
-    sys.free(dir)
+    runtime.free(dir)
     var err *runtime.Error = NULL
     mkdir(path, mode, &err)
     switch sys.errno() {

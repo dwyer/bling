@@ -65,7 +65,7 @@ fun Buffer_bytes(b *Buffer) *char {
 
 fun Buffer_string(b *Buffer) *char {
     Buffer_init(b)
-    var s *char = sys.malloc(Buffer_len(b) + 1)
+    var s *char = runtime.malloc(Buffer_len(b) + 1)
     sys.memcpy(s, runtime.Slice_get(b, 0, NULL), Buffer_len(b))
     s[Buffer_len(b)] = '\0'
     return s

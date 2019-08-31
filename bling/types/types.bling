@@ -86,7 +86,7 @@ fun constant_stringVal(x *ast.Expr) *char {
     assert(x.kind == ast.EXPR_BASIC_LIT)
     var lit *const char = x.basic.value
     var n int = sys.strlen(lit) - 2
-    var val *char = sys.malloc(n + 1)
+    var val *char = runtime.malloc(n + 1)
     for var i int = 0; i < n; i++ {
         val[i] = lit[i + 1]
     }

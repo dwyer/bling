@@ -456,7 +456,7 @@ fun Scope_print(s *Scope) {
         while runtime.MapIter_next(&iter, &key, NULL) {
             var s *char = C.sprintf("%s- %s", bytes.Buffer_string(&buf), key)
             print(s)
-            sys.free(s)
+            runtime.free(s)
         }
         s = s.outer
         bytes.Buffer_writeByte(&buf, '\t', NULL)
@@ -484,7 +484,7 @@ fun resolve(scope *Scope, ident *Expr) bool {
 
 fun Scope_free(s *Scope) {
     runtime.Map_unmake(&s.objects)
-    sys.free(s)
+    runtime.free(s)
 }
 
 fun isIdent(x *Expr) bool {

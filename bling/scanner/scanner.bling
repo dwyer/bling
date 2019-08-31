@@ -2,6 +2,7 @@ package scanner
 
 import "C"
 import "bling/token"
+import "runtime"
 import "sys"
 
 typ Scanner struct {
@@ -209,7 +210,7 @@ scan_again:
         if sys.strlen(*lit) > 1 {
             tok = token.lookup(*lit)
             if tok != token.IDENT {
-                sys.free(*lit)
+                runtime.free(*lit)
                 *lit = NULL
             }
             switch tok {
