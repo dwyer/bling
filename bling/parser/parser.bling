@@ -266,7 +266,9 @@ fun parseOperand(p *Parser, lhs bool) *ast.Expr {
     if !p.c_mode {
         var t *ast.Expr = tryIdentOrType(p)
         if t {
-            assert(t.kind != ast.EXPR_IDENT)
+            if t.kind == ast.EXPR_IDENT {
+                errorExpected(p, p.pos, "non-ident")
+            }
             return t
         }
     }
