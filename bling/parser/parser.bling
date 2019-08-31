@@ -234,7 +234,7 @@ fun parseOperand(p *Parser, lhs bool) *ast.Expr {
     switch p.tok {
     case token.IDENT:
         {
-            var x *ast.Expr = parseIdent(p)
+            var x = parseIdent(p)
             if !p.c_mode {
                 resolve(p, x)
             }
@@ -246,10 +246,10 @@ fun parseOperand(p *Parser, lhs bool) *ast.Expr {
         if p.c_mode {
             error(p, p.pos, "unreachable")
         } else {
-            var pos token.Pos = p.pos
+            var pos = p.pos
             expect(p, token.LPAREN)
             p.exprLev++
-            var x ast.Expr = {
+            var x = ast.Expr{
                 kind: ast.EXPR_PAREN,
                 paren: {
                     pos: pos,
@@ -264,11 +264,8 @@ fun parseOperand(p *Parser, lhs bool) *ast.Expr {
         break
     }
     if !p.c_mode {
-        var t *ast.Expr = tryIdentOrType(p)
+        var t = tryIdentOrType(p)
         if t {
-            if t.kind == ast.EXPR_IDENT {
-                errorExpected(p, p.pos, "non-ident")
-            }
             return t
         }
     }
