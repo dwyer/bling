@@ -3,7 +3,7 @@ CFLAGS=
 BLINGC=blingc
 BUILDFLAGS=
 BACKUP_DIR=$(HOME)/.bling.bkup
-BACKUP_FILE=$(BACKUP_DIR)/blingc-$(shell date +%s)
+BACKUP_FILE=bling-$(shell date +%s).tar.gz
 
 GEN_DIR=./gen
 EXEC=$(GEN_DIR)/cmd/blingc/blingc
@@ -22,6 +22,8 @@ clean:
 	$(RM) -r $(GEN_DIR)
 
 install: $(BACKUP_DIR)
+	tar czf $(BACKUP_FILE) $(GEN_DIR)
+	mv $(BACKUP_FILE) $(BACKUP_DIR)
 	install $(EXEC) $(BACKUP_FILE)
 	install $(EXEC) $(HOME)/bin
 

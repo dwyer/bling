@@ -1,7 +1,6 @@
 *.dSYM
 *.o
 *.out
-all.bling
 all.c
-bazel-*
+bling-*.tar.gz
 gen/
