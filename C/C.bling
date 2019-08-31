@@ -1,57 +1,42 @@
 package C
 
-typ Size u64
+typ size_t u64
 
-fun errno() int
+fun getErrno() int
+fun setErrno(int)
 
-fun errnoReset()
+fun getEnviron() **char
 
-fun errnoString() *char
+fun strerror(int) *char
 
 fun getenv(key *const char) *char
 
 fun printf(s *const char, ...)
-
 fun sprintf(s *const char, ...) *char
 
-fun malloc(n Size) *void
-
 fun free(ptr *void)
+fun malloc(n size_t) *void
+fun realloc(ptr *void, n size_t) *void
 
-fun realloc(ptr *void, n Size) *void
-
-fun memcmp(dst *const void, src *const void, n Size) int
-
-fun memcpy(dst *void, src *const void, n Size) *void
-
-fun memset(dst *void, c int, n Size) *void
-
+fun memcmp(dst *const void, src *const void, n size_t) int
+fun memcpy(dst *void, src *const void, n size_t) *void
+fun memset(dst *void, c int, n size_t) *void
 fun strdup(s *const char) *char
-
-fun strndup(s *const char, n Size) *char
-
-fun strlen(s *const char) Size
-
+fun strndup(s *const char, n size_t) *char
+fun strlen(s *const char) size_t
 fun streq(a *const char, b *const char) bool
 
 fun open(filename *const char, oflag int, perm int) int
-
 fun close(fd int) int
-
-fun read(fd int, b *void, n Size) int
-
-fun write(fd int, b *const void, n Size) int
+fun read(fd int, b *void, n size_t) int
+fun write(fd int, b *const void, n size_t) int
 
 typ Dir *void
-
 fun opendir(filename *const char) Dir
-
 fun closedir(dir Dir) int
 
 typ Dirent *void
-
 fun readdir(dir Dir) Dirent
-
 fun Dirent_name(dirent Dirent) *char
 
 typ Stat struct {
@@ -66,15 +51,12 @@ fun stat(path *const char, s *Stat) int
 
 fun mkdir(path *const char, mode u32) int
 
-fun environ() **char
-
 typ Pid int
 
 fun execve(path *const char, argv []const *char, envp []const *char) int
 
 fun fork() Pid
 fun exit(int)
-
 fun waitpid(pid Pid, status *int, opts int) Pid
 
 fun backtrace(buf **void, n int) int

@@ -6,16 +6,16 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-extern int C$errno() {
+extern int C$getErrno(void) {
     return errno;
 }
 
-extern void C$errnoReset() {
-    errno = 0;
+extern void C$setErrno(int n) {
+    errno = n;
 }
 
-extern char *C$errnoString() {
-    return strerror(errno);
+extern char *C$strerror(int n) {
+    return strerror(n);
 }
 
 extern int C$execve(const char *path, char *const argv[], char *const envp[]) {
@@ -26,15 +26,15 @@ extern char *C$getenv(const char *key) {
     return getenv(key);
 }
 
-extern int C$memcmp(const void *dst, const void *src, C$Size n) {
+extern int C$memcmp(const void *dst, const void *src, C$size_t n) {
     return memcmp(dst, src, n);
 }
 
-extern void *C$memcpy(void *dst, const void *src, C$Size n) {
+extern void *C$memcpy(void *dst, const void *src, C$size_t n) {
     return memcpy(dst, src, n);
 }
 
-extern void *C$memset(void *dst, int c, C$Size n) {
+extern void *C$memset(void *dst, int c, C$size_t n) {
     return memset(dst, c, n);
 }
 
@@ -42,15 +42,15 @@ extern char *C$strdup(const char *s) {
     return strdup(s);
 }
 
-extern char *C$strndup(const char *s, C$Size n) {
+extern char *C$strndup(const char *s, C$size_t n) {
     return strndup(s, n);
 }
 
-extern C$Size C$strlen(const char *s) {
+extern C$size_t C$strlen(const char *s) {
     return strlen(s);
 }
 
-extern void *C$malloc(C$Size n) {
+extern void *C$malloc(C$size_t n) {
     return malloc(n);
 }
 
@@ -58,7 +58,7 @@ extern void C$free(void *ptr) {
     free(ptr);
 }
 
-extern void *C$realloc(void *ptr, C$Size n) {
+extern void *C$realloc(void *ptr, C$size_t n) {
     return realloc(ptr, n);
 }
 
@@ -74,7 +74,7 @@ extern C$Pid C$fork() {
     return fork();
 }
 
-extern char **C$environ() {
+extern char **C$getEnviron() {
     extern char **environ;
     return environ;
 }
@@ -89,11 +89,11 @@ extern int C$close(int fd) {
     return close(fd);
 }
 
-extern int C$read(int fd, void *b, C$Size n) {
+extern int C$read(int fd, void *b, C$size_t n) {
     return read(fd, b, n);
 }
 
-extern int C$write(int fd, const void *b, C$Size n) {
+extern int C$write(int fd, const void *b, C$size_t n) {
     return write(fd, b, n);
 }
 

@@ -5,15 +5,15 @@ import "C"
 typ Size u64
 
 fun errno() int {
-    return C.errno()
+    return C.getErrno()
 }
 
 fun errnoReset() {
-    C.errnoReset()
+    C.setErrno(0)
 }
 
 fun errnoString() *char {
-    return C.errnoString()
+    return C.strerror(C.getErrno())
 }
 
 fun getenv(key *const char) *char {
@@ -289,7 +289,7 @@ fun mkdir(path *const char, mode u32) int {
 }
 
 fun environ() **char {
-    return C.environ()
+    return C.getEnviron()
 }
 
 typ Pid int
