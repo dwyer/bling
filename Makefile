@@ -24,7 +24,6 @@ clean:
 install: $(BACKUP_DIR)
 	tar czf $(BACKUP_FILE) $(GEN_DIR)
 	mv $(BACKUP_FILE) $(BACKUP_DIR)
-	install $(EXEC) $(BACKUP_FILE)
 	install $(EXEC) $(HOME)/bin
 
 $(BACKUP_DIR):
