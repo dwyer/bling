@@ -49,9 +49,8 @@ fun strlen(s *const char) Size {
 }
 
 fun streq(a *const char, b *const char) bool {
-    return C.streq(a, b)
+    return C.strcmp(a, b) == 0
 }
-
 
 typ Error struct {
     error *char
@@ -263,7 +262,7 @@ fun pair_ref(m *const Map, key *const void) *MapPair {
         stats.iters++
         var idx int = (hash + i) % Map_cap(m)
         var p *MapPair = Slice_get(&m._pairs, idx, NULL)
-        if !p.key || C.streq(key, p.key) {
+        if !p.key || streq(key, p.key) {
             if !i {
                 stats.hits++
             } else {

@@ -62,8 +62,8 @@ extern void *C$realloc(void *ptr, C$size_t n) {
     return realloc(ptr, n);
 }
 
-extern bool C$streq(const char *a, const char *b) {
-    return strcmp(a, b) == 0;
+extern int C$strcmp(const char *a, const char *b) {
+    return strcmp(a, b);
 }
 
 extern C$Pid C$waitpid(C$Pid pid, int *status, int opts) {

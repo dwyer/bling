@@ -2,14 +2,13 @@ package C
 
 typ size_t u64
 
+fun getEnviron() **char
+
 fun getErrno() int
 fun setErrno(int)
 
-fun getEnviron() **char
-
-fun strerror(int) *char
-
 fun getenv(key *const char) *char
+fun strerror(int) *char
 
 fun printf(s *const char, ...)
 fun sprintf(s *const char, ...) *char
@@ -21,10 +20,11 @@ fun realloc(ptr *void, n size_t) *void
 fun memcmp(dst *const void, src *const void, n size_t) int
 fun memcpy(dst *void, src *const void, n size_t) *void
 fun memset(dst *void, c int, n size_t) *void
+
+fun strcmp(a *const char, b *const char) int
 fun strdup(s *const char) *char
 fun strndup(s *const char, n size_t) *char
 fun strlen(s *const char) size_t
-fun streq(a *const char, b *const char) bool
 
 fun open(filename *const char, oflag int, perm int) int
 fun close(fd int) int
