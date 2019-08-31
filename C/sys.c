@@ -131,3 +131,17 @@ extern int C$stat(const char *path, C$Stat *s) {
 extern int C$mkdir(const char *path, u32 mode) {
     return mkdir(path, mode);
 }
+
+#include <execinfo.h> // backtrace, etc.
+
+extern int C$backtrace(void **buf, int n) {
+    return backtrace(buf, n);
+}
+
+extern void C$backtrace_symbols_fd(void **buf, int n, int fd) {
+    backtrace_symbols_fd(buf, n, fd);
+}
+
+extern void C$exit(int status) {
+    exit(status);
+}

@@ -30,6 +30,9 @@
 #define false 0
 #define true 1
 
+#define panic(s) runtime$_panic(s)
+#define print(s) runtime$_print(s)
+
 typedef char bool;
 
 typedef char i8;
@@ -44,8 +47,5 @@ typedef unsigned long long u64;
 
 typedef u32 uint;
 typedef u64 uintptr;
-
-extern void print(const char *s);
-extern void _Noreturn panic(const char *s);
 
 #endif

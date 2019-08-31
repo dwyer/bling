@@ -3,6 +3,18 @@ package runtime
 import "C"
 import "sys"
 
+fun _panic(s *const char) {
+    print(s)
+    var buf [1024]*void
+    var n = C.backtrace(buf, 1024)
+    C.backtrace_symbols_fd(buf, n, 2)
+    C.exit(1)
+}
+
+fun _print(s *const char) {
+    C.printf("%s\n", s);
+}
+
 fun malloc(n sys.Size) *void {
     return sys.malloc(n)
 }

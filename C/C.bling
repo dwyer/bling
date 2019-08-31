@@ -73,5 +73,9 @@ typ Pid int
 fun execve(path *const char, argv []const *char, envp []const *char) int
 
 fun fork() Pid
+fun exit(int)
 
 fun waitpid(pid Pid, status *int, opts int) Pid
+
+fun backtrace(buf **void, n int) int
+fun backtrace_symbols_fd(buf **void, n int, fd int)
