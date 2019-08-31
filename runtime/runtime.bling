@@ -1,7 +1,8 @@
 package runtime
 
 import "C"
-import "sys"
+
+typ Size C.size_t
 
 fun _panic(s *const char) {
     print(s)
@@ -15,12 +16,16 @@ fun _print(s *const char) {
     C.printf("%s\n", s);
 }
 
-fun malloc(n sys.Size) *void {
-    return sys.malloc(n)
+fun malloc(n Size) *void {
+    return C.malloc(n)
 }
 
-fun memcpy(dst *void, src *const void, n sys.Size) *void {
-    return sys.memcpy(dst, src, n)
+fun free(ptr *void) {
+    C.free(ptr)
+}
+
+fun memcpy(dst *void, src *const void, n Size) *void {
+    return C.memcpy(dst, src, n)
 }
 
 typ Error struct {
@@ -59,7 +64,7 @@ typ MapIter struct {
 
 fun NewError(msg *const char) *Error {
     var err Error = {
-        error: sys.strdup(msg),
+        error: C.strdup(msg),
     }
     return &&err
 }
@@ -73,19 +78,19 @@ fun Error_move(src *Error, dst **Error) {
 }
 
 fun Error_check(e **Error) {
-    if sys.errno() {
-        var err *Error = NewError(sys.errnoString())
+    if C.getErrno() {
+        var err *Error = NewError(C.strerror(C.getErrno()))
         Error_move(err, e)
     }
 }
 
 fun clearError() {
-    sys.errnoReset()
+    C.setErrno(0)
 }
 
 fun Error_free(e *Error) {
-    sys.free(e.error)
-    sys.free(e)
+    free(e.error)
+    free(e)
 }
 
 fun Slice_make(size int) Slice {
@@ -99,7 +104,7 @@ fun Slice_make(size int) Slice {
 }
 
 fun Slice_unmake(s *void) {
-    sys.free((typ *Slice(s))._array)
+    free((typ *Slice(s))._array)
 }
 
 fun Slice_len(s *const void) int {
@@ -119,7 +124,7 @@ fun Slice_get(s *const void, i int, dst *void) *void {
         if (typ *Slice(s)).size == 1 {
             *typ *char(dst) = *ref
         } else {
-            sys.memcpy(dst, ref, (typ *Slice(s)).size)
+            memcpy(dst, ref, (typ *Slice(s)).size)
         }
     }
     return ref
@@ -127,7 +132,7 @@ fun Slice_get(s *const void, i int, dst *void) *void {
 
 fun _setCap(s *Slice, cap int) {
     s.cap = cap
-    s._array = sys.realloc(s._array, s.cap * s.size)
+    s._array = C.realloc(s._array, s.cap * s.size)
 }
 
 fun _setLen(s *Slice, len int) {
@@ -152,7 +157,7 @@ fun Slice_setLen(s *void, len int) {
     _setLen(s, len)
     var diff int = len - old
     if diff > 0 {
-        sys.memset(Slice_get(s, old, NULL), 0, diff * (typ *Slice(s)).size)
+        C.memset(Slice_get(s, old, NULL), 0, diff * (typ *Slice(s)).size)
     }
 }
 
@@ -160,7 +165,7 @@ fun Slice_set(s *void, i int, x *const void) {
     if (typ *Slice(s)).size == 1 {
         (typ *char((typ *Slice(s))._array))[i] = *typ *char(x)
     } else {
-        sys.memcpy(Slice_get(s, i, NULL), x, (typ *Slice(s)).size)
+        memcpy(Slice_get(s, i, NULL), x, (typ *Slice(s)).size)
     }
 }
 
@@ -192,8 +197,8 @@ fun djb2(s *const char) uintptr {
     return hash
 }
 
-fun memdup(src *const void, size sys.Size) *void {
-    return sys.memcpy(sys.malloc(size), src, size)
+fun memdup(src *const void, size Size) *void {
+    return memcpy(malloc(size), src, size)
 }
 
 fun Map_init(m *Map) {
@@ -233,7 +238,7 @@ fun pair_ref(m *const Map, key *const void) *MapPair {
         stats.iters++
         var idx int = (hash + i) % Map_cap(m)
         var p *MapPair = Slice_get(&m._pairs, idx, NULL)
-        if !p.key || sys.streq(key, p.key) {
+        if !p.key || C.streq(key, p.key) {
             if !i {
                 stats.hits++
             } else {
@@ -251,11 +256,11 @@ fun set_unsafe(m *Map, key *const char, val *const void) {
     }
     var p *MapPair = pair_ref(m, key)
     if p.key == NULL {
-        p.key = sys.strdup(key)
+        p.key = C.strdup(key)
         p.val = memdup(val, m._valSize)
         m._len++
     } else {
-        sys.memcpy(p.val, val, m._valSize)
+        memcpy(p.val, val, m._valSize)
     }
 }
 
@@ -264,7 +269,7 @@ fun Map_get(m *const void, key *const char, val *void) bool {
         var p *MapPair = pair_ref(m, key)
         if p.val {
             if val {
-                sys.memcpy(val, p.val, (typ *Map(m))._valSize)
+                memcpy(val, p.val, (typ *Map(m))._valSize)
             }
             return true
         }
@@ -307,7 +312,7 @@ fun MapIter_next(m *MapIter, key **char, val *void) int {
                 *typ **void(key) = p.key
             }
             if val {
-                sys.memcpy(val, p.val, m._map._valSize)
+                memcpy(val, p.val, m._map._valSize)
             }
             return 1
         }
