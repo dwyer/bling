@@ -14,7 +14,7 @@
     runtime$Slice_append(&(a), &$0); \
 } while (0)
 
-#define assert(x) do { if (!(x)) panic("assert failed: " # x); } while (0)
+#define assert(x) do { if (!(x)) print("assert failed: " # x); } while (0)
 
 #define len(x) _Generic((x), \
         runtime$Slice: runtime$Slice_len, \
