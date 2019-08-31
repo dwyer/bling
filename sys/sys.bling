@@ -20,34 +20,6 @@ fun getenv(key *const char) *char {
     return C.getenv(key)
 }
 
-fun memcmp(dst *const void, src *const void, n Size) int {
-    return C.memcmp(dst, src, n)
-}
-
-fun memcpy(dst *void, src *const void, n Size) *void {
-    return C.memcpy(dst, src, n)
-}
-
-fun memset(dst *void, c int, n Size) *void {
-    return C.memset(dst, c, n)
-}
-
-fun strdup(s *const char) *char {
-    return C.strdup(s)
-}
-
-fun strndup(s *const char, n Size) *char {
-    return C.strndup(s, n)
-}
-
-fun strlen(s *const char) Size {
-    return C.strlen(s)
-}
-
-fun streq(a *const char, b *const char) bool {
-    return C.streq(a, b)
-}
-
 fun open(filename *const char, oflag int, perm int) int {
     return C.open(filename, oflag, perm)
 }

@@ -2,7 +2,6 @@ package token
 
 import "C"
 import "bytes"
-import "sys"
 import "runtime"
 
 typ Token enum {
@@ -379,7 +378,7 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     var zero int = 0
     append(lines, zero)
     var file File = {
-        name: sys.strdup(filename),
+        name: runtime.strdup(filename),
         base: base,
         size: size,
         lines: lines,

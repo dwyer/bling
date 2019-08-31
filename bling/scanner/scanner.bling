@@ -3,7 +3,6 @@ package scanner
 import "C"
 import "bling/token"
 import "runtime"
-import "sys"
 
 typ Scanner struct {
     file *token.File
@@ -69,7 +68,7 @@ fun switch2(s *Scanner, tok0 token.Token, tok1 token.Token) token.Token {
 }
 
 fun make_string_slice(s *Scanner, start int, end int) *char {
-    return sys.strndup(&s.src[start], end - start)
+    return runtime.strndup(&s.src[start], end - start)
 }
 
 fun scan_ident(s *Scanner) *char {
@@ -207,7 +206,7 @@ scan_again:
     *lit = NULL
     if is_letter(s.ch) {
         *lit = scan_ident(s)
-        if sys.strlen(*lit) > 1 {
+        if runtime.strlen(*lit) > 1 {
             tok = token.lookup(*lit)
             if tok != token.IDENT {
                 runtime.free(*lit)
@@ -358,7 +357,7 @@ scan_again:
 }
 
 fun init(s *Scanner, file *token.File, src *char) {
-    file.src = sys.strdup(src)
+    file.src = runtime.strdup(src)
     s.file = file
     s.src = file.src
     s.rd_offset = 0

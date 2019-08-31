@@ -14,7 +14,6 @@ import "paths"
 import "runtime"
 import "subc/cemitter"
 import "subc/cparser"
-import "sys"
 
 fun emit_rawfile(e *emitter.Emitter, filename *const char) {
     var err *runtime.Error = NULL
@@ -51,7 +50,7 @@ fun isForwardDecl(decl *ast.Decl) bool {
 fun compile_c(argv []*char) {
     var dst *const char = NULL
     while **argv == '-' {
-        if sys.streq(*argv, "-o") {
+        if runtime.streq(*argv, "-o") {
             argv++
             dst = *argv
         } else {
@@ -107,7 +106,7 @@ fun compile_bling(argv []*char) {
     }
     var dst *char = NULL
     while **argv == '-' {
-        if sys.streq(*argv, "-o") {
+        if runtime.streq(*argv, "-o") {
             argv++
             dst = *argv
         } else {
@@ -164,7 +163,7 @@ fun compile_bling(argv []*char) {
 fun buildPackage(argv []*char) {
     assert(*argv)
     var builder = build.newBuilder(token.newFileSet())
-    if sys.streq(*argv, "-f") {
+    if runtime.streq(*argv, "-f") {
         builder.force = true
         argv++
     }
@@ -179,16 +178,16 @@ fun main(argc int, argv []*char) int {
     if !*argv {
         panic(C.sprintf("usage: %s -o DST SRCS", progname))
     }
-    if sys.streq(*argv, "version") {
+    if runtime.streq(*argv, "version") {
         print("0.0.0-alpha")
         return 0
     }
-    if sys.streq(*argv, "build") {
+    if runtime.streq(*argv, "build") {
         argv++
         buildPackage(argv)
         return 0
     }
-    if sys.streq(*argv, "-c") {
+    if runtime.streq(*argv, "-c") {
         argv++
         compile_c(argv)
         return 0

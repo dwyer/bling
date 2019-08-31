@@ -6,7 +6,6 @@ import "bling/emitter"
 import "bling/token"
 import "bling/types"
 import "runtime"
-import "sys"
 
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     if !expr {
@@ -64,7 +63,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         break
     case ast.EXPR_IDENT:
         if expr.ident.obj && expr.ident.obj.scope {
-            if expr.ident.obj.scope.pkg && !sys.streq(expr.ident.obj.scope.pkg, "main") {
+            if expr.ident.obj.scope.pkg && !runtime.streq(expr.ident.obj.scope.pkg, "main") {
                 emitter.emitString(e, expr.ident.obj.scope.pkg)
                 emitter.emitToken(e, token.DOLLAR)
             }

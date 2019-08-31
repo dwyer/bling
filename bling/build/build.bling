@@ -13,7 +13,6 @@ import "paths"
 import "runtime"
 import "subc/cemitter"
 import "subc/cparser"
-import "sys"
 
 var AR_PATH *const char = "/usr/bin/ar"
 
@@ -132,7 +131,7 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
     var dst *char = NULL
     {
         var i int = bytes.lastIndexByte(src, '.')
-        var base *char = sys.strdup(src)
+        var base *char = runtime.strdup(src)
         base[i] = '\0'
         dst = C.sprintf("%s/%s.o", GEN_PATH, base)
         runtime.free(base)
@@ -151,7 +150,7 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
 fun newPackage(b *Builder, path *const char) Package {
     var base *char = paths.base(path)
     var typesPkg *types.Package = types.check(&b.conf, path, b.fset, NULL, b.info)
-    var isCmd bool = typesPkg.name ? sys.streq(typesPkg.name, "main") : false
+    var isCmd bool = typesPkg.name ? runtime.streq(typesPkg.name, "main") : false
     var genPath *char = paths.join2(GEN_PATH, path)
     var libPath *char = C.sprintf("%s/%s.a", genPath, base)
     if isCmd {
@@ -160,7 +159,7 @@ fun newPackage(b *Builder, path *const char) Package {
         libPath = C.sprintf("%s/%s.a", genPath, base)
     }
     var pkg Package = {
-        path: sys.strdup(path),
+        path: runtime.strdup(path),
         pkg: typesPkg,
         hPath: C.sprintf("%s/%s.h", genPath, base),
         cPath: C.sprintf("%s/%s.c", genPath, base),
@@ -298,7 +297,7 @@ fun _buildPackage(b *Builder, path *const char) *Package {
     }
     if VERBOSE {
     }
-    if sys.streq(path, "C") {
+    if runtime.streq(path, "C") {
         pkg = buildCPackage(b, path)
     } else {
         pkg = buildBlingPackage(b, path)

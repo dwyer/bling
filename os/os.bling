@@ -64,7 +64,7 @@ fun PathError_check(path *const char, error **runtime.Error) {
 
 fun newFile(fd uintptr, name *const char) *File {
     var file File = {
-        name: sys.strdup(name),
+        name: runtime.strdup(name),
         fd: fd,
     }
     return &&file
@@ -97,7 +97,7 @@ fun read(file *File, b *char, n int, error **runtime.Error) int {
 
 fun write(file *File, b *const char, error **runtime.Error) int {
     runtime.clearError()
-    var n int = sys.write(file.fd, b, sys.strlen(b))
+    var n int = sys.write(file.fd, b, runtime.strlen(b))
     PathError_check(file.name, error)
     return n
 }
@@ -120,7 +120,7 @@ fun stat(name *const char, error **runtime.Error) *FileInfo {
         return NULL
     }
     var info FileInfo = {
-        _name: sys.strdup(name),
+        _name: runtime.strdup(name),
         _sys: &&st,
     }
     return &&info
@@ -157,7 +157,7 @@ fun readdirnames(file *File, error **runtime.Error) [array]*char {
         if name[0] == '.' {
             continue
         }
-        append(arr, sys.strdup(name))
+        append(arr, runtime.strdup(name))
     }
     return arr
 }
@@ -230,7 +230,7 @@ fun mkdir(path *const char, mode u32, error **runtime.Error) {
 
 fun mkdirAll(path *const char, mode u32, error **runtime.Error) {
     var dir *char = paths.dir(path)
-    if !sys.streq(dir, ".") {
+    if !runtime.streq(dir, ".") {
         mkdirAll(dir, mode, error)
     }
     runtime.free(dir)

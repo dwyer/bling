@@ -2,25 +2,24 @@ package paths
 
 import "bytes"
 import "runtime"
-import "sys"
 
 fun base(path *const char) *char {
     if path == NULL || path[0] == '\0' {
-        return sys.strdup(".")
+        return runtime.strdup(".")
     }
     var i int = bytes.lastIndexByte(path, '/')
     if i > 0 {
         path = &path[i + 1]
     }
-    return sys.strdup(path)
+    return runtime.strdup(path)
 }
 
 fun clean(path *const char) *char {
-    if sys.streq(path, "") {
-        return sys.strdup(".")
+    if runtime.streq(path, "") {
+        return runtime.strdup(".")
     }
     var r = 0
-    var n = sys.strlen(path)
+    var n = runtime.strlen(path)
     var out = bytes.Buffer{}
     var rooted = path[0] == '/'
     if rooted {
@@ -45,26 +44,26 @@ fun clean(path *const char) *char {
         }
     }
     if bytes.Buffer_len(&out) == 0 {
-        return sys.strdup(".")
+        return runtime.strdup(".")
     }
     return bytes.Buffer_string(&out)
 }
 
 fun dir(path *const char) *char {
     if path == NULL || path[0] == '\0' {
-        return sys.strdup(".")
+        return runtime.strdup(".")
     }
     var i = bytes.lastIndexByte(path, '/')
     if i > 0 {
-        var p = sys.strdup(path)
+        var p = runtime.strdup(path)
         p[i] = '\0'
         return p
     }
-    return sys.strdup(".")
+    return runtime.strdup(".")
 }
 
 fun ext(path *const char) *const char {
-    var n int = sys.strlen(path) - 1
+    var n int = runtime.strlen(path) - 1
     while n > 0 && path[n] != '.' {
         n--
     }

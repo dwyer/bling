@@ -6,7 +6,6 @@ import "bling/emitter"
 import "bling/parser"
 import "bling/token"
 import "runtime"
-import "sys"
 
 typ Config struct {
     strict bool
@@ -85,7 +84,7 @@ typ exprKind enum {
 fun constant_stringVal(x *ast.Expr) *char {
     assert(x.kind == ast.EXPR_BASIC_LIT)
     var lit *const char = x.basic.value
-    var n int = sys.strlen(lit) - 2
+    var n int = runtime.strlen(lit) - 2
     var val *char = runtime.malloc(n + 1)
     for var i int = 0; i < n; i++ {
         val[i] = lit[i + 1]
@@ -144,7 +143,7 @@ fun makeIdent(name *const char) *ast.Expr {
     var x ast.Expr = {
         kind: ast.EXPR_IDENT,
         ident: {
-            name: sys.strdup(name),
+            name: runtime.strdup(name),
         },
     }
     return &&x
@@ -229,7 +228,7 @@ fun isArithmetic(type *ast.Expr) bool {
     case ast.EXPR_STAR, ast.TYPE_ENUM:
         return true
     case ast.TYPE_NATIVE:
-        return !sys.streq(type.native.name, "void")
+        return !runtime.streq(type.native.name, "void")
     default:
         return false
     }
@@ -238,7 +237,7 @@ fun isArithmetic(type *ast.Expr) bool {
 fun isNative(type *ast.Expr, name *const char) bool {
     switch type.kind {
     case ast.EXPR_IDENT:
-        return sys.streq(type.ident.name, name)
+        return runtime.streq(type.ident.name, name)
     case ast.TYPE_NATIVE:
         return true
     default:
@@ -406,7 +405,7 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
     for var i int = 0; i < len(base.struct_.fields); i++ {
         var field *ast.Decl = base.struct_.fields[i]
         if field.field.name {
-            if sys.streq(name.ident.name, field.field.name.ident.name) {
+            if runtime.streq(name.ident.name, field.field.name.ident.name) {
                 base = field.field.type
                 return field
             }
@@ -1130,8 +1129,8 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
         info = newInfo()
     }
     var pkg Package = {
-        path: sys.strdup(path),
-        name: file.name ? sys.strdup(file.name.ident.name) : NULL,
+        path: runtime.strdup(path),
+        name: file.name ? runtime.strdup(file.name.ident.name) : NULL,
         scope: file.scope,
         imports: makearray(*Package),
     }
@@ -1258,7 +1257,7 @@ fun defPredeclaredTypes() {
         var name ast.Expr = {
             kind: ast.EXPR_IDENT,
             ident: {
-                name: sys.strdup(predeclaredTypes[i].name),
+                name: runtime.strdup(predeclaredTypes[i].name),
                 obj: obj,
             },
         }
@@ -1267,7 +1266,7 @@ fun defPredeclaredTypes() {
             native: {
                 kind: predeclaredTypes[i].kind,
                 info: predeclaredTypes[i].info,
-                name: sys.strdup(predeclaredTypes[i].name),
+                name: runtime.strdup(predeclaredTypes[i].name),
             },
         }
         var decl ast.Decl = {
@@ -1337,13 +1336,13 @@ fun defPredeclaredFuncs() {
         var name ast.Expr = {
             kind: ast.EXPR_IDENT,
             ident: {
-                name: sys.strdup(predeclareFuncs[i].name),
+                name: runtime.strdup(predeclareFuncs[i].name),
             },
         }
         var type ast.Expr = {
             kind: ast.TYPE_BUILTIN,
             builtin: {
-                name: sys.strdup(predeclareFuncs[i].name),
+                name: runtime.strdup(predeclareFuncs[i].name),
                 nargs: predeclareFuncs[i].nargs,
                 variadic: predeclareFuncs[i].variadic,
                 isExpr: predeclareFuncs[i].kind == expression,
@@ -1395,13 +1394,13 @@ fun defPredeclaredConsts() {
         var name ast.Expr = {
             kind: ast.EXPR_IDENT,
             ident: {
-                name: sys.strdup(predeclareConsts[i].name),
+                name: runtime.strdup(predeclareConsts[i].name),
             },
         }
         var expr ast.Expr = {
             kind: ast.EXPR_CONST,
             const_: {
-                name: sys.strdup(predeclareConsts[i].name),
+                name: runtime.strdup(predeclareConsts[i].name),
                 type: obj.decl.typedef_.name,
                 value: predeclareConsts[i].value,
             },
