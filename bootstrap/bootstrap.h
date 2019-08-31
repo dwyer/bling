@@ -26,6 +26,7 @@
 #define get(T, a, i) (*(T*)runtime$Slice_get(&(a), (i), NULL))
 
 #define NULL ((void*)0)
+#define nil ((void*)0)
 
 #define false 0
 #define true 1
@@ -34,6 +35,9 @@
 #define print(s) runtime$_print(s)
 
 typedef char bool;
+
+typedef void *voidptr;
+typedef char *charptr;
 
 typedef char i8;
 typedef short i16;

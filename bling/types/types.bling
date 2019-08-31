@@ -462,7 +462,7 @@ fun Checker_resolve(c *Checker, s *ast.Scope, x *ast.Expr) {
     Checker_error(c, ast.Expr_pos(x), C.sprintf("unresolved: %s", x.ident.name))
 }
 
-fun Checker_declare(c *Checker, decl *ast.Decl, data *void, scope *ast.Scope, kind ast.ObjKind, ident *ast.Expr) {
+fun Checker_declare(c *Checker, decl *ast.Decl, data voidptr, scope *ast.Scope, kind ast.ObjKind, ident *ast.Expr) {
     if ident.ident.obj != NULL {
         Checker_error(c, decl.pos, C.sprintf("already declared: %s", ident.ident.name))
     }
@@ -1368,24 +1368,11 @@ var predeclareConsts []struct {
     type *char
     value int
 } = {
-    {
-        "NULL",
-        "voidptr",
-        0,
-    },
-    {
-        "false",
-        "bool",
-        0,
-    },
-    {
-        "true",
-        "bool",
-        1,
-    },
-    {
-        NULL,
-    },
+    { "NULL", "voidptr", 0, },
+    { "nil", "voidptr", 0, },
+    { "false", "bool", 0, },
+    { "true", "bool", 1, },
+    { NULL, },
 }
 
 fun defPredeclaredConsts() {

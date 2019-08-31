@@ -199,8 +199,8 @@ fun Slice_append(s *void, x *const void) {
 }
 
 fun nilArray(s *void) *void {
-    var nil *void = NULL
-    Slice_append(s, &nil)
+    var z = NULL
+    Slice_append(s, &z)
     return (typ *Slice(s))._array
 }
 
