@@ -1,6 +1,7 @@
 package sys
 
 import "C"
+import "runtime"
 
 typ Size u64
 
@@ -20,20 +21,42 @@ fun getenv(key *const char) *char {
     return C.getenv(key)
 }
 
-fun open(filename *const char, oflag int, perm int) int {
-    return C.open(filename, oflag, perm)
+fun _throwErrno(e **runtime.Error) {
+    var errno = C.getErrno()
+    if errno != 0 {
+        var err = runtime.NewError(C.strerror(errno))
+        runtime.Error_move(err, e)
+    }
 }
 
-fun close(fd int) int {
-    return C.close(fd)
+fun open(filename *const char, oflag int, perm int, e **runtime.Error) int {
+    var fd = C.open(filename, oflag, perm)
+    if fd < 0 {
+        _throwErrno(e)
+    }
+    return fd
 }
 
-fun read(fd int, b *void, n Size) int {
-    return C.read(fd, b, n)
+fun close(fd int, e **runtime.Error) {
+    if C.close(fd) < 0 {
+        _throwErrno(e)
+    }
 }
 
-fun write(fd int, b *const void, n Size) int {
-    return C.write(fd, b, n)
+fun read(fd int, b *void, n Size, e **runtime.Error) int {
+    var r = C.read(fd, b, n)
+    if r < 0 {
+        _throwErrno(e)
+    }
+    return r
+}
+
+fun write(fd int, b *const void, n Size, e **runtime.Error) int {
+    var r = C.write(fd, b, n)
+    if r < 0 {
+        _throwErrno(e)
+    }
+    return r
 }
 
 typ FileOpenMode enum {
@@ -190,18 +213,29 @@ typ Errno enum {
 
 typ Dir *void
 
-fun opendir(filename *const char) Dir {
-    return C.opendir(filename)
+fun opendir(filename *const char, e **runtime.Error) Dir {
+    var d = C.opendir(filename)
+    if d == NULL {
+        _throwErrno(e)
+    }
+    return d
 }
 
-fun closedir(dir Dir) int {
-    return C.closedir(dir)
+fun closedir(dir Dir, e **runtime.Error) {
+    if C.closedir(dir) != 0 {
+        _throwErrno(e)
+    }
 }
 
 typ Dirent *void
 
-fun readdir(dir Dir) Dirent {
-    return C.readdir(dir)
+fun readdir(dir Dir, e **runtime.Error) Dirent {
+    C.setErrno(0)
+    var dirent = C.readdir(dir)
+    if C.getErrno() != 0 {
+        _throwErrno(e)
+    }
+    return dirent
 }
 
 fun Dirent_name(dirent Dirent) *char {
@@ -210,8 +244,10 @@ fun Dirent_name(dirent Dirent) *char {
 
 typ Stat C.Stat
 
-fun stat(path *const char, s *Stat) int {
-    return C.stat(path, s)
+fun stat(path *const char, s *Stat, e **runtime.Error) {
+    if C.stat(path, s) != 0 {
+        _throwErrno(e)
+    }
 }
 
 typ S enum {
@@ -244,8 +280,10 @@ typ S enum {
     S_IFMT = 0xf000
 }
 
-fun mkdir(path *const char, mode u32) int {
-    return C.mkdir(path, mode)
+fun mkdir(path *const char, mode u32, e **runtime.Error) {
+    if C.mkdir(path, mode) != 0 {
+        _throwErrno(e)
+    }
 }
 
 fun environ() **char {
@@ -254,14 +292,24 @@ fun environ() **char {
 
 typ Pid int
 
-fun execve(path *const char, argv []const *char, envp []const *char) int {
-    return C.execve(path, argv, envp)
+fun exec(path *const char, argv []const *char, envv []const *char, e **runtime.Error) {
+    if C.execve(path, argv, envv) == -1 {
+        _throwErrno(e)
+    }
 }
 
-fun fork() Pid {
-    return C.fork()
+fun fork(e **runtime.Error) Pid {
+    var pid = C.fork()
+    if pid == -1 {
+        _throwErrno(e)
+    }
+    return pid
 }
 
-fun waitpid(pid Pid, status *int, opts int) Pid {
-    return C.waitpid(pid, status, opts)
+fun waitpid(pid Pid, status *int, opts int, e **runtime.Error) Pid {
+    var wpid = C.waitpid(pid, status, opts)
+    if wpid == -1 {
+        _throwErrno(e)
+    }
+    return wpid
 }
