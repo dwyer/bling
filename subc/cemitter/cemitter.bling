@@ -9,7 +9,7 @@ import "runtime"
 
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     if !expr {
-        panic("cemitter$emitExpr: expr is NULL")
+        panic("cemitter$emitExpr: expr is nil")
     }
     switch expr.kind {
     case ast.EXPR_BASIC_LIT:
@@ -32,7 +32,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
             }
             var arg *ast.Expr = expr.call.args[i]
             if types.isType(arg) {
-                emitType(e, arg, NULL)
+                emitType(e, arg, nil)
             } else {
                 emitExpr(e, arg)
             }
@@ -41,7 +41,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         break
     case ast.EXPR_CAST:
         emitter.emitToken(e, token.LPAREN)
-        emitType(e, expr.cast.type, NULL)
+        emitType(e, expr.cast.type, nil)
         emitter.emitToken(e, token.RPAREN)
         emitExpr(e, expr.cast.expr)
         break
@@ -79,7 +79,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
             if types.isDynamicArray(t) {
                 emitter.emitToken(e, token.GET)
                 emitter.emitToken(e, token.LPAREN)
-                emitType(e, t.array_.elt, NULL)
+                emitType(e, t.array_.elt, nil)
                 emitter.emitToken(e, token.COMMA)
                 emitExpr(e, expr.index.x)
                 emitter.emitToken(e, token.COMMA)
@@ -122,7 +122,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     case ast.EXPR_SIZEOF:
         emitter.emitToken(e, token.SIZEOF)
         emitter.emitToken(e, token.LPAREN)
-        emitType(e, expr.sizeof_.x, NULL)
+        emitType(e, expr.sizeof_.x, nil)
         emitter.emitToken(e, token.RPAREN)
         break
     case ast.EXPR_STAR:
@@ -335,7 +335,7 @@ fun _emitFields(e *emitter.Emitter, fields [array]*ast.Decl) {
 }
 
 fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
-    if type == NULL {
+    if type == nil {
         panic("cemitter$emitType: type is nil")
     }
     switch type.kind {
@@ -349,10 +349,10 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         {
             var base = type.star.x
             if base.kind == ast.TYPE_FUNC {
-                emitType(e, base.func.result, NULL)
+                emitType(e, base.func.result, nil)
                 emitter.emitToken(e, token.LPAREN)
                 emitter.emitToken(e, token.MUL)
-                if name != NULL {
+                if name != nil {
                     emitExpr(e, name)
                 }
                 emitter.emitToken(e, token.RPAREN)
@@ -365,9 +365,9 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
                     emitDecl(e, base.func.params[i])
                 }
                 emitter.emitToken(e, token.RPAREN)
-                name = NULL
+                name = nil
             } else {
-                emitType(e, base, NULL)
+                emitType(e, base, nil)
                 emitter.emitToken(e, token.MUL)
             }
         }
@@ -376,7 +376,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         if type.array_.dynamic {
             emitter.emitToken(e, token.ARRAY)
             emitter.emitToken(e, token.LPAREN)
-            emitType(e, type.array_.elt, NULL)
+            emitType(e, type.array_.elt, nil)
             emitter.emitToken(e, token.RPAREN)
         } else {
             emitType(e, type.array_.elt, name)
@@ -385,7 +385,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
                 emitExpr(e, type.array_.len)
             }
             emitter.emitToken(e, token.RBRACK)
-            name = NULL
+            name = nil
         }
         break
     case ast.TYPE_ELLIPSIS:
@@ -421,7 +421,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         }
         break
     case ast.TYPE_FUNC:
-        if type.func.result != NULL {
+        if type.func.result != nil {
             emitType(e, type.func.result, name)
         } else {
             emitter.emitString(e, "void")
@@ -437,7 +437,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitDecl(e, type.func.params[i])
         }
         emitter.emitToken(e, token.RPAREN)
-        name = NULL
+        name = nil
         break
     case ast.TYPE_MAP:
         emitter.emitToken(e, token.MAP)
@@ -538,7 +538,7 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
     emitter.emitString(e, file.filename)
     emitter.emitNewline(e)
     emitter.emitNewline(e)
-    if file.name != NULL {
+    if file.name != nil {
         emitter.emitToken(e, token.PACKAGE)
         emitter.emitToken(e, token.LPAREN)
         emitExpr(e, file.name)
@@ -554,7 +554,7 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
 }
 
 fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
-    var obj *ast.Object = NULL
+    var obj *ast.Object = nil
     for var i int = 0; i < len(scope.keys); i++ {
         runtime.Map_get(&scope.objects, scope.keys[i], &obj)
         if obj.kind == kind {
@@ -572,7 +572,7 @@ fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
 }
 
 fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
-    if runtime.Map_get(done, pkg.path, NULL) {
+    if runtime.Map_get(done, pkg.path, nil) {
         return
     }
     runtime.Map_set(done, pkg.path, &pkg.path)

@@ -55,7 +55,7 @@ fun operand(p *parser.Parser) *ast.Expr {
 }
 
 fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
-    if x == NULL {
+    if x == nil {
         x = operand(p)
     }
     for ;; {
@@ -79,7 +79,7 @@ fun postfix_expression(p *parser.Parser, x *ast.Expr) *ast.Expr {
                 var args [array]*ast.Expr = makearray(*ast.Expr)
                 parser.expect(p, token.LPAREN)
                 while p.tok != token.RPAREN {
-                    var x *ast.Expr = NULL
+                    var x *ast.Expr = nil
                     if is_type(p) {
                         x = type_name(p)
                     } else {
@@ -164,7 +164,7 @@ fun unary_expression(p *parser.Parser) *ast.Expr {
         {
             parser.next(p)
             parser.expect(p, token.LPAREN)
-            var x *ast.Expr = NULL
+            var x *ast.Expr = nil
             if is_type(p) {
                 x = type_name(p)
                 if p.tok == token.MUL {
@@ -185,9 +185,9 @@ fun unary_expression(p *parser.Parser) *ast.Expr {
         }
     case token.DEC, token.INC:
         parser.error(p, p.pos, C.sprintf("unary `%s` not supported in subc", token.string(p.tok)))
-        return NULL
+        return nil
     default:
-        return postfix_expression(p, NULL)
+        return postfix_expression(p, nil)
     }
 }
 
@@ -256,7 +256,7 @@ fun binary_expression(p *parser.Parser, prec1 int) *ast.Expr {
 fun ternary_expression(p *parser.Parser) *ast.Expr {
     var x *ast.Expr = binary_expression(p, token.lowest_prec + 1)
     if parser.accept(p, token.QUESTION_MARK) {
-        var consequence *ast.Expr = NULL
+        var consequence *ast.Expr = nil
         if p.tok != token.COLON {
             consequence = expression(p)
         }
@@ -286,7 +286,7 @@ fun constant_expression(p *parser.Parser) *ast.Expr {
 fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
     var keyword token.Token = p.tok
     var pos token.Pos = parser.expect(p, keyword)
-    var name *ast.Expr = NULL
+    var name *ast.Expr = nil
     if p.tok == token.IDENT {
         name = parser.parseIdent(p)
     }
@@ -327,7 +327,7 @@ fun struct_or_union_specifier(p *parser.Parser) *ast.Expr {
 
 fun enum_specifier(p *parser.Parser) *ast.Expr {
     var pos token.Pos = parser.expect(p, token.ENUM)
-    var name *ast.Expr = NULL
+    var name *ast.Expr = nil
     if p.tok == token.IDENT {
         name = parser.parseIdent(p)
     }
@@ -368,7 +368,7 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
     if p.tok == token.MUL {
         *type_ptr = pointer(p, *type_ptr)
     }
-    var name *ast.Expr = NULL
+    var name *ast.Expr = nil
     var is_ptr bool = false
     switch p.tok {
     case token.IDENT:
@@ -388,7 +388,7 @@ fun declarator(p *parser.Parser, type_ptr **ast.Expr) *ast.Expr {
     if p.tok == token.LBRACK {
         var pos token.Pos = p.pos
         parser.next(p)
-        var len *ast.Expr = NULL
+        var len *ast.Expr = nil
         if p.tok != token.RBRACK {
             len = constant_expression(p)
         }
@@ -505,7 +505,7 @@ fun abstract_declarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
     }
     for ;; {
         if parser.accept(p, token.LBRACK) {
-            var len *ast.Expr = NULL
+            var len *ast.Expr = nil
             if p.tok != token.RBRACK {
                 len = constant_expression(p)
             }
@@ -564,7 +564,7 @@ fun initializer(p *parser.Parser) *ast.Expr {
     }
     var list [array]*ast.Expr = makearray(*ast.Expr)
     while p.tok != token.RBRACE && p.tok != token.EOF {
-        var key *ast.Expr = NULL
+        var key *ast.Expr = nil
         var isArray bool = false
         if parser.accept(p, token.PERIOD) {
             key = parser.parseIdent(p)
@@ -669,16 +669,16 @@ fun statement(p *parser.Parser) *ast.Stmt {
     var pos token.Pos = p.pos
     if parser.accept(p, token.FOR) {
         parser.expect(p, token.LPAREN)
-        var init *ast.Stmt = NULL
+        var init *ast.Stmt = nil
         if !parser.accept(p, token.SEMICOLON) {
             init = statement(p)
         }
-        var cond *ast.Expr = NULL
+        var cond *ast.Expr = nil
         if p.tok != token.SEMICOLON {
             cond = expression(p)
         }
         parser.expect(p, token.SEMICOLON)
-        var post *ast.Stmt = NULL
+        var post *ast.Stmt = nil
         if p.tok != token.RPAREN {
             post = simple_statement(p, false)
         }
@@ -702,7 +702,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         var cond *ast.Expr = expression(p)
         parser.expect(p, token.RPAREN)
         var body *ast.Stmt = compound_statement(p, true)
-        var else_ *ast.Stmt = NULL
+        var else_ *ast.Stmt = nil
         if parser.accept(p, token.ELSE) {
             if p.tok == token.IF {
                 else_ = statement(p)
@@ -722,7 +722,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         return &&stmt
     }
     if parser.accept(p, token.RETURN) {
-        var x *ast.Expr = NULL
+        var x *ast.Expr = nil
         if p.tok != token.SEMICOLON {
             x = expression(p)
         }
@@ -811,7 +811,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
         {
             var keyword token.Token = p.tok
             parser.next(p)
-            var label *ast.Expr = NULL
+            var label *ast.Expr = nil
             if keyword == token.GOTO {
                 label = parser.parseIdent(p)
             }
@@ -917,7 +917,7 @@ fun map_specifier(p *parser.Parser) *ast.Expr {
 }
 
 fun type_specifier(p *parser.Parser) *ast.Expr {
-    var x *ast.Expr = NULL
+    var x *ast.Expr = nil
     switch p.tok {
     case token.SIGNED, token.UNSIGNED:
         parser.error(p, p.pos, C.sprintf("`%s` is not supported in subc", token.string(p.tok)))
@@ -993,7 +993,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
     }
     var type *ast.Expr = declaration_specifiers(p, true)
     var name *ast.Expr = declarator(p, &type)
-    var value *ast.Expr = NULL
+    var value *ast.Expr = nil
     if type.kind == ast.TYPE_FUNC {
         var decl ast.Decl = {
             kind: ast.DECL_FUNC,
@@ -1014,7 +1014,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
         value = initializer(p)
     }
     parser.expect(p, token.SEMICOLON)
-    if name != NULL {
+    if name != nil {
         var decl ast.Decl = {
             kind: ast.DECL_VALUE,
             pos: pos,
@@ -1050,7 +1050,7 @@ fun declaration(p *parser.Parser, is_external bool) *ast.Decl {
 fun parse_cfile(p *parser.Parser, scope *ast.Scope) *ast.File {
     var decls [array]*ast.Decl = makearray(*ast.Decl)
     var imports [array]*ast.Decl = makearray(*ast.Decl)
-    var name *ast.Expr = NULL
+    var name *ast.Expr = nil
     while p.tok == token.HASH {
         var lit *ast.Decl = parser.parsePragma(p)
         append(decls, lit)
@@ -1093,7 +1093,7 @@ fun parse_cfile(p *parser.Parser, scope *ast.Scope) *ast.File {
 }
 
 fun parseFile(fset *token.FileSet, filename *const char, scope *ast.Scope) *ast.File {
-    var src *char = ioutil.readFile(filename, NULL)
+    var src *char = ioutil.readFile(filename, nil)
     var p parser.Parser = {}
     parser.init(&p, fset, filename, src)
     p.c_mode = true

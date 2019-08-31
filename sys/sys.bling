@@ -215,7 +215,7 @@ typ Dir *void
 
 fun opendir(filename *const char, e **runtime.Error) Dir {
     var d = C.opendir(filename)
-    if d == NULL {
+    if d == nil {
         _throwErrno(e)
     }
     return d

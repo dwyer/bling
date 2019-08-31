@@ -30,10 +30,10 @@ fun join(a []*const char, size int, sep *const char) *char {
         return runtime.strdup(a[0])
     }
     var b Buffer = makearray(char)
-    Buffer_write(&b, a[0], runtime.strlen(a[0]), NULL)
+    Buffer_write(&b, a[0], runtime.strlen(a[0]), nil)
     for var i int = 1; i < size; i++ {
-        Buffer_write(&b, sep, runtime.strlen(sep), NULL)
-        Buffer_write(&b, a[i], runtime.strlen(a[i]), NULL)
+        Buffer_write(&b, sep, runtime.strlen(sep), nil)
+        Buffer_write(&b, a[i], runtime.strlen(a[i]), nil)
     }
     return Buffer_string(&b)
 }
@@ -59,13 +59,13 @@ fun Buffer_len(b *Buffer) int {
 
 fun Buffer_bytes(b *Buffer) *char {
     Buffer_init(b)
-    return runtime.Slice_get(b, 0, NULL)
+    return runtime.Slice_get(b, 0, nil)
 }
 
 fun Buffer_string(b *Buffer) *char {
     Buffer_init(b)
     var s *char = runtime.malloc(Buffer_len(b) + 1)
-    runtime.memcpy(s, runtime.Slice_get(b, 0, NULL), Buffer_len(b))
+    runtime.memcpy(s, runtime.Slice_get(b, 0, nil), Buffer_len(b))
     s[Buffer_len(b)] = '\0'
     return s
 }

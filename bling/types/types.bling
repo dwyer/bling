@@ -121,7 +121,7 @@ fun isType(expr *ast.Expr) bool {
     for ;; {
         switch expr.kind {
         case ast.EXPR_IDENT:
-            if expr.ident.obj == NULL {
+            if expr.ident.obj == nil {
                 panic(C.sprintf("types$isType: unresolved identifier %s", expr.ident.name))
             }
             return expr.ident.obj.kind == ast.ObjKind_TYP
@@ -160,7 +160,7 @@ fun makePtr(type *ast.Expr) *ast.Expr {
 }
 
 fun getUnderlyingType(ident *ast.Expr) *ast.Expr {
-    if ident.ident.obj == NULL {
+    if ident.ident.obj == nil {
         panic(C.sprintf("not resolved: %s", typeString(ident)))
     }
     var decl *ast.Decl = ident.ident.obj.decl
@@ -218,7 +218,7 @@ fun getType(x *ast.Expr) *ast.Expr {
         break
     }
     panic(exprString(x))
-    return NULL
+    return nil
 }
 
 fun isArithmetic(type *ast.Expr) bool {
@@ -249,7 +249,7 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
     if a == b {
         return true
     }
-    if a == NULL || b == NULL {
+    if a == nil || b == nil {
         return false
     }
     if a.kind == ast.TYPE_MAP || b.kind == ast.TYPE_MAP {
@@ -283,7 +283,7 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
                 for ; i < len(a.func.params); i++ {
                     var param1 *ast.Decl = a.func.params[i]
                     var param2 *ast.Decl = b.func.params[i]
-                    if param2 == NULL {
+                    if param2 == nil {
                         return false
                     }
                     if !areIdentical(param1.field.type, param2.field.type) {
@@ -314,7 +314,7 @@ fun pointerBase(t *ast.Expr) *ast.Expr {
         return t.array_.elt
     default:
         panic(C.sprintf("not a pointer: %s", typeString(t)))
-        return NULL
+        return nil
     }
 }
 
@@ -387,14 +387,14 @@ fun getDeclType(decl *ast.Decl) *ast.Expr {
     case ast.DECL_FUNC:
         return decl.func.type
     case ast.DECL_IMPORT:
-        return NULL
+        return nil
     case ast.DECL_TYPEDEF:
         return decl.typedef_.type
     case ast.DECL_VALUE:
         return decl.value.type
     default:
         panic(C.sprintf("unhandled decl: %s", declString(decl)))
-        return NULL
+        return nil
     }
 }
 
@@ -416,7 +416,7 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
             }
         }
     }
-    return NULL
+    return nil
 }
 
 fun getStructField(type *ast.Expr, index int) *ast.Decl {
@@ -430,7 +430,7 @@ fun getStructField(type *ast.Expr, index int) *ast.Decl {
     if 0 <= index && index < len(base.struct_.fields) {
         return base.struct_.fields[index]
     }
-    return NULL
+    return nil
 }
 
 typ Checker struct {
@@ -463,7 +463,7 @@ fun Checker_resolve(c *Checker, s *ast.Scope, x *ast.Expr) {
 }
 
 fun Checker_declare(c *Checker, decl *ast.Decl, data voidptr, scope *ast.Scope, kind ast.ObjKind, ident *ast.Expr) {
-    if ident.ident.obj != NULL {
+    if ident.ident.obj != nil {
         Checker_error(c, decl.pos, C.sprintf("already declared: %s", ident.ident.name))
     }
     var obj *ast.Object = ast.newObject(kind, ident.ident.name)
@@ -472,7 +472,7 @@ fun Checker_declare(c *Checker, decl *ast.Decl, data voidptr, scope *ast.Scope, 
     obj.scope = scope
     ident.ident.obj = obj
     var alt *ast.Object = ast.Scope_insert(scope, obj)
-    if alt != NULL {
+    if alt != nil {
         Checker_error(c, decl.pos, C.sprintf("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl)))
     }
 }
@@ -494,7 +494,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
     case ast.EXPR_SELECTOR:
         {
             var type *ast.Expr = Checker_checkExpr(c, t.selector.x)
-            assert(type == NULL)
+            assert(type == nil)
             assert(ast.isIdent(t.selector.x))
             assert(t.selector.x.ident.obj.kind == ast.ObjKind_PKG)
             var oldScope *ast.Scope = c.pkg.scope
@@ -521,7 +521,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
             if t.enum_.name {
                 decl.value.type = t.enum_.name
             }
-            Checker_declare(c, decl, NULL, c.pkg.scope, ast.ObjKind_CON, decl.value.name)
+            Checker_declare(c, decl, nil, c.pkg.scope, ast.ObjKind_CON, decl.value.name)
             if decl.value.value {
                 Checker_checkExpr(c, decl.value.value)
             }
@@ -549,7 +549,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
                 var field *ast.Decl = t.struct_.fields[i]
                 Checker_checkType(c, field.field.type)
                 if field.field.name {
-                    Checker_declare(c, field, NULL, c.pkg.scope, ast.ObjKind_VAL, field.field.name)
+                    Checker_declare(c, field, nil, c.pkg.scope, ast.ObjKind_VAL, field.field.name)
                 }
             }
             Checker_closeScope(c)
@@ -563,7 +563,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
 
 fun Checker_checkIdent(c *Checker, expr *ast.Expr) *ast.Expr {
     assert(expr.kind == ast.EXPR_IDENT)
-    if expr.ident.obj == NULL {
+    if expr.ident.obj == nil {
         Checker_error(c, ast.Expr_pos(expr), "unresolved identifier")
     }
     return getDeclType(expr.ident.obj.decl)
@@ -593,7 +593,7 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
             elt = elt.key_value.value
         }
         if elt.kind == ast.EXPR_COMPOSITE_LIT {
-            if elt.composite.type == NULL {
+            if elt.composite.type == nil {
                 elt.composite.type = baseT.array_.elt
             } else {
                 Checker_checkType(c, elt.composite.type)
@@ -610,7 +610,7 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
     var expectKV bool = false
     for var i int = 0; i < len(x.composite.list); i++ {
         var elt *ast.Expr = x.composite.list[i]
-        var fieldT *ast.Expr = NULL
+        var fieldT *ast.Expr = nil
         if elt.kind == ast.EXPR_KEY_VALUE {
             elt.key_value.isArray = false
             expectKV = true
@@ -619,7 +619,7 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
                 Checker_error(c, ast.Expr_pos(x), "key must be an identifier")
             }
             var field *ast.Decl = getStructFieldByName(x.composite.type, key)
-            if field == NULL {
+            if field == nil {
                 Checker_error(c, ast.Expr_pos(key), C.sprintf("no member named '%s' in '%s'", exprString(key), typeString(x.composite.type)))
             }
             key.ident.obj = field.field.name.ident.obj
@@ -632,9 +632,9 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             var field *ast.Decl = getStructField(x.composite.type, i)
             fieldT = field.field.type
         }
-        var eltT *ast.Expr = NULL
+        var eltT *ast.Expr = nil
         if elt.kind == ast.EXPR_COMPOSITE_LIT {
-            if elt.composite.type == NULL {
+            if elt.composite.type == nil {
                 elt.composite.type = fieldT
             } else {
                 Checker_checkType(c, elt.composite.type)
@@ -706,7 +706,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             return makePtr(Checker_lookupIdent(c, "char"))
         default:
             Checker_error(c, ast.Expr_pos(expr), "unreachable")
-            return NULL
+            return nil
         }
     case ast.EXPR_CALL:
         {
@@ -764,13 +764,13 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                     for var i int = 0; i < len(expr.call.args); i++ {
                         Checker_checkExpr(c, expr.call.args[i])
                     }
-                    return NULL
+                    return nil
                 }
             } else if type.kind == ast.TYPE_FUNC {
                 var j int = 0
                 for var i int = 0; i < len(expr.call.args); i++ {
                     var param *ast.Decl = type.func.params[j]
-                    if param == NULL {
+                    if param == nil {
                         Checker_error(c, ast.Expr_pos(expr), "too many args")
                         break
                     }
@@ -822,7 +822,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     case ast.EXPR_SELECTOR:
         {
             var type *ast.Expr = Checker_checkExpr(c, expr.selector.x)
-            if type == NULL {
+            if type == nil {
                 var x *ast.Expr = expr.selector.x
                 assert(x.kind == ast.EXPR_IDENT)
                 var decl *ast.Decl = x.ident.obj.decl
@@ -841,7 +841,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 assert(expr.selector.tok != token.ARROW)
             }
             var field *ast.Decl = getStructFieldByName(type, expr.selector.sel)
-            if field == NULL {
+            if field == nil {
                 Checker_error(c, ast.Expr_pos(expr), C.sprintf("no member named '%s' in '%s'", exprString(expr.selector.sel), typeString(type)))
             }
             expr.selector.sel.ident.obj = field.field.name.ident.obj
@@ -860,7 +860,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 return type.array_.elt
             default:
                 Checker_error(c, ast.Expr_pos(expr), C.sprintf("derefencing a non-pointer `%s`", typeString(type)))
-                return NULL
+                return nil
             }
         }
     case ast.EXPR_TERNARY:
@@ -892,7 +892,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         }
     default:
         Checker_error(c, ast.Expr_pos(expr), "unknown expr")
-        return NULL
+        return nil
     }
 }
 
@@ -965,7 +965,7 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
         if stmt.return_.x {
             var a *ast.Expr = c.result
             var b *ast.Expr = Checker_checkExpr(c, stmt.return_.x)
-            if a == NULL {
+            if a == nil {
                 Checker_error(c, ast.Stmt_pos(stmt), "returning value in void function")
             }
             if !areAssignable(a, b) {
@@ -998,11 +998,11 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
 
 fun Checker_checkImport(c *Checker, imp *ast.Decl) *Package {
     var path *char = constant_stringVal(imp.imp.path)
-    var pkg *Package = NULL
+    var pkg *Package = nil
     runtime.Map_get(&c.info.imports, path, &pkg)
-    if pkg == NULL {
-        pkg = check(c.conf, path, c.fset, NULL, c.info)
-        assert(runtime.Map_get(&c.info.imports, path, NULL))
+    if pkg == nil {
+        pkg = check(c.conf, path, c.fset, nil, c.info)
+        assert(runtime.Map_get(&c.info.imports, path, nil))
     }
     imp.imp.name = makeIdent(pkg.scope.pkg)
     Checker_declare(c, imp, pkg.scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
@@ -1023,14 +1023,14 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
                 var param *ast.Decl = type.func.params[i]
                 assert(param.kind == ast.DECL_FIELD)
                 if param.field.name {
-                    Checker_declare(c, param, NULL, c.pkg.scope, ast.ObjKind_VAL, param.field.name)
+                    Checker_declare(c, param, nil, c.pkg.scope, ast.ObjKind_VAL, param.field.name)
                 }
             }
             c.result = decl.func.type.func.result
             for var i int = 0; i < len(decl.func.body.block.stmts); i++ {
                 Checker_checkStmt(c, decl.func.body.block.stmts[i])
             }
-            c.result = NULL
+            c.result = nil
             Checker_closeScope(c)
             break
         }
@@ -1051,13 +1051,13 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
         break
     case ast.DECL_VALUE:
         {
-            var valType *ast.Expr = NULL
-            if decl.value.type != NULL {
+            var valType *ast.Expr = nil
+            if decl.value.type != nil {
                 Checker_checkType(c, decl.value.type)
             }
-            if decl.value.value != NULL {
+            if decl.value.value != nil {
                 if decl.value.value.kind == ast.EXPR_COMPOSITE_LIT {
-                    if decl.value.value.composite.type == NULL {
+                    if decl.value.value.composite.type == nil {
                         decl.value.value.composite.type = decl.value.type
                     } else {
                         Checker_checkType(c, decl.value.value.composite.type)
@@ -1067,16 +1067,16 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
                     valType = Checker_checkExpr(c, decl.value.value)
                 }
             }
-            if decl.value.type == NULL {
+            if decl.value.type == nil {
                 decl.value.type = valType
             }
-            if valType != NULL {
+            if valType != nil {
                 var varType *ast.Expr = decl.value.type
                 if !areAssignable(varType, valType) {
                     Checker_error(c, decl.pos, C.sprintf("not assignable %s and %s", typeString(varType), typeString(valType)))
                 }
             }
-            Checker_declare(c, decl, NULL, c.pkg.scope, ast.ObjKind_VAL, decl.value.name)
+            Checker_declare(c, decl, nil, c.pkg.scope, ast.ObjKind_VAL, decl.value.name)
             break
         }
     default:
@@ -1103,7 +1103,7 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
             break
         }
         if kind {
-            Checker_declare(c, d, NULL, c.pkg.scope, kind, d.typedef_.name)
+            Checker_declare(c, d, nil, c.pkg.scope, kind, d.typedef_.name)
         }
     }
     for var i int = 0; i < len(file.decls); i++ {
@@ -1120,7 +1120,7 @@ fun newInfo() *Info {
 
 fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.File, info *Info) *Package {
     if info {
-        var pkg *Package = NULL
+        var pkg *Package = nil
         runtime.Map_get(&info.imports, path, &pkg)
         if pkg {
             return pkg
@@ -1130,7 +1130,7 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
     }
     var pkg Package = {
         path: runtime.strdup(path),
-        name: file.name ? runtime.strdup(file.name.ident.name) : NULL,
+        name: file.name ? runtime.strdup(file.name.ident.name) : nil,
         scope: file.scope,
         imports: makearray(*Package),
     }
@@ -1146,14 +1146,14 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
 }
 
 fun check(conf *Config, path *const char, fset *token.FileSet, files **ast.File, info *Info) *Package {
-    if files == NULL {
-        files = parser.parseDir(fset, path, universe(), NULL)
+    if files == nil {
+        files = parser.parseDir(fset, path, universe(), nil)
     }
     assert(files[0] && !files[1])
     return checkFile(conf, path, fset, files[0], info)
 }
 
-var _universe *ast.Scope = NULL
+var _universe *ast.Scope = nil
 
 var predeclaredTypes []const Basic = {
     INVALID: {
@@ -1277,7 +1277,7 @@ fun defPredeclaredTypes() {
             },
         }
         obj.decl = &&decl
-        assert(ast.Scope_insert(_universe, obj) == NULL)
+        assert(ast.Scope_insert(_universe, obj) == nil)
     }
 }
 
@@ -1359,7 +1359,7 @@ fun defPredeclaredFuncs() {
         var obj *ast.Object = ast.newObject(ast.ObjKind_FUN, name.ident.name)
         obj.decl = &&decl
         obj.decl.func.name.ident.obj = obj
-        assert(ast.Scope_insert(_universe, obj) == NULL)
+        assert(ast.Scope_insert(_universe, obj) == nil)
     }
 }
 
@@ -1368,11 +1368,11 @@ var predeclareConsts []struct {
     type *char
     value int
 } = {
-    { "NULL", "voidptr", 0, },
-    { "nil", "voidptr", 0, },
-    { "false", "bool", 0, },
-    { "true", "bool", 1, },
-    { NULL, },
+    {"NULL", "voidptr", 0},
+    {"nil", "voidptr", 0},
+    {"false", "bool", 0},
+    {"true", "bool", 1},
+    {nil},
 }
 
 fun defPredeclaredConsts() {
@@ -1403,13 +1403,13 @@ fun defPredeclaredConsts() {
         obj = ast.newObject(ast.ObjKind_CON, name.ident.name)
         obj.decl = &&decl
         obj.decl.value.name.ident.obj = obj
-        assert(ast.Scope_insert(_universe, obj) == NULL)
+        assert(ast.Scope_insert(_universe, obj) == nil)
     }
 }
 
 fun universe() *ast.Scope {
-    if _universe == NULL {
-        _universe = ast.Scope_new(NULL)
+    if _universe == nil {
+        _universe = ast.Scope_new(nil)
         defPredeclaredTypes()
         defPredeclaredConsts()
         defPredeclaredFuncs()

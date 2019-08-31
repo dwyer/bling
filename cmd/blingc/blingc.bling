@@ -16,7 +16,7 @@ import "subc/cemitter"
 import "subc/cparser"
 
 fun emit_rawfile(e *emitter.Emitter, filename *const char) {
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var src *char = ioutil.readFile(filename, &err)
     if err {
         panic(err.error)
@@ -28,7 +28,7 @@ fun emit_rawfile(e *emitter.Emitter, filename *const char) {
 fun isForwardDecl(decl *ast.Decl) bool {
     switch decl.kind {
     case ast.DECL_FUNC:
-        return decl.func.body == NULL
+        return decl.func.body == nil
     case ast.DECL_PRAGMA:
         return true
     case ast.DECL_TYPEDEF:
@@ -41,14 +41,14 @@ fun isForwardDecl(decl *ast.Decl) bool {
             }
         }
     case ast.DECL_VALUE:
-        return decl.value.value == NULL
+        return decl.value.value == nil
     default:
         return false
     }
 }
 
 fun compile_c(argv []*char) {
-    var dst *const char = NULL
+    var dst *const char = nil
     while **argv == '-' {
         if runtime.streq(*argv, "-o") {
             argv++
@@ -80,7 +80,7 @@ fun compile_c(argv []*char) {
     }
     var out *char = emitter.Emitter_string(&e)
     var file *os.File = os.stdout
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     if dst {
         file = os.create(dst, &err)
         if err {
@@ -100,11 +100,11 @@ fun compile_c(argv []*char) {
 }
 
 fun compile_bling(argv []*char) {
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var conf types.Config = {
         strict: true,
     }
-    var dst *char = NULL
+    var dst *char = nil
     while **argv == '-' {
         if runtime.streq(*argv, "-o") {
             argv++
@@ -121,7 +121,7 @@ fun compile_bling(argv []*char) {
     emit_rawfile(&e, "bootstrap/bootstrap.h")
     var fset *token.FileSet = token.newFileSet()
     var filename *char = *argv
-    var file *ast.File = NULL
+    var file *ast.File = nil
     if bytes.hasSuffix(filename, ".bling") {
         file = parser.parseFile(fset, filename, types.universe())
     } else if bytes.hasSuffix(filename, ".c") {
@@ -129,7 +129,7 @@ fun compile_bling(argv []*char) {
     } else {
         panic(C.sprintf("unknown file type: %s", filename))
     }
-    var pkg *types.Package = types.checkFile(&conf, paths.dir(filename), fset, file, NULL)
+    var pkg *types.Package = types.checkFile(&conf, paths.dir(filename), fset, file, nil)
     cemitter.emitPackage(&e, pkg)
     argv++
     assert(!*argv)
@@ -137,7 +137,7 @@ fun compile_bling(argv []*char) {
     if dst {
         if bytes.hasSuffix(dst, ".out") {
             var tmp *char = paths.join2(os.tempDir(), "tmp.c")
-            ioutil.writeFile(tmp, out, 0644, NULL)
+            ioutil.writeFile(tmp, out, 0644, nil)
             var args []*char = {
                 "/usr/bin/cc",
                 "-o",
@@ -146,14 +146,14 @@ fun compile_bling(argv []*char) {
                 "bazel-bin/bootstrap/libbootstrap.a",
                 "bazel-bin/os/libos.a",
                 "bazel-bin/sys/libsys.a",
-                NULL,
+                nil,
             }
-            var code int = os.exec(args, NULL)
+            var code int = os.exec(args, nil)
             if code != 0 {
                 panic(C.sprintf("- failed with code %d", code))
             }
         } else {
-            ioutil.writeFile(dst, out, 0644, NULL)
+            ioutil.writeFile(dst, out, 0644, nil)
         }
     } else {
         os.write(os.stdout, out, &err)

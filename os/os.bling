@@ -60,8 +60,8 @@ fun _throwPathError(path *const char, err *runtime.Error, e **runtime.Error) {
 
 fun _throwFileError(file *File, err *runtime.Error, e **runtime.Error) {
     if err {
-        if e == NULL {
-            close(file, NULL) // close the file before we panic
+        if e == nil {
+            close(file, nil) // close the file before we panic
         }
         _throwPathError(file.name, err, e)
     }
@@ -77,11 +77,11 @@ fun newFile(fd uintptr, name *const char) *File {
 
 fun openFile(filename *const char, mode int, perm int, e **runtime.Error) *File {
     runtime.clearError()
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var fd = sys.open(filename, mode, perm, &err)
     if err {
         _throwPathError(filename, err, e)
-        return NULL
+        return nil
     }
     return newFile(fd, filename)
 }
@@ -95,21 +95,21 @@ fun create(filename *const char, e **runtime.Error) *File {
 }
 
 fun read(file *File, b *char, n int, e **runtime.Error) int {
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var r = sys.read(file.fd, b, n, &err)
     _throwFileError(file, err, e)
     return r
 }
 
 fun write(file *File, b *const char, e **runtime.Error) int {
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var n = sys.write(file.fd, b, runtime.strlen(b), &err)
     _throwFileError(file, err, e)
     return n
 }
 
 fun close(file *File, e **runtime.Error) {
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     if file._isDir {
         sys.closedir(typ *void(file.fd), &err)
     } else {
@@ -120,11 +120,11 @@ fun close(file *File, e **runtime.Error) {
 
 fun stat(name *const char, e **runtime.Error) *FileInfo {
     var st = sys.Stat{}
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     sys.stat(name, &st, &err)
     if err {
         _throwPathError(name, err, e)
-        return NULL
+        return nil
     }
     var info = FileInfo{
         _name: runtime.strdup(name),
@@ -134,7 +134,7 @@ fun stat(name *const char, e **runtime.Error) *FileInfo {
 }
 
 fun FileInfo_free(info *FileInfo) {
-    if info != NULL {
+    if info != nil {
         runtime.free(info._name)
         runtime.free(info._sys)
         runtime.free(info)
@@ -142,11 +142,11 @@ fun FileInfo_free(info *FileInfo) {
 }
 
 fun openDir(name *const char, e **runtime.Error) *File {
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var dp = sys.opendir(name, &err)
     if err {
         _throwPathError(name, err, e)
-        return NULL
+        return nil
     }
     var file = newFile(typ uintptr(dp), name)
     file._isDir = true
@@ -157,9 +157,9 @@ fun readdirnames(file *File, e **runtime.Error) [array]*char {
     var arr = makearray(*char)
     var dp sys.Dir = typ sys.Dir(file.fd)
     for ;; {
-        var err *runtime.Error = NULL
+        var err *runtime.Error = nil
         var dirent = sys.readdir(dp, &err)
-        if dirent == NULL {
+        if dirent == nil {
             break
         }
         var name = sys.Dirent_name(dirent)
@@ -172,9 +172,9 @@ fun readdirnames(file *File, e **runtime.Error) [array]*char {
 }
 
 fun readdir(file *File, e **runtime.Error) [array]*FileInfo {
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var names = readdirnames(file, &err)
-    if err != NULL {
+    if err != nil {
         _throwFileError(file, err, e)
         return names
     }
@@ -183,7 +183,7 @@ fun readdir(file *File, e **runtime.Error) [array]*FileInfo {
         var path = paths.join2(file.name, names[i])
         runtime.free(names[i])
         var info *FileInfo = stat(path, &err)
-        if err != NULL {
+        if err != nil {
             _throwFileError(file, err, e)
             _throwPathError(file.name, err, e)
             return names
@@ -231,7 +231,7 @@ fun tempDir() *const char {
 }
 
 fun mkdir(path *const char, mode u32, e **runtime.Error) {
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     sys.mkdir(path, mode, &err)
     _throwPathError(path, err, e)
 }
@@ -243,7 +243,7 @@ fun mkdirAll(path *const char, mode u32, e **runtime.Error) {
         mkdirAll(dir, mode, e)
     }
     runtime.free(dir)
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     mkdir(path, mode, &err)
     switch sys.errno() {
     case 0, sys.EEXIST:
@@ -256,9 +256,9 @@ fun mkdirAll(path *const char, mode u32, e **runtime.Error) {
 
 fun exec(argv []const *char, e **runtime.Error) int {
     var status = -1
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var pid = sys.fork(&err)
-    if err == NULL {
+    if err == nil {
         if pid == 0 {
             sys.exec(argv[0], argv, sys.environ(), &err)
         } else {

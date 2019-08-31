@@ -432,9 +432,9 @@ fun Scope_unmake(s *Scope) {
 }
 
 fun Scope_insert(s *Scope, obj *Object) *Object {
-    var alt *Object = NULL
+    var alt *Object = nil
     runtime.Map_get(&s.objects, obj.name, &alt)
-    if alt == NULL {
+    if alt == nil {
         runtime.Map_set(&s.objects, obj.name, &obj)
         append(s.keys, obj.name)
     }
@@ -442,7 +442,7 @@ fun Scope_insert(s *Scope, obj *Object) *Object {
 }
 
 fun Scope_lookup(s *Scope, name *char) *Object {
-    var obj *Object = NULL
+    var obj *Object = nil
     runtime.Map_get(&s.objects, name, &obj)
     return obj
 }
@@ -451,30 +451,30 @@ fun Scope_print(s *Scope) {
     var buf bytes.Buffer = {}
     while s {
         var iter runtime.MapIter = runtime.NewMapIter(&s.objects)
-        var key *char = NULL
-        while runtime.MapIter_next(&iter, &key, NULL) {
+        var key *char = nil
+        while runtime.MapIter_next(&iter, &key, nil) {
             var s *char = C.sprintf("%s- %s", bytes.Buffer_string(&buf), key)
             print(s)
             runtime.free(s)
         }
         s = s.outer
-        bytes.Buffer_writeByte(&buf, '\t', NULL)
+        bytes.Buffer_writeByte(&buf, '\t', nil)
     }
 }
 
 fun Scope_deepLookup(s *Scope, name *char) *Object {
-    for ; s != NULL; s = s.outer {
+    for ; s != nil; s = s.outer {
         var obj *Object = Scope_lookup(s, name)
-        if obj != NULL {
+        if obj != nil {
             return obj
         }
     }
-    return NULL
+    return nil
 }
 
 fun resolve(scope *Scope, ident *Expr) bool {
     var obj *Object = Scope_deepLookup(scope, ident.ident.name)
-    if obj != NULL {
+    if obj != nil {
         ident.ident.obj = obj
         return true
     }
@@ -495,7 +495,7 @@ fun isIdentNamed(x *Expr, name *const char) bool {
 }
 
 fun isNil(x *Expr) bool {
-    return isIdentNamed(x, "NULL")
+    return isIdentNamed(x, "nil")
 }
 
 fun isVoid(x *Expr) bool {
@@ -506,7 +506,7 @@ fun isVoidPtr(x *Expr) bool {
     for ;; {
         switch x.kind {
         case EXPR_IDENT:
-            if x.ident.obj == NULL {
+            if x.ident.obj == nil {
                 return false
             }
             assert(x.ident.obj.kind == ObjKind_TYP)

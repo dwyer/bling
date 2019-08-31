@@ -67,7 +67,7 @@ extern int C$strcmp(const char *a, const char *b) {
 }
 
 extern C$Pid C$waitpid(C$Pid pid, int *status, int opts) {
-    return wait4(pid, status, opts, NULL);
+    return wait4(pid, status, opts, nil);
 }
 
 extern C$Pid C$fork() {

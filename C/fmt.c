@@ -11,7 +11,7 @@ extern void C$printf(const char *s, ...) {
 }
 
 extern char *C$sprintf(const char *s, ...) {
-    char *res = NULL;
+    char *res = nil;
     va_list ap;
     va_start(ap, s);
     vasprintf(&res, s, ap);

@@ -19,7 +19,7 @@ fun Emitter_string(e *Emitter) *char {
 }
 
 fun emitBytes(e *Emitter, s *const char, n int) {
-    bytes.Buffer_write(&e.buf, s, n, NULL)
+    bytes.Buffer_write(&e.buf, s, n, nil)
 }
 
 fun emitString(e *Emitter, s *const char) {
@@ -57,7 +57,7 @@ fun hasPrefix(s *const char, prefix *const char) bool {
 }
 
 fun isSimpleType(t *ast.Expr) bool {
-    if t == NULL {
+    if t == nil {
         return false
     }
     if t.kind == ast.TYPE_ARRAY && !t.array_.dynamic {
@@ -73,7 +73,7 @@ fun isSimpleType(t *ast.Expr) bool {
 
 fun emitExpr(e *Emitter, expr *ast.Expr) {
     if !expr {
-        panic("emitter$emitExpr: expr is NULL")
+        panic("emitter$emitExpr: expr is nil")
     }
     switch expr.kind {
     case ast.EXPR_BASIC_LIT:
@@ -361,7 +361,7 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
 }
 
 fun is_void(type *ast.Expr) bool {
-    return type == NULL || (type.kind == ast.EXPR_IDENT && runtime.streq(type.ident.name, "void"))
+    return type == nil || (type.kind == ast.EXPR_IDENT && runtime.streq(type.ident.name, "void"))
 }
 
 fun emitType(e *Emitter, type *ast.Expr) {
@@ -485,7 +485,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
 fun emitDecl(e *Emitter, decl *ast.Decl) {
     switch decl.kind {
     case ast.DECL_FIELD:
-        if decl.field.name != NULL {
+        if decl.field.name != nil {
             emitExpr(e, decl.field.name)
             emitSpace(e)
         }
@@ -570,7 +570,7 @@ fun emitFile(e *Emitter, file *ast.File) {
     emitString(e, "//")
     emitString(e, file.filename)
     emitNewline(e)
-    if file.name != NULL {
+    if file.name != nil {
         emitToken(e, token.PACKAGE)
         emitSpace(e)
         emitExpr(e, file.name)

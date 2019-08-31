@@ -203,14 +203,14 @@ scan_again:
     skip_whitespace(s)
     *pos = token.File_pos(s.file, s.offset)
     var insertSemi bool = false
-    *lit = NULL
+    *lit = nil
     if is_letter(s.ch) {
         *lit = scan_ident(s)
         if runtime.strlen(*lit) > 1 {
             tok = token.lookup(*lit)
             if tok != token.IDENT {
                 runtime.free(*lit)
-                *lit = NULL
+                *lit = nil
             }
             switch tok {
             case token.IDENT, token.BREAK, token.CONTINUE, token.FALLTHROUGH, token.RETURN:

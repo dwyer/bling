@@ -6,66 +6,66 @@ import "os"
 
 fun readAll(file *os.File, error **runtime.Error) *char {
     var bufsiz const int = 1024
-    var ret *char = NULL
-    var err *runtime.Error = NULL
-    if err != NULL {
+    var ret *char = nil
+    var err *runtime.Error = nil
+    if err != nil {
         goto end
     }
     var b bytes.Buffer = {}
     for ;; {
         var buf [bufsiz]char
         var n int = os.read(file, buf, bufsiz, &err)
-        if err != NULL {
+        if err != nil {
             goto end
         }
-        bytes.Buffer_write(&b, buf, n, NULL)
+        bytes.Buffer_write(&b, buf, n, nil)
         if n < bufsiz {
             break
         }
     }
     ret = bytes.Buffer_string(&b)
 end:
-    if err != NULL {
+    if err != nil {
         runtime.Error_move(err, error)
     }
     return ret
 }
 
 fun readDir(name *const char, error **runtime.Error) [array]*os.FileInfo {
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var file *os.File = os.openDir(name, &err)
     var info [array]*os.FileInfo = makearray(*os.FileInfo)
-    if err != NULL {
+    if err != nil {
         goto end
     }
     info = os.readdir(file, &err)
-    if err != NULL {
-        os.close(file, NULL)
+    if err != nil {
+        os.close(file, nil)
         goto end
     }
     os.close(file, &err)
 end:
-    if err != NULL {
+    if err != nil {
         runtime.Error_move(err, error)
     }
     return info
 }
 
 fun readFile(name *const char, error **runtime.Error) *char {
-    var err *runtime.Error = NULL
-    var ret *char = NULL
+    var err *runtime.Error = nil
+    var ret *char = nil
     var file *os.File = os.open(name, &err)
     if err {
         goto end
     }
     ret = readAll(file, &err)
-    if err != NULL {
-        os.close(file, NULL)
+    if err != nil {
+        os.close(file, nil)
         goto end
     }
     os.close(file, &err)
 end:
-    if err != NULL {
+    if err != nil {
         runtime.Error_move(err, error)
     }
     return ret
@@ -73,17 +73,17 @@ end:
 
 fun writeFile(filename *const char, data *const char, perm int, error **runtime.Error) {
     typ void(perm)
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var file *os.File = os.create(filename, &err)
     if err {
         goto end
     }
     os.write(file, data, &err)
     if err {
-        os.close(file, NULL)
+        os.close(file, nil)
         goto end
     }
-    os.close(file, NULL)
+    os.close(file, nil)
 end:
     if err {
         runtime.Error_move(err, error)

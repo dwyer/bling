@@ -39,7 +39,7 @@ fun execute(cmd *[array]*char) {
         printStrArray(*cmd)
     }
     var args **char = runtime.nilArray(cmd)
-    var code int = os.exec(args, NULL)
+    var code int = os.exec(args, nil)
     if code != 0 {
         panic(C.sprintf("- failed with code %d", code))
     }
@@ -48,7 +48,7 @@ fun execute(cmd *[array]*char) {
 
 fun mkdirForFile(path *const char) {
     var dir *char = paths.dir(path)
-    os.mkdirAll(dir, 0755, NULL)
+    os.mkdirAll(dir, 0755, nil)
     runtime.free(dir)
 }
 
@@ -100,7 +100,7 @@ fun genObj(b *Builder, dst *const char, src *const char) {
 
 fun getFileModTime(path *const char) os.Time {
     var t os.Time = 0
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var info *os.FileInfo = os.stat(path, &err)
     if info {
         t = os.FileInfo_modTime(info)
@@ -111,7 +111,7 @@ fun getFileModTime(path *const char) os.Time {
 
 fun getSrcModTime(path *const char) os.Time {
     var t os.Time = 0
-    var files [array]*os.FileInfo = ioutil.readDir(path, NULL)
+    var files [array]*os.FileInfo = ioutil.readDir(path, nil)
     for var i int = 0; i < len(files); i++ {
         var file *os.FileInfo = files[i]
         var modTime os.Time = os.FileInfo_modTime(file)
@@ -128,7 +128,7 @@ fun getSrcModTime(path *const char) os.Time {
 
 fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
     var src *char = os.FileInfo_name(cFile)
-    var dst *char = NULL
+    var dst *char = nil
     {
         var i int = bytes.lastIndexByte(src, '.')
         var base *char = runtime.strdup(src)
@@ -136,9 +136,9 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
         dst = C.sprintf("%s/%s.o", GEN_PATH, base)
         runtime.free(base)
     }
-    var err *runtime.Error = NULL
+    var err *runtime.Error = nil
     var objFile *os.FileInfo = os.stat(dst, &err)
-    var doBuild bool = objFile == NULL || os.FileInfo_modTime(cFile) > os.FileInfo_modTime(objFile)
+    var doBuild bool = objFile == nil || os.FileInfo_modTime(cFile) > os.FileInfo_modTime(objFile)
     if b.force || doBuild {
         genObj(b, dst, src)
         os.FileInfo_free(objFile)
@@ -149,7 +149,7 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
 
 fun newPackage(b *Builder, path *const char) Package {
     var base *char = paths.base(path)
-    var typesPkg *types.Package = types.check(&b.conf, path, b.fset, NULL, b.info)
+    var typesPkg *types.Package = types.check(&b.conf, path, b.fset, nil, b.info)
     var isCmd bool = typesPkg.name ? runtime.streq(typesPkg.name, "main") : false
     var genPath *char = paths.join2(GEN_PATH, path)
     var libPath *char = C.sprintf("%s/%s.a", genPath, base)
@@ -192,7 +192,7 @@ fun writeFile(path *const char, out *const char) {
     if VERBOSE {
     }
     mkdirForFile(path)
-    ioutil.writeFile(path, out, 0644, NULL)
+    ioutil.writeFile(path, out, 0644, nil)
 }
 
 fun genHeader(b *Builder, pkg *Package) {
@@ -220,7 +220,7 @@ fun getCFile(b *Builder, pkg *Package) {
 
 fun buildCPackage(b *Builder, path *const char) *Package {
     var pkg = newPackage(b, path)
-    var files = ioutil.readDir(path, NULL)
+    var files = ioutil.readDir(path, nil)
     for var i = 0; i < len(files); i++ {
         var checkTime = false
         var file = files[i]
@@ -271,9 +271,9 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
             append(cmd, typ *char("-o"))
             append(cmd, pkg.libPath)
             append(cmd, pkg.objPath)
-            var pkg *Package = NULL
+            var pkg *Package = nil
             var iter runtime.MapIter = runtime.NewMapIter(&b.pkgs)
-            while runtime.MapIter_next(&iter, NULL, &pkg) {
+            while runtime.MapIter_next(&iter, nil, &pkg) {
                 append(cmd, pkg.libPath)
             }
             execute(&cmd)
@@ -290,7 +290,7 @@ fun buildBlingPackage(b *Builder, path *const char) *Package {
 }
 
 fun _buildPackage(b *Builder, path *const char) *Package {
-    var pkg *Package = NULL
+    var pkg *Package = nil
     runtime.Map_get(&b.pkgs, path, &pkg)
     if pkg {
         return pkg

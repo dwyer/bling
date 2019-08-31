@@ -4,7 +4,7 @@ import "bytes"
 import "runtime"
 
 fun base(path *const char) *char {
-    if path == NULL || path[0] == '\0' {
+    if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
     var i int = bytes.lastIndexByte(path, '/')
@@ -23,7 +23,7 @@ fun clean(path *const char) *char {
     var out = bytes.Buffer{}
     var rooted = path[0] == '/'
     if rooted {
-        bytes.Buffer_writeByte(&out, '/', NULL)
+        bytes.Buffer_writeByte(&out, '/', nil)
         r++
     }
     for ; r < n; {
@@ -36,10 +36,10 @@ fun clean(path *const char) *char {
             panic("not implemented")
         } else {
             if (rooted && bytes.Buffer_len(&out) != 1) || (!rooted && bytes.Buffer_len(&out) != 0) {
-                bytes.Buffer_writeByte(&out, '/', NULL)
+                bytes.Buffer_writeByte(&out, '/', nil)
             }
             for ; r < n && path[r] != '/'; r++ {
-                bytes.Buffer_writeByte(&out, path[r], NULL)
+                bytes.Buffer_writeByte(&out, path[r], nil)
             }
         }
     }
@@ -50,7 +50,7 @@ fun clean(path *const char) *char {
 }
 
 fun dir(path *const char) *char {
-    if path == NULL || path[0] == '\0' {
+    if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
     var i = bytes.lastIndexByte(path, '/')
@@ -71,7 +71,7 @@ fun ext(path *const char) *const char {
 }
 
 fun isAbs(path *const char) bool {
-    return path != NULL && path[0] == '/'
+    return path != nil && path[0] == '/'
 }
 
 fun join(elems **const char, n int) *char {

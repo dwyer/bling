@@ -94,7 +94,7 @@ fun NewError(msg *const char) *Error {
 }
 
 fun Error_move(src *Error, dst **Error) {
-    if dst != NULL {
+    if dst != nil {
         *dst = src
     } else {
         panic(C.sprintf("Unhandled error: %s", src.error))
@@ -122,7 +122,7 @@ fun Slice_make(size int) Slice {
         size: size,
         _len: 0,
         cap: 0,
-        _array: NULL,
+        _array: nil,
     }
     return s
 }
@@ -170,7 +170,7 @@ fun _setLen(s *Slice, len int) {
         cap *= 2
         grow = true
     }
-    if s._array == NULL || grow {
+    if s._array == nil || grow {
         _setCap(s, cap)
     }
     s._len = len
@@ -181,7 +181,7 @@ fun Slice_setLen(s *void, len int) {
     _setLen(s, len)
     var diff int = len - old
     if diff > 0 {
-        C.memset(Slice_get(s, old, NULL), 0, diff * (typ *Slice(s)).size)
+        C.memset(Slice_get(s, old, nil), 0, diff * (typ *Slice(s)).size)
     }
 }
 
@@ -189,7 +189,7 @@ fun Slice_set(s *void, i int, x *const void) {
     if (typ *Slice(s)).size == 1 {
         (typ *char((typ *Slice(s))._array))[i] = *typ *char(x)
     } else {
-        memcpy(Slice_get(s, i, NULL), x, (typ *Slice(s)).size)
+        memcpy(Slice_get(s, i, nil), x, (typ *Slice(s)).size)
     }
 }
 
@@ -199,7 +199,7 @@ fun Slice_append(s *void, x *const void) {
 }
 
 fun nilArray(s *void) *void {
-    var z = NULL
+    var z = nil
     Slice_append(s, &z)
     return (typ *Slice(s))._array
 }
@@ -261,7 +261,7 @@ fun pair_ref(m *const Map, key *const void) *MapPair {
     for var i int = 0; i < len(m._pairs); i++ {
         stats.iters++
         var idx int = (hash + i) % Map_cap(m)
-        var p *MapPair = Slice_get(&m._pairs, idx, NULL)
+        var p *MapPair = Slice_get(&m._pairs, idx, nil)
         if !p.key || streq(key, p.key) {
             if !i {
                 stats.hits++
@@ -271,7 +271,7 @@ fun pair_ref(m *const Map, key *const void) *MapPair {
             return p
         }
     }
-    return NULL
+    return nil
 }
 
 fun set_unsafe(m *Map, key *const char, val *const void) {
@@ -279,7 +279,7 @@ fun set_unsafe(m *Map, key *const char, val *const void) {
         Map_init(m)
     }
     var p *MapPair = pair_ref(m, key)
-    if p.key == NULL {
+    if p.key == nil {
         p.key = C.strdup(key)
         p.val = memdup(val, m._valSize)
         m._len++
@@ -311,7 +311,7 @@ fun Map_set(m *void, key *const char, val *const void) {
         Slice_setLen(&(typ *Map(m))._pairs, newCap)
         (typ *Map(m))._len = 0
         for var i int = 0; i < len(pairs); i++ {
-            var p *MapPair = Slice_get(&pairs, i, NULL)
+            var p *MapPair = Slice_get(&pairs, i, nil)
             if p.key {
                 set_unsafe((typ *Map(m)), p.key, p.val)
             }
@@ -329,7 +329,7 @@ fun NewMapIter(m *const void) MapIter {
 
 fun MapIter_next(m *MapIter, key **char, val *void) int {
     while m._idx < len(m._map._pairs) {
-        var p *MapPair = Slice_get(&m._map._pairs, m._idx, NULL)
+        var p *MapPair = Slice_get(&m._map._pairs, m._idx, nil)
         m._idx++
         if p.key {
             if key {

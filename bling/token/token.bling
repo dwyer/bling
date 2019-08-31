@@ -346,13 +346,13 @@ fun File_position(f *File, p Pos) Position {
 
 fun File_lineString(f *File, line int) *char {
     if line < 1 {
-        return NULL
+        return nil
     }
     var buf bytes.Buffer = {}
     var i int = f.lines[line - 1]
     var ch int = f.src[i]
     while ch > 0 && ch != '\n' {
-        bytes.Buffer_writeByte(&buf, ch, NULL)
+        bytes.Buffer_writeByte(&buf, ch, nil)
         i++
         ch = f.src[i]
     }
@@ -403,7 +403,7 @@ fun searchFiles(files *[array]*File, x int) int {
 
 fun FileSet_file(s *FileSet, p Pos) *File {
     var f *File = s.last
-    if f != NULL && f.base <= p && p <= f.base + f.size {
+    if f != nil && f.base <= p && p <= f.base + f.size {
         return f
     }
     var i int = searchFiles(&s.files, p)
@@ -414,7 +414,7 @@ fun FileSet_file(s *FileSet, p Pos) *File {
             return f
         }
     }
-    return NULL
+    return nil
 }
 
 fun FileSet_print(fset *FileSet) {
