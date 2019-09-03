@@ -17,7 +17,7 @@ import "subc/cparser"
 
 fun emit_rawfile(e *emitter.Emitter, filename *const char) {
     var err *runtime.Error = nil
-    var src *char = ioutil.readFile(filename, &err)
+    var src = ioutil.readFile(filename, &err)
     if err {
         panic(err.error)
     }
@@ -32,13 +32,11 @@ fun isForwardDecl(decl *ast.Decl) bool {
     case ast.DECL_PRAGMA:
         return true
     case ast.DECL_TYPEDEF:
-        {
-            switch decl.typedef_.type.kind {
-            case ast.TYPE_STRUCT:
-                return len(decl.typedef_.type.struct_.fields) == 0
-            default:
-                return false
-            }
+        switch decl.typedef_.type.kind {
+        case ast.TYPE_STRUCT:
+            return len(decl.typedef_.type.struct_.fields) == 0
+        default:
+            return false
         }
     case ast.DECL_VALUE:
         return decl.value.value == nil
@@ -58,16 +56,16 @@ fun compile_c(argv []*char) {
         }
         argv++
     }
-    var e emitter.Emitter = {}
-    var fset *token.FileSet = token.newFileSet()
+    var e = emitter.Emitter{}
+    var fset = token.newFileSet()
     while *argv {
-        var filename *char = *argv
-        var file *ast.File = cparser.parseFile(fset, filename, types.universe())
+        var filename = *argv
+        var file = cparser.parseFile(fset, filename, types.universe())
         var allowForward = file.name && ast.isIdentNamed(file.name, "C")
         if !allowForward {
-            var i int = 0
-            for var j int = 0; j < len(file.decls); j++ {
-                var d *ast.Decl = file.decls[j]
+            var i = 0
+            for var j = 0; j < len(file.decls); j++ {
+                var d = file.decls[j]
                 if !isForwardDecl(d) {
                     runtime.Slice_set(&file.decls, i, &d)
                     i++
@@ -78,8 +76,8 @@ fun compile_c(argv []*char) {
         emitter.emitFile(&e, file)
         argv++
     }
-    var out *char = emitter.Emitter_string(&e)
-    var file *os.File = os.stdout
+    var out = emitter.Emitter_string(&e)
+    var file = os.stdout
     var err *runtime.Error = nil
     if dst {
         file = os.create(dst, &err)
@@ -101,7 +99,7 @@ fun compile_c(argv []*char) {
 
 fun compile_bling(argv []*char) {
     var err *runtime.Error = nil
-    var conf types.Config = {
+    var conf = types.Config{
         strict: true,
     }
     var dst *char = nil
@@ -117,10 +115,10 @@ fun compile_bling(argv []*char) {
     if !*argv {
         return
     }
-    var e emitter.Emitter = {}
+    var e = emitter.Emitter{}
     emit_rawfile(&e, "bootstrap/bootstrap.h")
-    var fset *token.FileSet = token.newFileSet()
-    var filename *char = *argv
+    var fset = token.newFileSet()
+    var filename = *argv
     var file *ast.File = nil
     if bytes.hasSuffix(filename, ".bling") {
         file = parser.parseFile(fset, filename, types.universe())
@@ -129,16 +127,16 @@ fun compile_bling(argv []*char) {
     } else {
         panic(C.sprintf("unknown file type: %s", filename))
     }
-    var pkg *types.Package = types.checkFile(&conf, paths.dir(filename), fset, file, nil)
+    var pkg = types.checkFile(&conf, paths.dir(filename), fset, file, nil)
     cemitter.emitPackage(&e, pkg)
     argv++
     assert(!*argv)
-    var out *char = emitter.Emitter_string(&e)
+    var out = emitter.Emitter_string(&e)
     if dst {
         if bytes.hasSuffix(dst, ".out") {
-            var tmp *char = paths.join2(os.tempDir(), "tmp.c")
+            var tmp = paths.join2(os.tempDir(), "tmp.c")
             ioutil.writeFile(tmp, out, 0644, nil)
-            var args []*char = {
+            var args = []*char{
                 "/usr/bin/cc",
                 "-o",
                 dst,
@@ -148,7 +146,7 @@ fun compile_bling(argv []*char) {
                 "bazel-bin/sys/libsys.a",
                 nil,
             }
-            var code int = os.exec(args, nil)
+            var code = os.exec(args, nil)
             if code != 0 {
                 panic(C.sprintf("- failed with code %d", code))
             }
@@ -168,12 +166,12 @@ fun buildPackage(argv []*char) {
         argv++
     }
     assert(*argv)
-    var path *char = *argv
+    var path = *argv
     build.buildPackage(builder, path)
 }
 
 fun main(argc int, argv []*char) int {
-    var progname *char = *argv
+    var progname = *argv
     argv++
     if !*argv {
         panic(C.sprintf("usage: %s -o DST SRCS", progname))

@@ -72,7 +72,7 @@ fun make_string_slice(s *Scanner, start int, end int) *char {
 }
 
 fun scan_ident(s *Scanner) *char {
-    var offs int = s.offset
+    var offs = s.offset
     while is_letter(s.ch) || is_digit(s.ch) || (s.dontInsertSemis && s.ch == '$') {
         next0(s)
     }
@@ -80,7 +80,7 @@ fun scan_ident(s *Scanner) *char {
 }
 
 fun scan_pragma(s *Scanner) *char {
-    var offs int = s.offset
+    var offs = s.offset
     while s.ch > 0 && s.ch != '\n' {
         next0(s)
     }
@@ -103,8 +103,8 @@ fun isNumeric(ch int, kind NumKind) bool {
 }
 
 fun scan_number(s *Scanner, tokp *token.Token) *char {
-    var offs int = s.offset
-    var kind NumKind = NumKind_DECINT
+    var offs = s.offset
+    var kind = NumKind_DECINT
     if s.ch == '0' {
         next0(s)
         if s.ch == 'x' {
@@ -137,9 +137,9 @@ fun scan_number(s *Scanner, tokp *token.Token) *char {
 }
 
 fun scan_rune(s *Scanner) *char {
-    var offs int = s.offset
-    var n int = 0
-    var escape bool = false
+    var offs = s.offset
+    var n = 0
+    var escape = false
     for ;; {
         if n > 0 && s.ch == '\'' && !escape {
             break
@@ -153,9 +153,9 @@ fun scan_rune(s *Scanner) *char {
 }
 
 fun scan_string(s *Scanner) *char {
-    var offs int = s.offset
-    var n int = 0
-    var escape bool = false
+    var offs = s.offset
+    var n = 0
+    var escape = false
     for ;; {
         if n > 0 && s.ch == '"' && !escape {
             break
@@ -173,7 +173,7 @@ fun error(s *Scanner, offs int, msg *const char) {
 }
 
 fun scan_comment(s *Scanner) {
-    var offs int = s.offset - 1
+    var offs = s.offset - 1
     switch s.ch {
     case '/':
         skip_line(s)
@@ -181,7 +181,7 @@ fun scan_comment(s *Scanner) {
     case '*':
         next0(s)
         while s.ch >= 0 {
-            var ch int = s.ch
+            var ch = s.ch
             next0(s)
             if ch == '*' && s.ch == '/' {
                 next0(s)
@@ -202,7 +202,7 @@ scan_again:
     tok = token.ILLEGAL
     skip_whitespace(s)
     *pos = token.File_pos(s.file, s.offset)
-    var insertSemi bool = false
+    var insertSemi = false
     *lit = nil
     if is_letter(s.ch) {
         *lit = scan_ident(s)
@@ -235,7 +235,7 @@ scan_again:
         *lit = scan_string(s)
         tok = token.STRING
     } else {
-        var ch int = s.ch
+        var ch = s.ch
         next0(s)
         switch ch {
         case '\0':

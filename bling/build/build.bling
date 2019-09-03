@@ -25,7 +25,7 @@ var INCL_PATH *const char = "."
 var VERBOSE const bool = true
 
 fun printStrArray(s [array]*char) {
-    for var i int = 0; i < len(s); i++ {
+    for var i = 0; i < len(s); i++ {
         if i {
             C.printf(" ")
         }
@@ -38,8 +38,8 @@ fun execute(cmd *[array]*char) {
     if VERBOSE {
         printStrArray(*cmd)
     }
-    var args **char = runtime.nilArray(cmd)
-    var code int = os.exec(args, nil)
+    var args = runtime.nilArray(cmd)
+    var code = os.exec(args, nil)
     if code != 0 {
         panic(C.sprintf("- failed with code %d", code))
     }
@@ -47,7 +47,7 @@ fun execute(cmd *[array]*char) {
 }
 
 fun mkdirForFile(path *const char) {
-    var dir *char = paths.dir(path)
+    var dir = paths.dir(path)
     os.mkdirAll(dir, 0755, nil)
     runtime.free(dir)
 }
@@ -85,7 +85,7 @@ fun newBuilder(fset *token.FileSet) *Builder {
 }
 
 fun genObj(b *Builder, dst *const char, src *const char) {
-    var cmd [array]*char = makearray(*char)
+    var cmd = makearray(*char)
     append(cmd, CC_PATH)
     append(cmd, typ *char("-g"))
     append(cmd, typ *char("-I"))
@@ -101,7 +101,7 @@ fun genObj(b *Builder, dst *const char, src *const char) {
 fun getFileModTime(path *const char) os.Time {
     var t os.Time = 0
     var err *runtime.Error = nil
-    var info *os.FileInfo = os.stat(path, &err)
+    var info = os.stat(path, &err)
     if info {
         t = os.FileInfo_modTime(info)
         os.FileInfo_free(info)
@@ -111,10 +111,10 @@ fun getFileModTime(path *const char) os.Time {
 
 fun getSrcModTime(path *const char) os.Time {
     var t os.Time = 0
-    var files [array]*os.FileInfo = ioutil.readDir(path, nil)
-    for var i int = 0; i < len(files); i++ {
-        var file *os.FileInfo = files[i]
-        var modTime os.Time = os.FileInfo_modTime(file)
+    var files = ioutil.readDir(path, nil)
+    for var i = 0; i < len(files); i++ {
+        var file = files[i]
+        var modTime = os.FileInfo_modTime(file)
         if bytes.hasSuffix(os.FileInfo_name(file), ".bling") {
             if t < modTime {
                 t = modTime
@@ -127,18 +127,18 @@ fun getSrcModTime(path *const char) os.Time {
 }
 
 fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
-    var src *char = os.FileInfo_name(cFile)
+    var src = os.FileInfo_name(cFile)
     var dst *char = nil
     {
-        var i int = bytes.lastIndexByte(src, '.')
-        var base *char = runtime.strdup(src)
+        var i = bytes.lastIndexByte(src, '.')
+        var base = runtime.strdup(src)
         base[i] = '\0'
         dst = C.sprintf("%s/%s.o", GEN_PATH, base)
         runtime.free(base)
     }
     var err *runtime.Error = nil
-    var objFile *os.FileInfo = os.stat(dst, &err)
-    var doBuild bool = objFile == nil || os.FileInfo_modTime(cFile) > os.FileInfo_modTime(objFile)
+    var objFile = os.stat(dst, &err)
+    var doBuild = objFile == nil || os.FileInfo_modTime(cFile) > os.FileInfo_modTime(objFile)
     if b.force || doBuild {
         genObj(b, dst, src)
         os.FileInfo_free(objFile)
@@ -148,17 +148,17 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
 }
 
 fun newPackage(b *Builder, path *const char) Package {
-    var base *char = paths.base(path)
-    var typesPkg *types.Package = types.check(&b.conf, path, b.fset, nil, b.info)
-    var isCmd bool = typesPkg.name ? runtime.streq(typesPkg.name, "main") : false
-    var genPath *char = paths.join2(GEN_PATH, path)
-    var libPath *char = C.sprintf("%s/%s.a", genPath, base)
+    var base = paths.base(path)
+    var typesPkg = types.check(&b.conf, path, b.fset, nil, b.info)
+    var isCmd = typesPkg.name ? runtime.streq(typesPkg.name, "main") : false
+    var genPath = paths.join2(GEN_PATH, path)
+    var libPath = nil
     if isCmd {
         libPath = C.sprintf("%s/%s", genPath, base)
     } else {
         libPath = C.sprintf("%s/%s.a", genPath, base)
     }
-    var pkg Package = {
+    var pkg = Package{
         path: runtime.strdup(path),
         pkg: typesPkg,
         hPath: C.sprintf("%s/%s.h", genPath, base),
@@ -172,8 +172,8 @@ fun newPackage(b *Builder, path *const char) Package {
     }
     runtime.free(genPath)
     runtime.free(base)
-    for var i int = 0; i < len(pkg.pkg.imports); i++ {
-        var dep *Package = _buildPackage(b, pkg.pkg.imports[i].path)
+    for var i = 0; i < len(pkg.pkg.imports); i++ {
+        var dep *Package = _buildPackage(b, pkg.pkg.imports[i].path) // XXX
         append(pkg.deps, dep)
         if pkg.srcModTime < dep.srcModTime {
             pkg.srcModTime = dep.srcModTime
@@ -183,37 +183,35 @@ fun newPackage(b *Builder, path *const char) Package {
 }
 
 fun emitInclude(e *emitter.Emitter, path *const char) {
-    var s *char = C.sprintf("#include \"%s\"\n", path)
+    var s = C.sprintf("#include \"%s\"\n", path)
     emitter.emitString(e, s)
     runtime.free(s)
 }
 
 fun writeFile(path *const char, out *const char) {
-    if VERBOSE {
-    }
     mkdirForFile(path)
     ioutil.writeFile(path, out, 0644, nil)
 }
 
 fun genHeader(b *Builder, pkg *Package) {
-    var e emitter.Emitter = {}
+    var e = emitter.Emitter{}
     emitter.emitString(&e, "#pragma once")
     emitter.emitNewline(&e)
     emitInclude(&e, "bootstrap/bootstrap.h")
-    for var i int = 0; i < len(pkg.deps); i++ {
+    for var i = 0; i < len(pkg.deps); i++ {
         emitInclude(&e, pkg.deps[i].hPath)
     }
     cemitter.emitHeader(&e, pkg.pkg)
-    var out *char = emitter.Emitter_string(&e)
+    var out = emitter.Emitter_string(&e)
     writeFile(pkg.hPath, out)
     runtime.free(out)
 }
 
 fun getCFile(b *Builder, pkg *Package) {
-    var e emitter.Emitter = {}
+    var e = emitter.Emitter{}
     emitInclude(&e, pkg.hPath)
     cemitter.emitBody(&e, pkg.pkg)
-    var out *char = emitter.Emitter_string(&e)
+    var out = emitter.Emitter_string(&e)
     writeFile(pkg.cPath, out)
     runtime.free(out)
 }
@@ -257,28 +255,26 @@ fun buildCPackage(b *Builder, path *const char) *Package {
 }
 
 fun buildBlingPackage(b *Builder, path *const char) *Package {
-    var pkg Package = newPackage(b, path)
+    var pkg = newPackage(b, path)
     if b.force || pkg.srcModTime > pkg.libModTime {
         genHeader(b, &pkg)
         getCFile(b, &pkg)
         genObj(b, pkg.objPath, pkg.cPath)
-        if VERBOSE {
-        }
         if pkg.isCmd {
-            var cmd [array]*char = makearray(*char)
+            var cmd = makearray(*char)
             append(cmd, CC_PATH)
             append(cmd, typ *char("-g"))
             append(cmd, typ *char("-o"))
             append(cmd, pkg.libPath)
             append(cmd, pkg.objPath)
             var pkg *Package = nil
-            var iter runtime.MapIter = runtime.NewMapIter(&b.pkgs)
+            var iter = runtime.NewMapIter(&b.pkgs)
             while runtime.MapIter_next(&iter, nil, &pkg) {
                 append(cmd, pkg.libPath)
             }
             execute(&cmd)
         } else {
-            var cmd [array]*char = makearray(*char)
+            var cmd = makearray(*char)
             append(cmd, AR_PATH)
             append(cmd, typ *char("rsc"))
             append(cmd, pkg.libPath)
@@ -294,8 +290,6 @@ fun _buildPackage(b *Builder, path *const char) *Package {
     runtime.Map_get(&b.pkgs, path, &pkg)
     if pkg {
         return pkg
-    }
-    if VERBOSE {
     }
     if runtime.streq(path, "C") {
         pkg = buildCPackage(b, path)

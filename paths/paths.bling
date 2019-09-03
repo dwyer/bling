@@ -7,7 +7,7 @@ fun base(path *const char) *char {
     if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
-    var i int = bytes.lastIndexByte(path, '/')
+    var i = bytes.lastIndexByte(path, '/')
     if i > 0 {
         path = &path[i + 1]
     }
@@ -63,7 +63,7 @@ fun dir(path *const char) *char {
 }
 
 fun ext(path *const char) *const char {
-    var n int = runtime.strlen(path) - 1
+    var n = runtime.strlen(path) - 1
     while n > 0 && path[n] != '.' {
         n--
     }
@@ -79,7 +79,7 @@ fun join(elems **const char, n int) *char {
 }
 
 fun join2(a *const char, b *const char) *char {
-    var elems []*const char = {
+    var elems = []*const char{
         a,
         b,
     }

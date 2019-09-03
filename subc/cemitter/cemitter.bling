@@ -25,12 +25,12 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     case ast.EXPR_CALL:
         emitExpr(e, expr.call.func)
         emitter.emitToken(e, token.LPAREN)
-        for var i int = 0; i < len(expr.call.args); i++ {
+        for var i = 0; i < len(expr.call.args); i++ {
             if i > 0 {
                 emitter.emitToken(e, token.COMMA)
                 emitter.emitSpace(e)
             }
-            var arg *ast.Expr = expr.call.args[i]
+            var arg = expr.call.args[i]
             if types.isType(arg) {
                 emitType(e, arg, nil)
             } else {
@@ -50,7 +50,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         if len(expr.composite.list) > 0 {
             emitter.emitNewline(e)
             e.indent++
-            for var i int = 0; i < len(expr.composite.list); i++ {
+            for var i = 0; i < len(expr.composite.list); i++ {
                 emitter.emitTabs(e)
                 emitExpr(e, expr.composite.list[i])
                 emitter.emitToken(e, token.COMMA)
@@ -72,7 +72,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         break
     case ast.EXPR_INDEX:
         {
-            var t *ast.Expr = types.getType(expr.index.x)
+            var t = types.getType(expr.index.x)
             assert(t)
             t = types.getBaseType(t)
             assert(t)
@@ -174,7 +174,7 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         emitter.emitToken(e, token.LBRACE)
         emitter.emitNewline(e)
         e.indent++
-        for var i int = 0; i < len(stmt.block.stmts); i++ {
+        for var i = 0; i < len(stmt.block.stmts); i++ {
             switch stmt.block.stmts[i].kind {
             case ast.STMT_LABEL:
                 break
@@ -191,7 +191,7 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         break
     case ast.STMT_CASE:
         if len(stmt.case_.exprs) > 0 {
-            for var i int = 0; i < len(stmt.case_.exprs); i++ {
+            for var i = 0; i < len(stmt.case_.exprs); i++ {
                 if i > 0 {
                     emitter.emitToken(e, token.COLON)
                     emitter.emitNewline(e)
@@ -207,7 +207,7 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         emitter.emitToken(e, token.COLON)
         emitter.emitNewline(e)
         e.indent++
-        for var i int = 0; i < len(stmt.case_.stmts); i++ {
+        for var i = 0; i < len(stmt.case_.stmts); i++ {
             emitter.emitTabs(e)
             emitStmt(e, stmt.case_.stmts[i])
             emitter.emitNewline(e)
@@ -305,7 +305,7 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         emitter.emitSpace(e)
         emitter.emitToken(e, token.LBRACE)
         emitter.emitNewline(e)
-        for var i int = 0; i < len(stmt.switch_.stmts); i++ {
+        for var i = 0; i < len(stmt.switch_.stmts); i++ {
             emitter.emitTabs(e)
             emitStmt(e, stmt.switch_.stmts[i])
         }
@@ -357,7 +357,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
                 }
                 emitter.emitToken(e, token.RPAREN)
                 emitter.emitToken(e, token.LPAREN)
-                for var i int = 0; i < len(base.func.params); i++ {
+                for var i = 0; i < len(base.func.params); i++ {
                     if i > 0 {
                         emitter.emitToken(e, token.COMMA)
                         emitter.emitSpace(e)
@@ -402,8 +402,8 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitter.emitToken(e, token.LBRACE)
             emitter.emitNewline(e)
             e.indent++
-            for var i int = 0; i < len(type.enum_.enums); i++ {
-                var decl *ast.Decl = type.enum_.enums[i]
+            for var i = 0; i < len(type.enum_.enums); i++ {
+                var decl = type.enum_.enums[i]
                 emitter.emitTabs(e)
                 emitExpr(e, decl.value.name)
                 if decl.value.value {
@@ -429,7 +429,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             emitExpr(e, name)
         }
         emitter.emitToken(e, token.LPAREN)
-        for var i int = 0; i < len(type.func.params); i++ {
+        for var i = 0; i < len(type.func.params); i++ {
             if i > 0 {
                 emitter.emitToken(e, token.COMMA)
                 emitter.emitSpace(e)
@@ -502,7 +502,7 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
         break
     case ast.DECL_VALUE:
         if e.forwardDecl {
-            var isPublic bool = true
+            var isPublic = true
             switch decl.value.type.kind {
             case ast.TYPE_ARRAY, ast.TYPE_STRUCT:
                 isPublic = false
@@ -546,7 +546,7 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
         emitter.emitToken(e, token.SEMICOLON)
         emitter.emitNewline(e)
     }
-    for var i int = 0; len(file.decls); i++ {
+    for var i = 0; len(file.decls); i++ {
         emitter.emitNewline(e)
         emitDecl(e, file.decls[i])
         emitter.emitNewline(e)
@@ -555,7 +555,7 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
 
 fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
     var obj *ast.Object = nil
-    for var i int = 0; i < len(scope.keys); i++ {
+    for var i = 0; i < len(scope.keys); i++ {
         runtime.Map_get(&scope.objects, scope.keys[i], &obj)
         if obj.kind == kind {
             emitter.emitNewline(e)
@@ -576,7 +576,7 @@ fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
         return
     }
     runtime.Map_set(done, pkg.path, &pkg.path)
-    for var i int = 0; i < len(pkg.imports); i++ {
+    for var i = 0; i < len(pkg.imports); i++ {
         _emitPackage(e, done, pkg.imports[i])
     }
     e.forwardDecl = true
@@ -586,13 +586,13 @@ fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
 }
 
 fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
-    var done map *char = makemap(*char)
+    var done = makemap(*char)
     _emitPackage(e, &done, pkg)
     runtime.Map_unmake(&done)
 }
 
 fun emitHeader(e *emitter.Emitter, pkg *types.Package) {
-    var old bool = e.forwardDecl
+    var old = e.forwardDecl
     e.forwardDecl = true
     emitObjects(e, pkg.scope, ast.ObjKind_TYP)
     e.forwardDecl = false
@@ -604,7 +604,7 @@ fun emitHeader(e *emitter.Emitter, pkg *types.Package) {
 }
 
 fun emitBody(e *emitter.Emitter, pkg *types.Package) {
-    var old bool = e.forwardDecl
+    var old = e.forwardDecl
     e.forwardDecl = false
     emitObjects(e, pkg.scope, ast.ObjKind_VAL)
     emitObjects(e, pkg.scope, ast.ObjKind_FUN)

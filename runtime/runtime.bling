@@ -160,8 +160,8 @@ fun _setCap(s *Slice, cap int) {
 }
 
 fun _setLen(s *Slice, len int) {
-    var grow bool = false
-    var cap int = s.cap
+    var grow = false
+    var cap = s.cap
     if cap == 0 {
         cap = 1
         grow = true
@@ -177,9 +177,9 @@ fun _setLen(s *Slice, len int) {
 }
 
 fun Slice_setLen(s *void, len int) {
-    var old int = (typ *Slice(s))._len
+    var old = (typ *Slice(s))._len
     _setLen(s, len)
-    var diff int = len - old
+    var diff = len - old
     if diff > 0 {
         C.memset(Slice_get(s, old, nil), 0, diff * (typ *Slice(s)).size)
     }
@@ -256,12 +256,12 @@ fun Map_isInitialized(m *const Map) bool {
 }
 
 fun pair_ref(m *const Map, key *const void) *MapPair {
-    var hash uintptr = djb2(key) % Map_cap(m)
+    var hash = djb2(key) % Map_cap(m)
     stats.lookups++
-    for var i int = 0; i < len(m._pairs); i++ {
+    for var i = 0; i < len(m._pairs); i++ {
         stats.iters++
-        var idx int = (hash + i) % Map_cap(m)
-        var p *MapPair = Slice_get(&m._pairs, idx, nil)
+        var idx = (hash + i) % Map_cap(m)
+        var p = &m._pairs[idx]
         if !p.key || streq(key, p.key) {
             if !i {
                 stats.hits++
@@ -278,7 +278,7 @@ fun set_unsafe(m *Map, key *const char, val *const void) {
     if !Map_isInitialized(m) {
         Map_init(m)
     }
-    var p *MapPair = pair_ref(m, key)
+    var p = pair_ref(m, key)
     if p.key == nil {
         p.key = C.strdup(key)
         p.val = memdup(val, m._valSize)
@@ -290,7 +290,7 @@ fun set_unsafe(m *Map, key *const char, val *const void) {
 
 fun Map_get(m *const void, key *const char, val *void) bool {
     if Map_isInitialized(m) {
-        var p *MapPair = pair_ref(m, key)
+        var p = pair_ref(m, key)
         if p.val {
             if val {
                 memcpy(val, p.val, (typ *Map(m))._valSize)
@@ -303,15 +303,15 @@ fun Map_get(m *const void, key *const char, val *void) bool {
 
 fun Map_set(m *void, key *const char, val *const void) {
     set_unsafe(m, key, val)
-    var load_factor float = typ float(Map_len(m)) / Map_cap(m)
+    var load_factor = typ float(Map_len(m)) / Map_cap(m)
     if load_factor >= MAP_LOAD_FACTOR {
-        var newCap int = Map_cap(m) * 2
-        var pairs [array]MapPair = (typ *Map(m))._pairs
+        var newCap = Map_cap(m) * 2
+        var pairs = (typ *Map(m))._pairs
         (typ *Map(m))._pairs = makearray(MapPair)
         Slice_setLen(&(typ *Map(m))._pairs, newCap)
         (typ *Map(m))._len = 0
-        for var i int = 0; i < len(pairs); i++ {
-            var p *MapPair = Slice_get(&pairs, i, nil)
+        for var i = 0; i < len(pairs); i++ {
+            var p = &pairs[i]
             if p.key {
                 set_unsafe((typ *Map(m)), p.key, p.val)
             }
@@ -329,7 +329,7 @@ fun NewMapIter(m *const void) MapIter {
 
 fun MapIter_next(m *MapIter, key **char, val *void) int {
     while m._idx < len(m._map._pairs) {
-        var p *MapPair = Slice_get(&m._map._pairs, m._idx, nil)
+        var p = &m._map._pairs[m._idx]
         m._idx++
         if p.key {
             if key {

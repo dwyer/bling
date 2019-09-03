@@ -408,7 +408,7 @@ fun isExprType(x *Expr) bool {
 }
 
 fun newObject(kind ObjKind, name *char) *Object {
-    var obj Object = {
+    var obj = Object{
         kind: kind,
         name: name,
     }
@@ -416,7 +416,7 @@ fun newObject(kind ObjKind, name *char) *Object {
 }
 
 fun Scope_new(outer *Scope) *Scope {
-    var s Scope = {
+    var s = Scope{
         outer: outer,
         objects: runtime.Map_make(sizeof(*Object)),
         keys: makearray(*char),
@@ -448,12 +448,12 @@ fun Scope_lookup(s *Scope, name *char) *Object {
 }
 
 fun Scope_print(s *Scope) {
-    var buf bytes.Buffer = {}
+    var buf = bytes.Buffer{}
     while s {
-        var iter runtime.MapIter = runtime.NewMapIter(&s.objects)
+        var iter = runtime.NewMapIter(&s.objects)
         var key *char = nil
         while runtime.MapIter_next(&iter, &key, nil) {
-            var s *char = C.sprintf("%s- %s", bytes.Buffer_string(&buf), key)
+            var s = C.sprintf("%s- %s", bytes.Buffer_string(&buf), key)
             print(s)
             runtime.free(s)
         }
@@ -464,7 +464,7 @@ fun Scope_print(s *Scope) {
 
 fun Scope_deepLookup(s *Scope, name *char) *Object {
     for ; s != nil; s = s.outer {
-        var obj *Object = Scope_lookup(s, name)
+        var obj = Scope_lookup(s, name)
         if obj != nil {
             return obj
         }
@@ -473,7 +473,7 @@ fun Scope_deepLookup(s *Scope, name *char) *Object {
 }
 
 fun resolve(scope *Scope, ident *Expr) bool {
-    var obj *Object = Scope_deepLookup(scope, ident.ident.name)
+    var obj = Scope_deepLookup(scope, ident.ident.name)
     if obj != nil {
         ident.ident.obj = obj
         return true

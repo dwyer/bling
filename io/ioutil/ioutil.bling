@@ -1,20 +1,17 @@
 package ioutil
 
 import "bytes"
-import "runtime"
 import "os"
+import "runtime"
 
 fun readAll(file *os.File, error **runtime.Error) *char {
     var bufsiz const int = 1024
     var ret *char = nil
     var err *runtime.Error = nil
-    if err != nil {
-        goto end
-    }
-    var b bytes.Buffer = {}
+    var b = bytes.Buffer{}
     for ;; {
         var buf [bufsiz]char
-        var n int = os.read(file, buf, bufsiz, &err)
+        var n = os.read(file, buf, bufsiz, &err)
         if err != nil {
             goto end
         }
@@ -32,9 +29,9 @@ end:
 }
 
 fun readDir(name *const char, error **runtime.Error) [array]*os.FileInfo {
+    var info = makearray(*os.FileInfo)
     var err *runtime.Error = nil
-    var file *os.File = os.openDir(name, &err)
-    var info [array]*os.FileInfo = makearray(*os.FileInfo)
+    var file = os.openDir(name, &err)
     if err != nil {
         goto end
     }
@@ -52,10 +49,10 @@ end:
 }
 
 fun readFile(name *const char, error **runtime.Error) *char {
-    var err *runtime.Error = nil
     var ret *char = nil
-    var file *os.File = os.open(name, &err)
-    if err {
+    var err *runtime.Error = nil
+    var file = os.open(name, &err)
+    if err != nil {
         goto end
     }
     ret = readAll(file, &err)
@@ -72,20 +69,19 @@ end:
 }
 
 fun writeFile(filename *const char, data *const char, perm int, error **runtime.Error) {
-    typ void(perm)
     var err *runtime.Error = nil
-    var file *os.File = os.create(filename, &err)
-    if err {
+    var file = os.create(filename, &err)
+    if err != nil {
         goto end
     }
     os.write(file, data, &err)
-    if err {
+    if err != nil {
         os.close(file, nil)
         goto end
     }
     os.close(file, nil)
 end:
-    if err {
+    if err != nil {
         runtime.Error_move(err, error)
     }
 }

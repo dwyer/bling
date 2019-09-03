@@ -35,7 +35,7 @@ fun emitNewline(e *Emitter) {
 }
 
 fun emitTabs(e *Emitter) {
-    for var i int = 0; i < e.indent; i++ {
+    for var i = 0; i < e.indent; i++ {
         emitString(e, "    ")
     }
 }
@@ -48,7 +48,7 @@ fun emitToken(e *Emitter, tok token.Token) {
 }
 
 fun hasPrefix(s *const char, prefix *const char) bool {
-    for var i int = 0; prefix[i]; i++ {
+    for var i = 0; prefix[i]; i++ {
         if s[i] != prefix[i] {
             return false
         }
@@ -89,7 +89,7 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
     case ast.EXPR_CALL:
         emitExpr(e, expr.call.func)
         emitToken(e, token.LPAREN)
-        for var i int = 0; i < len(expr.call.args); i++ {
+        for var i = 0; i < len(expr.call.args); i++ {
             if i > 0 {
                 emitToken(e, token.COMMA)
                 emitSpace(e)
@@ -114,7 +114,7 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         if len(expr.composite.list) > 0 {
             emitNewline(e)
             e.indent++
-            for var i int = 0; i < len(expr.composite.list); i++ {
+            for var i = 0; i < len(expr.composite.list); i++ {
                 emitTabs(e)
                 emitExpr(e, expr.composite.list[i])
                 emitToken(e, token.COMMA)
@@ -129,7 +129,7 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         if e.pkg && hasPrefix(expr.ident.name, e.pkg) && expr.ident.name[runtime.strlen(e.pkg)] == '$' {
             emitString(e, &expr.ident.name[runtime.strlen(e.pkg) + 1])
         } else {
-            var i int = bytes.indexByte(expr.ident.name, '$')
+            var i = bytes.indexByte(expr.ident.name, '$')
             if i >= 0 {
                 emitBytes(e, expr.ident.name, i)
                 emitToken(e, token.PERIOD)
@@ -213,7 +213,7 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
         emitToken(e, token.LBRACE)
         emitNewline(e)
         e.indent++
-        for var i int = 0; i < len(stmt.block.stmts); i++ {
+        for var i = 0; i < len(stmt.block.stmts); i++ {
             switch stmt.block.stmts[i].kind {
             case ast.STMT_LABEL:
                 break
@@ -232,7 +232,7 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
         if len(stmt.case_.exprs) > 0 {
             emitToken(e, token.CASE)
             emitSpace(e)
-            for var i int = 0; i < len(stmt.case_.exprs); i++ {
+            for var i = 0; i < len(stmt.case_.exprs); i++ {
                 if i > 0 {
                     emitToken(e, token.COMMA)
                     emitSpace(e)
@@ -244,8 +244,8 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
         }
         emitToken(e, token.COLON)
         if len(stmt.case_.stmts) > 0 {
-            var first *ast.Stmt = stmt.case_.stmts[0]
-            var oneline bool = false
+            var first = stmt.case_.stmts[0]
+            var oneline = false
             switch first.kind {
             case ast.STMT_BLOCK, ast.STMT_JUMP, ast.STMT_RETURN:
                 break
@@ -259,7 +259,7 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
             } else {
                 emitNewline(e)
                 e.indent++
-                for var i int = 0; i < len(stmt.case_.stmts); i++ {
+                for var i = 0; i < len(stmt.case_.stmts); i++ {
                     emitTabs(e)
                     emitStmt(e, stmt.case_.stmts[i])
                     emitNewline(e)
@@ -347,7 +347,7 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
         emitSpace(e)
         emitToken(e, token.LBRACE)
         emitNewline(e)
-        for var i int = 0; i < len(stmt.switch_.stmts); i++ {
+        for var i = 0; i < len(stmt.switch_.stmts); i++ {
             emitTabs(e)
             emitStmt(e, stmt.switch_.stmts[i])
         }
@@ -378,7 +378,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
         if type.kind == ast.TYPE_FUNC {
             emitToken(e, token.FUNC)
             emitToken(e, token.LPAREN)
-            for var i int = 0; i < len(type.func.params); i++ {
+            for var i = 0; i < len(type.func.params); i++ {
                 if i > 0 {
                     emitToken(e, token.COMMA)
                     emitSpace(e)
@@ -420,8 +420,8 @@ fun emitType(e *Emitter, type *ast.Expr) {
             emitToken(e, token.LBRACE)
             emitNewline(e)
             e.indent++
-            for var i int = 0; i < len(type.enum_.enums); i++ {
-                var decl *ast.Decl = type.enum_.enums[i]
+            for var i = 0; i < len(type.enum_.enums); i++ {
+                var decl = type.enum_.enums[i]
                 emitTabs(e)
                 emitExpr(e, decl.value.name)
                 if decl.value.value {
@@ -439,7 +439,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
         break
     case ast.TYPE_FUNC:
         emitToken(e, token.LPAREN)
-        for var i int = 0; i < len(type.func.params); i++ {
+        for var i = 0; i < len(type.func.params); i++ {
             if i > 0 {
                 emitToken(e, token.COMMA)
                 emitSpace(e)
@@ -467,7 +467,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
             emitToken(e, token.LBRACE)
             emitNewline(e)
             e.indent++
-            for var i int = 0; i < len(type.struct_.fields); i++ {
+            for var i = 0; i < len(type.struct_.fields); i++ {
                 emitTabs(e)
                 emitDecl(e, type.struct_.fields[i])
                 emitNewline(e)
@@ -525,7 +525,7 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
                 emitSpace(e)
                 emitExpr(e, decl.value.name)
             }
-            var omitType bool = false
+            var omitType = false
             if decl.value.value {
                 switch decl.value.value.kind {
                 case ast.EXPR_COMPOSITE_LIT:
@@ -577,13 +577,13 @@ fun emitFile(e *Emitter, file *ast.File) {
         emitNewline(e)
         emitNewline(e)
     }
-    for var i int = 0; i < len(file.imports); i++ {
+    for var i = 0; i < len(file.imports); i++ {
         emitToken(e, token.IMPORT)
         emitSpace(e)
         emitExpr(e, file.imports[i].imp.path)
         emitNewline(e)
     }
-    for var i int = 0; i < len(file.decls); i++ {
+    for var i = 0; i < len(file.decls); i++ {
         emitNewline(e)
         emitDecl(e, file.decls[i])
         emitNewline(e)

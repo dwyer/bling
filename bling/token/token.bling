@@ -241,16 +241,16 @@ fun string(tok Token) *char {
     return tokens[tok]
 }
 
-var keywords map Token = makemap(Token)
+var keywords = makemap(Token)
 
 fun lookup(ident *char) Token {
     if len(keywords) == 0 {
-        for var i int = _keywordBeg + 1; i < _keywordEnd; i++ {
-            var s *char = string(i)
+        for var i = _keywordBeg + 1; i < _keywordEnd; i++ {
+            var s = string(i)
             runtime.Map_set(&keywords, s, &i)
         }
     }
-    var tok Token = IDENT
+    var tok = IDENT
     runtime.Map_get(&keywords, ident, &tok)
     return tok
 }
@@ -291,7 +291,7 @@ fun getInt(a *[array]int, i int) int {
 }
 
 fun File_addLine(f *File, offset int) {
-    var i int = len(f.lines)
+    var i = len(f.lines)
     if (i == 0 || getInt(&f.lines, i - 1) < offset) && offset < f.size {
         append(f.lines, offset)
     }
@@ -302,10 +302,10 @@ fun File_pos(f *File, offset int) Pos {
 }
 
 fun searchInts(a *[array]int, x int) int {
-    var i int = 0
-    var j int = len(*a)
+    var i = 0
+    var j = len(*a)
     while i < j {
-        var h int = i + (j - i) / 2
+        var h = i + (j - i) / 2
         if getInt(a, h) <= x {
             i = h + 1
         } else {
@@ -316,9 +316,9 @@ fun searchInts(a *[array]int, x int) int {
 }
 
 fun _File_position(f *File, p Pos, adjusted bool) Position {
-    var offset int = p - f.base
-    var i int = searchInts(&f.lines, offset)
-    var pos Position = {
+    var offset = p - f.base
+    var i = searchInts(&f.lines, offset)
+    var pos = Position{
         filename: f.name,
         offset: offset,
         line: i + 1,
@@ -330,7 +330,7 @@ fun _File_position(f *File, p Pos, adjusted bool) Position {
 var noPos const Pos = 0
 
 fun File_positionFor(f *File, p Pos, adjusted bool) Position {
-    var pos Position = {}
+    var pos = Position{}
     if p != noPos {
         if p < f.base || p > f.base + f.size {
             panic("illegal Pos value")
@@ -348,9 +348,9 @@ fun File_lineString(f *File, line int) *char {
     if line < 1 {
         return nil
     }
-    var buf bytes.Buffer = {}
-    var i int = f.lines[line - 1]
-    var ch int = f.src[i]
+    var buf = bytes.Buffer{}
+    var i = f.lines[line - 1]
+    var ch = f.src[i]
     while ch > 0 && ch != '\n' {
         bytes.Buffer_writeByte(&buf, ch, nil)
         i++
@@ -360,7 +360,7 @@ fun File_lineString(f *File, line int) *char {
 }
 
 fun newFileSet() *FileSet {
-    var fset FileSet = {
+    var fset = FileSet{
         base: 1,
         files: makearray(*File),
     }
@@ -374,16 +374,16 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
     if base < s.base || size < 0 {
         panic("illegal base or size")
     }
-    var lines [array]int = makearray(int)
-    var zero int = 0
+    var lines = makearray(int)
+    var zero = 0
     append(lines, zero)
-    var file File = {
+    var file = File{
         name: runtime.strdup(filename),
         base: base,
         size: size,
         lines: lines,
     }
-    var f *File = &&file
+    var f = &&file
     base += size + 1
     s.base = base
     append(s.files, f)
@@ -392,8 +392,8 @@ fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File 
 }
 
 fun searchFiles(files *[array]*File, x int) int {
-    for var i int = 0; i < len(*files); i++ {
-        var f *File = (*files)[i]
+    for var i = 0; i < len(*files); i++ {
+        var f = (*files)[i]
         if f.base <= x && x <= f.base + f.size {
             return i
         }
@@ -402,11 +402,11 @@ fun searchFiles(files *[array]*File, x int) int {
 }
 
 fun FileSet_file(s *FileSet, p Pos) *File {
-    var f *File = s.last
+    var f = s.last
     if f != nil && f.base <= p && p <= f.base + f.size {
         return f
     }
-    var i int = searchFiles(&s.files, p)
+    var i = searchFiles(&s.files, p)
     if i >= 0 {
         f = s.files[i]
         if p <= f.base + f.size {
@@ -418,9 +418,9 @@ fun FileSet_file(s *FileSet, p Pos) *File {
 }
 
 fun FileSet_print(fset *FileSet) {
-    for var i int = 0; i < len(fset.files); i++ {
-        var f *File = fset.files[i]
-        var s *char = C.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
+    for var i = 0; i < len(fset.files); i++ {
+        var f = fset.files[i]
+        var s = C.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
         print(s)
         runtime.free(s)
     }
