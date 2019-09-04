@@ -1,5 +1,4 @@
 * Make `void` a keyword?
-* Implement native maps and dynamic arrays.
 * if and switch: allow init expr
 * Change cast syntax from `<T>x` to `typ(T) x`;
 * Make `sizeof` a builtin func.
