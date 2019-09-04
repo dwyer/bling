@@ -494,10 +494,10 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
         emitter.emitToken(e, token.HASH)
         emitter.emitString(e, decl.pragma.lit)
         break
-    case ast.DECL_TYPEDEF:
+    case ast.DECL_TYPE:
         emitter.emitToken(e, token.TYPEDEF)
         emitter.emitSpace(e)
-        emitType(e, decl.typedef_.type, decl.typedef_.name)
+        emitType(e, decl.type.type, decl.type.name)
         emitter.emitToken(e, token.SEMICOLON)
         break
     case ast.DECL_VALUE:

@@ -13,7 +13,7 @@ typ NodeKind enum {
     DECL_FUNC
     DECL_IMPORT
     DECL_PRAGMA
-    DECL_TYPEDEF
+    DECL_TYPE
     DECL_VALUE
     _DECL_END
     _EXPR_START
@@ -284,7 +284,7 @@ typ Decl struct {
     union {
         imp ImportDecl
         pragma PragmaDecl
-        typedef_ TypeDecl
+        type TypeDecl
         value ValueDecl
         func FuncDecl
         field Field
@@ -510,7 +510,7 @@ fun isVoidPtr(x *Expr) bool {
                 return false
             }
             assert(x.ident.obj.kind == ObjKind_TYP)
-            x = x.ident.obj.decl.typedef_.type
+            x = x.ident.obj.decl.type.type
             continue
         case EXPR_STAR:
             return isVoid(x.star.x)

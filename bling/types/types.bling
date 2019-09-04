@@ -164,10 +164,10 @@ fun getUnderlyingType(ident *ast.Expr) *ast.Expr {
         panic(C.sprintf("not resolved: %s", typeString(ident)))
     }
     var decl = ident.ident.obj.decl
-    if decl.kind != ast.DECL_TYPEDEF {
+    if decl.kind != ast.DECL_TYPE {
         panic(C.sprintf("not a type: %s", typeString(ident)))
     }
-    return decl.typedef_.type
+    return decl.type.type
 }
 
 fun getBaseType(type *ast.Expr) *ast.Expr {
@@ -388,8 +388,8 @@ fun getDeclType(decl *ast.Decl) *ast.Expr {
         return decl.func.type
     case ast.DECL_IMPORT:
         return nil
-    case ast.DECL_TYPEDEF:
-        return decl.typedef_.type
+    case ast.DECL_TYPE:
+        return decl.type.type
     case ast.DECL_VALUE:
         return decl.value.type
     default:
@@ -572,7 +572,7 @@ fun Checker_checkIdent(c *Checker, expr *ast.Expr) *ast.Expr {
 fun isInteger(x *ast.Expr) bool {
     switch x.kind {
     case ast.EXPR_IDENT:
-        return isInteger(x.ident.obj.decl.typedef_.type)
+        return isInteger(x.ident.obj.decl.type.type)
     case ast.TYPE_ENUM, ast.TYPE_NATIVE:
         return true
     default:
@@ -671,8 +671,8 @@ fun Checker_lookupIdent(c *Checker, name *char) *ast.Expr {
     var obj = ast.Scope_deepLookup(c.pkg.scope, name)
     assert(obj)
     assert(obj.kind == ast.ObjKind_TYP)
-    assert(obj.decl.kind == ast.DECL_TYPEDEF)
-    var t = obj.decl.typedef_.name
+    assert(obj.decl.kind == ast.DECL_TYPE)
+    var t = obj.decl.type.name
     assert(t.ident.obj)
     return t
 }
@@ -1036,18 +1036,18 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
         }
     case ast.DECL_PRAGMA:
         break
-    case ast.DECL_TYPEDEF:
-        switch decl.typedef_.type.kind {
+    case ast.DECL_TYPE:
+        switch decl.type.type.kind {
         case ast.TYPE_ENUM:
-            decl.typedef_.type.enum_.name = decl.typedef_.name
+            decl.type.type.enum_.name = decl.type.name
             break
         case ast.TYPE_STRUCT:
-            decl.typedef_.type.struct_.name = decl.typedef_.name
+            decl.type.type.struct_.name = decl.type.name
             break
         default:
             break
         }
-        Checker_checkType(c, decl.typedef_.type)
+        Checker_checkType(c, decl.type.type)
         break
     case ast.DECL_VALUE:
         {
@@ -1096,14 +1096,14 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
         case ast.DECL_FUNC:
             kind = ast.ObjKind_FUN
             break
-        case ast.DECL_TYPEDEF:
+        case ast.DECL_TYPE:
             kind = ast.ObjKind_TYP
             break
         default:
             break
         }
         if kind {
-            Checker_declare(c, d, nil, c.pkg.scope, kind, d.typedef_.name)
+            Checker_declare(c, d, nil, c.pkg.scope, kind, d.type.name)
         }
     }
     for var i = 0; i < len(file.decls); i++ {
@@ -1198,8 +1198,8 @@ fun defPredeclaredTypes() {
             },
         }
         var decl = ast.Decl{
-            kind: ast.DECL_TYPEDEF,
-            typedef_: {
+            kind: ast.DECL_TYPE,
+            type: {
                 name: &&name,
                 type: &&type,
             },
@@ -1281,7 +1281,7 @@ fun defPredeclaredConsts() {
             kind: ast.EXPR_CONST,
             const_: {
                 name: runtime.strdup(predeclareConsts[i].name),
-                type: obj.decl.typedef_.name,
+                type: obj.decl.type.name,
                 value: predeclareConsts[i].value,
             },
         }
@@ -1289,7 +1289,7 @@ fun defPredeclaredConsts() {
             kind: ast.DECL_VALUE,
             value: {
                 name: &&name,
-                type: obj.decl.typedef_.name,
+                type: obj.decl.type.name,
                 value: &&expr,
             },
         }

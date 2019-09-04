@@ -506,12 +506,12 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
         emitSpace(e)
         emitExpr(e, decl.imp.path)
         break
-    case ast.DECL_TYPEDEF:
+    case ast.DECL_TYPE:
         emitToken(e, token.TYPE)
         emitSpace(e)
-        emitExpr(e, decl.typedef_.name)
+        emitExpr(e, decl.type.name)
         emitSpace(e)
-        emitType(e, decl.typedef_.type)
+        emitType(e, decl.type.type)
         break
     case ast.DECL_PRAGMA:
         emitToken(e, token.HASH)

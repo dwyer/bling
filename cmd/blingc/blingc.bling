@@ -31,10 +31,10 @@ fun isForwardDecl(decl *ast.Decl) bool {
         return decl.func.body == nil
     case ast.DECL_PRAGMA:
         return true
-    case ast.DECL_TYPEDEF:
-        switch decl.typedef_.type.kind {
+    case ast.DECL_TYPE:
+        switch decl.type.type.kind {
         case ast.TYPE_STRUCT:
-            return len(decl.typedef_.type.struct_.fields) == 0
+            return len(decl.type.type.struct_.fields) == 0
         default:
             return false
         }

@@ -971,9 +971,9 @@ fun declaration(p *parser.Parser, isExternal bool) *ast.Decl {
         var name = declarator(p, &type)
         parser.expect(p, token.SEMICOLON)
         var declref = ast.Decl{
-            kind: ast.DECL_TYPEDEF,
+            kind: ast.DECL_TYPE,
             pos: pos,
-            typedef_: {
+            type: {
                 name: name,
                 type: type,
             },
@@ -1028,9 +1028,9 @@ fun declaration(p *parser.Parser, isExternal bool) *ast.Decl {
             break
         }
         var decl = ast.Decl{
-            kind: ast.DECL_TYPEDEF,
+            kind: ast.DECL_TYPE,
             pos: pos,
-            typedef_: {
+            type: {
                 type: type,
                 name: name,
             },

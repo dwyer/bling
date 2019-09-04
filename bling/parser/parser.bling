@@ -1217,9 +1217,9 @@ fun parseTypeDecl(p *Parser) *ast.Decl {
     var type = parseType(p)
     expect(p, token.SEMICOLON)
     var decl = ast.Decl{
-        kind: ast.DECL_TYPEDEF,
+        kind: ast.DECL_TYPE,
         pos: pos,
-        typedef_: {
+        type: {
             name: ident,
             type: type,
         },
