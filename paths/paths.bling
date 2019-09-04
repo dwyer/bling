@@ -94,17 +94,17 @@ fun split(path *const char) **char {
 }
 
 fun match(pattern *const char, path *const char) bool {
-    if *pattern == '\0' && *path == '\0' {
+    if pattern[0] == '\0' && path[0] == '\0' {
         return true
     }
-    if *pattern == '\0' || *path == '\0' {
+    if pattern[0] == '\0' || path[0] == '\0' {
         return false
     }
-    if *pattern == '*' {
-        return match(pattern + 1, path) || match(pattern, path + 1)
+    if pattern[0] == '*' {
+        return match(&pattern[1], path) || match(pattern, &path[1])
     }
-    if *pattern == *path {
-        return match(pattern + 1, path + 1)
+    if pattern[0] == path[0] {
+        return match(&pattern[1], &path[1])
     }
     return false
 }
