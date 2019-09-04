@@ -20,7 +20,6 @@ typ Token enum {
     DEFAULT
     ELSE
     ENUM
-    ESC
     FALLTHROUGH
     FOR
     FUNC
@@ -152,7 +151,6 @@ var tokens []*char = {
     DEFAULT: "default",
     ELSE: "else",
     ENUM: "enum",
-    ESC: "$$ESC",
     EXTERN: "extern",
     FALLTHROUGH: "fallthrough",
     FOR: "for",

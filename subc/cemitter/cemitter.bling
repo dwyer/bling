@@ -144,7 +144,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         break
     case ast.EXPR_UNARY:
         if expr.unary.op == token.LAND {
-            emitter.emitToken(e, token.ESC)
+            emitter.emitString(e, "$$ESC")
             emitter.emitToken(e, token.LPAREN)
         } else {
             emitter.emitToken(e, expr.unary.op)

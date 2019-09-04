@@ -127,14 +127,10 @@ done:
 fun unaryExpr(p *parser.Parser) *ast.Expr {
     var pos = p.pos
     switch p.tok {
-    case token.ADD, token.AND, token.ESC, token.BITWISE_NOT, token.NOT, token.SUB:
+    case token.ADD, token.AND, token.BITWISE_NOT, token.NOT, token.SUB:
         {
             var op = p.tok
             parser.next(p)
-            if op == token.ESC {
-                op = token.LAND
-                parser.expect(p, token.LPAREN)
-            }
             var x = ast.Expr{
                 kind: ast.EXPR_UNARY,
                 unary: {
