@@ -1,10 +1,12 @@
 #ifndef BLING_BOOTSTRAP_H
 #define BLING_BOOTSTRAP_H
 
-#define esc(x) ({ \
+#define $$ESC(x) ({ \
         typeof(x) $0 = (x); \
         runtime$memcpy(runtime$malloc(sizeof $0), &$0, sizeof $0); \
         })
+
+#define esc(x) $$ESC(x)
 
 #define array(T) runtime$Slice
 #define map(T) runtime$Map

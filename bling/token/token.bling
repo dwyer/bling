@@ -152,7 +152,7 @@ var tokens []*char = {
     DEFAULT: "default",
     ELSE: "else",
     ENUM: "enum",
-    ESC: "esc",
+    ESC: "$$ESC",
     EXTERN: "extern",
     FALLTHROUGH: "fallthrough",
     FOR: "for",
