@@ -164,8 +164,7 @@ fun _setLen(s *Slice, size int, len int) {
 fun Array_setLen(s *Slice, size int, len int) {
     var old = s._len
     _setLen(s, size, len)
-    var diff = len - old
-    if diff > 0 {
+    if var diff = len - old; diff > 0 {
         C.memset(Array_get(s, size, old, nil), 0, diff * size)
     }
 }
@@ -246,8 +245,7 @@ fun _mapGetPairRef(m *const Map, key *const void) *MapPair {
     for var i = 0; i < len(m._pairs); i++ {
         stats.iters++
         var idx = (hash + i) % _mapCap(m)
-        var p = &m._pairs[idx]
-        if !p.key || streq(key, p.key) {
+        if var p = &m._pairs[idx]; !p.key || streq(key, p.key) {
             if !i {
                 stats.hits++
             } else {
@@ -286,16 +284,14 @@ fun Map_get(m *const Map, key *const char, val *void) bool {
 
 fun Map_set(m *Map, key *const char, val *const void) {
     _mapSetUnsafe(m, key, val)
-    var load_factor = typ float(Map_len(m)) / _mapCap(m)
-    if load_factor >= MAP_LOAD_FACTOR {
+    if var load_factor = typ float(Map_len(m)) / _mapCap(m); load_factor >= MAP_LOAD_FACTOR {
         var newCap = _mapCap(m) * 2
         var pairs = m._pairs
         m._pairs = makearray(MapPair)
         Array_setLen(typ *Slice(&m._pairs), sizeof(MapPair), newCap)
         m._len = 0
         for var i = 0; i < len(pairs); i++ {
-            var p = &pairs[i]
-            if p.key {
+            if var p = &pairs[i]; p.key {
                 _mapSetUnsafe(m, p.key, p.val)
             }
         }
