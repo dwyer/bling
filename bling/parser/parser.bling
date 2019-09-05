@@ -1189,7 +1189,7 @@ fun parseDir(fset *token.FileSet, path *const char, first **runtime.Error) **ast
         }
     }
     runtime.Slice_unmake(&infos)
-    return runtime.nilArray(&files)
+    return runtime.nilArray(&files, sizeof(*ast.File))
 }
 
 fun _parseFile(p *Parser) *ast.File {
