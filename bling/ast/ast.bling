@@ -7,6 +7,7 @@ import "runtime"
 
 typ NodeKind enum {
     NODE_ILLEGAL = 0
+
     _DECL_START
     DECL_BUILTIN
     DECL_FIELD
@@ -16,6 +17,7 @@ typ NodeKind enum {
     DECL_TYPE
     DECL_VALUE
     _DECL_END
+
     _EXPR_START
     EXPR_BASIC_LIT
     EXPR_BINARY
@@ -33,6 +35,7 @@ typ NodeKind enum {
     EXPR_TERNARY
     EXPR_UNARY
     _EXPR_END
+
     _STMT_START
     STMT_ASSIGN
     STMT_BLOCK
@@ -48,6 +51,7 @@ typ NodeKind enum {
     STMT_RETURN
     STMT_SWITCH
     _STMT_END
+
     _TYPE_START
     TYPE_ARRAY
     TYPE_BUILTIN

@@ -5,12 +5,16 @@ import "bytes"
 import "runtime"
 
 typ Token enum {
-    ILLEGAL = 0
+    ILLEGAL
+
+    // basic lits
     CHAR
     FLOAT
     IDENT
     INT
     STRING
+
+    // keywords
     _keywordBeg
     ARRAY
     BREAK
@@ -37,6 +41,8 @@ typ Token enum {
     UNION
     VAR
     WHILE
+
+    // C keywords
     EXTERN
     SIGNED
     STATIC
@@ -54,6 +60,7 @@ typ Token enum {
     _TYPEOF
     _VOLATILE
     _keywordEnd
+
     ARROW
     COLON
     COMMA
@@ -69,6 +76,7 @@ typ Token enum {
     RBRACK
     RPAREN
     SEMICOLON
+
     ADD
     ADD_ASSIGN
     AND
