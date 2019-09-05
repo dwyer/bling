@@ -13,7 +13,7 @@
 
 #define append(a, x) do { \
     typeof(x) $0 = (x); \
-    runtime$Slice_append(&(a), &$0); \
+    runtime$Array_append((runtime$Slice*)&(a), sizeof(x), &$0); \
 } while (0)
 
 #define assert(x) do { if (!(x)) print("assert failed: " # x); } while (0)
@@ -25,7 +25,7 @@
 #define makearray(T) (runtime$Slice){.size = sizeof(T)}
 #define makemap(T) (runtime$Map){._valSize = sizeof(T)}
 
-#define get(T, a, i) (*(T*)runtime$Slice_get(&(a), (i), nil))
+#define get(T, a, i) (*(T*)runtime$Array_get((runtime$Slice*)&(a), sizeof(T), (i), nil))
 
 #define nil ((void*)0)
 

@@ -117,33 +117,19 @@ fun Error_free(e *Error) {
     free(e)
 }
 
-fun Slice_make(size int) Slice {
-    var s Slice = {
-        size: size,
-        _len: 0,
-        cap: 0,
-        _array: nil,
-    }
-    return s
-}
-
 fun Slice_unmake(s *void) {
     free((typ *Slice(s))._array)
 }
 
-fun Slice_len(s *const void) int {
-    return (typ *Slice(s))._len
+fun Slice_len(s *const Slice) int {
+    return s._len
 }
 
-fun Slice_cap(s *const void) int {
-    return (typ *Slice(s)).cap
-}
-
-fun Array_get(s *const void, size int, i int, dst *void) *void {
-    if i >= (typ *Slice(s))._len {
-        panic(C.sprintf("out of range: index=%d, len=%d", i, (typ *Slice(s))._len))
+fun Array_get(s *const Slice, size int, i int, dst *void) *void {
+    if i >= s._len {
+        panic(C.sprintf("out of range: index=%d, len=%d", i, s._len))
     }
-    var ref *char = &(typ *char((typ *Slice(s))._array))[i * size]
+    var ref *char = &(typ *char(s._array))[i * size]
     if dst {
         if size == 1 {
             *typ *char(dst) = *ref
@@ -152,11 +138,6 @@ fun Array_get(s *const void, size int, i int, dst *void) *void {
         }
     }
     return ref
-}
-
-
-fun Slice_get(s *const void, i int, dst *void) *void {
-    return Array_get(s, (typ *Slice(s)).size, i, dst)
 }
 
 fun _setCap(s *Slice, size int, cap int) {
@@ -190,10 +171,6 @@ fun Array_setLen(s *void, size int, len int) {
     }
 }
 
-fun Slice_setLen(s *void, len int) {
-    Array_setLen(s, (typ *Slice(s)).size, len)
-}
-
 fun Array_set(s *void, size int, i int, x *const void) {
     if size == 1 {
         (typ *char((typ *Slice(s))._array))[i] = *typ *char(x)
@@ -202,18 +179,9 @@ fun Array_set(s *void, size int, i int, x *const void) {
     }
 }
 
-fun Slice_set(s *void, i int, x *const void) {
-    Array_set(s, (typ *Slice(s)).size, i, x)
-}
-
-fun Array_append(s *void, size int, x *const void) {
-    _setLen(s, size, (typ *Slice(s))._len + 1)
-    Array_set(s, size, (typ *Slice(s))._len - 1, x)
-}
-
-fun Slice_append(s *void, x *const void) {
-    var size = (typ *Slice(s)).size
-    Array_append(s, size, x)
+fun Array_append(s *Slice, size int, x *const void) {
+    _setLen(s, size, s._len + 1)
+    Array_set(s, size, s._len - 1, x)
 }
 
 fun nilArray(s *void, size int) *void {
