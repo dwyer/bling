@@ -67,11 +67,11 @@ fun compile_c(argv []*char) {
             for var j = 0; j < len(file.decls); j++ {
                 var d = file.decls[j]
                 if !isForwardDecl(d) {
-                    runtime.Array_set(&file.decls, sizeof(*ast.File), i, &d)
+                    runtime.Array_set(typ *runtime.Slice(&file.decls), sizeof(*ast.File), i, &d)
                     i++
                 }
             }
-            runtime.Array_setLen(&file.decls, sizeof(*ast.File), i)
+            runtime.Array_setLen(typ *runtime.Slice(&file.decls), sizeof(*ast.File), i)
         }
         emitter.emitFile(&e, file)
         argv++

@@ -57,9 +57,8 @@ typ Error struct {
 }
 
 typ Slice struct {
-    size int
     _len int
-    cap int
+    _cap int
     _array *void
 }
 
@@ -141,13 +140,13 @@ fun Array_get(s *const Slice, size int, i int, dst *void) *void {
 }
 
 fun _setCap(s *Slice, size int, cap int) {
-    s.cap = cap
-    s._array = C.realloc(s._array, s.cap * size)
+    s._cap = cap
+    s._array = C.realloc(s._array, s._cap * size)
 }
 
 fun _setLen(s *Slice, size int, len int) {
     var grow = false
-    var cap = s.cap
+    var cap = s._cap
     if cap == 0 {
         cap = 1
         grow = true
@@ -162,8 +161,8 @@ fun _setLen(s *Slice, size int, len int) {
     s._len = len
 }
 
-fun Array_setLen(s *void, size int, len int) {
-    var old = (typ *Slice(s))._len
+fun Array_setLen(s *Slice, size int, len int) {
+    var old = s._len
     _setLen(s, size, len)
     var diff = len - old
     if diff > 0 {
@@ -171,9 +170,9 @@ fun Array_setLen(s *void, size int, len int) {
     }
 }
 
-fun Array_set(s *void, size int, i int, x *const void) {
+fun Array_set(s *Slice, size int, i int, x *const void) {
     if size == 1 {
-        (typ *char((typ *Slice(s))._array))[i] = *typ *char(x)
+        (typ *char(s._array))[i] = *typ *char(x)
     } else {
         memcpy(Array_get(s, size, i, nil), x, size)
     }
@@ -214,7 +213,7 @@ fun memdup(src *const void, size Size) *void {
 fun Map_init(m *Map) {
     assert(m._valSize)
     m._pairs = makearray(MapPair)
-    Array_setLen(&m._pairs, sizeof(MapPair), DEFAULT_CAP)
+    Array_setLen(typ *Slice(&m._pairs), sizeof(MapPair), DEFAULT_CAP)
 }
 
 fun Map_make(valSize int) Map {
@@ -225,16 +224,16 @@ fun Map_make(valSize int) Map {
     return m
 }
 
-fun Map_unmake(m *void) {
-    Slice_unmake(&(typ *Map(m))._pairs)
+fun Map_unmake(m *Map) {
+    Slice_unmake(&m._pairs)
 }
 
-fun Map_len(m *const void) int {
-    return (typ *Map(m))._len
+fun Map_len(m *const Map) int {
+    return m._len
 }
 
-fun Map_cap(m *const void) int {
-    return len((typ *Map(m))._pairs)
+fun Map_cap(m *const Map) int {
+    return len(m._pairs)
 }
 
 fun Map_isInitialized(m *const Map) bool {
@@ -274,12 +273,12 @@ fun set_unsafe(m *Map, key *const char, val *const void) {
     }
 }
 
-fun Map_get(m *const void, key *const char, val *void) bool {
+fun Map_get(m *const Map, key *const char, val *void) bool {
     if Map_isInitialized(m) {
         var p = pair_ref(m, key)
         if p.val {
             if val {
-                memcpy(val, p.val, (typ *Map(m))._valSize)
+                memcpy(val, p.val, m._valSize)
             }
             return true
         }
@@ -287,26 +286,26 @@ fun Map_get(m *const void, key *const char, val *void) bool {
     return false
 }
 
-fun Map_set(m *void, key *const char, val *const void) {
+fun Map_set(m *Map, key *const char, val *const void) {
     set_unsafe(m, key, val)
     var load_factor = typ float(Map_len(m)) / Map_cap(m)
     if load_factor >= MAP_LOAD_FACTOR {
         var newCap = Map_cap(m) * 2
-        var pairs = (typ *Map(m))._pairs
-        (typ *Map(m))._pairs = makearray(MapPair)
-        Array_setLen(&(typ *Map(m))._pairs, sizeof(MapPair), newCap)
-        (typ *Map(m))._len = 0
+        var pairs = m._pairs
+        m._pairs = makearray(MapPair)
+        Array_setLen(typ *Slice(&m._pairs), sizeof(MapPair), newCap)
+        m._len = 0
         for var i = 0; i < len(pairs); i++ {
             var p = &pairs[i]
             if p.key {
-                set_unsafe((typ *Map(m)), p.key, p.val)
+                set_unsafe(m, p.key, p.val)
             }
         }
         Slice_unmake(&pairs)
     }
 }
 
-fun NewMapIter(m *const void) MapIter {
+fun NewMapIter(m *const Map) MapIter {
     var iter MapIter = {
         _map: m,
     }

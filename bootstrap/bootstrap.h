@@ -22,7 +22,7 @@
         runtime$Slice: runtime$Slice_len, \
         runtime$Map: runtime$Map_len)(&(x))
 
-#define makearray(T) (runtime$Slice){.size = sizeof(T)}
+#define makearray(T) (runtime$Slice){}
 #define makemap(T) (runtime$Map){._valSize = sizeof(T)}
 
 #define get(T, a, i) (*(T*)runtime$Array_get((runtime$Slice*)&(a), sizeof(T), (i), nil))
