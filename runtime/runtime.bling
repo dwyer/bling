@@ -139,27 +139,32 @@ fun Slice_cap(s *const void) int {
     return (typ *Slice(s)).cap
 }
 
-fun Slice_get(s *const void, i int, dst *void) *void {
+fun Slice_get0(s *const void, size int, i int, dst *void) *void {
     if i >= (typ *Slice(s))._len {
         panic(C.sprintf("out of range: index=%d, len=%d", i, (typ *Slice(s))._len))
     }
-    var ref *char = &(typ *char((typ *Slice(s))._array))[i * (typ *Slice(s)).size]
+    var ref *char = &(typ *char((typ *Slice(s))._array))[i * size]
     if dst {
-        if (typ *Slice(s)).size == 1 {
+        if size == 1 {
             *typ *char(dst) = *ref
         } else {
-            memcpy(dst, ref, (typ *Slice(s)).size)
+            memcpy(dst, ref, size)
         }
     }
     return ref
 }
 
-fun _setCap(s *Slice, cap int) {
-    s.cap = cap
-    s._array = C.realloc(s._array, s.cap * s.size)
+
+fun Slice_get(s *const void, i int, dst *void) *void {
+    return Slice_get0(s, (typ *Slice(s)).size, i, dst)
 }
 
-fun _setLen(s *Slice, len int) {
+fun _setCap(s *Slice, size int, cap int) {
+    s.cap = cap
+    s._array = C.realloc(s._array, s.cap * size)
+}
+
+fun _setLen(s *Slice, size int, len int) {
     var grow = false
     var cap = s.cap
     if cap == 0 {
@@ -171,30 +176,39 @@ fun _setLen(s *Slice, len int) {
         grow = true
     }
     if s._array == nil || grow {
-        _setCap(s, cap)
+        _setCap(s, size, cap)
     }
     s._len = len
 }
 
-fun Slice_setLen(s *void, len int) {
+fun Slice_setLen0(s *void, size int, len int) {
     var old = (typ *Slice(s))._len
-    _setLen(s, len)
+    _setLen(s, size, len)
     var diff = len - old
     if diff > 0 {
-        C.memset(Slice_get(s, old, nil), 0, diff * (typ *Slice(s)).size)
+        C.memset(Slice_get0(s, size, old, nil), 0, diff * size)
+    }
+}
+
+fun Slice_setLen(s *void, len int) {
+    Slice_setLen0(s, (typ *Slice(s)).size, len)
+}
+
+fun Slice_set0(s *void, size int, i int, x *const void) {
+    if size == 1 {
+        (typ *char((typ *Slice(s))._array))[i] = *typ *char(x)
+    } else {
+        memcpy(Slice_get0(s, size, i, nil), x, size)
     }
 }
 
 fun Slice_set(s *void, i int, x *const void) {
-    if (typ *Slice(s)).size == 1 {
-        (typ *char((typ *Slice(s))._array))[i] = *typ *char(x)
-    } else {
-        memcpy(Slice_get(s, i, nil), x, (typ *Slice(s)).size)
-    }
+    Slice_set0(s, (typ *Slice(s)).size, i, x)
 }
 
 fun Slice_append(s *void, x *const void) {
-    _setLen(s, (typ *Slice(s))._len + 1)
+    var size = (typ *Slice(s)).size
+    _setLen(s, size, (typ *Slice(s))._len + 1)
     Slice_set(s, (typ *Slice(s))._len - 1, x)
 }
 
@@ -228,7 +242,7 @@ fun memdup(src *const void, size Size) *void {
 fun Map_init(m *Map) {
     assert(m._valSize)
     m._pairs = makearray(MapPair)
-    Slice_setLen(&m._pairs, DEFAULT_CAP)
+    Slice_setLen0(&m._pairs, sizeof(MapPair), DEFAULT_CAP)
 }
 
 fun Map_make(valSize int) Map {
@@ -308,7 +322,7 @@ fun Map_set(m *void, key *const char, val *const void) {
         var newCap = Map_cap(m) * 2
         var pairs = (typ *Map(m))._pairs
         (typ *Map(m))._pairs = makearray(MapPair)
-        Slice_setLen(&(typ *Map(m))._pairs, newCap)
+        Slice_setLen0(&(typ *Map(m))._pairs, sizeof(MapPair), newCap)
         (typ *Map(m))._len = 0
         for var i = 0; i < len(pairs); i++ {
             var p = &pairs[i]

@@ -59,13 +59,13 @@ fun Buffer_len(b *Buffer) int {
 
 fun Buffer_bytes(b *Buffer) *char {
     Buffer_init(b)
-    return runtime.Slice_get(b, 0, nil)
+    return runtime.Slice_get0(b, 1, 0, nil)
 }
 
 fun Buffer_string(b *Buffer) *char {
     Buffer_init(b)
     var s *char = runtime.malloc(Buffer_len(b) + 1)
-    runtime.memcpy(s, runtime.Slice_get(b, 0, nil), Buffer_len(b))
+    runtime.memcpy(s, runtime.Slice_get0(b, 1, 0, nil), Buffer_len(b))
     s[Buffer_len(b)] = '\0'
     return s
 }
