@@ -326,6 +326,7 @@ typ DeclStmt struct {
 
 typ IfStmt struct {
     pos token.Pos
+    init *Stmt
     cond *Expr
     body *Stmt
     else_ *Stmt

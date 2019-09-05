@@ -225,6 +225,15 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
         emitter.emitToken(e, token.SEMICOLON)
         break
     case ast.STMT_IF:
+        if stmt.if_.init {
+            emitter.emitToken(e, token.LBRACE)
+            emitter.emitNewline(e)
+            e.indent++
+            emitter.emitTabs(e)
+            emitStmt(e, stmt.if_.init)
+            emitter.emitNewline(e)
+            emitter.emitTabs(e)
+        }
         emitter.emitToken(e, token.IF)
         emitter.emitSpace(e)
         emitter.emitToken(e, token.LPAREN)
@@ -237,6 +246,12 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
             emitter.emitToken(e, token.ELSE)
             emitter.emitSpace(e)
             emitStmt(e, stmt.if_.else_)
+        }
+        if stmt.if_.init {
+            emitter.emitNewline(e)
+            e.indent--
+            emitter.emitTabs(e)
+            emitter.emitToken(e, token.RBRACE)
         }
         break
     case ast.STMT_ITER:

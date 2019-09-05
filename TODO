@@ -1,5 +1,5 @@
 * Make `void` a keyword?
-* if and switch: allow init expr
+* switch: allow init expr
 * Change cast syntax from `<T>x` to `typ(T) x`;
 * Make `sizeof` a builtin func.
 * Remove '#' token from bling.

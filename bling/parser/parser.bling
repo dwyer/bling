@@ -196,8 +196,7 @@ fun parseOperand(p *Parser) *ast.Expr {
         break
     }
     if !p.c_mode {
-        var t = tryType(p)
-        if t {
+        if var t = tryType(p); t != nil {
             return t
         }
     }
@@ -311,8 +310,7 @@ fun parseSelector(p *Parser, x *ast.Expr) *ast.Expr {
 }
 
 fun parsePrimaryExpr(p *Parser) *ast.Expr {
-    var x = parseOperand(p)
-    for ;; {
+    for var x = parseOperand(p);; {
         switch p.tok {
         case token.PERIOD:
             next(p)
@@ -817,10 +815,20 @@ fun parseForStmt(p *Parser) *ast.Stmt {
     return &&stmt
 }
 
+fun tryInitStmt(p *Parser) *ast.Stmt {
+    switch p.tok {
+    case token.VAR:
+        return parseDeclStmt(p)
+    default:
+        return nil
+    }
+}
+
 fun parseIfStmt(p *Parser) *ast.Stmt {
     var pos = expect(p, token.IF)
     var outer = p.exprLev
     p.exprLev = -1
+    var init = tryInitStmt(p)
     var cond = parseExpr(p)
     p.exprLev = outer
     if p.tok != token.LBRACE {
@@ -841,6 +849,7 @@ fun parseIfStmt(p *Parser) *ast.Stmt {
         kind: ast.STMT_IF,
         if_: {
             pos: pos,
+            init: init,
             cond: cond,
             body: body,
             else_: else_,
