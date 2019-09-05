@@ -1266,7 +1266,6 @@ var predeclareConsts []struct {
     type *char
     value int
 } = {
-    {"NULL", "voidptr", 0},
     {"nil", "voidptr", 0},
     {"false", "bool", 0},
     {"true", "bool", 1},

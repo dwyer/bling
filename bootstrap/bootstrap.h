@@ -27,7 +27,6 @@
 
 #define get(T, a, i) (*(T*)runtime$Slice_get(&(a), (i), nil))
 
-#define NULL ((void*)0)
 #define nil ((void*)0)
 
 #define false 0
