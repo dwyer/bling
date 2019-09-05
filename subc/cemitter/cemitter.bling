@@ -9,7 +9,7 @@ import "runtime"
 
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     if !expr {
-        panic("cemitter$emitExpr: expr is nil")
+        panic("expr is nil")
     }
     switch expr.kind {
     case ast.EXPR_BASIC_LIT:
@@ -336,7 +336,7 @@ fun _emitFields(e *emitter.Emitter, fields [array]*ast.Decl) {
 
 fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
     if type == nil {
-        panic("cemitter$emitType: type is nil")
+        panic("type is nil")
     }
     switch type.kind {
     case ast.EXPR_IDENT:

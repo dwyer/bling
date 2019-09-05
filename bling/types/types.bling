@@ -1128,10 +1128,12 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
     } else {
         info = newInfo()
     }
+    var scope = ast.Scope_new(universe())
+    scope.pkg = file.name.ident.name
     var pkg Package = {
         path: runtime.strdup(path),
         name: file.name ? runtime.strdup(file.name.ident.name) : nil,
-        scope: file.scope,
+        scope: scope,
         imports: makearray(*Package),
     }
     var c Checker = {
@@ -1147,7 +1149,7 @@ fun checkFile(conf *Config, path *const char, fset *token.FileSet, file *ast.Fil
 
 fun check(conf *Config, path *const char, fset *token.FileSet, files **ast.File, info *Info) *Package {
     if files == nil {
-        files = parser.parseDir(fset, path, universe(), nil)
+        files = parser.parseDir(fset, path, nil)
     }
     assert(files[0] && !files[1])
     return checkFile(conf, path, fset, files[0], info)
