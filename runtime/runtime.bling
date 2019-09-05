@@ -59,7 +59,7 @@ typ Error struct {
 typ Slice struct {
     _len int
     _cap int
-    _array *void
+    _array *u8
 }
 
 typ MapPair struct {
@@ -128,10 +128,10 @@ fun Array_get(s *const Slice, size int, i int, dst *void) *void {
     if i >= s._len {
         panic(C.sprintf("out of range: index=%d, len=%d", i, s._len))
     }
-    var ref *char = &(typ *char(s._array))[i * size]
+    var ref = &s._array[i * size]
     if dst {
         if size == 1 {
-            *typ *char(dst) = *ref
+            *typ *u8(dst) = *ref
         } else {
             memcpy(dst, ref, size)
         }
@@ -172,7 +172,7 @@ fun Array_setLen(s *Slice, size int, len int) {
 
 fun Array_set(s *Slice, size int, i int, x *const void) {
     if size == 1 {
-        (typ *char(s._array))[i] = *typ *char(x)
+        s._array[i] = *typ *u8(x)
     } else {
         memcpy(Array_get(s, size, i, nil), x, size)
     }
@@ -183,7 +183,7 @@ fun Array_append(s *Slice, size int, x *const void) {
     Array_set(s, size, s._len - 1, x)
 }
 
-fun nilArray(s *void, size int) *void {
+fun nilArray(s *Slice, size int) *void {
     var z = nil
     Array_append(s, size, &z)
     return (typ *Slice(s))._array
