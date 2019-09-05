@@ -14,7 +14,7 @@ fun isType(p *parser.Parser) bool {
     case token.ARRAY, token.CONST, token.ENUM, token.EXTERN, token.MAP, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED:
         return true
     case token.IDENT:
-        return runtime.Map_get(&p.typeNames, p.lit, NULL)
+        return runtime.Map_get(&p.typeNames, p.lit, nil)
     default:
         return false
     }
