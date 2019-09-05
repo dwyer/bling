@@ -232,20 +232,20 @@ fun Map_len(m *const Map) int {
     return m._len
 }
 
-fun Map_cap(m *const Map) int {
+fun _mapCap(m *const Map) int {
     return len(m._pairs)
 }
 
-fun Map_isInitialized(m *const Map) bool {
-    return Map_cap(m) > 0
+fun _mapIsInitialized(m *const Map) bool {
+    return _mapCap(m) > 0
 }
 
-fun pair_ref(m *const Map, key *const void) *MapPair {
-    var hash = djb2(key) % Map_cap(m)
+fun _mapGetPairRef(m *const Map, key *const void) *MapPair {
+    var hash = djb2(key) % _mapCap(m)
     stats.lookups++
     for var i = 0; i < len(m._pairs); i++ {
         stats.iters++
-        var idx = (hash + i) % Map_cap(m)
+        var idx = (hash + i) % _mapCap(m)
         var p = &m._pairs[idx]
         if !p.key || streq(key, p.key) {
             if !i {
@@ -259,12 +259,11 @@ fun pair_ref(m *const Map, key *const void) *MapPair {
     return nil
 }
 
-fun set_unsafe(m *Map, key *const char, val *const void) {
-    if !Map_isInitialized(m) {
+fun _mapSetUnsafe(m *Map, key *const char, val *const void) {
+    if !_mapIsInitialized(m) {
         Map_init(m)
     }
-    var p = pair_ref(m, key)
-    if p.key == nil {
+    if var p = _mapGetPairRef(m, key); p.key == nil {
         p.key = C.strdup(key)
         p.val = memdup(val, m._valSize)
         m._len++
@@ -274,9 +273,8 @@ fun set_unsafe(m *Map, key *const char, val *const void) {
 }
 
 fun Map_get(m *const Map, key *const char, val *void) bool {
-    if Map_isInitialized(m) {
-        var p = pair_ref(m, key)
-        if p.val {
+    if _mapIsInitialized(m) {
+        if var p = _mapGetPairRef(m, key); p.val != nil {
             if val {
                 memcpy(val, p.val, m._valSize)
             }
@@ -287,10 +285,10 @@ fun Map_get(m *const Map, key *const char, val *void) bool {
 }
 
 fun Map_set(m *Map, key *const char, val *const void) {
-    set_unsafe(m, key, val)
-    var load_factor = typ float(Map_len(m)) / Map_cap(m)
+    _mapSetUnsafe(m, key, val)
+    var load_factor = typ float(Map_len(m)) / _mapCap(m)
     if load_factor >= MAP_LOAD_FACTOR {
-        var newCap = Map_cap(m) * 2
+        var newCap = _mapCap(m) * 2
         var pairs = m._pairs
         m._pairs = makearray(MapPair)
         Array_setLen(typ *Slice(&m._pairs), sizeof(MapPair), newCap)
@@ -298,7 +296,7 @@ fun Map_set(m *Map, key *const char, val *const void) {
         for var i = 0; i < len(pairs); i++ {
             var p = &pairs[i]
             if p.key {
-                set_unsafe(m, p.key, p.val)
+                _mapSetUnsafe(m, p.key, p.val)
             }
         }
         Slice_unmake(&pairs)
