@@ -1071,7 +1071,7 @@ fun _parseFile(p *parser.Parser) *ast.File {
     return &&file
 }
 
-fun parseFile(fset *token.FileSet, filename *const char) *ast.File {
+fun parseFile(fset *token.FileSet, filename runtime.charstr) *ast.File {
     var src = ioutil.readFile(filename, nil)
     var p = parser.Parser{}
     parser.init(&p, fset, filename, src)

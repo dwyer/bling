@@ -79,7 +79,7 @@ typ ObjKind enum {
 
 typ Object struct {
     kind ObjKind
-    name *char
+    name runtime.charptr
     decl *Decl
     data *void
     scope *Scope
@@ -95,7 +95,7 @@ typ ArrayType struct {
 typ BasicLit struct {
     pos token.Pos
     kind token.Token
-    value *char
+    value runtime.charptr
 }
 
 typ BinaryExpr struct {
@@ -105,7 +105,7 @@ typ BinaryExpr struct {
 }
 
 typ BuiltinType struct {
-    name *char
+    name runtime.charptr
     nargs int
     variadic bool
     isExpr bool
@@ -130,7 +130,7 @@ typ CompositeLit struct {
 }
 
 typ ConstExpr struct {
-    name *char
+    name runtime.charptr
     type *Expr
     value int
 }
@@ -153,7 +153,7 @@ typ FuncExpr struct {
 
 typ Ident struct {
     pos token.Pos
-    name *char
+    name runtime.charptr
     obj *Object
 }
 
@@ -176,7 +176,7 @@ typ MapType struct {
 typ NativeType struct {
     kind int
     info int
-    name *char
+    name runtime.charptr
 }
 
 typ ParenExpr struct {
@@ -256,7 +256,7 @@ typ ImportDecl struct {
 }
 
 typ PragmaDecl struct {
-    lit *char
+    lit runtime.charptr
 }
 
 typ TypeDecl struct {
@@ -390,19 +390,19 @@ typ Stmt struct {
 typ Scope struct {
     outer *Scope
     objects map *Object
-    keys [array]*char
-    pkg *char
+    keys [array]runtime.charptr
+    pkg runtime.charptr
 }
 
 typ File struct {
-    filename *const char
+    filename runtime.charstr
     name *Expr
     imports [array]*Decl
     decls [array]*Decl
 }
 
 typ Package struct {
-    name *char
+    name runtime.charptr
     scope *Scope
     files [array]*File
 }
@@ -411,7 +411,7 @@ fun isExprType(x *Expr) bool {
     return _TYPE_START < x.kind && x.kind < _TYPE_END
 }
 
-fun newObject(kind ObjKind, name *char) *Object {
+fun newObject(kind ObjKind, name runtime.charptr) *Object {
     var obj = Object{
         kind: kind,
         name: name,
@@ -423,7 +423,7 @@ fun Scope_new(outer *Scope) *Scope {
     var s = Scope{
         outer: outer,
         objects: runtime.Map_make(sizeof(*Object)),
-        keys: makearray(*char),
+        keys: makearray(runtime.charptr),
     }
     return &&s
 }
@@ -445,7 +445,7 @@ fun Scope_insert(s *Scope, obj *Object) *Object {
     return alt
 }
 
-fun Scope_lookup(s *Scope, name *char) *Object {
+fun Scope_lookup(s *Scope, name runtime.charptr) *Object {
     var obj *Object = nil
     runtime.Map_get(&s.objects, name, &obj)
     return obj
@@ -455,7 +455,7 @@ fun Scope_print(s *Scope) {
     var buf = bytes.Buffer{}
     while s {
         var iter = runtime.NewMapIter(&s.objects)
-        var key *char = nil
+        var key runtime.charptr = nil
         while runtime.MapIter_next(&iter, &key, nil) {
             var s = C.sprintf("%s- %s", bytes.Buffer_string(&buf), key)
             print(s)
@@ -466,7 +466,7 @@ fun Scope_print(s *Scope) {
     }
 }
 
-fun Scope_deepLookup(s *Scope, name *char) *Object {
+fun Scope_deepLookup(s *Scope, name runtime.charptr) *Object {
     for ; s != nil; s = s.outer {
         var obj = Scope_lookup(s, name)
         if obj != nil {
@@ -494,7 +494,7 @@ fun isIdent(x *Expr) bool {
     return x.kind == EXPR_IDENT
 }
 
-fun isIdentNamed(x *Expr, name *const char) bool {
+fun isIdentNamed(x *Expr, name runtime.charstr) bool {
     return isIdent(x) && runtime.streq(x.ident.name, name)
 }
 

@@ -1,9 +1,8 @@
 * allow packages to contain more than one file
 * Implicit nil: var decls without assignment are nil by default
 * string: Replace C strings with Bling strings
-    * change `*char` types to `charptr`
-    * change `*const char` types to `charstr` or `cstring` or similar
-    * eventually, convert `charstr` to `string`
+    * convert `charstr` to `string`
+    * convert `charptr` to `[]i8` or similar.
 * Slice: allow native arrays (and nil) to be assigned to Slice
 * Slice: Change name to DynamicArray or similar
 * Make `void` a keyword?

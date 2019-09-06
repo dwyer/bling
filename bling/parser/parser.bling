@@ -15,7 +15,7 @@ typ Parser struct {
     scanner scanner.Scanner
     pos token.Pos
     tok token.Token
-    lit *char
+    lit runtime.charptr
     c_mode bool
     exprLev int
     numIdents int
@@ -55,7 +55,7 @@ fun next(p *Parser) {
     p.tok = scanner.scan(&p.scanner, &p.pos, &p.lit)
 }
 
-fun init(p *Parser, fset *token.FileSet, filename *const char, src *char) {
+fun init(p *Parser, fset *token.FileSet, filename runtime.charstr, src runtime.charptr) {
     assert(fset)
     p.file = token.FileSet_addFile(fset, filename, -1, runtime.strlen(src))
     p.lit = nil
@@ -66,12 +66,12 @@ fun init(p *Parser, fset *token.FileSet, filename *const char, src *char) {
     next(p)
 }
 
-fun error(p *Parser, pos token.Pos, msg *char) {
+fun error(p *Parser, pos token.Pos, msg runtime.charptr) {
     var position = token.File_position(p.file, pos)
     panic(C.sprintf("%s: %s\n%s", token.Position_string(&position), msg, token.File_lineString(p.file, position.line)))
 }
 
-fun errorExpected(p *Parser, pos token.Pos, msg *char) {
+fun errorExpected(p *Parser, pos token.Pos, msg runtime.charptr) {
     var buf = bytes.Buffer{}
     bytes.Buffer_write(&buf, "expected ", -1, nil)
     bytes.Buffer_write(&buf, msg, -1, nil)
@@ -1166,15 +1166,15 @@ fun parseDecl(p *Parser) *ast.Decl {
     }
 }
 
-fun isBlingFile(name *const char) bool {
+fun isBlingFile(name runtime.charstr) bool {
     return bytes.hasSuffix(name, ".bling")
 }
 
-fun isTestFile(name *const char) bool {
+fun isTestFile(name runtime.charstr) bool {
     return paths.match("*_test.bling", name)
 }
 
-fun parseDir(fset *token.FileSet, path *const char, first **runtime.Error) [array]*ast.File {
+fun parseDir(fset *token.FileSet, path runtime.charstr, first **runtime.Error) [array]*ast.File {
     var err *runtime.Error = nil
     var infos = ioutil.readDir(path, &err)
     var files = makearray(*ast.File)
@@ -1228,7 +1228,7 @@ fun _parseFile(p *Parser) *ast.File {
     return &&file
 }
 
-fun parseFile(fset *token.FileSet, filename *const char) *ast.File {
+fun parseFile(fset *token.FileSet, filename runtime.charstr) *ast.File {
     var err *runtime.Error = nil
     var src = ioutil.readFile(filename, &err)
     if err {

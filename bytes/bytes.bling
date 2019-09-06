@@ -4,7 +4,7 @@ import "runtime"
 
 typ Buffer [array]char
 
-fun hasSuffix(b *const char, suffix *const char) bool {
+fun hasSuffix(b runtime.charstr, suffix runtime.charstr) bool {
     for var i = 0; b[i]; i++ {
         if runtime.streq(&b[i], suffix) {
             return true
@@ -13,7 +13,7 @@ fun hasSuffix(b *const char, suffix *const char) bool {
     return false
 }
 
-fun indexByte(b *const char, c char) int {
+fun indexByte(b runtime.charstr, c char) int {
     for var i = 0; b[i]; i++ {
         if b[i] == c {
             return i
@@ -22,7 +22,7 @@ fun indexByte(b *const char, c char) int {
     return -1
 }
 
-fun join(a []*const char, size int, sep *const char) *char {
+fun join(a []runtime.charstr, size int, sep runtime.charstr) runtime.charptr {
     switch size {
     case 0:
         return runtime.strdup("")
@@ -38,7 +38,7 @@ fun join(a []*const char, size int, sep *const char) *char {
     return Buffer_string(&b)
 }
 
-fun lastIndexByte(b *const char, c char) int {
+fun lastIndexByte(b runtime.charstr, c char) int {
     for var i = runtime.strlen(b) - 1; i >= 0; i-- {
         if c == b[i] {
             return i
@@ -57,20 +57,20 @@ fun Buffer_len(b *Buffer) int {
     return len(*b)
 }
 
-fun Buffer_bytes(b *Buffer) *char {
+fun Buffer_bytes(b *Buffer) runtime.charptr {
     Buffer_init(b)
     return runtime.Array_get(b, 1, 0, nil)
 }
 
-fun Buffer_string(b *Buffer) *char {
+fun Buffer_string(b *Buffer) runtime.charptr {
     Buffer_init(b)
-    var s *char = runtime.malloc(Buffer_len(b) + 1)
+    var s runtime.charptr = runtime.malloc(Buffer_len(b) + 1)
     runtime.memcpy(s, runtime.Array_get(b, 1, 0, nil), Buffer_len(b))
     s[Buffer_len(b)] = '\0'
     return s
 }
 
-fun Buffer_write(b *Buffer, p *const char, size int, error **runtime.Error) int {
+fun Buffer_write(b *Buffer, p runtime.charstr, size int, error **runtime.Error) int {
     Buffer_init(b)
     if size < 0 {
         size = runtime.strlen(p)

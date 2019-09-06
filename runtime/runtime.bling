@@ -4,7 +4,10 @@ import "C"
 
 typ Size C.size_t
 
-fun _panic(s *const char) {
+typ charptr *char
+typ charstr *const char
+
+fun _panic(s charstr) {
     print(s)
     var buf [1024]*void
     var n = C.backtrace(buf, 1024)
@@ -12,7 +15,7 @@ fun _panic(s *const char) {
     C.exit(1)
 }
 
-fun _print(s *const char) {
+fun _print(s charstr) {
     C.printf("%s\n", s);
 }
 
@@ -36,24 +39,24 @@ fun memset(dst *void, c int, n Size) *void {
     return C.memset(dst, c, n)
 }
 
-fun strdup(s *const char) *char {
+fun strdup(s charstr) charptr {
     return C.strdup(s)
 }
 
-fun strndup(s *const char, n Size) *char {
+fun strndup(s charstr, n Size) charptr {
     return C.strndup(s, n)
 }
 
-fun strlen(s *const char) Size {
+fun strlen(s charstr) Size {
     return C.strlen(s)
 }
 
-fun streq(a *const char, b *const char) bool {
+fun streq(a charstr, b charstr) bool {
     return C.strcmp(a, b) == 0
 }
 
 typ Error struct {
-    error *char
+    error charptr
 }
 
 typ Slice struct {
@@ -85,7 +88,7 @@ typ MapIter struct {
     _idx int
 }
 
-fun NewError(msg *const char) *Error {
+fun NewError(msg charstr) *Error {
     var err Error = {
         error: C.strdup(msg),
     }
@@ -194,7 +197,7 @@ var DEFAULT_CAP const int = 8
 
 var stats MapStats = {}
 
-fun djb2(s *const char) uintptr {
+fun djb2(s charstr) uintptr {
     var hash uintptr = 5381
     var ch int = *s
     while ch {
@@ -257,7 +260,7 @@ fun _mapGetPairRef(m *const Map, key *const void) *MapPair {
     return nil
 }
 
-fun _mapSetUnsafe(m *Map, key *const char, val *const void) {
+fun _mapSetUnsafe(m *Map, key charstr, val *const void) {
     if !_mapIsInitialized(m) {
         Map_init(m)
     }
@@ -270,7 +273,7 @@ fun _mapSetUnsafe(m *Map, key *const char, val *const void) {
     }
 }
 
-fun Map_get(m *const Map, key *const char, val *void) bool {
+fun Map_get(m *const Map, key charstr, val *void) bool {
     if _mapIsInitialized(m) {
         if var p = _mapGetPairRef(m, key); p.val != nil {
             if val {
@@ -282,7 +285,7 @@ fun Map_get(m *const Map, key *const char, val *void) bool {
     return false
 }
 
-fun Map_set(m *Map, key *const char, val *const void) {
+fun Map_set(m *Map, key charstr, val *const void) {
     _mapSetUnsafe(m, key, val)
     if var load_factor = typ float(Map_len(m)) / _mapCap(m); load_factor >= MAP_LOAD_FACTOR {
         var newCap = _mapCap(m) * 2
@@ -306,7 +309,7 @@ fun NewMapIter(m *const Map) MapIter {
     return iter
 }
 
-fun MapIter_next(m *MapIter, key **char, val *void) int {
+fun MapIter_next(m *MapIter, key *charptr, val *void) int {
     while m._idx < len(m._map._pairs) {
         var p = &m._map._pairs[m._idx]
         m._idx++

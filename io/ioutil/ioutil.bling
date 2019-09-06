@@ -4,9 +4,9 @@ import "bytes"
 import "os"
 import "runtime"
 
-fun readAll(file *os.File, error **runtime.Error) *char {
+fun readAll(file *os.File, error **runtime.Error) runtime.charptr {
     var bufsiz const int = 1024
-    var ret *char = nil
+    var ret runtime.charptr = nil
     var err *runtime.Error = nil
     var b = bytes.Buffer{}
     for ;; {
@@ -28,7 +28,7 @@ end:
     return ret
 }
 
-fun readDir(name *const char, error **runtime.Error) [array]*os.FileInfo {
+fun readDir(name runtime.charstr, error **runtime.Error) [array]*os.FileInfo {
     var info = makearray(*os.FileInfo)
     var err *runtime.Error = nil
     var file = os.openDir(name, &err)
@@ -48,8 +48,8 @@ end:
     return info
 }
 
-fun readFile(name *const char, error **runtime.Error) *char {
-    var ret *char = nil
+fun readFile(name runtime.charstr, error **runtime.Error) runtime.charptr {
+    var ret runtime.charptr = nil
     var err *runtime.Error = nil
     var file = os.open(name, &err)
     if err != nil {
@@ -68,7 +68,7 @@ end:
     return ret
 }
 
-fun writeFile(filename *const char, data *const char, perm int, error **runtime.Error) {
+fun writeFile(filename runtime.charstr, data runtime.charstr, perm int, error **runtime.Error) {
     var err *runtime.Error = nil
     var file = os.create(filename, &err)
     if err != nil {
