@@ -1,6 +1,7 @@
 * allow packages to contain more than one file
 * Implement var args.
     * Rewrite `print` to accept var args.
+* Implement methods on `typ` defs.
 * Implicit nil: var decls without assignment are nil by default
 * cmd/blingc: Add `run` option.
 * string: Replace C strings with Bling strings
