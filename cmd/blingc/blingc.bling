@@ -67,7 +67,7 @@ fun compile_c(argv []*char) {
             for var j = 0; j < len(file.decls); j++ {
                 var d = file.decls[j]
                 if !isForwardDecl(d) {
-                    runtime.Array_set(typ *runtime.Slice(&file.decls), sizeof(*ast.File), i, &d)
+                    file.decls[i] = d
                     i++
                 }
             }

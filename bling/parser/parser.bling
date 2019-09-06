@@ -1174,14 +1174,14 @@ fun isTestFile(name *const char) bool {
     return paths.match("*_test.bling", name)
 }
 
-fun parseDir(fset *token.FileSet, path *const char, first **runtime.Error) **ast.File {
+fun parseDir(fset *token.FileSet, path *const char, first **runtime.Error) [array]*ast.File {
     var err *runtime.Error = nil
     var infos = ioutil.readDir(path, &err)
+    var files = makearray(*ast.File)
     if err {
         runtime.Error_move(err, first)
-        return nil
+        return files
     }
-    var files = makearray(*ast.File)
     for var i = 0; i < len(infos); i++ {
         var name = os.FileInfo_name(infos[i])
         if isBlingFile(name) && !isTestFile(name) {
@@ -1189,7 +1189,7 @@ fun parseDir(fset *token.FileSet, path *const char, first **runtime.Error) **ast
         }
     }
     runtime.Slice_unmake(&infos)
-    return runtime.nilArray(typ *runtime.Slice(&files), sizeof(*ast.File))
+    return files
 }
 
 fun _parseFile(p *Parser) *ast.File {

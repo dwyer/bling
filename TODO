@@ -1,38 +1,45 @@
+* allow packages to contain more than one file
+* Implicit nil: var decls without assignment are nil by default
+* string: Replace C strings with Bling strings
+    * change `*char` types to `charptr`
+    * change `*const char` types to `charstr` or `cstring` or similar
+    * eventually, convert `charstr` to `string`
+* Slice: allow native arrays (and nil) to be assigned to Slice
+* Slice: Change name to DynamicArray or similar
 * Make `void` a keyword?
 * switch: allow init expr
-* Change cast syntax from `<T>x` to `typ(T) x`;
+* Change cast syntax from `typ T(x)` to `T(x)`
 * Make `sizeof` a builtin func.
 * Remove '#' token from bling.
 * Implement a const type (like `enum` value or #define directive).
 * Implement `import ( ... )` decl.
 * Make semicolons optional before `}` and `)'.
-* After we replace C code with Bling:
-    * ast: Replace CastExpr with CallExpr.
-    * Eventually we want to have switch cases to have an implicit break and to open
-      a new scope by default. So the above example would be converted to:
+* ast: Replace CastExpr with CallExpr.
+* Eventually we want to have switch cases to have an implicit break and to open
+  a new scope by default. So the above example would be converted to:
 
-        // in bling
-        switch (x) {
-        case A, B, C:
-            var y = x + 1;
+    // in bling
+    switch (x) {
+    case A, B, C:
+        var y = x + 1;
+        doSomething(y);
+    default:
+        doSomethingElse();
+    }
+
+    // in C
+    switch (x) {
+    case A:
+    case B:
+    case C: {
+            int y = x + 1;
             doSomething(y);
-        default:
+        }
+        break;
+    default: {
             doSomethingElse();
         }
+        break;
+    }
 
-        // in C
-        switch (x) {
-        case A:
-        case B:
-        case C: {
-                int y = x + 1;
-                doSomething(y);
-            }
-            break;
-        default: {
-                doSomethingElse();
-            }
-            break;
-        }
-
-        * When this is complete, change the functionality of `fallthrough`.
+    * When this is complete, change the functionality of `fallthrough`.

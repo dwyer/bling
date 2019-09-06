@@ -25,6 +25,7 @@
 #define makearray(T) (runtime$Slice){}
 #define makemap(T) (runtime$Map){._valSize = sizeof(T)}
 
+#define $$arrayget(T, a, i) (*(T*)runtime$Array_get((runtime$Slice*)&(a), sizeof(T), (i), nil))
 #define get(T, a, i) (*(T*)runtime$Array_get((runtime$Slice*)&(a), sizeof(T), (i), nil))
 
 #define nil ((void*)0)

@@ -149,7 +149,8 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
 
 fun newPackage(b *Builder, path *const char) Package {
     var base = paths.base(path)
-    var typesPkg = types.check(&b.conf, path, b.fset, nil, b.info)
+    var files = parser.parseDir(b.fset, path, nil)
+    var typesPkg = types.check(&b.conf, path, b.fset, files, b.info)
     var isCmd = typesPkg.name ? runtime.streq(typesPkg.name, "main") : false
     var genPath = paths.join2(GEN_PATH, path)
     var libPath = nil
