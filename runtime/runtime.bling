@@ -73,7 +73,7 @@ typ MapPair struct {
 typ Map struct {
     _valSize int
     _len int
-    _pairs [array]MapPair
+    _pairs []MapPair
 }
 
 typ MapStats struct {

@@ -227,7 +227,7 @@ fun parseElement(p *Parser) *ast.Expr {
     return value
 }
 
-fun parseElementList(p *Parser) [array]*ast.Expr {
+fun parseElementList(p *Parser) []*ast.Expr {
     var list = makearray(*ast.Expr)
     while p.tok != token.RBRACE && p.tok != token.EOF {
         var value = parseElement(p)
@@ -575,7 +575,7 @@ fun parseParam(p *Parser, anon bool) *ast.Decl {
     return d
 }
 
-fun parseParameterList(p *Parser, anon bool) [array]*ast.Decl {
+fun parseParameterList(p *Parser, anon bool) []*ast.Decl {
     var params = makearray(*ast.Decl)
     for ;; {
         var param = parseParam(p, false)
@@ -606,7 +606,7 @@ fun parseParameterList(p *Parser, anon bool) [array]*ast.Decl {
     return params
 }
 
-fun parseParameters(p *Parser, anon bool) [array]*ast.Decl {
+fun parseParameters(p *Parser, anon bool) []*ast.Decl {
     var params = makearray(*ast.Decl)
     expect(p, token.LPAREN)
     if p.tok != token.RPAREN {
@@ -1025,7 +1025,7 @@ fun parseStmt(p *Parser) *ast.Stmt {
     return stmt
 }
 
-fun parseStmtList(p *Parser) [array]*ast.Stmt {
+fun parseStmtList(p *Parser) []*ast.Stmt {
     var stmts = makearray(*ast.Stmt)
     while p.tok != token.RBRACE {
         append(stmts, parseStmt(p))
@@ -1177,7 +1177,7 @@ fun isTestFile(name runtime.charstr) bool {
     return paths.match("*_test.bling", name)
 }
 
-fun parseDir(fset *token.FileSet, path runtime.charstr, first **runtime.Error) [array]*ast.File {
+fun parseDir(fset *token.FileSet, path runtime.charstr, first **runtime.Error) []*ast.File {
     var err *runtime.Error = nil
     var infos = ioutil.readDir(path, &err)
     var files = makearray(*ast.File)

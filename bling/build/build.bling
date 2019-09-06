@@ -24,7 +24,7 @@ var INCL_PATH runtime.charstr = "."
 
 var VERBOSE const bool = true
 
-fun printStrArray(s [array]runtime.charptr) {
+fun printStrArray(s []runtime.charptr) {
     for var i = 0; i < len(s); i++ {
         if i {
             C.printf(" ")
@@ -34,7 +34,7 @@ fun printStrArray(s [array]runtime.charptr) {
     C.printf("\n")
 }
 
-fun execute(cmd *[array]runtime.charptr) {
+fun execute(cmd *[]runtime.charptr) {
     if VERBOSE {
         printStrArray(*cmd)
     }
@@ -58,11 +58,11 @@ typ Package struct {
     hPath runtime.charptr
     cPath runtime.charptr
     objPath runtime.charptr
-    objPaths [array]runtime.charptr
+    objPaths []runtime.charptr
     libPath runtime.charptr
     libModTime os.Time
     srcModTime os.Time
-    deps [array]*Package
+    deps []*Package
     isCmd bool
 }
 

@@ -440,7 +440,7 @@ fun pointer(p *parser.Parser, type *ast.Expr) *ast.Expr {
     return type
 }
 
-fun paramTypeList(p *parser.Parser) [array]*ast.Decl {
+fun paramTypeList(p *parser.Parser) []*ast.Decl {
     var params = makearray(*ast.Decl)
     while p.tok != token.RPAREN {
         var param = parameterDeclaration(p)

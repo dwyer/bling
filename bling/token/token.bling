@@ -126,14 +126,14 @@ typ File struct {
     name runtime.charptr
     base int
     size int
-    lines [array]int
+    lines []int
     src runtime.charptr
 }
 
 typ FileSet struct {
     fset *FileSet
     base int
-    files [array]*File
+    files []*File
     last *File
 }
 
@@ -292,7 +292,7 @@ fun Position_string(p *Position) runtime.charptr {
     return C.sprintf("%s:%d:%d", p.filename, p.line, p.column)
 }
 
-fun getInt(a *[array]int, i int) int {
+fun getInt(a *[]int, i int) int {
     return (*a)[i]
 }
 
@@ -307,7 +307,7 @@ fun File_pos(f *File, offset int) Pos {
     return f.base + offset
 }
 
-fun searchInts(a *[array]int, x int) int {
+fun searchInts(a *[]int, x int) int {
     var i = 0
     var j = len(*a)
     while i < j {
@@ -397,7 +397,7 @@ fun FileSet_addFile(s *FileSet, filename runtime.charstr, base int, size int) *F
     return f
 }
 
-fun searchFiles(files *[array]*File, x int) int {
+fun searchFiles(files *[]*File, x int) int {
     for var i = 0; i < len(*files); i++ {
         var f = (*files)[i]
         if f.base <= x && x <= f.base + f.size {

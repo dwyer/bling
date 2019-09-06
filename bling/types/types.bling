@@ -17,7 +17,7 @@ typ Package struct {
     path runtime.charptr
     name runtime.charptr
     scope *ast.Scope
-    imports [array]*Package
+    imports []*Package
 }
 
 typ Info struct {
@@ -1169,7 +1169,7 @@ fun checkFile(conf *Config, path runtime.charstr, fset *token.FileSet, file *ast
     return c.pkg
 }
 
-fun check(conf *Config, path runtime.charstr, fset *token.FileSet, files [array]*ast.File, info *Info) *Package {
+fun check(conf *Config, path runtime.charstr, fset *token.FileSet, files []*ast.File, info *Info) *Package {
     assert(len(files) == 1)
     return checkFile(conf, path, fset, files[0], info)
 }

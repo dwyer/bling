@@ -28,7 +28,7 @@ end:
     return ret
 }
 
-fun readDir(name runtime.charstr, error **runtime.Error) [array]*os.FileInfo {
+fun readDir(name runtime.charstr, error **runtime.Error) []*os.FileInfo {
     var info = makearray(*os.FileInfo)
     var err *runtime.Error = nil
     var file = os.openDir(name, &err)

@@ -2,7 +2,7 @@ package bytes
 
 import "runtime"
 
-typ Buffer [array]char
+typ Buffer []char
 
 fun hasSuffix(b runtime.charstr, suffix runtime.charstr) bool {
     for var i = 0; b[i]; i++ {

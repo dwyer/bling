@@ -333,7 +333,7 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
     }
 }
 
-fun _emitFields(e *emitter.Emitter, fields [array]*ast.Decl) {
+fun _emitFields(e *emitter.Emitter, fields []*ast.Decl) {
     for var i = 0; i < len(fields); i++ {
         var field = fields[i]
         if field.field.name || field.field.type.kind == ast.TYPE_STRUCT {

@@ -153,7 +153,7 @@ fun openDir(name runtime.charstr, e **runtime.Error) *File {
     return file
 }
 
-fun readdirnames(file *File, e **runtime.Error) [array]runtime.charptr {
+fun readdirnames(file *File, e **runtime.Error) []runtime.charptr {
     var arr = makearray(runtime.charptr)
     var dp sys.Dir = typ sys.Dir(file.fd)
     for ;; {
@@ -171,7 +171,7 @@ fun readdirnames(file *File, e **runtime.Error) [array]runtime.charptr {
     return arr
 }
 
-fun readdir(file *File, e **runtime.Error) [array]*FileInfo {
+fun readdir(file *File, e **runtime.Error) []*FileInfo {
     var err *runtime.Error = nil
     var names = readdirnames(file, &err)
     if err != nil {
