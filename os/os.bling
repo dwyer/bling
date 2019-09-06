@@ -254,7 +254,7 @@ fun mkdirAll(path runtime.charstr, mode u32, e **runtime.Error) {
     }
 }
 
-fun exec(argv []const runtime.charptr, e **runtime.Error) int {
+fun exec(argv [?]const runtime.charptr, e **runtime.Error) int {
     var status = -1
     var err *runtime.Error = nil
     var pid = sys.fork(&err)

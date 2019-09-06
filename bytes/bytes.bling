@@ -22,7 +22,7 @@ fun indexByte(b runtime.charstr, c char) int {
     return -1
 }
 
-fun join(a []runtime.charstr, size int, sep runtime.charstr) runtime.charptr {
+fun join(a [?]runtime.charstr, size int, sep runtime.charstr) runtime.charptr {
     switch size {
     case 0:
         return runtime.strdup("")

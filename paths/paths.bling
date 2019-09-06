@@ -79,7 +79,7 @@ fun join(elems *runtime.charstr, n int) runtime.charptr {
 }
 
 fun join2(a runtime.charstr, b runtime.charstr) runtime.charptr {
-    var elems = []runtime.charstr{
+    var elems = [?]runtime.charstr{
         a,
         b,
     }

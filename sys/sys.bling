@@ -292,7 +292,7 @@ fun environ() *runtime.charptr {
 
 typ Pid int
 
-fun exec(path runtime.charstr, argv []const runtime.charptr, envv []const runtime.charptr, e **runtime.Error) {
+fun exec(path runtime.charstr, argv [?]const runtime.charptr, envv [?]const runtime.charptr, e **runtime.Error) {
     if C.execve(path, argv, envv) == -1 {
         _throwErrno(e)
     }

@@ -45,7 +45,7 @@ fun isForwardDecl(decl *ast.Decl) bool {
     }
 }
 
-fun compile_c(argv []runtime.charptr) {
+fun compile_c(argv [?]runtime.charptr) {
     var dst runtime.charstr = nil
     while **argv == '-' {
         if runtime.streq(*argv, "-o") {
@@ -97,7 +97,7 @@ fun compile_c(argv []runtime.charptr) {
     }
 }
 
-fun compile_bling(argv []runtime.charptr) {
+fun compile_bling(argv [?]runtime.charptr) {
     var err *runtime.Error = nil
     var conf = types.Config{
         strict: true,
@@ -136,7 +136,7 @@ fun compile_bling(argv []runtime.charptr) {
         if bytes.hasSuffix(dst, ".out") {
             var tmp = paths.join2(os.tempDir(), "tmp.c")
             ioutil.writeFile(tmp, out, 0644, nil)
-            var args = []runtime.charptr{
+            var args = [?]runtime.charptr{
                 "/usr/bin/cc",
                 "-o",
                 dst,
@@ -158,7 +158,7 @@ fun compile_bling(argv []runtime.charptr) {
     }
 }
 
-fun buildPackage(argv []runtime.charptr) {
+fun buildPackage(argv [?]runtime.charptr) {
     assert(*argv)
     var builder = build.newBuilder(token.newFileSet())
     if runtime.streq(*argv, "-f") {
@@ -170,7 +170,7 @@ fun buildPackage(argv []runtime.charptr) {
     build.buildPackage(builder, path)
 }
 
-fun main(argc int, argv []runtime.charptr) int {
+fun main(argc int, argv [?]runtime.charptr) int {
     var progname = *argv
     argv++
     if !*argv {

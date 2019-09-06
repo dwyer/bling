@@ -144,7 +144,7 @@ typ Position struct {
     column int
 }
 
-var tokens []runtime.charptr = {
+var tokens [?]runtime.charptr = {
     ILLEGAL: "ILLEGAL",
     CHAR: "CHAR",
     FLOAT: "FLOAT",
