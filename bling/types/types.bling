@@ -441,14 +441,27 @@ typ Checker struct {
     result *ast.Expr
 }
 
-fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
-    token.FileSet_print(c.fset)
+fun Checker_log(c *Checker, fatal bool, pos token.Pos, msg *const char) {
     var position = token.Position{}
     var file = token.FileSet_file(c.fset, pos)
     if file {
         position = token.File_position(file, pos)
     }
-    panic(C.sprintf("%s: %s\n%s", token.Position_string(&position), msg, token.File_lineString(file, position.line)))
+    var errMsg = C.sprintf("%s: %s\n%s", token.Position_string(&position), msg, token.File_lineString(file, position.line))
+    if fatal {
+        panic(errMsg)
+    } else {
+        print(errMsg)
+    }
+    runtime.free(errMsg)
+}
+
+fun Checker_warning(c *Checker, pos token.Pos, msg *const char) {
+    Checker_log(c, false, pos, msg)
+}
+
+fun Checker_error(c *Checker, pos token.Pos, msg *const char) {
+    Checker_log(c, true, pos, msg)
 }
 
 fun Checker_resolve(c *Checker, s *ast.Scope, x *ast.Expr) {
@@ -853,11 +866,13 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     case ast.EXPR_STAR:
         {
             var type = Checker_checkExpr(c, expr.star.x)
-            switch type.kind {
+            var base = getBaseType(type)
+            switch base.kind {
             case ast.EXPR_STAR:
-                return type.star.x
+                return base.star.x
             case ast.TYPE_ARRAY:
-                return type.array_.elt
+                Checker_warning(c, ast.Expr_pos(expr), C.sprintf("derefencing an array `%s`", typeString(type)))
+                return base.array_.elt
             default:
                 Checker_error(c, ast.Expr_pos(expr), C.sprintf("derefencing a non-pointer `%s`", typeString(type)))
                 return nil
