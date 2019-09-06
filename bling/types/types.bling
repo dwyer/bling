@@ -815,12 +815,13 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     case ast.EXPR_INDEX:
         {
             var type = Checker_checkExpr(c, expr.index.x)
-            switch type.kind {
+            var base = getBaseType(type)
+            switch base.kind {
             case ast.TYPE_ARRAY:
-                type = type.array_.elt
+                type = base.array_.elt
                 break
             case ast.EXPR_STAR:
-                type = type.star.x
+                type = base.star.x
                 break
             default:
                 Checker_error(c, ast.Expr_pos(expr), C.sprintf("indexing a non-array or pointer `%s`", typeString(type)))
