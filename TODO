@@ -1,3 +1,8 @@
+* Implement optional types, e.g.
+    * Old: expr.ident.obj && expr.ident.obj.scope && expr.ident.obj.scope.pkgName
+    * New: expr.ident.obj?.scope?.pkgName
+    * `x?.sel` => `x ? x.sel : nil`
+    * assert that both sizes resolve to pointers
 * allow packages to contain more than one file
 * Implement var args.
     * Rewrite `print` to accept var args.
@@ -21,6 +26,8 @@
 * Implement `import ( ... )` decl.
 * Make semicolons optional before `}` and `)'.
 * ast: Replace CastExpr with CallExpr.
+* parser/emitter
+    * Emit method recv.
 * Eventually we want to have switch cases to have an implicit break and to open
   a new scope by default. So the above example would be converted to:
 

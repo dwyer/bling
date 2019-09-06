@@ -273,6 +273,7 @@ typ ValueDecl struct {
 
 typ FuncDecl struct {
     name *Expr
+    recv *Decl
     type *Expr
     body *Stmt
 }
@@ -391,7 +392,7 @@ typ Scope struct {
     outer *Scope
     objects map *Object
     keys []runtime.charptr
-    pkg runtime.charptr
+    pkgName *Expr
 }
 
 typ File struct {

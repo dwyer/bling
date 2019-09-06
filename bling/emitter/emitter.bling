@@ -126,17 +126,7 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         emitToken(e, token.RBRACE)
         break
     case ast.EXPR_IDENT:
-        if e.pkg && hasPrefix(expr.ident.name, e.pkg) && expr.ident.name[runtime.strlen(e.pkg)] == '$' {
-            emitString(e, &expr.ident.name[runtime.strlen(e.pkg) + 1])
-        } else {
-            if var i = bytes.indexByte(expr.ident.name, '$'); i >= 0 {
-                emitBytes(e, expr.ident.name, i)
-                emitToken(e, token.PERIOD)
-                emitString(e, &expr.ident.name[i + 1])
-            } else {
-                emitString(e, expr.ident.name)
-            }
-        }
+        emitString(e, expr.ident.name)
         break
     case ast.EXPR_INDEX:
         if isSimpleType(expr.index.x) {

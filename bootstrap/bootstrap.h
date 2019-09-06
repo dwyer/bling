@@ -16,7 +16,7 @@
     runtime$Array_append((runtime$Slice*)&(a), sizeof(x), &$0); \
 } while (0)
 
-#define assert(x) do { if (!(x)) print("assert failed: " # x); } while (0)
+#define assert(x) do { if (!(x)) print("!!! ASSERT FAILED: " # x); } while (0)
 
 #define len(x) _Generic((x), \
         runtime$Slice: runtime$Slice_len, \

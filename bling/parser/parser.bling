@@ -1124,13 +1124,12 @@ fun parseTypeDecl(p *Parser) *ast.Decl {
 
 fun parseFuncDecl(p *Parser) *ast.Decl {
     var pos = expect(p, token.FUNC)
-    var decl = ast.Decl{
-        kind: ast.DECL_FUNC,
-        pos: pos,
-        func: {
-            name: parseIdent(p),
-        },
+    var recv *ast.Decl = nil
+    if accept(p, token.LPAREN) {
+        recv = parseParam(p, false)
+        expect(p, token.RPAREN)
     }
+    var name = parseIdent(p)
     var type = ast.Expr{
         kind: ast.TYPE_FUNC,
         func: {
@@ -1141,11 +1140,21 @@ fun parseFuncDecl(p *Parser) *ast.Decl {
     if p.tok != token.LBRACE && p.tok != token.SEMICOLON {
         type.func.result = parseType(p)
     }
-    decl.func.type = &&type
+    var body *ast.Stmt = nil
     if p.tok == token.LBRACE {
-        decl.func.body = parseBody(p)
+        body = parseBody(p)
     } else {
         expect(p, token.SEMICOLON)
+    }
+    var decl = ast.Decl{
+        kind: ast.DECL_FUNC,
+        pos: pos,
+        func: {
+            name: name,
+            recv: recv,
+            type: &&type,
+            body: body,
+        },
     }
     return &&decl
 }

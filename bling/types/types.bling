@@ -122,7 +122,7 @@ fun isType(expr *ast.Expr) bool {
         switch expr.kind {
         case ast.EXPR_IDENT:
             if expr.ident.obj == nil {
-                panic(C.sprintf("types$isType: unresolved identifier %s", expr.ident.name))
+                panic(C.sprintf("unresolved identifier %s", expr.ident.name))
             }
             return expr.ident.obj.kind == ast.ObjKind_TYP
         case ast.EXPR_SELECTOR:
@@ -137,6 +137,10 @@ fun isType(expr *ast.Expr) bool {
             return false
         }
     }
+}
+
+fun isTypeAlias(t *ast.Expr) bool {
+    return t.kind == ast.EXPR_IDENT && t.ident.obj.kind == ast.ObjKind_TYP
 }
 
 fun makeIdent(name runtime.charstr) *ast.Expr {
@@ -469,7 +473,7 @@ fun Checker_error(c *Checker, pos token.Pos, msg runtime.charstr) {
 fun Checker_resolve(c *Checker, s *ast.Scope, x *ast.Expr) {
     assert(x.kind == ast.EXPR_IDENT)
     if x.ident.obj {
-        Checker_error(c, ast.Expr_pos(x), "already resolved")
+        Checker_error(c, ast.Expr_pos(x), C.sprintf("already resolved: %s", x.ident.name))
     }
     if ast.resolve(s, x) {
         return
@@ -635,7 +639,9 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             }
             var field = getStructFieldByName(x.composite.type, key)
             if field == nil {
-                Checker_error(c, ast.Expr_pos(key), C.sprintf("no member named '%s' in '%s'", exprString(key), typeString(x.composite.type)))
+                Checker_error(c, ast.Expr_pos(key),
+                    C.sprintf("no member named '%s' in '%s'",
+                        exprString(key), typeString(x.composite.type)))
             }
             key.ident.obj = field.field.name.ident.obj
             fieldT = field.field.type
@@ -690,6 +696,51 @@ fun Checker_lookupIdent(c *Checker, name runtime.charptr) *ast.Expr {
     var t = obj.decl.type.name
     assert(t.ident.obj)
     return t
+}
+
+fun Checker_checkSelector(c *Checker, expr *ast.Expr) *ast.Expr {
+    var type *ast.Expr = Checker_checkExpr(c, expr.selector.x) // XXX
+    if type == nil {
+        // x is a scope
+        var x = expr.selector.x
+        assert(x.kind == ast.EXPR_IDENT)
+        var decl = x.ident.obj.decl
+        assert(decl.kind == ast.DECL_IMPORT)
+        var oldScope = c.pkg.scope
+        c.pkg.scope = x.ident.obj.data
+        type = Checker_checkExpr(c, expr.selector.sel)
+        c.pkg.scope = oldScope
+        expr.selector.tok = token.DOLLAR
+        return type
+    }
+    if type.kind == ast.EXPR_STAR {
+        expr.selector.tok = token.ARROW
+        type = type.star.x
+    } else {
+        assert(expr.selector.tok != token.ARROW)
+    }
+    if isTypeAlias(type) {
+        // if type is an alias, check its scope for a method
+        if type.ident.obj.data != nil {
+            if var scope *ast.Scope = type.ident.obj.data; scope {
+                if var obj = ast.Scope_lookup(scope, expr.selector.sel.ident.name); obj {
+                    Checker_resolve(c, scope, expr.selector.sel)
+                    assert(obj.kind == ast.ObjKind_FUN)
+                    expr.selector.tok = token.FUNC
+                    return obj.decl.func.type
+                }
+            }
+        }
+    }
+    if var field = getStructFieldByName(type, expr.selector.sel); field == nil {
+        Checker_error(c, ast.Expr_pos(expr),
+            C.sprintf("no member named '%s' in '%s'",
+                exprString(expr.selector.sel), typeString(type)))
+        return nil
+    } else {
+        expr.selector.sel.ident.obj = field.field.name.ident.obj
+        return field.field.type
+    }
 }
 
 fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
@@ -836,33 +887,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
     case ast.EXPR_PAREN:
         return Checker_checkExpr(c, expr.paren.x)
     case ast.EXPR_SELECTOR:
-        {
-            var type = Checker_checkExpr(c, expr.selector.x)
-            if type == nil {
-                var x = expr.selector.x
-                assert(x.kind == ast.EXPR_IDENT)
-                var decl = x.ident.obj.decl
-                assert(decl.kind == ast.DECL_IMPORT)
-                var oldScope = c.pkg.scope
-                c.pkg.scope = x.ident.obj.data
-                type = Checker_checkExpr(c, expr.selector.sel)
-                c.pkg.scope = oldScope
-                expr.selector.tok = token.DOLLAR
-                return type
-            }
-            if type.kind == ast.EXPR_STAR {
-                expr.selector.tok = token.ARROW
-                type = type.star.x
-            } else {
-                assert(expr.selector.tok != token.ARROW)
-            }
-            var field = getStructFieldByName(type, expr.selector.sel)
-            if field == nil {
-                Checker_error(c, ast.Expr_pos(expr), C.sprintf("no member named '%s' in '%s'", exprString(expr.selector.sel), typeString(type)))
-            }
-            expr.selector.sel.ident.obj = field.field.name.ident.obj
-            return field.field.type
-        }
+        return Checker_checkSelector(c, expr)
     case ast.EXPR_SIZEOF:
         Checker_checkType(c, expr.sizeof_.x)
         return Checker_lookupIdent(c, "u64")
@@ -1030,7 +1055,7 @@ fun Checker_checkImport(c *Checker, imp *ast.Decl) *Package {
         pkg = check(c.conf, path, c.fset, files, c.info)
         assert(runtime.Map_get(&c.info.imports, path, nil))
     }
-    imp.imp.name = makeIdent(pkg.scope.pkg)
+    imp.imp.name = makeIdent(pkg.scope.pkgName.ident.name)
     Checker_declare(c, imp, pkg.scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
     return pkg
 }
@@ -1039,24 +1064,47 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
     switch decl.kind {
     case ast.DECL_FUNC:
         {
+            var pkgScope = c.pkg.scope
             Checker_checkType(c, decl.func.type)
-            if c.conf.ignoreFuncBodies || !decl.func.body {
-                break
-            }
             Checker_openScope(c)
+            if var recv = decl.func.recv; recv != nil {
+                var type = recv.field.type
+                Checker_checkType(c, type)
+                if type.kind == ast.EXPR_STAR {
+                    type = type.star.x
+                }
+                if type.kind != ast.EXPR_IDENT {
+                    Checker_error(c, ast.Expr_pos(recv.field.type),
+                        "can't declare method on non-alias")
+                }
+                var obj = type.ident.obj
+                var typeScope *ast.Scope = obj.data
+                if obj.data == nil {
+                    typeScope = ast.Scope_new(pkgScope)
+                    typeScope.pkgName = type
+                    obj.data = typeScope
+                }
+                assert(obj.data)
+                assert(typeScope.pkgName)
+                // declare method in pkg scope
+                Checker_declare(c, decl, obj.data, typeScope, ast.ObjKind_FUN, decl.func.name)
+                // declare recv in method scope
+                Checker_declare(c, recv, nil, c.pkg.scope, ast.ObjKind_VAL, recv.field.name)
+            }
             var type = decl.func.type
             for var i = 0; i < len(type.func.params); i++ {
-                var param = type.func.params[i]
-                assert(param.kind == ast.DECL_FIELD)
-                if param.field.name {
-                    Checker_declare(c, param, nil, c.pkg.scope, ast.ObjKind_VAL, param.field.name)
+                if var param = type.func.params[i]; param.field.name != nil {
+                    Checker_declare(c, param, nil, c.pkg.scope, ast.ObjKind_VAL,
+                        param.field.name)
                 }
             }
-            c.result = decl.func.type.func.result
-            for var i = 0; i < len(decl.func.body.block.stmts); i++ {
-                Checker_checkStmt(c, decl.func.body.block.stmts[i])
+            if var body = decl.func.body; body != nil && !c.conf.ignoreFuncBodies {
+                c.result = type.func.result
+                for var i = 0; i < len(body.block.stmts); i++ {
+                    Checker_checkStmt(c, body.block.stmts[i])
+                }
+                c.result = nil
             }
-            c.result = nil
             Checker_closeScope(c)
             break
         }
@@ -1120,17 +1168,18 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
         var d = file.decls[i]
         switch d.kind {
         case ast.DECL_FUNC:
+            if d.func.recv {
+                continue // don't declare methods
+            }
             kind = ast.ObjKind_FUN
             break
         case ast.DECL_TYPE:
             kind = ast.ObjKind_TYP
             break
         default:
-            break
+            continue
         }
-        if kind {
-            Checker_declare(c, d, nil, c.pkg.scope, kind, d.type.name)
-        }
+        Checker_declare(c, d, nil, c.pkg.scope, kind, d.type.name)
     }
     for var i = 0; i < len(file.decls); i++ {
         Checker_checkDecl(c, file.decls[i])
@@ -1155,7 +1204,7 @@ fun checkFile(conf *Config, path runtime.charstr, fset *token.FileSet, file *ast
         info = newInfo()
     }
     var scope = ast.Scope_new(universe())
-    scope.pkg = file.name.ident.name
+    scope.pkgName = file.name
     var pkg Package = {
         path: runtime.strdup(path),
         name: file.name ? runtime.strdup(file.name.ident.name) : nil,
