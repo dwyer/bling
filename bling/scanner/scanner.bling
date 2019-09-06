@@ -6,7 +6,7 @@ import "runtime"
 
 typ Scanner struct {
     file *token.File
-    src *char
+    src runtime.charptr
     rd_offset int
     offset int
     ch int
@@ -67,11 +67,11 @@ fun switch2(s *Scanner, tok0 token.Token, tok1 token.Token) token.Token {
     return switch4(s, tok0, tok1, '\0', token.ILLEGAL, token.ILLEGAL)
 }
 
-fun make_string_slice(s *Scanner, start int, end int) *char {
+fun make_string_slice(s *Scanner, start int, end int) runtime.charptr {
     return runtime.strndup(&s.src[start], end - start)
 }
 
-fun scan_ident(s *Scanner) *char {
+fun scan_ident(s *Scanner) runtime.charptr {
     var offs = s.offset
     while is_letter(s.ch) || is_digit(s.ch) || (s.dontInsertSemis && s.ch == '$') {
         next0(s)
@@ -79,7 +79,7 @@ fun scan_ident(s *Scanner) *char {
     return make_string_slice(s, offs, s.offset)
 }
 
-fun scan_pragma(s *Scanner) *char {
+fun scan_pragma(s *Scanner) runtime.charptr {
     var offs = s.offset
     while s.ch > 0 && s.ch != '\n' {
         next0(s)
@@ -102,7 +102,7 @@ fun isNumeric(ch int, kind NumKind) bool {
     }
 }
 
-fun scan_number(s *Scanner, tokp *token.Token) *char {
+fun scan_number(s *Scanner, tokp *token.Token) runtime.charptr {
     var offs = s.offset
     var kind = NumKind_DECINT
     if s.ch == '0' {
@@ -136,7 +136,7 @@ fun scan_number(s *Scanner, tokp *token.Token) *char {
     return make_string_slice(s, offs, s.offset)
 }
 
-fun scan_rune(s *Scanner) *char {
+fun scan_rune(s *Scanner) runtime.charptr {
     var offs = s.offset
     var n = 0
     var escape = false
@@ -152,7 +152,7 @@ fun scan_rune(s *Scanner) *char {
     return make_string_slice(s, offs, s.offset)
 }
 
-fun scan_string(s *Scanner) *char {
+fun scan_string(s *Scanner) runtime.charptr {
     var offs = s.offset
     var n = 0
     var escape = false
@@ -168,7 +168,7 @@ fun scan_string(s *Scanner) *char {
     return make_string_slice(s, offs, s.offset)
 }
 
-fun error(s *Scanner, offs int, msg *const char) {
+fun error(s *Scanner, offs int, msg runtime.charstr) {
     panic(C.sprintf("scanner error: offset %d: %s", offs, msg))
 }
 
@@ -196,7 +196,7 @@ fun scan_comment(s *Scanner) {
     }
 }
 
-fun scan(s *Scanner, pos *token.Pos, lit **char) token.Token {
+fun scan(s *Scanner, pos *token.Pos, lit *runtime.charptr) token.Token {
     var tok token.Token
 scan_again:
     tok = token.ILLEGAL
@@ -356,7 +356,7 @@ scan_again:
     return tok
 }
 
-fun init(s *Scanner, file *token.File, src *char) {
+fun init(s *Scanner, file *token.File, src runtime.charptr) {
     file.src = runtime.strdup(src)
     s.file = file
     s.src = file.src

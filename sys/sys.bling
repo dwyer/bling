@@ -13,11 +13,11 @@ fun errnoReset() {
     C.setErrno(0)
 }
 
-fun errnoString() *char {
+fun errnoString() runtime.charptr {
     return C.strerror(C.getErrno())
 }
 
-fun getenv(key *const char) *char {
+fun getenv(key runtime.charstr) runtime.charptr {
     return C.getenv(key)
 }
 
@@ -29,7 +29,7 @@ fun _throwErrno(e **runtime.Error) {
     }
 }
 
-fun open(filename *const char, oflag int, perm int, e **runtime.Error) int {
+fun open(filename runtime.charstr, oflag int, perm int, e **runtime.Error) int {
     var fd = C.open(filename, oflag, perm)
     if fd < 0 {
         _throwErrno(e)
@@ -213,7 +213,7 @@ typ Errno enum {
 
 typ Dir *void
 
-fun opendir(filename *const char, e **runtime.Error) Dir {
+fun opendir(filename runtime.charstr, e **runtime.Error) Dir {
     var d = C.opendir(filename)
     if d == nil {
         _throwErrno(e)
@@ -238,13 +238,13 @@ fun readdir(dir Dir, e **runtime.Error) Dirent {
     return dirent
 }
 
-fun Dirent_name(dirent Dirent) *char {
+fun Dirent_name(dirent Dirent) runtime.charptr {
     return C.Dirent_name(dirent)
 }
 
 typ Stat C.Stat
 
-fun stat(path *const char, s *Stat, e **runtime.Error) {
+fun stat(path runtime.charstr, s *Stat, e **runtime.Error) {
     if C.stat(path, s) != 0 {
         _throwErrno(e)
     }
@@ -280,19 +280,19 @@ typ S enum {
     S_IFMT = 0xf000
 }
 
-fun mkdir(path *const char, mode u32, e **runtime.Error) {
+fun mkdir(path runtime.charstr, mode u32, e **runtime.Error) {
     if C.mkdir(path, mode) != 0 {
         _throwErrno(e)
     }
 }
 
-fun environ() **char {
+fun environ() *runtime.charptr {
     return C.getEnviron()
 }
 
 typ Pid int
 
-fun exec(path *const char, argv []const *char, envv []const *char, e **runtime.Error) {
+fun exec(path runtime.charstr, argv []const runtime.charptr, envv []const runtime.charptr, e **runtime.Error) {
     if C.execve(path, argv, envv) == -1 {
         _throwErrno(e)
     }

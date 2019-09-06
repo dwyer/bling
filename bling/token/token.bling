@@ -123,11 +123,11 @@ typ Prec enum {
 
 typ File struct {
     set *FileSet
-    name *char
+    name runtime.charptr
     base int
     size int
     lines [array]int
-    src *char
+    src runtime.charptr
 }
 
 typ FileSet struct {
@@ -138,13 +138,13 @@ typ FileSet struct {
 }
 
 typ Position struct {
-    filename *char
+    filename runtime.charptr
     offset int
     line int
     column int
 }
 
-var tokens []*char = {
+var tokens []runtime.charptr = {
     ILLEGAL: "ILLEGAL",
     CHAR: "CHAR",
     FLOAT: "FLOAT",
@@ -243,13 +243,13 @@ var tokens []*char = {
     XOR_ASSIGN: "^=",
 }
 
-fun string(tok Token) *char {
+fun string(tok Token) runtime.charptr {
     return tokens[tok]
 }
 
 var keywords = makemap(Token)
 
-fun lookup(ident *char) Token {
+fun lookup(ident runtime.charptr) Token {
     if len(keywords) == 0 {
         for var i = _keywordBeg + 1; i < _keywordEnd; i++ {
             var s = string(i)
@@ -288,7 +288,7 @@ fun precedence(op Token) int {
     }
 }
 
-fun Position_string(p *Position) *char {
+fun Position_string(p *Position) runtime.charptr {
     return C.sprintf("%s:%d:%d", p.filename, p.line, p.column)
 }
 
@@ -350,7 +350,7 @@ fun File_position(f *File, p Pos) Position {
     return File_positionFor(f, p, true)
 }
 
-fun File_lineString(f *File, line int) *char {
+fun File_lineString(f *File, line int) runtime.charptr {
     if line < 1 {
         return nil
     }
@@ -373,7 +373,7 @@ fun newFileSet() *FileSet {
     return &&fset
 }
 
-fun FileSet_addFile(s *FileSet, filename *const char, base int, size int) *File {
+fun FileSet_addFile(s *FileSet, filename runtime.charstr, base int, size int) *File {
     if base < 0 {
         base = s.base
     }

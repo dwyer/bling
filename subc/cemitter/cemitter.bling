@@ -586,7 +586,7 @@ fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
     emitObjects(e, scope, ast.ObjKind_FUN)
 }
 
-fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
+fun _emitPackage(e *emitter.Emitter, done *map runtime.charptr, pkg *types.Package) {
     if runtime.Map_get(done, pkg.path, nil) {
         return
     }
@@ -601,7 +601,7 @@ fun _emitPackage(e *emitter.Emitter, done *map *char, pkg *types.Package) {
 }
 
 fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
-    var done = makemap(*char)
+    var done = makemap(runtime.charptr)
     _emitPackage(e, &done, pkg)
     runtime.Map_unmake(&done)
 }
