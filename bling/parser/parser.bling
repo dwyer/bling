@@ -476,11 +476,14 @@ fun parseArrayType(p *Parser) *ast.Expr {
         dynamic = true
     } else if accept(p, token.QUESTION_MARK) {
         // noop
-    } else {
+    } else if p.tok != token.RBRACK {
         p.exprLev++
         len = parseRhs(p)
         p.exprLev--
+    } else {
+        dynamic = true
     }
+
     expect(p, token.RBRACK)
     var type = ast.Expr{
         kind: ast.TYPE_ARRAY,
