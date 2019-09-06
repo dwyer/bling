@@ -948,12 +948,16 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
         break
     case ast.STMT_IF:
         if stmt.if_.init {
+            Checker_openScope(c)
             Checker_checkStmt(c, stmt.if_.init)
         }
         Checker_checkExpr(c, stmt.if_.cond)
         Checker_checkStmt(c, stmt.if_.body)
         if stmt.if_.else_ {
             Checker_checkStmt(c, stmt.if_.else_)
+        }
+        if stmt.if_.init {
+            Checker_closeScope(c)
         }
         break
     case ast.STMT_ITER:
