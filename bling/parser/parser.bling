@@ -1192,7 +1192,7 @@ fun parseDir(fset *token.FileSet, path runtime.charstr, first **runtime.Error) [
         return files
     }
     for var i = 0; i < len(infos); i++ {
-        var name = os.FileInfo_name(infos[i])
+        var name = infos[i].name()
         if isBlingFile(name) && !isTestFile(name) {
             append(files, parseFile(fset, name))
         }

@@ -100,11 +100,9 @@ fun genObj(b *Builder, dst runtime.charstr, src runtime.charstr) {
 
 fun getFileModTime(path runtime.charstr) os.Time {
     var t os.Time = 0
-    var err *runtime.Error = nil
-    var info = os.stat(path, &err)
-    if info {
-        t = os.FileInfo_modTime(info)
-        os.FileInfo_free(info)
+    if var info = os.stat(path, nil); info != nil {
+        t = info.modTime()
+        info.free()
     }
     return t
 }
@@ -114,20 +112,20 @@ fun getSrcModTime(path runtime.charstr) os.Time {
     var files = ioutil.readDir(path, nil)
     for var i = 0; i < len(files); i++ {
         var file = files[i]
-        var modTime = os.FileInfo_modTime(file)
-        if bytes.hasSuffix(os.FileInfo_name(file), ".bling") {
+        var modTime = file.modTime()
+        if bytes.hasSuffix(file.name(), ".bling") {
             if t < modTime {
                 t = modTime
             }
         }
-        os.FileInfo_free(file)
+        file.free()
     }
     runtime.Slice_unmake(&files)
     return t
 }
 
 fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
-    var src = os.FileInfo_name(cFile)
+    var src = cFile.name()
     var dst runtime.charptr = nil
     {
         var i = bytes.lastIndexByte(src, '.')
@@ -138,10 +136,10 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
     }
     var err *runtime.Error = nil
     var objFile = os.stat(dst, &err)
-    var doBuild = objFile == nil || os.FileInfo_modTime(cFile) > os.FileInfo_modTime(objFile)
+    var doBuild = objFile == nil || cFile.modTime() > objFile.modTime()
     if b.force || doBuild {
         genObj(b, dst, src)
-        os.FileInfo_free(objFile)
+        objFile.free()
         objFile = os.stat(dst, &err)
     }
     return objFile
@@ -223,8 +221,8 @@ fun buildCPackage(b *Builder, path runtime.charstr) *Package {
     for var i = 0; i < len(files); i++ {
         var checkTime = false
         var file = files[i]
-        var modTime = os.FileInfo_modTime(file)
-        var name = os.FileInfo_name(file)
+        var modTime = file.modTime()
+        var name = file.name()
         if bytes.hasSuffix(name, ".bling") || bytes.hasSuffix(name, ".c") {
             if pkg.srcModTime < modTime {
                 pkg.srcModTime = modTime
@@ -239,9 +237,9 @@ fun buildCPackage(b *Builder, path runtime.charstr) *Package {
         append(cmd, pkg.libPath)
         for var i = 0; i < len(files); i++ {
             var file = files[i]
-            if bytes.hasSuffix(os.FileInfo_name(file), ".c") {
+            if bytes.hasSuffix(file.name(), ".c") {
                 var obj = buildCFile(b, file)
-                append(cmd, os.FileInfo_name(obj))
+                append(cmd, file.name())
             }
         }
         mkdirForFile(pkg.libPath)
@@ -249,7 +247,7 @@ fun buildCPackage(b *Builder, path runtime.charstr) *Package {
         pkg.libModTime = getFileModTime(pkg.libPath)
     }
     for var i = 0; i < len(files); i++ {
-        os.FileInfo_free(files[i])
+        files[i].free()
     }
     runtime.Slice_unmake(&files)
     return &&pkg

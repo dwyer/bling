@@ -133,7 +133,7 @@ fun stat(name runtime.charstr, e **runtime.Error) *FileInfo {
     return &&info
 }
 
-fun FileInfo_free(info *FileInfo) {
+fun (info *FileInfo) free() {
     if info != nil {
         runtime.free(info._name)
         runtime.free(info._sys)
@@ -194,31 +194,31 @@ fun readdir(file *File, e **runtime.Error) []*FileInfo {
     return arr
 }
 
-fun FileInfo_name(info *FileInfo) runtime.charptr {
+fun (info *FileInfo) name() runtime.charptr {
     return info._name
 }
 
-fun FileInfo_size(info *FileInfo) u64 {
-    var st = typ *sys.Stat(FileInfo_sys(info))
+fun (info *FileInfo) size() u64 {
+    var st = typ *sys.Stat(info.sys())
     return st.size
 }
 
-fun FileInfo_mode(info *FileInfo) FileMode {
-    var st = typ *sys.Stat(FileInfo_sys(info))
+fun (info *FileInfo) mode() FileMode {
+    var st = typ *sys.Stat(info.sys())
     return st.mode
 }
 
-fun FileInfo_modTime(info *FileInfo) Time {
-    var st = typ *sys.Stat(FileInfo_sys(info))
+fun (info *FileInfo) modTime() Time {
+    var st = typ *sys.Stat(info.sys())
     return st.mtime
 }
 
-fun FileInfo_isDir(info *FileInfo) bool {
-    var st = typ *sys.Stat(FileInfo_sys(info))
+fun (info *FileInfo) isDir() bool {
+    var st = typ *sys.Stat(info.sys())
     return ((st.mode & 0170000) == 0040000)
 }
 
-fun FileInfo_sys(info *FileInfo) *void {
+fun (info *FileInfo) sys() *void {
     return info._sys
 }
 
