@@ -30,12 +30,12 @@ fun join(a [?]runtime.charstr, size int, sep runtime.charstr) runtime.charptr {
         return runtime.strdup(a[0])
     }
     var b Buffer = makearray(char)
-    Buffer_write(&b, a[0], runtime.strlen(a[0]), nil)
+    b.write(a[0], runtime.strlen(a[0]), nil)
     for var i = 1; i < size; i++ {
-        Buffer_write(&b, sep, runtime.strlen(sep), nil)
-        Buffer_write(&b, a[i], runtime.strlen(a[i]), nil)
+        b.write(sep, runtime.strlen(sep), nil)
+        b.write(a[i], runtime.strlen(a[i]), nil)
     }
-    return Buffer_string(&b)
+    return b.toString()
 }
 
 fun lastIndexByte(b runtime.charstr, c char) int {
@@ -45,6 +45,45 @@ fun lastIndexByte(b runtime.charstr, c char) int {
         }
     }
     return -1
+}
+
+fun (b *Buffer) init() {
+    if len(*b) == 0 {
+        *b = makearray(char)
+    }
+}
+
+fun (b *Buffer) len() int {
+    return len(*b)
+}
+
+fun (b *Buffer) bytes() runtime.charptr {
+    b.init()
+    return runtime.Array_get(b, 1, 0, nil)
+}
+
+fun (b *Buffer) toString() runtime.charptr {
+    b.init()
+    var s runtime.charptr = runtime.malloc(b.len() + 1)
+    runtime.memcpy(s, runtime.Array_get(b, 1, 0, nil), b.len())
+    s[b.len()] = '\0'
+    return s
+}
+
+fun (b *Buffer) write(p runtime.charstr, size int, error **runtime.Error) int {
+    b.init()
+    if size < 0 {
+        size = runtime.strlen(p)
+    }
+    for var i = 0; i < size; i++ {
+        append(*b, p[i])
+    }
+    return size
+}
+
+fun (b *Buffer) writeByte(p char, error **runtime.Error) {
+    b.init()
+    append(*b, p)
 }
 
 fun Buffer_init(b *Buffer) {

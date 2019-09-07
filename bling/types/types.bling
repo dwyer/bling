@@ -713,22 +713,42 @@ fun Checker_checkSelector(c *Checker, expr *ast.Expr) *ast.Expr {
         expr.selector.tok = token.DOLLAR
         return type
     }
+    var isArgPtr = false
     if type.kind == ast.EXPR_STAR {
         expr.selector.tok = token.ARROW
         type = type.star.x
+        isArgPtr = true
     } else {
         assert(expr.selector.tok != token.ARROW)
     }
     if isTypeAlias(type) {
         // if type is an alias, check its scope for a method
-        if type.ident.obj.data != nil {
-            if var scope *ast.Scope = type.ident.obj.data; scope {
-                if var obj = ast.Scope_lookup(scope, expr.selector.sel.ident.name); obj {
-                    Checker_resolve(c, scope, expr.selector.sel)
-                    assert(obj.kind == ast.ObjKind_FUN)
-                    expr.selector.tok = token.FUNC
-                    return obj.decl.func.type
+        if var scope *ast.Scope = type.ident.obj.data; scope {
+            if var obj = ast.Scope_lookup(scope, expr.selector.sel.ident.name); obj {
+                Checker_resolve(c, scope, expr.selector.sel)
+                assert(obj.kind == ast.ObjKind_FUN)
+                expr.selector.tok = token.FUNC
+                var recvType = obj.decl.func.recv.field.type
+                var isRecvTypePtr = recvType.kind == ast.EXPR_STAR
+                if isRecvTypePtr && !isArgPtr {
+                    var refer = ast.Expr{
+                        kind: ast.EXPR_UNARY,
+                        unary: {
+                            op: token.AND,
+                            x: expr.selector.x,
+                        },
+                    }
+                    expr.selector.x = &&refer
+                } else if !isRecvTypePtr && isArgPtr {
+                    var deref = ast.Expr{
+                        kind: ast.EXPR_STAR,
+                        star: {
+                            x: expr.selector.x,
+                        },
+                    }
+                    expr.selector.x = &&deref
                 }
+                return obj.decl.func.type
             }
         }
     }
