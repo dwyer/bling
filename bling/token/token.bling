@@ -127,7 +127,7 @@ typ File struct {
     base int
     size int
     lines []int
-    src runtime.charptr
+    src []char
 }
 
 typ FileSet struct {

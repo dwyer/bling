@@ -357,9 +357,9 @@ scanAgain:
 }
 
 fun (s *Scanner) init(file *token.File, src []char) {
-    file.src = runtime.strdup(runtime.bytetocharptr(src))
+    file.src = src
     s.file = file
-    s.src = file.src
+    s.src = runtime.strdup(runtime.bytetocharptr(src))
     s.rdOffset = 0
     s.offset = 0
     s.insertSemi = false
