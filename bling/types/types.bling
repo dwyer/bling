@@ -182,14 +182,22 @@ fun makePtr(type *ast.Expr) *ast.Expr {
 }
 
 fun getUnderlyingType(ident *ast.Expr) *ast.Expr {
-    if ident.ident.obj == nil {
-        panic(C.sprintf("not resolved: %s", typeString(ident)))
+    for ;; {
+        switch ident.kind {
+        case ast.EXPR_IDENT:
+            if ident.ident.obj == nil {
+                panic(C.sprintf("not resolved: %s", typeString(ident)))
+            }
+            var decl = ident.ident.obj.decl
+            if decl.kind != ast.DECL_TYPE {
+                panic(C.sprintf("not a type: %s", typeString(ident)))
+            }
+            return decl.type.type
+        default:
+            panic(C.sprintf("not an alias: %s", typeString(ident)))
+            return nil
+        }
     }
-    var decl = ident.ident.obj.decl
-    if decl.kind != ast.DECL_TYPE {
-        panic(C.sprintf("not a type: %s", typeString(ident)))
-    }
-    return decl.type.type
 }
 
 fun getBaseType(type *ast.Expr) *ast.Expr {
@@ -322,7 +330,7 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
 
 fun isPointer(t *ast.Expr) bool {
     t = getBaseType(t)
-    return t.kind == ast.EXPR_STAR || t.kind == ast.TYPE_ARRAY
+    return t.kind == ast.EXPR_STAR || (t.kind == ast.TYPE_ARRAY && !t.array_.dynamic)
 }
 
 fun pointerBase(t *ast.Expr) *ast.Expr {
@@ -345,17 +353,13 @@ fun areAssignable(a *ast.Expr, b *ast.Expr) bool {
     if areIdentical(a, b) {
         return true
     }
+    a = getBaseType(a)
+    b = getBaseType(b)
     if ast.isVoidPtr(a) || ast.isVoidPtr(b) {
         return true
     }
     if isPointer(a) && isPointer(b) {
         return areAssignable(pointerBase(a), pointerBase(b))
-    }
-    while a.kind == ast.EXPR_IDENT {
-        a = getUnderlyingType(a)
-    }
-    while b.kind == ast.EXPR_IDENT {
-        b = getUnderlyingType(b)
     }
     if isNative(a, "bool") && isArithmetic(b) {
         return true
@@ -363,7 +367,7 @@ fun areAssignable(a *ast.Expr, b *ast.Expr) bool {
     if b.kind == ast.TYPE_ENUM && isArithmetic(a) {
         return true
     }
-    if a.kind == ast.TYPE_ENUM && isArithmetic(a) {
+    if a.kind == ast.TYPE_ENUM && isArithmetic(b) {
         return true
     }
     return areIdentical(a, b)

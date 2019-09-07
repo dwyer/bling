@@ -174,11 +174,11 @@ fun readdirnames(file *File, e **runtime.Error) []runtime.charptr {
 fun readdir(file *File, e **runtime.Error) []*FileInfo {
     var err *runtime.Error = nil
     var names = readdirnames(file, &err)
+    var arr = []*FileInfo{}
     if err != nil {
         _throwFileError(file, err, e)
-        return names
+        return arr
     }
-    var arr = makearray(runtime.charptr)
     for var i = 0; i < len(names); i++ {
         var path = paths.join2(file.name, names[i])
         runtime.free(names[i])
@@ -186,7 +186,7 @@ fun readdir(file *File, e **runtime.Error) []*FileInfo {
         if err != nil {
             _throwFileError(file, err, e)
             _throwPathError(file.name, err, e)
-            return names
+            return arr
         }
         append(arr, info)
     }
