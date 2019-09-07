@@ -139,8 +139,25 @@ fun isType(expr *ast.Expr) bool {
     }
 }
 
+fun getTypeAlias(t *ast.Expr) *ast.Expr {
+    for ;; {
+        switch t.kind {
+        case ast.EXPR_SELECTOR:
+            t = t.selector.sel
+            break
+        case ast.EXPR_IDENT:
+            if t.ident.obj.kind == ast.ObjKind_TYP {
+                return t
+            }
+            return nil
+        default:
+            return nil
+        }
+    }
+}
+
 fun isTypeAlias(t *ast.Expr) bool {
-    return t.kind == ast.EXPR_IDENT && t.ident.obj.kind == ast.ObjKind_TYP
+    return getTypeAlias(t) != nil
 }
 
 fun makeIdent(name runtime.charstr) *ast.Expr {
@@ -721,9 +738,9 @@ fun Checker_checkSelector(c *Checker, expr *ast.Expr) *ast.Expr {
     } else {
         assert(expr.selector.tok != token.ARROW)
     }
-    if isTypeAlias(type) {
+    if var alias = getTypeAlias(type); alias != nil {
         // if type is an alias, check its scope for a method
-        if var scope *ast.Scope = type.ident.obj.data; scope {
+        if var scope *ast.Scope = alias.ident.obj.data; scope {
             if var obj = ast.Scope_lookup(scope, expr.selector.sel.ident.name); obj {
                 Checker_resolve(c, scope, expr.selector.sel)
                 assert(obj.kind == ast.ObjKind_FUN)
@@ -752,15 +769,19 @@ fun Checker_checkSelector(c *Checker, expr *ast.Expr) *ast.Expr {
             }
         }
     }
-    if var field = getStructFieldByName(type, expr.selector.sel); field == nil {
-        Checker_error(c, ast.Expr_pos(expr),
+    if var base = getBaseType(type); base.kind == ast.TYPE_STRUCT {
+        if var field = getStructFieldByName(type, expr.selector.sel); field == nil {
+            Checker_error(c, ast.Expr_pos(expr),
             C.sprintf("no member named '%s' in '%s'",
-                exprString(expr.selector.sel), typeString(type)))
-        return nil
-    } else {
-        expr.selector.sel.ident.obj = field.field.name.ident.obj
-        return field.field.type
+            exprString(expr.selector.sel), typeString(type)))
+            return nil
+        } else {
+            expr.selector.sel.ident.obj = field.field.name.ident.obj
+            return field.field.type
+        }
     }
+    Checker_error(c, ast.Expr_pos(expr), "selector on invalid type")
+    return nil
 }
 
 fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
