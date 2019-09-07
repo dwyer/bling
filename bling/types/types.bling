@@ -1076,9 +1076,11 @@ fun (c *Checker) checkStmt(stmt *ast.Stmt) {
                         c.error(stmt.pos(), C.sprintf("not comparable: %s and %s", typeString(type1), typeString(type2)))
                     }
                 }
+                c.openScope()
                 for var j = 0; j < len(clause.case_.stmts); j++ {
                     c.checkStmt(clause.case_.stmts[j])
                 }
+                c.closeScope()
             }
         }
         break

@@ -220,6 +220,8 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
             emitter.emitToken(e, token.DEFAULT)
         }
         emitter.emitToken(e, token.COLON)
+        emitter.emitSpace(e)
+        emitter.emitToken(e, token.LBRACE)
         emitter.emitNewline(e)
         e.indent++
         for var i = 0; i < len(stmt.case_.stmts); i++ {
@@ -228,6 +230,9 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
             emitter.emitNewline(e)
         }
         e.indent--
+        emitter.emitTabs(e)
+        emitter.emitToken(e, token.RBRACE)
+        emitter.emitNewline(e)
         break
     case ast.STMT_DECL:
         emitDecl(e, stmt.decl.decl)

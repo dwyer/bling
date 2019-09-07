@@ -26,33 +26,4 @@
 * Implement `import ( ... )` decl.
 * Make semicolons optional before `}` and `)'.
 * ast: Replace CastExpr with CallExpr.
-* parser/emitter
-    * Emit method recv.
-* Eventually we want to have switch cases to have an implicit break and to open
-  a new scope by default. So the above example would be converted to:
-
-    // in bling
-    switch (x) {
-    case A, B, C:
-        var y = x + 1;
-        doSomething(y);
-    default:
-        doSomethingElse();
-    }
-
-    // in C
-    switch (x) {
-    case A:
-    case B:
-    case C: {
-            int y = x + 1;
-            doSomething(y);
-        }
-        break;
-    default: {
-            doSomethingElse();
-        }
-        break;
-    }
-
-    * When this is complete, change the functionality of `fallthrough`.
+* swtich/case: Implicit break.
