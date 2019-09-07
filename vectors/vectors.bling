@@ -45,3 +45,7 @@ fun (u Vec3) scale(s Unit) Vec3 {
     }
     return w
 }
+
+fun norm(u Vec2) int {
+    return int(u.x * u.x + u.y * u.y)
+}

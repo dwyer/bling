@@ -1,5 +1,3 @@
-* BUGFIX: unsolved func types when calling a function that was declared later.
-    * FIX: check func type at decl time.
 * Implement optional types, e.g.
     * Old: expr.ident.obj && expr.ident.obj.scope && expr.ident.obj.scope.pkgName
     * New: expr.ident.obj?.scope?.pkgName

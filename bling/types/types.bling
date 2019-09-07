@@ -1086,7 +1086,6 @@ fun (c *Checker) checkImport(imp *ast.Decl) *Package {
 fun (c *Checker) checkDecl(decl *ast.Decl) {
     switch decl.kind {
     case ast.DECL_FUNC:
-        c.checkType(decl.func.type)
         c.openScope()
         if var recv = decl.func.recv; recv != nil {
             // declare recv in method scope
@@ -1162,10 +1161,15 @@ fun (c *Checker) checkFile(file *ast.File) {
         append(c.pkg.imports, pkg)
     }
     for var i = 0; i < len(file.decls); i++ {
-        var kind = ast.ObjKind_BAD
         var decl = file.decls[i]
+        var kind = ast.ObjKind_BAD
+        var scope = c.pkg.scope
+        var name *ast.Expr = nil
         switch decl.kind {
         case ast.DECL_FUNC:
+            c.checkType(decl.func.type)
+            kind = ast.ObjKind_FUN
+            name = decl.func.name
             if var recv = decl.func.recv; recv {
                 var type = recv.field.type
                 c.checkType(type)
@@ -1176,28 +1180,24 @@ fun (c *Checker) checkFile(file *ast.File) {
                     c.error(recv.field.type.pos(),
                         "can't declare method on non-alias")
                 }
-                var obj = type.ident.obj
-                var typeScope *ast.Scope = obj.data
-                if obj.data == nil {
-                    typeScope = ast.newScope(c.pkg.scope)
-                    typeScope.pkgName = type
-                    obj.data = typeScope
+                scope = type.ident.obj.data // declare method in type scope
+                if type.ident.obj.data == nil {
+                    scope = ast.newScope(c.pkg.scope)
+                    scope.pkgName = type
+                    type.ident.obj.data = scope
                 }
-                assert(obj.data)
-                assert(typeScope.pkgName)
-                // declare method in pkg scope
-                c.declare(decl, obj.data, typeScope, ast.ObjKind_FUN, decl.func.name)
-                continue // don't declare methods
+                assert(type.ident.obj.data)
+                assert(scope.pkgName)
             }
-            kind = ast.ObjKind_FUN
             break
         case ast.DECL_TYPE:
             kind = ast.ObjKind_TYP
+            name = decl.type.name
             break
         default:
             continue
         }
-        c.declare(decl, nil, c.pkg.scope, kind, decl.type.name)
+        c.declare(decl, nil, scope, kind, name)
     }
     for var i = 0; i < len(file.decls); i++ {
         c.checkDecl(file.decls[i])
