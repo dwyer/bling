@@ -7,8 +7,7 @@ fun base(path runtime.charstr) runtime.charptr {
     if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
-    var i = bytes.lastIndexByte(path, '/')
-    if i > 0 {
+    if var i = bytes.lastIndexByte(path, '/'); i > 0 {
         path = &path[i + 1]
     }
     return runtime.strdup(path)
@@ -53,8 +52,7 @@ fun dir(path runtime.charstr) runtime.charptr {
     if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
-    var i = bytes.lastIndexByte(path, '/')
-    if i > 0 {
+    if var i = bytes.lastIndexByte(path, '/'); i > 0 {
         var p = runtime.strdup(path)
         p[i] = '\0'
         return p
