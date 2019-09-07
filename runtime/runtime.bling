@@ -265,7 +265,7 @@ fun _mapIsInitialized(m *const Map) bool {
     return _mapCap(m) > 0
 }
 
-fun _mapGetPairRef(m *const Map, key *const void) *MapPair {
+fun _mapGetPairIdx(m *const Map, key *const void) int {
     var hash = djb2(key) % _mapCap(m)
     stats.lookups++
     for var i = 0; i < len(m._pairs); i++ {
@@ -277,8 +277,15 @@ fun _mapGetPairRef(m *const Map, key *const void) *MapPair {
             } else {
                 stats.misses++
             }
-            return p
+            return idx
         }
+    }
+    return -1
+}
+
+fun _mapGetPairRef(m *const Map, key *const void) *MapPair {
+    if var idx = _mapGetPairIdx(m, key); idx >= 0 {
+        return &m._pairs[idx]
     }
     return nil
 }
@@ -323,6 +330,16 @@ fun Map_set(m *Map, key charstr, val *const void) {
         }
         Slice_unmake(&pairs)
     }
+}
+
+fun Map_remove(m *Map, key charstr) bool {
+    if _mapIsInitialized(m) {
+        if var idx = _mapGetPairIdx(m, key); idx >= 0 {
+            var x = MapPair{}; m._pairs[idx] = x // TODO fix this
+            return true
+        }
+    }
+    return false
 }
 
 fun NewMapIter(m *const Map) MapIter {

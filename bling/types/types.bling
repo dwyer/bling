@@ -509,7 +509,7 @@ fun (c *Checker) declare(decl *ast.Decl, data voidptr, scope *ast.Scope, kind as
     obj.scope = scope
     ident.ident.obj = obj
     var alt = scope.insert(obj)
-    if alt != nil {
+    if alt != nil && kind != ast.ObjKind_PKG { // TODO declare pkgs in seperate scope
         c.error(decl.pos, C.sprintf("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl)))
     }
 }
@@ -1155,52 +1155,53 @@ fun (c *Checker) checkDecl(decl *ast.Decl) {
     }
 }
 
-fun (c *Checker) checkFile(file *ast.File) {
-    for var i = 0; i < len(file.imports); i++ {
-        var pkg = c.checkImport(file.imports[i])
-        append(c.pkg.imports, pkg)
-    }
-    for var i = 0; i < len(file.decls); i++ {
-        var decl = file.decls[i]
-        var kind = ast.ObjKind_BAD
-        var scope = c.pkg.scope
-        var name *ast.Expr = nil
-        switch decl.kind {
-        case ast.DECL_FUNC:
-            c.checkType(decl.func.type)
-            kind = ast.ObjKind_FUN
-            name = decl.func.name
-            if var recv = decl.func.recv; recv {
-                var type = recv.field.type
-                c.checkType(type)
-                if type.kind == ast.EXPR_STAR {
-                    type = type.star.x
-                }
-                if type.kind != ast.EXPR_IDENT {
-                    c.error(recv.field.type.pos(),
-                        "can't declare method on non-alias")
-                }
-                scope = type.ident.obj.data // declare method in type scope
-                if type.ident.obj.data == nil {
-                    scope = ast.newScope(c.pkg.scope)
-                    scope.pkgName = type
-                    type.ident.obj.data = scope
-                }
-                assert(type.ident.obj.data)
-                assert(scope.pkgName)
-            }
-            break
-        case ast.DECL_TYPE:
-            kind = ast.ObjKind_TYP
-            name = decl.type.name
-            break
-        default:
-            continue
+fun (c *Checker) checkFiles(files []*ast.File) {
+    for var j = 0; j < len(files); j++ {
+        var file = files[j]
+        for var i = 0; i < len(file.imports); i++ {
+            var pkg = c.checkImport(file.imports[i])
+            append(c.pkg.imports, pkg)
         }
-        c.declare(decl, nil, scope, kind, name)
+        for var i = 0; i < len(file.decls); i++ {
+            if var decl = file.decls[i]; decl.kind == ast.DECL_TYPE {
+                c.declare(decl, nil, c.pkg.scope, ast.ObjKind_TYP, decl.type.name)
+            }
+        }
     }
-    for var i = 0; i < len(file.decls); i++ {
-        c.checkDecl(file.decls[i])
+    for var j = 0; j < len(files); j++ {
+        var decls = files[j].decls
+        for var i = 0; i < len(decls); i++ {
+            if var decl = decls[i]; decl.kind == ast.DECL_FUNC {
+                c.checkType(decl.func.type)
+                var scope = c.pkg.scope
+                if var recv = decl.func.recv; recv {
+                    var type = recv.field.type
+                    c.checkType(type)
+                    if type.kind == ast.EXPR_STAR {
+                        type = type.star.x
+                    }
+                    if type.kind != ast.EXPR_IDENT {
+                        c.error(recv.field.type.pos(),
+                        "can't declare method on non-alias")
+                    }
+                    scope = type.ident.obj.data // declare method in type scope
+                    if type.ident.obj.data == nil {
+                        scope = ast.newScope(c.pkg.scope)
+                        scope.pkgName = type
+                        type.ident.obj.data = scope
+                    }
+                    assert(type.ident.obj.data)
+                    assert(scope.pkgName)
+                }
+                c.declare(decl, nil, scope, ast.ObjKind_FUN, decl.func.name)
+            }
+        }
+    }
+    for var j = 0; j < len(files); j++ {
+        var decls = files[j].decls
+        for var i = 0; i < len(decls); i++ {
+            c.checkDecl(decls[i])
+        }
     }
 }
 
@@ -1211,7 +1212,8 @@ fun newInfo() *Info {
     return &&info
 }
 
-fun checkFile(conf *Config, path runtime.charstr, fset *token.FileSet, file *ast.File, info *Info) *Package {
+fun checkFiles(conf *Config, path runtime.charstr, fset *token.FileSet, files []*ast.File, info *Info) *Package {
+    var file = files[0]
     if info {
         var pkg *Package = nil
         runtime.Map_get(&info.imports, path, &pkg)
@@ -1236,13 +1238,12 @@ fun checkFile(conf *Config, path runtime.charstr, fset *token.FileSet, file *ast
         pkg: &&pkg,
     }
     runtime.Map_set(&info.imports, path, &c.pkg)
-    c.checkFile(file)
+    c.checkFiles(files)
     return c.pkg
 }
 
 fun check(conf *Config, path runtime.charstr, fset *token.FileSet, files []*ast.File, info *Info) *Package {
-    assert(len(files) == 1)
-    return checkFile(conf, path, fset, files[0], info)
+    return checkFiles(conf, path, fset, files, info)
 }
 
 var _universe *ast.Scope = nil

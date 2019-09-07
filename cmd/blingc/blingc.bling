@@ -118,15 +118,15 @@ fun compileBling(argv [?]runtime.charptr) {
     emitRawFile(&e, "bootstrap/bootstrap.h")
     var fset = token.newFileSet()
     var filename = *argv
-    var file *ast.File = nil
+    var files = []*ast.File{}
     if bytes.hasSuffix(filename, ".bling") {
-        file = parser.parseFile(fset, filename)
+        append(files, parser.parseFile(fset, filename))
     } else if bytes.hasSuffix(filename, ".c") {
-        file = cparser.parseFile(fset, filename)
+        append(files, cparser.parseFile(fset, filename))
     } else {
         panic(C.sprintf("unknown file type: %s", filename))
     }
-    var pkg = types.checkFile(&conf, paths.dir(filename), fset, file, nil)
+    var pkg = types.checkFiles(&conf, paths.dir(filename), fset, files, nil)
     cemitter.emitPackage(&e, pkg)
     argv++
     assert(!*argv)

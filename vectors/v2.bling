@@ -1,0 +1,24 @@
+package vectors
+
+import "C"
+
+typ Vec2 struct {
+    x Unit
+    y Unit
+}
+
+fun (u Vec2) add(v Vec2) Vec2 {
+    var w Vec2 = {
+        x: u.x + v.x,
+        y: u.y + v.y,
+    }
+    return w
+}
+
+fun (u Vec2) scale(s Unit) Vec2 {
+    var w Vec2 = {
+        x: u.x * s,
+        y: u.y * s,
+    }
+    return w
+}
