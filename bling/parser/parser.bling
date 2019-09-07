@@ -59,7 +59,7 @@ fun (p *Parser) init(fset *token.FileSet, filename runtime.charstr, src []char) 
     assert(fset)
     p.file = fset.addFile(filename, -1, len(src))
     p.lit = nil
-    p.scanner.init(p.file, runtime.bytetocharptr(src))
+    p.scanner.init(p.file, src)
     p.scanner.dontInsertSemis = !bytes.hasSuffix(filename, ".bling")
     p.exprLev = 0
     p.typeNames = makemap(*ast.Expr)

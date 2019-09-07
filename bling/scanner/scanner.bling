@@ -356,8 +356,8 @@ scanAgain:
     return tok
 }
 
-fun (s *Scanner) init(file *token.File, src runtime.charptr) {
-    file.src = runtime.strdup(src)
+fun (s *Scanner) init(file *token.File, src []char) {
+    file.src = runtime.strdup(runtime.bytetocharptr(src))
     s.file = file
     s.src = file.src
     s.rdOffset = 0
