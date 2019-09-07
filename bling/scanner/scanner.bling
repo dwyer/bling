@@ -7,51 +7,51 @@ import "runtime"
 typ Scanner struct {
     file *token.File
     src runtime.charptr
-    rd_offset int
+    rdOffset int
     offset int
     ch int
     insertSemi bool
     dontInsertSemis bool
 }
 
-fun next0(s *Scanner) {
-    s.offset = s.rd_offset
+fun (s *Scanner) next() {
+    s.offset = s.rdOffset
     if s.ch == '\n' {
         s.file.addLine(s.offset)
     }
-    s.ch = s.src[s.rd_offset]
-    s.rd_offset++
+    s.ch = s.src[s.rdOffset]
+    s.rdOffset++
 }
 
-fun skip_whitespace(s *Scanner) {
+fun (s *Scanner) skipWhitespace() {
     while s.ch == ' ' || (s.ch == '\n' && !s.insertSemi) || s.ch == '\t' {
-        next0(s)
+        s.next()
     }
 }
 
-fun skip_line(s *Scanner) {
+fun (s *Scanner) skipLine() {
     while s.ch >= 0 && s.ch != '\n' {
-        next0(s)
+        s.next()
     }
 }
 
-fun is_letter(ch int) bool {
+fun isLetter(ch int) bool {
     return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_'
 }
 
-fun is_digit(ch int) bool {
+fun isDigit(ch int) bool {
     return '0' <= ch && ch <= '9'
 }
 
-fun switch4(s *Scanner, tok0 token.Token, tok1 token.Token, ch2 int, tok2 token.Token, tok3 token.Token) token.Token {
+fun (s *Scanner) switch4(tok0 token.Token, tok1 token.Token, ch2 int, tok2 token.Token, tok3 token.Token) token.Token {
     if s.ch == '=' {
-        next0(s)
+        s.next()
         return tok1
     }
     if ch2 && tok2 && s.ch == ch2 {
-        next0(s)
+        s.next()
         if tok3 && s.ch == '=' {
-            next0(s)
+            s.next()
             return tok3
         }
         return tok2
@@ -59,32 +59,32 @@ fun switch4(s *Scanner, tok0 token.Token, tok1 token.Token, ch2 int, tok2 token.
     return tok0
 }
 
-fun switch3(s *Scanner, tok0 token.Token, tok1 token.Token, ch2 int, tok2 token.Token) token.Token {
-    return switch4(s, tok0, tok1, ch2, tok2, token.ILLEGAL)
+fun (s *Scanner) switch3(tok0 token.Token, tok1 token.Token, ch2 int, tok2 token.Token) token.Token {
+    return s.switch4(tok0, tok1, ch2, tok2, token.ILLEGAL)
 }
 
-fun switch2(s *Scanner, tok0 token.Token, tok1 token.Token) token.Token {
-    return switch4(s, tok0, tok1, '\0', token.ILLEGAL, token.ILLEGAL)
+fun (s *Scanner) switch2(tok0 token.Token, tok1 token.Token) token.Token {
+    return s.switch4(tok0, tok1, '\0', token.ILLEGAL, token.ILLEGAL)
 }
 
-fun make_string_slice(s *Scanner, start int, end int) runtime.charptr {
+fun (s *Scanner) makeStringSlice(start int, end int) runtime.charptr {
     return runtime.strndup(&s.src[start], end - start)
 }
 
-fun scan_ident(s *Scanner) runtime.charptr {
+fun (s *Scanner) scanIdent() runtime.charptr {
     var offs = s.offset
-    while is_letter(s.ch) || is_digit(s.ch) || (s.dontInsertSemis && s.ch == '$') {
-        next0(s)
+    while isLetter(s.ch) || isDigit(s.ch) || (s.dontInsertSemis && s.ch == '$') {
+        s.next()
     }
-    return make_string_slice(s, offs, s.offset)
+    return s.makeStringSlice(offs, s.offset)
 }
 
-fun scan_pragma(s *Scanner) runtime.charptr {
+fun (s *Scanner) scanPragma() runtime.charptr {
     var offs = s.offset
     while s.ch > 0 && s.ch != '\n' {
-        next0(s)
+        s.next()
     }
-    return make_string_slice(s, offs, s.offset)
+    return s.makeStringSlice(offs, s.offset)
 }
 
 typ NumKind enum {
@@ -102,14 +102,14 @@ fun isNumeric(ch int, kind NumKind) bool {
     }
 }
 
-fun scan_number(s *Scanner, tokp *token.Token) runtime.charptr {
+fun (s *Scanner) scanNumber(tokp *token.Token) runtime.charptr {
     var offs = s.offset
     var kind = NumKind_DECINT
     if s.ch == '0' {
-        next0(s)
+        s.next()
         if s.ch == 'x' {
             kind = NumKind_HEXINT
-            next0(s)
+            s.next()
         }
     }
     for ;; {
@@ -123,7 +123,7 @@ fun scan_number(s *Scanner, tokp *token.Token) runtime.charptr {
                 break
             }
         }
-        next0(s)
+        s.next()
     }
     switch kind {
     case NumKind_DECINT, NumKind_HEXINT:
@@ -133,10 +133,10 @@ fun scan_number(s *Scanner, tokp *token.Token) runtime.charptr {
         *tokp = token.FLOAT
         break
     }
-    return make_string_slice(s, offs, s.offset)
+    return s.makeStringSlice(offs, s.offset)
 }
 
-fun scan_rune(s *Scanner) runtime.charptr {
+fun (s *Scanner) scanRune() runtime.charptr {
     var offs = s.offset
     var n = 0
     var escape = false
@@ -145,14 +145,14 @@ fun scan_rune(s *Scanner) runtime.charptr {
             break
         }
         escape = s.ch == '\\' && !escape
-        next0(s)
+        s.next()
         n++
     }
-    next0(s)
-    return make_string_slice(s, offs, s.offset)
+    s.next()
+    return s.makeStringSlice(offs, s.offset)
 }
 
-fun scan_string(s *Scanner) runtime.charptr {
+fun (s *Scanner) scanString() runtime.charptr {
     var offs = s.offset
     var n = 0
     var escape = false
@@ -161,34 +161,34 @@ fun scan_string(s *Scanner) runtime.charptr {
             break
         }
         escape = s.ch == '\\' && !escape
-        next0(s)
+        s.next()
         n++
     }
-    next0(s)
-    return make_string_slice(s, offs, s.offset)
+    s.next()
+    return s.makeStringSlice(offs, s.offset)
 }
 
-fun error(s *Scanner, offs int, msg runtime.charstr) {
+fun (s *Scanner) error(offs int, msg runtime.charstr) {
     panic(C.sprintf("scanner error: offset %d: %s", offs, msg))
 }
 
-fun scan_comment(s *Scanner) {
+fun (s *Scanner) scanComment() {
     var offs = s.offset - 1
     switch s.ch {
     case '/':
-        skip_line(s)
+        s.skipLine()
         break
     case '*':
-        next0(s)
+        s.next()
         while s.ch >= 0 {
             var ch = s.ch
-            next0(s)
+            s.next()
             if ch == '*' && s.ch == '/' {
-                next0(s)
+                s.next()
                 return
             }
         }
-        error(s, offs, "comment not terminated")
+        s.error(offs, "comment not terminated")
         break
     default:
         panic("not a comment")
@@ -196,16 +196,16 @@ fun scan_comment(s *Scanner) {
     }
 }
 
-fun scan(s *Scanner, pos *token.Pos, lit *runtime.charptr) token.Token {
+fun (s *Scanner) scan(pos *token.Pos, lit *runtime.charptr) token.Token {
     var tok token.Token
-scan_again:
+scanAgain:
     tok = token.ILLEGAL
-    skip_whitespace(s)
+    s.skipWhitespace()
     *pos = s.file.pos(s.offset)
     var insertSemi = false
     *lit = nil
-    if is_letter(s.ch) {
-        *lit = scan_ident(s)
+    if isLetter(s.ch) {
+        *lit = s.scanIdent()
         if runtime.strlen(*lit) > 1 {
             tok = token.lookup(*lit)
             if tok != token.IDENT {
@@ -223,20 +223,20 @@ scan_again:
             insertSemi = true
             tok = token.IDENT
         }
-    } else if is_digit(s.ch) {
+    } else if isDigit(s.ch) {
         insertSemi = true
-        *lit = scan_number(s, &tok)
+        *lit = s.scanNumber(&tok)
     } else if s.ch == '\'' {
         insertSemi = true
-        *lit = scan_rune(s)
+        *lit = s.scanRune()
         tok = token.CHAR
     } else if s.ch == '"' {
         insertSemi = true
-        *lit = scan_string(s)
+        *lit = s.scanString()
         tok = token.STRING
     } else {
         var ch = s.ch
-        next0(s)
+        s.next()
         switch ch {
         case '\0':
             insertSemi = true
@@ -248,7 +248,7 @@ scan_again:
             return token.SEMICOLON
         case '#':
             tok = token.HASH
-            *lit = scan_pragma(s)
+            *lit = s.scanPragma()
             break
         case '(':
             tok = token.LPAREN
@@ -287,31 +287,31 @@ scan_again:
             tok = token.BITWISE_NOT
             break
         case '!':
-            tok = switch2(s, token.NOT, token.NOT_EQUAL)
+            tok = s.switch2(token.NOT, token.NOT_EQUAL)
             break
         case '$':
             break
         case '%':
-            tok = switch2(s, token.MOD, token.MOD_ASSIGN)
+            tok = s.switch2(token.MOD, token.MOD_ASSIGN)
             break
         case '&':
-            tok = switch3(s, token.AND, token.AND_ASSIGN, '&', token.LAND)
+            tok = s.switch3(token.AND, token.AND_ASSIGN, '&', token.LAND)
             break
         case '*':
-            tok = switch2(s, token.MUL, token.MUL_ASSIGN)
+            tok = s.switch2(token.MUL, token.MUL_ASSIGN)
             break
         case '+':
-            tok = switch3(s, token.ADD, token.ADD_ASSIGN, '+', token.INC)
+            tok = s.switch3(token.ADD, token.ADD_ASSIGN, '+', token.INC)
             if tok == token.INC {
                 insertSemi = true
             }
             break
         case '-':
             if s.ch == '>' && s.dontInsertSemis {
-                next0(s)
+                s.next()
                 tok = token.ARROW
             } else {
-                tok = switch3(s, token.SUB, token.SUB_ASSIGN, '-', token.DEC)
+                tok = s.switch3(token.SUB, token.SUB_ASSIGN, '-', token.DEC)
                 if tok == token.DEC {
                     insertSemi = true
                 }
@@ -319,9 +319,9 @@ scan_again:
             break
         case '.':
             if s.ch == '.' {
-                next0(s)
+                s.next()
                 if s.ch == '.' {
-                    next0(s)
+                    s.next()
                     tok = token.ELLIPSIS
                 }
             } else {
@@ -330,23 +330,23 @@ scan_again:
             break
         case '/':
             if s.ch == '/' || s.ch == '*' {
-                scan_comment(s)
-                goto scan_again
+                s.scanComment()
+                goto scanAgain
             } else {
-                tok = switch2(s, token.DIV, token.DIV_ASSIGN)
+                tok = s.switch2(token.DIV, token.DIV_ASSIGN)
             }
             break
         case '<':
-            tok = switch4(s, token.LT, token.LT_EQUAL, '<', token.SHL, token.SHL_ASSIGN)
+            tok = s.switch4(token.LT, token.LT_EQUAL, '<', token.SHL, token.SHL_ASSIGN)
             break
         case '=':
-            tok = switch2(s, token.ASSIGN, token.EQUAL)
+            tok = s.switch2(token.ASSIGN, token.EQUAL)
             break
         case '>':
-            tok = switch4(s, token.GT, token.GT_EQUAL, '>', token.SHR, token.SHR_ASSIGN)
+            tok = s.switch4(token.GT, token.GT_EQUAL, '>', token.SHR, token.SHR_ASSIGN)
             break
         case '|':
-            tok = switch3(s, token.OR, token.OR_ASSIGN, '|', token.LOR)
+            tok = s.switch3(token.OR, token.OR_ASSIGN, '|', token.LOR)
             break
         }
     }
@@ -356,12 +356,12 @@ scan_again:
     return tok
 }
 
-fun init(s *Scanner, file *token.File, src runtime.charptr) {
+fun (s *Scanner) init(file *token.File, src runtime.charptr) {
     file.src = runtime.strdup(src)
     s.file = file
     s.src = file.src
-    s.rd_offset = 0
+    s.rdOffset = 0
     s.offset = 0
     s.insertSemi = false
-    next0(s)
+    s.next()
 }

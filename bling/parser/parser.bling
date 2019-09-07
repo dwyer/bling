@@ -52,14 +52,14 @@ fun unparen(x *ast.Expr) *ast.Expr {
 }
 
 fun next(p *Parser) {
-    p.tok = scanner.scan(&p.scanner, &p.pos, &p.lit)
+    p.tok = p.scanner.scan(&p.pos, &p.lit)
 }
 
 fun init(p *Parser, fset *token.FileSet, filename runtime.charstr, src runtime.charptr) {
     assert(fset)
     p.file = fset.addFile(filename, -1, runtime.strlen(src))
     p.lit = nil
-    scanner.init(&p.scanner, p.file, src)
+    p.scanner.init(p.file, src)
     p.scanner.dontInsertSemis = !bytes.hasSuffix(filename, ".bling")
     p.exprLev = 0
     p.typeNames = makemap(*ast.Expr)
