@@ -119,7 +119,7 @@ fun checkExpr(p *Parser, x *ast.Expr) *ast.Expr {
         panic("unreachable")
         break
     default:
-        errorExpected(p, ast.Expr_pos(x), "expression")
+        errorExpected(p, x.pos(), "expression")
         break
     }
     return x
@@ -242,7 +242,7 @@ fun parseElementList(p *Parser) []*ast.Expr {
 fun parseLiteralValue(p *Parser, type *ast.Expr) *ast.Expr {
     var pos = expect(p, token.LBRACE)
     if type {
-        pos = ast.Expr_pos(type)
+        pos = type.pos()
     }
     p.exprLev++
     var list = parseElementList(p)

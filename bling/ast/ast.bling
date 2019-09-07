@@ -527,18 +527,14 @@ fun isVoidPtr(x *Expr) bool {
     }
 }
 
-fun Decl_pos(d *Decl) token.Pos {
-    return d.pos
-}
-
-fun Expr_pos(x *Expr) token.Pos {
+fun (x *Expr) pos() token.Pos {
     switch x.kind {
     case EXPR_BASIC_LIT:
         return x.basic.pos
     case EXPR_BINARY:
-        return Expr_pos(x.binary.x)
+        return x.binary.x.pos()
     case EXPR_CALL:
-        return Expr_pos(x.call.func)
+        return x.call.func.pos()
     case EXPR_CAST:
         return x.cast.pos
     case EXPR_COMPOSITE_LIT:
@@ -546,19 +542,19 @@ fun Expr_pos(x *Expr) token.Pos {
     case EXPR_IDENT:
         return x.ident.pos
     case EXPR_INDEX:
-        return Expr_pos(x.index.x)
+        return x.index.x.pos()
     case EXPR_KEY_VALUE:
-        return Expr_pos(x.key_value.key)
+        return x.key_value.key.pos()
     case EXPR_PAREN:
         return x.paren.pos
     case EXPR_SELECTOR:
-        return Expr_pos(x.selector.x)
+        return x.selector.x.pos()
     case EXPR_SIZEOF:
         return x.sizeof_.pos
     case EXPR_STAR:
         return x.star.pos
     case EXPR_TERNARY:
-        return Expr_pos(x.ternary.cond)
+        return x.ternary.cond.pos()
     case EXPR_UNARY:
         return x.unary.pos
     case TYPE_ARRAY:
@@ -576,20 +572,20 @@ fun Expr_pos(x *Expr) token.Pos {
     }
 }
 
-fun Stmt_pos(s *Stmt) token.Pos {
+fun (s *Stmt) pos() token.Pos {
     switch s.kind {
     case STMT_ASSIGN:
-        return Expr_pos(s.assign.x)
+        return s.assign.x.pos()
     case STMT_BLOCK:
         return s.block.pos
     case STMT_CASE:
         return s.case_.pos
     case STMT_DECL:
-        return Decl_pos(s.decl.decl)
+        return s.decl.decl.pos
     case STMT_EMPTY:
         return s.empty.pos
     case STMT_EXPR:
-        return Expr_pos(s.expr.x)
+        return s.expr.x.pos()
     case STMT_IF:
         return s.if_.pos
     case STMT_ITER:
@@ -597,9 +593,9 @@ fun Stmt_pos(s *Stmt) token.Pos {
     case STMT_JUMP:
         return s.jump.pos
     case STMT_LABEL:
-        return Expr_pos(s.label.label)
+        return s.label.label.pos()
     case STMT_POSTFIX:
-        return Expr_pos(s.postfix.x)
+        return s.postfix.x.pos()
     case STMT_RETURN:
         return s.return_.pos
     case STMT_SWITCH:

@@ -490,12 +490,12 @@ fun Checker_error(c *Checker, pos token.Pos, msg runtime.charstr) {
 fun Checker_resolve(c *Checker, s *ast.Scope, x *ast.Expr) {
     assert(x.kind == ast.EXPR_IDENT)
     if x.ident.obj {
-        Checker_error(c, ast.Expr_pos(x), C.sprintf("already resolved: %s", x.ident.name))
+        Checker_error(c, x.pos(), C.sprintf("already resolved: %s", x.ident.name))
     }
     if ast.resolve(s, x) {
         return
     }
-    Checker_error(c, ast.Expr_pos(x), C.sprintf("unresolved: %s", x.ident.name))
+    Checker_error(c, x.pos(), C.sprintf("unresolved: %s", x.ident.name))
 }
 
 fun Checker_declare(c *Checker, decl *ast.Decl, data voidptr, scope *ast.Scope, kind ast.ObjKind, ident *ast.Expr) {
@@ -592,7 +592,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
         }
         break
     default:
-        Checker_error(c, ast.Expr_pos(t), "unknown type")
+        Checker_error(c, t.pos(), "unknown type")
         break
     }
 }
@@ -600,7 +600,7 @@ fun Checker_checkType(c *Checker, t *ast.Expr) {
 fun Checker_checkIdent(c *Checker, expr *ast.Expr) *ast.Expr {
     assert(expr.kind == ast.EXPR_IDENT)
     if expr.ident.obj == nil {
-        Checker_error(c, ast.Expr_pos(expr), "unresolved identifier")
+        Checker_error(c, expr.pos(), "unresolved identifier")
     }
     return getDeclType(expr.ident.obj.decl)
 }
@@ -624,7 +624,7 @@ fun Checker_checkArrayLit(c *Checker, x *ast.Expr) {
             elt.key_value.isArray = true
             var indexT = Checker_checkExpr(c, elt.key_value.key)
             if !isInteger(indexT) {
-                Checker_error(c, ast.Expr_pos(elt), C.sprintf("not a valid index: %s", exprString(elt.key_value.key)))
+                Checker_error(c, elt.pos(), C.sprintf("not a valid index: %s", exprString(elt.key_value.key)))
             }
             elt = elt.key_value.value
         }
@@ -652,11 +652,11 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             expectKV = true
             var key = elt.key_value.key
             if !ast.isIdent(key) {
-                Checker_error(c, ast.Expr_pos(x), "key must be an identifier")
+                Checker_error(c, x.pos(), "key must be an identifier")
             }
             var field = getStructFieldByName(x.composite.type, key)
             if field == nil {
-                Checker_error(c, ast.Expr_pos(key),
+                Checker_error(c, key.pos(),
                     C.sprintf("no member named '%s' in '%s'",
                         exprString(key), typeString(x.composite.type)))
             }
@@ -665,7 +665,7 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             elt = elt.key_value.value
         } else {
             if expectKV {
-                Checker_error(c, ast.Expr_pos(x), "expected a key/value expr")
+                Checker_error(c, x.pos(), "expected a key/value expr")
             }
             var field = getStructField(x.composite.type, i)
             fieldT = field.field.type
@@ -682,7 +682,7 @@ fun Checker_checkStructLit(c *Checker, x *ast.Expr) {
             eltT = Checker_checkExpr(c, elt)
         }
         if !areAssignable(fieldT, eltT) {
-            Checker_error(c, ast.Expr_pos(elt), C.sprintf("cannot init field of type `%s` with value of type `%s`", typeString(fieldT), typeString(eltT)))
+            Checker_error(c, elt.pos(), C.sprintf("cannot init field of type `%s` with value of type `%s`", typeString(fieldT), typeString(eltT)))
         }
     }
 }
@@ -699,7 +699,7 @@ fun Checker_checkCompositeLit(c *Checker, x *ast.Expr) *ast.Expr {
         Checker_checkStructLit(c, x)
         break
     default:
-        Checker_error(c, ast.Expr_pos(x), "composite type must be an array or a struct")
+        Checker_error(c, x.pos(), "composite type must be an array or a struct")
         break
     }
     return t
@@ -771,7 +771,7 @@ fun Checker_checkSelector(c *Checker, expr *ast.Expr) *ast.Expr {
     }
     if var base = getBaseType(type); base.kind == ast.TYPE_STRUCT {
         if var field = getStructFieldByName(type, expr.selector.sel); field == nil {
-            Checker_error(c, ast.Expr_pos(expr),
+            Checker_error(c, expr.pos(),
             C.sprintf("no member named '%s' in '%s'",
             exprString(expr.selector.sel), typeString(type)))
             return nil
@@ -780,7 +780,7 @@ fun Checker_checkSelector(c *Checker, expr *ast.Expr) *ast.Expr {
             return field.field.type
         }
     }
-    Checker_error(c, ast.Expr_pos(expr), "selector on invalid type")
+    Checker_error(c, expr.pos(), "selector on invalid type")
     return nil
 }
 
@@ -792,7 +792,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             var typ1 = Checker_checkExpr(c, expr.binary.x)
             var typ2 = Checker_checkExpr(c, expr.binary.y)
             if !areComparable(typ1, typ2) {
-                Checker_error(c, ast.Expr_pos(expr), C.sprintf("not compariable: %s and %s", typeString(typ1), typeString(typ2)))
+                Checker_error(c, expr.pos(), C.sprintf("not compariable: %s and %s", typeString(typ1), typeString(typ2)))
             }
             switch expr.binary.op {
             case token.EQUAL, token.GT, token.GT_EQUAL, token.LAND, token.LOR, token.LT, token.LT_EQUAL, token.NOT_EQUAL:
@@ -812,7 +812,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
         case token.STRING:
             return makePtr(Checker_lookupIdent(c, "char"))
         default:
-            Checker_error(c, ast.Expr_pos(expr), "unreachable")
+            Checker_error(c, expr.pos(), "unreachable")
             return nil
         }
     case ast.EXPR_CALL:
@@ -837,7 +837,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                     type = expr.call.args[0]
                     Checker_checkType(c, type)
                     if !isType(type) {
-                        Checker_error(c, ast.Expr_pos(type), "expected a type")
+                        Checker_error(c, type.pos(), "expected a type")
                     }
                     {
                         var t = ast.Expr{
@@ -854,7 +854,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                     type = expr.call.args[0]
                     Checker_checkType(c, type)
                     if !isType(type) {
-                        Checker_error(c, ast.Expr_pos(type), "expected a type")
+                        Checker_error(c, type.pos(), "expected a type")
                     }
                     {
                         var t = ast.Expr{
@@ -878,13 +878,13 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 for var i = 0; i < len(expr.call.args); i++ {
                     var param = type.func.params[j]
                     if param == nil {
-                        Checker_error(c, ast.Expr_pos(expr), "too many args")
+                        Checker_error(c, expr.pos(), "too many args")
                         break
                     }
                     var type = Checker_checkExpr(c, expr.call.args[i])
                     assert(param.kind == ast.DECL_FIELD)
                     if !areAssignable(param.field.type, type) {
-                        Checker_error(c, ast.Expr_pos(expr), C.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
+                        Checker_error(c, expr.pos(), C.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
                     }
                     if param.field.type.kind != ast.TYPE_ELLIPSIS {
                         j++
@@ -892,7 +892,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 }
                 return type.func.result
             } else {
-                Checker_error(c, ast.Expr_pos(expr), C.sprintf("`%s` is not a func", exprString(expr.call.func)))
+                Checker_error(c, expr.pos(), C.sprintf("`%s` is not a func", exprString(expr.call.func)))
             }
         }
     case ast.EXPR_COMPOSITE_LIT:
@@ -918,7 +918,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
                 type = base.star.x
                 break
             default:
-                Checker_error(c, ast.Expr_pos(expr), C.sprintf("indexing a non-array or pointer `%s`", typeString(type)))
+                Checker_error(c, expr.pos(), C.sprintf("indexing a non-array or pointer `%s`", typeString(type)))
                 break
             }
             var typ2 = Checker_checkExpr(c, expr.index.index)
@@ -940,10 +940,10 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             case ast.EXPR_STAR:
                 return base.star.x
             case ast.TYPE_ARRAY:
-                Checker_warning(c, ast.Expr_pos(expr), C.sprintf("derefencing an array `%s`", typeString(type)))
+                Checker_warning(c, expr.pos(), C.sprintf("derefencing an array `%s`", typeString(type)))
                 return base.array_.elt
             default:
-                Checker_error(c, ast.Expr_pos(expr), C.sprintf("derefencing a non-pointer `%s`", typeString(type)))
+                Checker_error(c, expr.pos(), C.sprintf("derefencing a non-pointer `%s`", typeString(type)))
                 return nil
             }
         }
@@ -954,7 +954,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             var t2 = expr.ternary.x ? Checker_checkExpr(c, expr.ternary.x) : t1
             var t3 = Checker_checkExpr(c, expr.ternary.y)
             if !areComparable(t2, t3) {
-                Checker_error(c, ast.Expr_pos(expr), "not comparable")
+                Checker_error(c, expr.pos(), "not comparable")
             }
             return t2
         }
@@ -964,7 +964,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             switch expr.unary.op {
             case token.AND:
                 if !isLhs(expr.unary.x) {
-                    Checker_error(c, ast.Expr_pos(expr), C.sprintf("invalid lvalue `%s`", exprString(expr.unary.x)))
+                    Checker_error(c, expr.pos(), C.sprintf("invalid lvalue `%s`", exprString(expr.unary.x)))
                 }
                 return makePtr(type)
             case token.LAND:
@@ -975,7 +975,7 @@ fun Checker_checkExpr(c *Checker, expr *ast.Expr) *ast.Expr {
             return type
         }
     default:
-        Checker_error(c, ast.Expr_pos(expr), "unknown expr")
+        Checker_error(c, expr.pos(), "unknown expr")
         return nil
     }
 }
@@ -985,15 +985,15 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
     case ast.STMT_ASSIGN:
         {
             if !isLhs(stmt.assign.x) {
-                Checker_error(c, ast.Stmt_pos(stmt), C.sprintf("invalid lvalue `%s`", exprString(stmt.assign.x)))
+                Checker_error(c, stmt.pos(), C.sprintf("invalid lvalue `%s`", exprString(stmt.assign.x)))
             }
             var a = Checker_checkExpr(c, stmt.assign.x)
             if a.is_const {
-                Checker_error(c, ast.Stmt_pos(stmt), "cannot assign to const var")
+                Checker_error(c, stmt.pos(), "cannot assign to const var")
             }
             var b = Checker_checkExpr(c, stmt.assign.y)
             if !areAssignable(a, b) {
-                Checker_error(c, ast.Stmt_pos(stmt), C.sprintf("not assignable: `%s` and `%s`", typeString(a), typeString(b)))
+                Checker_error(c, stmt.pos(), C.sprintf("not assignable: `%s` and `%s`", typeString(a), typeString(b)))
             }
         }
         break
@@ -1057,10 +1057,10 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
             var a = c.result
             var b = Checker_checkExpr(c, stmt.return_.x)
             if a == nil {
-                Checker_error(c, ast.Stmt_pos(stmt), "returning value in void function")
+                Checker_error(c, stmt.pos(), "returning value in void function")
             }
             if !areAssignable(a, b) {
-                Checker_error(c, ast.Stmt_pos(stmt), C.sprintf("not returnable: %s and %s", typeString(a), typeString(b)))
+                Checker_error(c, stmt.pos(), C.sprintf("not returnable: %s and %s", typeString(a), typeString(b)))
             }
         }
         break
@@ -1073,7 +1073,7 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
                 for var j = 0; j < len(clause.case_.exprs); j++ {
                     var type2 = Checker_checkExpr(c, clause.case_.exprs[j])
                     if !areComparable(type1, type2) {
-                        Checker_error(c, ast.Stmt_pos(stmt), C.sprintf("not comparable: %s and %s", typeString(type1), typeString(type2)))
+                        Checker_error(c, stmt.pos(), C.sprintf("not comparable: %s and %s", typeString(type1), typeString(type2)))
                     }
                 }
                 for var j = 0; j < len(clause.case_.stmts); j++ {
@@ -1083,7 +1083,7 @@ fun Checker_checkStmt(c *Checker, stmt *ast.Stmt) {
         }
         break
     default:
-        Checker_error(c, ast.Stmt_pos(stmt), "unknown stmt")
+        Checker_error(c, stmt.pos(), "unknown stmt")
     }
 }
 
@@ -1195,7 +1195,7 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
                     type = type.star.x
                 }
                 if type.kind != ast.EXPR_IDENT {
-                    Checker_error(c, ast.Expr_pos(recv.field.type),
+                    Checker_error(c, recv.field.type.pos(),
                         "can't declare method on non-alias")
                 }
                 var obj = type.ident.obj

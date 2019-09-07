@@ -397,7 +397,7 @@ fun declarator(p *parser.Parser, typePtr **ast.Expr) *ast.Expr {
         var type = ast.Expr{
             kind: ast.TYPE_FUNC,
             func: {
-                pos: ast.Expr_pos(*typePtr),
+                pos: (*typePtr).pos(),
                 result: *typePtr,
                 params: params,
             },
@@ -839,7 +839,7 @@ fun compoundStmt(p *parser.Parser, allow_single bool) *ast.Stmt {
         var stmt = statement(p)
         assert(stmt.kind != ast.STMT_DECL)
         append(stmts, stmt)
-        pos = ast.Stmt_pos(stmt)
+        pos = stmt.pos()
     } else {
         pos = parser.expect(p, token.LBRACE)
         while p.tok != token.RBRACE {
