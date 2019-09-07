@@ -1064,30 +1064,9 @@ fun Checker_checkDecl(c *Checker, decl *ast.Decl) {
     switch decl.kind {
     case ast.DECL_FUNC:
         {
-            var pkgScope = c.pkg.scope
             Checker_checkType(c, decl.func.type)
             Checker_openScope(c)
             if var recv = decl.func.recv; recv != nil {
-                var type = recv.field.type
-                Checker_checkType(c, type)
-                if type.kind == ast.EXPR_STAR {
-                    type = type.star.x
-                }
-                if type.kind != ast.EXPR_IDENT {
-                    Checker_error(c, ast.Expr_pos(recv.field.type),
-                        "can't declare method on non-alias")
-                }
-                var obj = type.ident.obj
-                var typeScope *ast.Scope = obj.data
-                if obj.data == nil {
-                    typeScope = ast.Scope_new(pkgScope)
-                    typeScope.pkgName = type
-                    obj.data = typeScope
-                }
-                assert(obj.data)
-                assert(typeScope.pkgName)
-                // declare method in pkg scope
-                Checker_declare(c, decl, obj.data, typeScope, ast.ObjKind_FUN, decl.func.name)
                 // declare recv in method scope
                 Checker_declare(c, recv, nil, c.pkg.scope, ast.ObjKind_VAL, recv.field.name)
             }
@@ -1165,10 +1144,30 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
     }
     for var i = 0; i < len(file.decls); i++ {
         var kind = ast.ObjKind_BAD
-        var d = file.decls[i]
-        switch d.kind {
+        var decl = file.decls[i]
+        switch decl.kind {
         case ast.DECL_FUNC:
-            if d.func.recv {
+            if var recv = decl.func.recv; recv {
+                var type = recv.field.type
+                Checker_checkType(c, type)
+                if type.kind == ast.EXPR_STAR {
+                    type = type.star.x
+                }
+                if type.kind != ast.EXPR_IDENT {
+                    Checker_error(c, ast.Expr_pos(recv.field.type),
+                        "can't declare method on non-alias")
+                }
+                var obj = type.ident.obj
+                var typeScope *ast.Scope = obj.data
+                if obj.data == nil {
+                    typeScope = ast.Scope_new(c.pkg.scope)
+                    typeScope.pkgName = type
+                    obj.data = typeScope
+                }
+                assert(obj.data)
+                assert(typeScope.pkgName)
+                // declare method in pkg scope
+                Checker_declare(c, decl, obj.data, typeScope, ast.ObjKind_FUN, decl.func.name)
                 continue // don't declare methods
             }
             kind = ast.ObjKind_FUN
@@ -1179,7 +1178,7 @@ fun Checker_checkFile(c *Checker, file *ast.File) {
         default:
             continue
         }
-        Checker_declare(c, d, nil, c.pkg.scope, kind, d.type.name)
+        Checker_declare(c, decl, nil, c.pkg.scope, kind, decl.type.name)
     }
     for var i = 0; i < len(file.decls); i++ {
         Checker_checkDecl(c, file.decls[i])
