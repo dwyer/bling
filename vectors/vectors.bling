@@ -15,20 +15,12 @@ fun (u Vec2) add(v Vec2) Vec2 {
     return w
 }
 
-fun (u Vec2) scale(z Unit) Vec2 {
+fun (u Vec2) scale(s Unit) Vec2 {
     var w Vec2 = {
-        x: u.x * z,
-        y: u.y * z,
+        x: u.x * s,
+        y: u.y * s,
     }
     return w
-}
-
-fun V2_add(u Vec2, v Vec2) Vec2 {
-    return u.add(v)
-}
-
-fun V2_scale(u Vec2, s Unit) Vec2 {
-    return u.scale(s)
 }
 
 typ Vec3 struct {
@@ -36,7 +28,7 @@ typ Vec3 struct {
     z Unit
 }
 
-fun V3_add(u Vec3, v Vec3) Vec3 {
+fun (u Vec3) add(v Vec3) Vec3 {
     var w Vec3 = {
         x: u.x + v.x,
         y: u.y + v.y,
@@ -45,7 +37,7 @@ fun V3_add(u Vec3, v Vec3) Vec3 {
     return w
 }
 
-fun V3_scale(u Vec3, s Unit) Vec3 {
+fun (u Vec3) scale(s Unit) Vec3 {
     var w Vec3 = {
         x: u.x * s,
         y: u.y * s,
