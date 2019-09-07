@@ -16,7 +16,7 @@ typ Parser struct {
     pos token.Pos
     tok token.Token
     lit runtime.charptr
-    c_mode bool
+    cMode bool
     exprLev int
     numIdents int
     typeNames map *ast.Expr
@@ -51,11 +51,11 @@ fun unparen(x *ast.Expr) *ast.Expr {
     return x
 }
 
-fun next(p *Parser) {
+fun (p *Parser) next() {
     p.tok = p.scanner.scan(&p.pos, &p.lit)
 }
 
-fun init(p *Parser, fset *token.FileSet, filename runtime.charstr, src runtime.charptr) {
+fun (p *Parser) init(fset *token.FileSet, filename runtime.charstr, src runtime.charptr) {
     assert(fset)
     p.file = fset.addFile(filename, -1, runtime.strlen(src))
     p.lit = nil
@@ -63,15 +63,15 @@ fun init(p *Parser, fset *token.FileSet, filename runtime.charstr, src runtime.c
     p.scanner.dontInsertSemis = !bytes.hasSuffix(filename, ".bling")
     p.exprLev = 0
     p.typeNames = makemap(*ast.Expr)
-    next(p)
+    p.next()
 }
 
-fun error(p *Parser, pos token.Pos, msg runtime.charptr) {
+fun (p *Parser) error(pos token.Pos, msg runtime.charptr) {
     var position = p.file.position(pos)
     panic(C.sprintf("%s: %s\n%s", position.string(), msg, p.file.lineString(position.line)))
 }
 
-fun errorExpected(p *Parser, pos token.Pos, msg runtime.charptr) {
+fun (p *Parser) errorExpected(pos token.Pos, msg runtime.charptr) {
     var buf = bytes.Buffer{}
     buf.write("expected ", -1, nil)
     buf.write(msg, -1, nil)
@@ -86,32 +86,32 @@ fun errorExpected(p *Parser, pos token.Pos, msg runtime.charptr) {
         }
     }
     msg = buf.toString()
-    error(p, pos, msg)
+    p.error(pos, msg)
     runtime.free(msg)
 }
 
-fun accept(p *Parser, tok0 token.Token) bool {
+fun (p *Parser) accept(tok0 token.Token) bool {
     if p.tok == tok0 {
-        next(p)
+        p.next()
         return true
     }
     return false
 }
 
-fun expect(p *Parser, tok token.Token) token.Pos {
+fun (p *Parser) expect(tok token.Token) token.Pos {
     var pos = p.pos
     if p.tok != tok {
         var lit = p.lit
         if lit == nil {
             lit = p.tok.string()
         }
-        errorExpected(p, pos, tok.string())
+        p.errorExpected(pos, tok.string())
     }
-    next(p)
+    p.next()
     return pos
 }
 
-fun checkExpr(p *Parser, x *ast.Expr) *ast.Expr {
+fun (p *Parser) checkExpr(x *ast.Expr) *ast.Expr {
     switch unparen(x).kind {
     case ast.EXPR_IDENT, ast.EXPR_BASIC_LIT, ast.EXPR_BINARY, ast.EXPR_CALL, ast.EXPR_CAST, ast.EXPR_COMPOSITE_LIT, ast.EXPR_INDEX, ast.EXPR_SELECTOR, ast.EXPR_SIZEOF, ast.EXPR_STAR, ast.EXPR_TERNARY, ast.EXPR_UNARY:
         break
@@ -119,28 +119,28 @@ fun checkExpr(p *Parser, x *ast.Expr) *ast.Expr {
         panic("unreachable")
         break
     default:
-        errorExpected(p, x.pos(), "expression")
+        p.errorExpected(x.pos(), "expression")
         break
     }
     return x
 }
 
-fun checkExprOrType(p *Parser, x *ast.Expr) *ast.Expr {
+fun (p *Parser) checkExprOrType(x *ast.Expr) *ast.Expr {
     return x
 }
 
-fun parseRhs(p *Parser) *ast.Expr {
-    return checkExpr(p, parseExpr(p))
+fun (p *Parser) parseRhs() *ast.Expr {
+    return p.checkExpr(p.parseExpr())
 }
 
-fun parseRhsOrType(p *Parser) *ast.Expr {
-    return checkExprOrType(p, parseExpr(p))
+fun (p *Parser) parseRhsOrType() *ast.Expr {
+    return p.checkExprOrType(p.parseExpr())
 }
 
-fun parseBasicLit(p *Parser, kind token.Token) *ast.Expr {
+fun (p *Parser) parseBasicLit(kind token.Token) *ast.Expr {
     var value = p.lit
     p.lit = nil
-    var pos = expect(p, kind)
+    var pos = p.expect(kind)
     var x = ast.Expr{
         kind: ast.EXPR_BASIC_LIT,
         basic: {
@@ -152,7 +152,7 @@ fun parseBasicLit(p *Parser, kind token.Token) *ast.Expr {
     return &&x
 }
 
-fun parseIdent(p *Parser) *ast.Expr {
+fun (p *Parser) parseIdent() *ast.Expr {
     var x = ast.Expr{
         kind: ast.EXPR_IDENT,
         ident: {
@@ -163,63 +163,63 @@ fun parseIdent(p *Parser) *ast.Expr {
         x.ident.name = p.lit
         p.lit = nil
     }
-    expect(p, token.IDENT)
+    p.expect(token.IDENT)
     p.numIdents++
     return &&x
 }
 
-fun parseOperand(p *Parser) *ast.Expr {
+fun (p *Parser) parseOperand() *ast.Expr {
     switch p.tok {
     case token.IDENT:
-        return parseIdent(p)
+        return p.parseIdent()
     case token.CHAR, token.FLOAT, token.INT, token.STRING:
-        return parseBasicLit(p, p.tok)
+        return p.parseBasicLit(p.tok)
     case token.LPAREN:
-        if p.c_mode {
-            error(p, p.pos, "unreachable")
+        if p.cMode {
+            p.error(p.pos, "unreachable")
         } else {
             var pos = p.pos
-            expect(p, token.LPAREN)
+            p.expect(token.LPAREN)
             p.exprLev++
             var x = ast.Expr{
                 kind: ast.EXPR_PAREN,
                 paren: {
                     pos: pos,
-                    x: parseRhsOrType(p),
+                    x: p.parseRhsOrType(),
                 },
             }
             p.exprLev--
-            expect(p, token.RPAREN)
+            p.expect(token.RPAREN)
             return &&x
         }
     default:
         break
     }
-    if !p.c_mode {
-        if var t = tryType(p); t != nil {
+    if !p.cMode {
+        if var t = p.tryType(); t != nil {
             return t
         }
     }
-    errorExpected(p, p.pos, "operand")
+    p.errorExpected(p.pos, "operand")
     return nil
 }
 
-fun parseValue(p *Parser) *ast.Expr {
+fun (p *Parser) parseValue() *ast.Expr {
     if p.tok == token.LBRACE {
-        return parseLiteralValue(p, nil)
+        return p.parseLiteralValue(nil)
     }
-    return checkExpr(p, parseExpr(p))
+    return p.checkExpr(p.parseExpr())
 }
 
-fun parseElement(p *Parser) *ast.Expr {
-    var value = parseValue(p)
-    if value.kind == ast.EXPR_IDENT && accept(p, token.COLON) {
+fun (p *Parser) parseElement() *ast.Expr {
+    var value = p.parseValue()
+    if value.kind == ast.EXPR_IDENT && p.accept(token.COLON) {
         var key = value
         var x = ast.Expr{
             kind: ast.EXPR_KEY_VALUE,
             key_value: {
                 key: key,
-                value: parseValue(p),
+                value: p.parseValue(),
             },
         }
         value = &&x
@@ -227,27 +227,27 @@ fun parseElement(p *Parser) *ast.Expr {
     return value
 }
 
-fun parseElementList(p *Parser) []*ast.Expr {
+fun (p *Parser) parseElementList() []*ast.Expr {
     var list = makearray(*ast.Expr)
     while p.tok != token.RBRACE && p.tok != token.EOF {
-        var value = parseElement(p)
+        var value = p.parseElement()
         append(list, value)
-        if !accept(p, token.COMMA) {
+        if !p.accept(token.COMMA) {
             break
         }
     }
     return list
 }
 
-fun parseLiteralValue(p *Parser, type *ast.Expr) *ast.Expr {
-    var pos = expect(p, token.LBRACE)
+fun (p *Parser) parseLiteralValue(type *ast.Expr) *ast.Expr {
+    var pos = p.expect(token.LBRACE)
     if type {
         pos = type.pos()
     }
     p.exprLev++
-    var list = parseElementList(p)
+    var list = p.parseElementList()
     p.exprLev--
-    expect(p, token.RBRACE)
+    p.expect(token.RBRACE)
     var expr = ast.Expr{
         kind: ast.EXPR_COMPOSITE_LIT,
         composite: {
@@ -259,34 +259,34 @@ fun parseLiteralValue(p *Parser, type *ast.Expr) *ast.Expr {
     return &&expr
 }
 
-fun parseIndexExpr(p *Parser, x *ast.Expr) *ast.Expr {
-    expect(p, token.LBRACK)
+fun (p *Parser) parseIndexExpr(x *ast.Expr) *ast.Expr {
+    p.expect(token.LBRACK)
     p.exprLev++
     var y = ast.Expr{
         kind: ast.EXPR_INDEX,
         index: {
             x: x,
-            index: parseRhs(p),
+            index: p.parseRhs(),
         },
     }
     p.exprLev--
-    expect(p, token.RBRACK)
+    p.expect(token.RBRACK)
     return &&y
 }
 
-fun parseCallExpr(p *Parser, x *ast.Expr) *ast.Expr {
+fun (p *Parser) parseCallExpr(x *ast.Expr) *ast.Expr {
     var args = makearray(*ast.Expr)
-    expect(p, token.LPAREN)
+    p.expect(token.LPAREN)
     p.exprLev++
     while p.tok != token.RPAREN {
-        var x = parseRhsOrType(p)
+        var x = p.parseRhsOrType()
         append(args, x)
-        if !accept(p, token.COMMA) {
+        if !p.accept(token.COMMA) {
             break
         }
     }
     p.exprLev--
-    expect(p, token.RPAREN)
+    p.expect(token.RPAREN)
     var call = ast.Expr{
         kind: ast.EXPR_CALL,
         call: {
@@ -297,34 +297,34 @@ fun parseCallExpr(p *Parser, x *ast.Expr) *ast.Expr {
     return &&call
 }
 
-fun parseSelector(p *Parser, x *ast.Expr) *ast.Expr {
+fun (p *Parser) parseSelector(x *ast.Expr) *ast.Expr {
     var y = ast.Expr{
         kind: ast.EXPR_SELECTOR,
         selector: {
             x: x,
             tok: token.PERIOD,
-            sel: parseIdent(p),
+            sel: p.parseIdent(),
         },
     }
     return &&y
 }
 
-fun parsePrimaryExpr(p *Parser) *ast.Expr {
-    for var x = parseOperand(p);; {
+fun (p *Parser) parsePrimaryExpr() *ast.Expr {
+    for var x = p.parseOperand();; {
         switch p.tok {
         case token.PERIOD:
-            next(p)
-            x = parseSelector(p, checkExprOrType(p, x))
+            p.next()
+            x = p.parseSelector(p.checkExprOrType(x))
             break
         case token.LBRACK:
-            x = parseIndexExpr(p, checkExpr(p, x))
+            x = p.parseIndexExpr(p.checkExpr(x))
             break
         case token.LPAREN:
-            x = parseCallExpr(p, checkExprOrType(p, x))
+            x = p.parseCallExpr(p.checkExprOrType(x))
             break
         case token.LBRACE:
             if isLiteralType(x) && (p.exprLev >= 0 || !isTypeName(x)) {
-                x = parseLiteralValue(p, x)
+                x = p.parseLiteralValue(x)
                 break
             } else {
                 return x
@@ -335,19 +335,19 @@ fun parsePrimaryExpr(p *Parser) *ast.Expr {
     }
 }
 
-fun parseUnaryExpr(p *Parser) *ast.Expr {
+fun (p *Parser) parseUnaryExpr() *ast.Expr {
     switch p.tok {
     case token.ADD, token.AND, token.BITWISE_NOT, token.LAND, token.NOT, token.SUB:
         {
             var pos = p.pos
             var op = p.tok
-            next(p)
+            p.next()
             var x = ast.Expr{
                 kind: ast.EXPR_UNARY,
                 unary: {
                     pos: pos,
                     op: op,
-                    x: checkExpr(p, parseUnaryExpr(p)),
+                    x: p.checkExpr(p.parseUnaryExpr()),
                 },
             }
             return &&x
@@ -355,12 +355,12 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
     case token.MUL:
         {
             var pos = p.pos
-            next(p)
+            p.next()
             var x = ast.Expr{
                 kind: ast.EXPR_STAR,
                 star: {
                     pos: pos,
-                    x: checkExprOrType(p, parseUnaryExpr(p)),
+                    x: p.checkExprOrType(p.parseUnaryExpr()),
                 },
             }
             return &&x
@@ -368,72 +368,72 @@ fun parseUnaryExpr(p *Parser) *ast.Expr {
     case token.SIZEOF:
         {
             var pos = p.pos
-            next(p)
-            expect(p, token.LPAREN)
+            p.next()
+            p.expect(token.LPAREN)
             var x = ast.Expr{
                 kind: ast.EXPR_SIZEOF,
                 sizeof_: {
                     pos: pos,
-                    x: parseType(p),
+                    x: p.parseType(),
                 },
             }
-            expect(p, token.RPAREN)
+            p.expect(token.RPAREN)
             return &&x
         }
     case token.TYPE:
         {
             var pos = p.pos
-            expect(p, token.TYPE)
-            var type = parseType(p)
+            p.expect(token.TYPE)
+            var type = p.parseType()
             if p.tok == token.LBRACE {
-                return parseLiteralValue(p, type)
+                return p.parseLiteralValue(type)
             }
             var y = ast.Expr{
                 kind: ast.EXPR_CAST,
                 cast: {
                     pos: pos,
                     type: type,
-                    expr: parseUnaryExpr(p),
+                    expr: p.parseUnaryExpr(),
                 },
             }
             return &&y
         }
     default:
-        return parsePrimaryExpr(p)
+        return p.parsePrimaryExpr()
     }
 }
 
-fun parseBinaryExpr(p *Parser, prec1 int) *ast.Expr {
-    var x = parseUnaryExpr(p)
+fun (p *Parser) parseBinaryExpr(prec1 int) *ast.Expr {
+    var x = p.parseUnaryExpr()
     for ;; {
         var op = p.tok
         var oprec = op.precedence()
         if oprec < prec1 {
             return x
         }
-        expect(p, op)
-        var y = parseBinaryExpr(p, oprec + 1)
+        p.expect(op)
+        var y = p.parseBinaryExpr(oprec + 1)
         var z = ast.Expr{
             kind: ast.EXPR_BINARY,
             binary: {
-                x: checkExpr(p, x),
                 op: op,
-                y: checkExpr(p, y),
+                x: p.checkExpr(x),
+                y: p.checkExpr(y),
             },
         }
         x = &&z
     }
 }
 
-fun parseTernaryExpr(p *Parser) *ast.Expr {
-    var x = parseBinaryExpr(p, token.lowest_prec + 1)
-    if accept(p, token.QUESTION_MARK) {
+fun (p *Parser) parseTernaryExpr() *ast.Expr {
+    var x = p.parseBinaryExpr(token.lowest_prec + 1)
+    if p.accept(token.QUESTION_MARK) {
         var consequence *ast.Expr = nil
         if p.tok != token.COLON {
-            consequence = parseExpr(p)
+            consequence = p.parseExpr()
         }
-        expect(p, token.COLON)
-        var alternative = parseTernaryExpr(p)
+        p.expect(token.COLON)
+        var alternative = p.parseTernaryExpr()
         var y = ast.Expr{
             kind: ast.EXPR_TERNARY,
             ternary: {
@@ -447,19 +447,19 @@ fun parseTernaryExpr(p *Parser) *ast.Expr {
     return x
 }
 
-fun parseExpr(p *Parser) *ast.Expr {
-    return parseTernaryExpr(p)
+fun (p *Parser) parseExpr() *ast.Expr {
+    return p.parseTernaryExpr()
 }
 
-fun parseTypeName(p *Parser) *ast.Expr {
-    var x = parseIdent(p)
-    if accept(p, token.PERIOD) {
+fun (p *Parser) parseTypeName() *ast.Expr {
+    var x = p.parseIdent()
+    if p.accept(token.PERIOD) {
         var y = ast.Expr{
             kind: ast.EXPR_SELECTOR,
             selector: {
                 x: x,
                 tok: token.DOLLAR,
-                sel: parseIdent(p),
+                sel: p.parseIdent(),
             },
         }
         x = &&y
@@ -467,26 +467,26 @@ fun parseTypeName(p *Parser) *ast.Expr {
     return x
 }
 
-fun parseArrayType(p *Parser) *ast.Expr {
+fun (p *Parser) parseArrayType() *ast.Expr {
     var pos = p.pos
-    expect(p, token.LBRACK)
+    p.expect(token.LBRACK)
     var len *ast.Expr = nil
     var dynamic = false
     if p.tok != token.RBRACK {
-        if !accept(p, token.QUESTION_MARK) {
+        if !p.accept(token.QUESTION_MARK) {
             p.exprLev++
-            len = parseRhs(p)
+            len = p.parseRhs()
             p.exprLev--
         }
     } else {
         dynamic = true
     }
-    expect(p, token.RBRACK)
+    p.expect(token.RBRACK)
     var type = ast.Expr{
         kind: ast.TYPE_ARRAY,
         array_: {
             pos: pos,
-            elt: parseType(p),
+            elt: p.parseType(),
             len: len,
             dynamic: dynamic,
         },
@@ -495,40 +495,40 @@ fun parseArrayType(p *Parser) *ast.Expr {
     return nil
 }
 
-fun parseFieldDecl(p *Parser) *ast.Decl {
+fun (p *Parser) parseFieldDecl() *ast.Decl {
     var decl = ast.Decl{
         kind: ast.DECL_FIELD,
         pos: p.pos,
     }
     if p.tok == token.UNION {
-        decl.field.type = parseType(p)
+        decl.field.type = p.parseType()
     } else {
-        decl.field.name = parseIdent(p)
+        decl.field.name = p.parseIdent()
         if p.tok == token.SEMICOLON {
             decl.field.type = decl.field.name
             decl.field.name = nil
         } else {
-            decl.field.type = parseType(p)
+            decl.field.type = p.parseType()
         }
     }
     var d = &&decl
-    expect(p, token.SEMICOLON)
+    p.expect(token.SEMICOLON)
     return d
 }
 
-fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
+fun (p *Parser) parseStructOrUnionType(keyword token.Token) *ast.Expr {
     var pos = p.pos
-    expect(p, keyword)
+    p.expect(keyword)
     var fields = makearray(*ast.Decl)
-    if accept(p, token.LBRACE) {
+    if p.accept(token.LBRACE) {
         for ;; {
-            var field = parseFieldDecl(p)
+            var field = p.parseFieldDecl()
             append(fields, field)
             if p.tok == token.RBRACE {
                 break
             }
         }
-        expect(p, token.RBRACE)
+        p.expect(token.RBRACE)
     }
     var x = ast.Expr{
         kind: ast.TYPE_STRUCT,
@@ -541,47 +541,47 @@ fun parseStructOrUnionType(p *Parser, keyword token.Token) *ast.Expr {
     return &&x
 }
 
-fun parsePointerType(p *Parser) *ast.Expr {
+fun (p *Parser) parsePointerType() *ast.Expr {
     var pos = p.pos
-    expect(p, token.MUL)
+    p.expect(token.MUL)
     var x = ast.Expr{
         kind: ast.EXPR_STAR,
         star: {
             pos: pos,
-            x: parseType(p),
+            x: p.parseType(),
         },
     }
     return &&x
 }
 
-fun parseParam(p *Parser, anon bool) *ast.Decl {
+fun (p *Parser) parseParam(anon bool) *ast.Decl {
     var decl = ast.Decl{
         kind: ast.DECL_FIELD,
         pos: p.pos,
     }
     if p.tok == token.IDENT {
-        decl.field.name = parseIdent(p)
+        decl.field.name = p.parseIdent()
     }
     if decl.field.name != nil && (p.tok == token.COMMA || p.tok == token.RPAREN) {
         decl.field.type = decl.field.name
         decl.field.name = nil
     } else {
-        decl.field.type = parseType(p)
+        decl.field.type = p.parseType()
     }
     var d = &&decl
     return d
 }
 
-fun parseParameterList(p *Parser, anon bool) []*ast.Decl {
+fun (p *Parser) parseParameterList(anon bool) []*ast.Decl {
     var params = makearray(*ast.Decl)
     for ;; {
-        var param = parseParam(p, false)
+        var param = p.parseParam(false)
         append(params, param)
-        if !accept(p, token.COMMA) {
+        if !p.accept(token.COMMA) {
             break
         }
         if p.tok == token.ELLIPSIS {
-            var pos = expect(p, token.ELLIPSIS)
+            var pos = p.expect(token.ELLIPSIS)
             var type = ast.Expr{
                 kind: ast.TYPE_ELLIPSIS,
                 ellipsis: {
@@ -603,22 +603,22 @@ fun parseParameterList(p *Parser, anon bool) []*ast.Decl {
     return params
 }
 
-fun parseParameters(p *Parser, anon bool) []*ast.Decl {
+fun (p *Parser) parseParameters(anon bool) []*ast.Decl {
     var params = makearray(*ast.Decl)
-    expect(p, token.LPAREN)
+    p.expect(token.LPAREN)
     if p.tok != token.RPAREN {
-        params = parseParameterList(p, anon)
+        params = p.parseParameterList(anon)
     }
-    expect(p, token.RPAREN)
+    p.expect(token.RPAREN)
     return params
 }
 
-fun parseFuncType(p *Parser) *ast.Expr {
-    var pos = expect(p, token.FUNC)
-    var params = parseParameters(p, false)
+fun (p *Parser) parseFuncType() *ast.Expr {
+    var pos = p.expect(token.FUNC)
+    var params = p.parseParameters(false)
     var result *ast.Expr = nil
     if p.tok != token.SEMICOLON {
-        result = parseType(p)
+        result = p.parseType()
     }
     var type = ast.Expr{
         kind: ast.TYPE_FUNC,
@@ -638,40 +638,40 @@ fun parseFuncType(p *Parser) *ast.Expr {
     return &&ptr
 }
 
-fun parseMapType(p *Parser) *ast.Expr {
+fun (p *Parser) parseMapType() *ast.Expr {
     var pos = p.pos
-    expect(p, token.MAP)
+    p.expect(token.MAP)
     var tmp = ast.Expr{
         kind: ast.TYPE_MAP,
         map_: {
             pos: pos,
-            val: parseType(p),
+            val: p.parseType(),
         },
     }
     return &&tmp
 }
 
-fun parseEnumType(p *Parser) *ast.Expr {
+fun (p *Parser) parseEnumType() *ast.Expr {
     var pos = p.pos
-    expect(p, token.ENUM)
+    p.expect(token.ENUM)
     var enums = makearray(*ast.Decl)
-    if accept(p, token.LBRACE) {
+    if p.accept(token.LBRACE) {
         while p.tok != token.RBRACE {
             var decl = ast.Decl{
                 kind: ast.DECL_VALUE,
                 pos: p.pos,
                 value: {
-                    name: parseIdent(p),
+                    name: p.parseIdent(),
                 },
             }
-            if accept(p, token.ASSIGN) {
-                decl.value.value = parseRhs(p)
+            if p.accept(token.ASSIGN) {
+                decl.value.value = p.parseRhs()
             }
             var enumerator = &&decl
             append(enums, enumerator)
-            expect(p, token.SEMICOLON)
+            p.expect(token.SEMICOLON)
         }
-        expect(p, token.RBRACE)
+        p.expect(token.RBRACE)
     }
     var x = ast.Expr{
         kind: ast.TYPE_ENUM,
@@ -683,52 +683,52 @@ fun parseEnumType(p *Parser) *ast.Expr {
     return &&x
 }
 
-fun parseQualifiedType(p *Parser, tok token.Token) *ast.Expr {
-    expect(p, tok)
-    var type *ast.Expr = parseType(p) // XXX
+fun (p *Parser) parseQualifiedType(tok token.Token) *ast.Expr {
+    p.expect(tok)
+    var type *ast.Expr = p.parseType() // XXX
     type.is_const = true
     return type
 }
 
-fun tryType(p *Parser) *ast.Expr {
+fun (p *Parser) tryType() *ast.Expr {
     switch p.tok {
     case token.IDENT:
-        return parseTypeName(p)
+        return p.parseTypeName()
     case token.LBRACK:
-        return parseArrayType(p)
+        return p.parseArrayType()
     case token.STRUCT, token.UNION:
-        return parseStructOrUnionType(p, p.tok)
+        return p.parseStructOrUnionType(p.tok)
     case token.MUL:
-        return parsePointerType(p)
+        return p.parsePointerType()
     case token.FUNC:
-        return parseFuncType(p)
+        return p.parseFuncType()
     case token.MAP:
-        return parseMapType(p)
+        return p.parseMapType()
     case token.ENUM:
-        return parseEnumType(p)
+        return p.parseEnumType()
     case token.CONST:
-        return parseQualifiedType(p, p.tok)
+        return p.parseQualifiedType(p.tok)
     default:
         return nil
     }
 }
 
-fun parseType(p *Parser) *ast.Expr {
-    var t = tryType(p)
+fun (p *Parser) parseType() *ast.Expr {
+    var t = p.tryType()
     if t == nil {
-        errorExpected(p, p.pos, "type")
+        p.errorExpected(p.pos, "type")
     }
     return t
 }
 
-fun parseSimpleStmt(p *Parser, labelOk bool) *ast.Stmt {
-    var x = parseExpr(p)
+fun (p *Parser) parseSimpleStmt(labelOk bool) *ast.Stmt {
+    var x = p.parseExpr()
     var op = p.tok
     switch op {
     case token.ADD_ASSIGN, token.ASSIGN, token.DIV_ASSIGN, token.MOD_ASSIGN, token.MUL_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.SUB_ASSIGN, token.XOR_ASSIGN:
         {
-            next(p)
-            var y = parseRhs(p)
+            p.next()
+            var y = p.parseRhs()
             var stmt = ast.Stmt{
                 kind: ast.STMT_ASSIGN,
                 assign: {
@@ -741,7 +741,7 @@ fun parseSimpleStmt(p *Parser, labelOk bool) *ast.Stmt {
         }
     case token.INC, token.DEC:
         {
-            next(p)
+            p.next()
             var stmt = ast.Stmt{
                 kind: ast.STMT_POSTFIX,
                 postfix: {
@@ -755,12 +755,12 @@ fun parseSimpleStmt(p *Parser, labelOk bool) *ast.Stmt {
         break
     }
     if labelOk && x.kind == ast.EXPR_IDENT {
-        if accept(p, token.COLON) {
+        if p.accept(token.COLON) {
             var stmt = ast.Stmt{
                 kind: ast.STMT_LABEL,
                 label: {
                     label: x,
-                    stmt: parseStmt(p),
+                    stmt: p.parseStmt(),
                 },
             }
             return &&stmt
@@ -775,32 +775,32 @@ fun parseSimpleStmt(p *Parser, labelOk bool) *ast.Stmt {
     return &&stmt
 }
 
-fun parseForStmt(p *Parser) *ast.Stmt {
-    var pos = expect(p, token.FOR)
+fun (p *Parser) parseForStmt() *ast.Stmt {
+    var pos = p.expect(token.FOR)
     var prevLev = p.exprLev
     p.exprLev = -1
     var init *ast.Stmt = nil
-    if !accept(p, token.SEMICOLON) {
+    if !p.accept(token.SEMICOLON) {
         switch p.tok {
         case token.VAR:
-            init = parseStmt(p)
+            init = p.parseStmt()
             break
         default:
-            init = parseSimpleStmt(p, false)
+            init = p.parseSimpleStmt(false)
             break
         }
     }
     var cond *ast.Expr = nil
     if p.tok != token.SEMICOLON {
-        cond = parseRhs(p)
+        cond = p.parseRhs()
     }
-    expect(p, token.SEMICOLON)
+    p.expect(token.SEMICOLON)
     var post *ast.Stmt = nil
     if p.tok != token.LBRACE {
-        post = parseSimpleStmt(p, false)
+        post = p.parseSimpleStmt(false)
     }
     p.exprLev = prevLev
-    var body = parseBlockStmt(p)
+    var body = p.parseBlockStmt()
     var stmt = ast.Stmt{
         kind: ast.STMT_ITER,
         iter: {
@@ -815,34 +815,34 @@ fun parseForStmt(p *Parser) *ast.Stmt {
     return &&stmt
 }
 
-fun tryInitStmt(p *Parser) *ast.Stmt {
+fun (p *Parser) tryInitStmt() *ast.Stmt {
     switch p.tok {
     case token.VAR:
-        return parseDeclStmt(p)
+        return p.parseDeclStmt()
     default:
         return nil
     }
 }
 
-fun parseIfStmt(p *Parser) *ast.Stmt {
-    var pos = expect(p, token.IF)
+fun (p *Parser) parseIfStmt() *ast.Stmt {
+    var pos = p.expect(token.IF)
     var outer = p.exprLev
     p.exprLev = -1
-    var init = tryInitStmt(p)
-    var cond = parseExpr(p)
+    var init = p.tryInitStmt()
+    var cond = p.parseExpr()
     p.exprLev = outer
     if p.tok != token.LBRACE {
-        error(p, p.pos, "`if` must be followed by a compound_statement")
+        p.error(p.pos, "`if` must be followed by a compound_statement")
     }
-    var body = parseBlockStmt(p)
+    var body = p.parseBlockStmt()
     var else_ *ast.Stmt = nil
-    if accept(p, token.ELSE) {
+    if p.accept(token.ELSE) {
         if p.tok == token.IF {
-            else_ = parseStmt(p)
+            else_ = p.parseStmt()
         } else if p.tok == token.LBRACE {
-            else_ = parseBlockStmt(p)
+            else_ = p.parseBlockStmt()
         } else {
-            error(p, p.pos, "`else` must be followed by an if_statement or compound_statement")
+            p.error(p.pos, "`else` must be followed by an if_statement or compound_statement")
         }
     }
     var stmt = ast.Stmt{
@@ -858,13 +858,13 @@ fun parseIfStmt(p *Parser) *ast.Stmt {
     return &&stmt
 }
 
-fun parseReturnStmt(p *Parser) *ast.Stmt {
-    var pos = expect(p, token.RETURN)
+fun (p *Parser) parseReturnStmt() *ast.Stmt {
+    var pos = p.expect(token.RETURN)
     var x *ast.Expr = nil
     if p.tok != token.SEMICOLON {
-        x = parseRhs(p)
+        x = p.parseRhs()
     }
-    expect(p, token.SEMICOLON)
+    p.expect(token.SEMICOLON)
     var stmt = ast.Stmt{
         kind: ast.STMT_RETURN,
         return_: {
@@ -875,29 +875,29 @@ fun parseReturnStmt(p *Parser) *ast.Stmt {
     return &&stmt
 }
 
-fun parseSwitchStmt(p *Parser) *ast.Stmt {
-    var pos = expect(p, token.SWITCH)
+fun (p *Parser) parseSwitchStmt() *ast.Stmt {
+    var pos = p.expect(token.SWITCH)
     var prevLev = p.exprLev
     p.exprLev = -1
-    var tag = parseExpr(p)
+    var tag = p.parseExpr()
     p.exprLev = prevLev
-    expect(p, token.LBRACE)
+    p.expect(token.LBRACE)
     var clauses = makearray(*ast.Stmt)
     while p.tok == token.CASE || p.tok == token.DEFAULT {
         var exprs = makearray(*ast.Expr)
         var pos = p.pos
-        if accept(p, token.CASE) {
+        if p.accept(token.CASE) {
             for ;; {
-                var expr = parseRhs(p)
+                var expr = p.parseRhs()
                 append(exprs, expr)
-                if !accept(p, token.COMMA) {
+                if !p.accept(token.COMMA) {
                     break
                 }
             }
         } else {
-            expect(p, token.DEFAULT)
+            p.expect(token.DEFAULT)
         }
-        expect(p, token.COLON)
+        p.expect(token.COLON)
         var stmts = makearray(*ast.Stmt)
         var loop = true
         while loop {
@@ -909,7 +909,7 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
                 break
             }
             if loop {
-                var stmt = parseStmt(p)
+                var stmt = p.parseStmt()
                 append(stmts, stmt)
             }
         }
@@ -924,8 +924,8 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
         var clause = &&stmt
         append(clauses, clause)
     }
-    expect(p, token.RBRACE)
-    accept(p, token.SEMICOLON)
+    p.expect(token.RBRACE)
+    p.accept(token.SEMICOLON)
     var stmt = ast.Stmt{
         kind: ast.STMT_SWITCH,
         switch_: {
@@ -937,13 +937,13 @@ fun parseSwitchStmt(p *Parser) *ast.Stmt {
     return &&stmt
 }
 
-fun parseWhileStmt(p *Parser) *ast.Stmt {
-    var pos = expect(p, token.WHILE)
+fun (p *Parser) parseWhileStmt() *ast.Stmt {
+    var pos = p.expect(token.WHILE)
     var prevLev = p.exprLev
     p.exprLev = -1
-    var cond = parseExpr(p)
+    var cond = p.parseExpr()
     p.exprLev = prevLev
-    var body = parseBlockStmt(p)
+    var body = p.parseBlockStmt()
     var stmt = ast.Stmt{
         kind: ast.STMT_ITER,
         iter: {
@@ -956,13 +956,13 @@ fun parseWhileStmt(p *Parser) *ast.Stmt {
     return &&stmt
 }
 
-fun parseJumpStmt(p *Parser, keyword token.Token) *ast.Stmt {
-    var pos = expect(p, keyword)
+fun (p *Parser) parseJumpStmt(keyword token.Token) *ast.Stmt {
+    var pos = p.expect(keyword)
     var label *ast.Expr = nil
     if keyword == token.GOTO {
-        label = parseIdent(p)
+        label = p.parseIdent()
     }
-    expect(p, token.SEMICOLON)
+    p.expect(token.SEMICOLON)
     var stmt = ast.Stmt{
         kind: ast.STMT_JUMP,
         jump: {
@@ -974,39 +974,39 @@ fun parseJumpStmt(p *Parser, keyword token.Token) *ast.Stmt {
     return &&stmt
 }
 
-fun parseDeclStmt(p *Parser) *ast.Stmt {
+fun (p *Parser) parseDeclStmt() *ast.Stmt {
     var stmt = ast.Stmt{
         kind: ast.STMT_DECL,
         decl: {
-            decl: parseDecl(p),
+            decl: p.parseDecl(),
         },
     }
     return &&stmt
 }
 
-fun parseStmt(p *Parser) *ast.Stmt {
+fun (p *Parser) parseStmt() *ast.Stmt {
     switch p.tok {
     case token.VAR:
-        return parseDeclStmt(p)
+        return p.parseDeclStmt()
     case token.FOR:
-        return parseForStmt(p)
+        return p.parseForStmt()
     case token.IF:
-        return parseIfStmt(p)
+        return p.parseIfStmt()
     case token.RETURN:
-        return parseReturnStmt(p)
+        return p.parseReturnStmt()
     case token.SWITCH:
-        return parseSwitchStmt(p)
+        return p.parseSwitchStmt()
     case token.WHILE:
-        return parseWhileStmt(p)
+        return p.parseWhileStmt()
     case token.BREAK, token.CONTINUE, token.FALLTHROUGH, token.GOTO:
-        return parseJumpStmt(p, p.tok)
+        return p.parseJumpStmt(p.tok)
     case token.LBRACE:
-        return parseBlockStmt(p)
+        return p.parseBlockStmt()
     default:
         break
     }
     var pos = p.pos
-    if accept(p, token.SEMICOLON) {
+    if p.accept(token.SEMICOLON) {
         var stmt = ast.Stmt{
             kind: ast.STMT_EMPTY,
             empty: {
@@ -1015,26 +1015,26 @@ fun parseStmt(p *Parser) *ast.Stmt {
         }
         return &&stmt
     }
-    var stmt = parseSimpleStmt(p, true)
+    var stmt = p.parseSimpleStmt(true)
     if stmt.kind != ast.STMT_LABEL {
-        expect(p, token.SEMICOLON)
+        p.expect(token.SEMICOLON)
     }
     return stmt
 }
 
-fun parseStmtList(p *Parser) []*ast.Stmt {
+fun (p *Parser) parseStmtList() []*ast.Stmt {
     var stmts = makearray(*ast.Stmt)
     while p.tok != token.RBRACE {
-        append(stmts, parseStmt(p))
+        append(stmts, p.parseStmt())
     }
     return stmts
 }
 
-fun parseBody(p *Parser) *ast.Stmt {
-    var pos = expect(p, token.LBRACE)
-    var list = parseStmtList(p)
-    expect(p, token.RBRACE)
-    accept(p, token.SEMICOLON)
+fun (p *Parser) parseBody() *ast.Stmt {
+    var pos = p.expect(token.LBRACE)
+    var list = p.parseStmtList()
+    p.expect(token.RBRACE)
+    p.accept(token.SEMICOLON)
     var stmt = ast.Stmt{
         kind: ast.STMT_BLOCK,
         block: {
@@ -1045,11 +1045,11 @@ fun parseBody(p *Parser) *ast.Stmt {
     return &&stmt
 }
 
-fun parseBlockStmt(p *Parser) *ast.Stmt {
-    var pos = expect(p, token.LBRACE)
-    var list = parseStmtList(p)
-    expect(p, token.RBRACE)
-    accept(p, token.SEMICOLON)
+fun (p *Parser) parseBlockStmt() *ast.Stmt {
+    var pos = p.expect(token.LBRACE)
+    var list = p.parseStmtList()
+    p.expect(token.RBRACE)
+    p.accept(token.SEMICOLON)
     var stmt = ast.Stmt{
         kind: ast.STMT_BLOCK,
         block: {
@@ -1060,11 +1060,11 @@ fun parseBlockStmt(p *Parser) *ast.Stmt {
     return &&stmt
 }
 
-fun parsePragma(p *Parser) *ast.Decl {
+fun (p *Parser) parsePragma() *ast.Decl {
     var pos = p.pos
     var lit = p.lit
     p.lit = nil
-    expect(p, token.HASH)
+    p.expect(token.HASH)
     var decl = ast.Decl{
         kind: ast.DECL_PRAGMA,
         pos: pos,
@@ -1075,23 +1075,23 @@ fun parsePragma(p *Parser) *ast.Decl {
     return &&decl
 }
 
-fun parseValueDecl(p *Parser) *ast.Decl {
+fun (p *Parser) parseValueDecl() *ast.Decl {
     var keyword = p.tok
-    var pos = expect(p, keyword)
-    var ident = parseIdent(p)
+    var pos = p.expect(keyword)
+    var ident = p.parseIdent()
     var type *ast.Expr = nil
     if p.tok != token.ASSIGN {
-        type = parseType(p)
+        type = p.parseType()
     }
     var value *ast.Expr = nil
-    if accept(p, token.ASSIGN) {
+    if p.accept(token.ASSIGN) {
         if p.tok == token.LBRACE {
-            value = parseLiteralValue(p, nil)
+            value = p.parseLiteralValue(nil)
         } else {
-            value = parseRhs(p)
+            value = p.parseRhs()
         }
     }
-    expect(p, token.SEMICOLON)
+    p.expect(token.SEMICOLON)
     var decl = ast.Decl{
         kind: ast.DECL_VALUE,
         pos: pos,
@@ -1105,12 +1105,12 @@ fun parseValueDecl(p *Parser) *ast.Decl {
     return &&decl
 }
 
-fun parseTypeDecl(p *Parser) *ast.Decl {
+fun (p *Parser) parseTypeDecl() *ast.Decl {
     var keyword = p.tok
-    var pos = expect(p, keyword)
-    var ident = parseIdent(p)
-    var type = parseType(p)
-    expect(p, token.SEMICOLON)
+    var pos = p.expect(keyword)
+    var ident = p.parseIdent()
+    var type = p.parseType()
+    p.expect(token.SEMICOLON)
     var decl = ast.Decl{
         kind: ast.DECL_TYPE,
         pos: pos,
@@ -1122,29 +1122,29 @@ fun parseTypeDecl(p *Parser) *ast.Decl {
     return &&decl
 }
 
-fun parseFuncDecl(p *Parser) *ast.Decl {
-    var pos = expect(p, token.FUNC)
+fun (p *Parser) parseFuncDecl() *ast.Decl {
+    var pos = p.expect(token.FUNC)
     var recv *ast.Decl = nil
-    if accept(p, token.LPAREN) {
-        recv = parseParam(p, false)
-        expect(p, token.RPAREN)
+    if p.accept(token.LPAREN) {
+        recv = p.parseParam(false)
+        p.expect(token.RPAREN)
     }
-    var name = parseIdent(p)
+    var name = p.parseIdent()
     var type = ast.Expr{
         kind: ast.TYPE_FUNC,
         func: {
             pos: pos,
-            params: parseParameters(p, false),
+            params: p.parseParameters(false),
         },
     }
     if p.tok != token.LBRACE && p.tok != token.SEMICOLON {
-        type.func.result = parseType(p)
+        type.func.result = p.parseType()
     }
     var body *ast.Stmt = nil
     if p.tok == token.LBRACE {
-        body = parseBody(p)
+        body = p.parseBody()
     } else {
-        expect(p, token.SEMICOLON)
+        p.expect(token.SEMICOLON)
     }
     var decl = ast.Decl{
         kind: ast.DECL_FUNC,
@@ -1159,18 +1159,18 @@ fun parseFuncDecl(p *Parser) *ast.Decl {
     return &&decl
 }
 
-fun parseDecl(p *Parser) *ast.Decl {
+fun (p *Parser) parseDecl() *ast.Decl {
     switch p.tok {
     case token.HASH:
-        return parsePragma(p)
+        return p.parsePragma()
     case token.TYPE:
-        return parseTypeDecl(p)
+        return p.parseTypeDecl()
     case token.CONST, token.VAR:
-        return parseValueDecl(p)
+        return p.parseValueDecl()
     case token.FUNC:
-        return parseFuncDecl(p)
+        return p.parseFuncDecl()
     default:
-        error(p, p.pos, C.sprintf("cant handle it: %s", p.tok.string()))
+        p.error(p.pos, C.sprintf("cant handle it: %s", p.tok.string()))
         return nil
     }
 }
@@ -1201,21 +1201,21 @@ fun parseDir(fset *token.FileSet, path runtime.charstr, first **runtime.Error) [
     return files
 }
 
-fun _parseFile(p *Parser) *ast.File {
+fun (p *Parser) _parseFile() *ast.File {
     var name *ast.Expr = nil
     var imports = makearray(*ast.Decl)
     var decls = makearray(*ast.Decl)
     while p.tok == token.HASH {
-        append(decls, parsePragma(p))
+        append(decls, p.parsePragma())
     }
-    if accept(p, token.PACKAGE) {
-        name = parseIdent(p)
-        expect(p, token.SEMICOLON)
+    if p.accept(token.PACKAGE) {
+        name = p.parseIdent()
+        p.expect(token.SEMICOLON)
     }
     while p.tok == token.IMPORT {
-        var pos = expect(p, token.IMPORT)
-        var path = parseBasicLit(p, token.STRING)
-        expect(p, token.SEMICOLON)
+        var pos = p.expect(token.IMPORT)
+        var path = p.parseBasicLit(token.STRING)
+        p.expect(token.SEMICOLON)
         var decl = ast.Decl{
             kind: ast.DECL_IMPORT,
             pos: pos,
@@ -1226,7 +1226,7 @@ fun _parseFile(p *Parser) *ast.File {
         append(imports, &&decl)
     }
     while p.tok != token.EOF {
-        append(decls, parseDecl(p))
+        append(decls, p.parseDecl())
     }
     var file = ast.File{
         filename: p.file.name,
@@ -1244,7 +1244,7 @@ fun parseFile(fset *token.FileSet, filename runtime.charstr) *ast.File {
         panic(C.sprintf("%s: %s", filename, err.error))
     }
     var p = Parser{}
-    init(&p, fset, filename, src)
+    p.init(fset, filename, src)
     runtime.free(src)
-    return _parseFile(&p)
+    return p._parseFile()
 }
