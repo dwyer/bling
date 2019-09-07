@@ -9,7 +9,7 @@ typ charstr *const char
 
 fun _panic(s charstr) {
     print(s)
-    var buf [1024]*void
+    var buf [1024]voidptr
     var n = C.backtrace(buf, 1024)
     C.backtrace_symbols_fd(buf, n, 2)
     C.exit(1)
@@ -19,15 +19,15 @@ fun _print(s charstr) {
     C.printf("%s\n", s);
 }
 
-fun malloc(n Size) *void {
+fun malloc(n Size) voidptr {
     return C.malloc(n)
 }
 
-fun free(ptr *void) {
+fun free(ptr voidptr) {
     C.free(ptr)
 }
 
-fun memcpy(dst *void, src *const void, n Size) *void {
+fun memcpy(dst voidptr, src *const void, n Size) voidptr {
     return C.memcpy(dst, src, n)
 }
 
@@ -35,7 +35,7 @@ fun memcmp(dst *const void, src *const void, n Size) int {
     return C.memcmp(dst, src, n)
 }
 
-fun memset(dst *void, c int, n Size) *void {
+fun memset(dst voidptr, c int, n Size) voidptr {
     return C.memset(dst, c, n)
 }
 
@@ -66,8 +66,8 @@ typ Slice struct {
 }
 
 typ MapPair struct {
-    key *void
-    val *void
+    key voidptr
+    val voidptr
 }
 
 typ Map struct {
@@ -119,7 +119,7 @@ fun Error_free(e *Error) {
     free(e)
 }
 
-fun Slice_unmake(s *void) {
+fun Slice_unmake(s voidptr) {
     free((typ *Slice(s))._array)
 }
 
@@ -127,7 +127,7 @@ fun Slice_len(s *const Slice) int {
     return s._len
 }
 
-fun Array_get(s *const Slice, size int, i int, dst *void) *void {
+fun Array_get(s *const Slice, size int, i int, dst voidptr) voidptr {
     if i >= s._len {
         panic(C.sprintf("out of range: index=%d, len=%d", i, s._len))
     }
@@ -185,7 +185,7 @@ fun Array_append(s *Slice, size int, x *const void) {
     Array_set(s, size, s._len - 1, x)
 }
 
-fun nilArray(s *Slice, size int) *void {
+fun nilArray(s *Slice, size int) voidptr {
     var z = nil
     Array_append(s, size, &z)
     return (typ *Slice(s))._array
@@ -208,7 +208,7 @@ fun djb2(s charstr) uintptr {
     return hash
 }
 
-fun memdup(src *const void, size Size) *void {
+fun memdup(src *const void, size Size) voidptr {
     return memcpy(malloc(size), src, size)
 }
 
@@ -273,7 +273,7 @@ fun _mapSetUnsafe(m *Map, key charstr, val *const void) {
     }
 }
 
-fun Map_get(m *const Map, key charstr, val *void) bool {
+fun Map_get(m *const Map, key charstr, val voidptr) bool {
     if _mapIsInitialized(m) {
         if var p = _mapGetPairRef(m, key); p.val != nil {
             if val {
@@ -309,13 +309,13 @@ fun NewMapIter(m *const Map) MapIter {
     return iter
 }
 
-fun MapIter_next(m *MapIter, key *charptr, val *void) int {
+fun MapIter_next(m *MapIter, key *charptr, val voidptr) int {
     while m._idx < len(m._map._pairs) {
         var p = &m._map._pairs[m._idx]
         m._idx++
         if p.key {
             if key {
-                *typ **void(key) = p.key
+                *typ *voidptr(key) = p.key
             }
             if val {
                 memcpy(val, p.val, m._map._valSize)

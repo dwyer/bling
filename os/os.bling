@@ -27,7 +27,7 @@ typ File struct {
 
 typ FileInfo struct {
     _name runtime.charptr
-    _sys *void
+    _sys voidptr
 }
 
 var _stdin File = {
@@ -111,7 +111,7 @@ fun write(file *File, b runtime.charstr, e **runtime.Error) int {
 fun close(file *File, e **runtime.Error) {
     var err *runtime.Error = nil
     if file._isDir {
-        sys.closedir(typ *void(file.fd), &err)
+        sys.closedir(typ voidptr(file.fd), &err)
     } else {
         sys.close(file.fd, &err)
     }
@@ -218,7 +218,7 @@ fun (info *FileInfo) isDir() bool {
     return ((st.mode & 0170000) == 0040000)
 }
 
-fun (info *FileInfo) sys() *void {
+fun (info *FileInfo) sys() voidptr {
     return info._sys
 }
 

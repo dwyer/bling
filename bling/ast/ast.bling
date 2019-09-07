@@ -80,7 +80,7 @@ typ Object struct {
     kind ObjKind
     name runtime.charptr
     decl *Decl
-    data *void
+    data voidptr
     scope *Scope
 }
 

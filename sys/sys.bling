@@ -43,7 +43,7 @@ fun close(fd int, e **runtime.Error) {
     }
 }
 
-fun read(fd int, b *void, n Size, e **runtime.Error) int {
+fun read(fd int, b voidptr, n Size, e **runtime.Error) int {
     var r = C.read(fd, b, n)
     if r < 0 {
         _throwErrno(e)
@@ -211,7 +211,7 @@ typ Errno enum {
     EXFULL = 0x36
 }
 
-typ Dir *void
+typ Dir voidptr
 
 fun opendir(filename runtime.charstr, e **runtime.Error) Dir {
     var d = C.opendir(filename)
@@ -227,7 +227,7 @@ fun closedir(dir Dir, e **runtime.Error) {
     }
 }
 
-typ Dirent *void
+typ Dirent voidptr
 
 fun readdir(dir Dir, e **runtime.Error) Dirent {
     C.setErrno(0)
