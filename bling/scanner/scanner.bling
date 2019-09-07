@@ -6,7 +6,7 @@ import "runtime"
 
 typ Scanner struct {
     file *token.File
-    src runtime.charptr
+    src []char
     rdOffset int
     offset int
     ch int
@@ -15,12 +15,16 @@ typ Scanner struct {
 }
 
 fun (s *Scanner) next() {
-    s.offset = s.rdOffset
-    if s.ch == '\n' {
-        s.file.addLine(s.offset)
+    if s.rdOffset < len(s.src) {
+        s.offset = s.rdOffset
+        if s.ch == '\n' {
+            s.file.addLine(s.offset)
+        }
+        s.ch = s.src[s.rdOffset]
+        s.rdOffset++
+    } else {
+        s.ch = 0
     }
-    s.ch = s.src[s.rdOffset]
-    s.rdOffset++
 }
 
 fun (s *Scanner) skipWhitespace() {
@@ -359,7 +363,7 @@ scanAgain:
 fun (s *Scanner) init(file *token.File, src []char) {
     file.src = src
     s.file = file
-    s.src = runtime.strdup(runtime.bytetocharptr(src))
+    s.src = src
     s.rdOffset = 0
     s.offset = 0
     s.insertSemi = false
