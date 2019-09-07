@@ -20,32 +20,30 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitExpr(e, expr.binary.y)
         break
     case ast.EXPR_CALL:
-        {
-            var recv *ast.Expr = nil
-            var func = expr.call.func
-            if func.kind == ast.EXPR_SELECTOR && func.selector.tok == token.FUNC {
-                recv = func.selector.x
-                func = func.selector.sel
-            }
-            emitExpr(e, expr.call.func)
-            emitter.emitToken(e, token.LPAREN)
-            if recv != nil {
-                emitExpr(e, recv)
-            }
-            for var i = 0; i < len(expr.call.args); i++ {
-                if i > 0 || recv != nil {
-                    emitter.emitToken(e, token.COMMA)
-                    emitter.emitSpace(e)
-                }
-                var arg = expr.call.args[i]
-                if types.isType(arg) {
-                    emitType(e, arg, nil)
-                } else {
-                    emitExpr(e, arg)
-                }
-            }
-            emitter.emitToken(e, token.RPAREN)
+        var recv *ast.Expr = nil
+        var func = expr.call.func
+        if func.kind == ast.EXPR_SELECTOR && func.selector.tok == token.FUNC {
+            recv = func.selector.x
+            func = func.selector.sel
         }
+        emitExpr(e, expr.call.func)
+        emitter.emitToken(e, token.LPAREN)
+        if recv != nil {
+            emitExpr(e, recv)
+        }
+        for var i = 0; i < len(expr.call.args); i++ {
+            if i > 0 || recv != nil {
+                emitter.emitToken(e, token.COMMA)
+                emitter.emitSpace(e)
+            }
+            var arg = expr.call.args[i]
+            if types.isType(arg) {
+                emitType(e, arg, nil)
+            } else {
+                emitExpr(e, arg)
+            }
+        }
+        emitter.emitToken(e, token.RPAREN)
         break
     case ast.EXPR_CAST:
         emitter.emitToken(e, token.LPAREN)
@@ -82,26 +80,24 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitter.emitString(e, expr.ident.name)
         break
     case ast.EXPR_INDEX:
-        {
-            var t = types.getType(expr.index.x)
-            assert(t)
-            t = types.getBaseType(t)
-            assert(t)
-            if types.isDynamicArray(t) {
-                emitter.emitToken(e, token.GET)
-                emitter.emitToken(e, token.LPAREN)
-                emitType(e, t.array_.elt, nil)
-                emitter.emitToken(e, token.COMMA)
-                emitExpr(e, expr.index.x)
-                emitter.emitToken(e, token.COMMA)
-                emitExpr(e, expr.index.index)
-                emitter.emitToken(e, token.RPAREN)
-            } else {
-                emitExpr(e, expr.index.x)
-                emitter.emitToken(e, token.LBRACK)
-                emitExpr(e, expr.index.index)
-                emitter.emitToken(e, token.RBRACK)
-            }
+        var t = types.getType(expr.index.x)
+        assert(t)
+        t = types.getBaseType(t)
+        assert(t)
+        if types.isDynamicArray(t) {
+            emitter.emitToken(e, token.GET)
+            emitter.emitToken(e, token.LPAREN)
+            emitType(e, t.array_.elt, nil)
+            emitter.emitToken(e, token.COMMA)
+            emitExpr(e, expr.index.x)
+            emitter.emitToken(e, token.COMMA)
+            emitExpr(e, expr.index.index)
+            emitter.emitToken(e, token.RPAREN)
+        } else {
+            emitExpr(e, expr.index.x)
+            emitter.emitToken(e, token.LBRACK)
+            emitExpr(e, expr.index.index)
+            emitter.emitToken(e, token.RBRACK)
         }
         break
     case ast.EXPR_KEY_VALUE:
@@ -403,30 +399,28 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         emitExpr(e, type.selector.sel) // XXX
         break
     case ast.EXPR_STAR:
-        {
-            var base = type.star.x
-            if base.kind == ast.TYPE_FUNC {
-                emitType(e, base.func.result, nil)
-                emitter.emitToken(e, token.LPAREN)
-                emitter.emitToken(e, token.MUL)
-                if name != nil {
-                    emitExpr(e, name)
-                }
-                emitter.emitToken(e, token.RPAREN)
-                emitter.emitToken(e, token.LPAREN)
-                for var i = 0; i < len(base.func.params); i++ {
-                    if i > 0 {
-                        emitter.emitToken(e, token.COMMA)
-                        emitter.emitSpace(e)
-                    }
-                    emitDecl(e, base.func.params[i])
-                }
-                emitter.emitToken(e, token.RPAREN)
-                name = nil
-            } else {
-                emitType(e, base, nil)
-                emitter.emitToken(e, token.MUL)
+        var base = type.star.x
+        if base.kind == ast.TYPE_FUNC {
+            emitType(e, base.func.result, nil)
+            emitter.emitToken(e, token.LPAREN)
+            emitter.emitToken(e, token.MUL)
+            if name != nil {
+                emitExpr(e, name)
             }
+            emitter.emitToken(e, token.RPAREN)
+            emitter.emitToken(e, token.LPAREN)
+            for var i = 0; i < len(base.func.params); i++ {
+                if i > 0 {
+                    emitter.emitToken(e, token.COMMA)
+                    emitter.emitSpace(e)
+                }
+                emitDecl(e, base.func.params[i])
+            }
+            emitter.emitToken(e, token.RPAREN)
+            name = nil
+        } else {
+            emitType(e, base, nil)
+            emitter.emitToken(e, token.MUL)
         }
         break
     case ast.TYPE_ARRAY:

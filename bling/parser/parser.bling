@@ -338,66 +338,58 @@ fun (p *Parser) parsePrimaryExpr() *ast.Expr {
 fun (p *Parser) parseUnaryExpr() *ast.Expr {
     switch p.tok {
     case token.ADD, token.AND, token.BITWISE_NOT, token.LAND, token.NOT, token.SUB:
-        {
-            var pos = p.pos
-            var op = p.tok
-            p.next()
-            var x = ast.Expr{
-                kind: ast.EXPR_UNARY,
-                unary: {
-                    pos: pos,
-                    op: op,
-                    x: p.checkExpr(p.parseUnaryExpr()),
-                },
-            }
-            return &&x
+        var pos = p.pos
+        var op = p.tok
+        p.next()
+        var x = ast.Expr{
+            kind: ast.EXPR_UNARY,
+            unary: {
+                pos: pos,
+                op: op,
+                x: p.checkExpr(p.parseUnaryExpr()),
+            },
         }
+        return &&x
     case token.MUL:
-        {
-            var pos = p.pos
-            p.next()
-            var x = ast.Expr{
-                kind: ast.EXPR_STAR,
-                star: {
-                    pos: pos,
-                    x: p.checkExprOrType(p.parseUnaryExpr()),
-                },
-            }
-            return &&x
+        var pos = p.pos
+        p.next()
+        var x = ast.Expr{
+            kind: ast.EXPR_STAR,
+            star: {
+                pos: pos,
+                x: p.checkExprOrType(p.parseUnaryExpr()),
+            },
         }
+        return &&x
     case token.SIZEOF:
-        {
-            var pos = p.pos
-            p.next()
-            p.expect(token.LPAREN)
-            var x = ast.Expr{
-                kind: ast.EXPR_SIZEOF,
-                sizeof_: {
-                    pos: pos,
-                    x: p.parseType(),
-                },
-            }
-            p.expect(token.RPAREN)
-            return &&x
+        var pos = p.pos
+        p.next()
+        p.expect(token.LPAREN)
+        var x = ast.Expr{
+            kind: ast.EXPR_SIZEOF,
+            sizeof_: {
+                pos: pos,
+                x: p.parseType(),
+            },
         }
+        p.expect(token.RPAREN)
+        return &&x
     case token.TYPE:
-        {
-            var pos = p.pos
-            p.expect(token.TYPE)
-            var type = p.parseType()
-            if p.tok == token.LBRACE {
-                return p.parseLiteralValue(type)
-            }
-            var y = ast.Expr{
-                kind: ast.EXPR_CAST,
-                cast: {
-                    pos: pos,
-                    type: type,
-                    expr: p.parseUnaryExpr(),
-                },
-            }
-            return &&y
+        var pos = p.pos
+        p.expect(token.TYPE)
+        var type = p.parseType()
+        if p.tok == token.LBRACE {
+            return p.parseLiteralValue(type)
         }
+        var y = ast.Expr{
+            kind: ast.EXPR_CAST,
+            cast: {
+                pos: pos,
+                type: type,
+                expr: p.parseUnaryExpr(),
+            },
+        }
+        return &&y
     default:
         return p.parsePrimaryExpr()
     }
@@ -726,31 +718,27 @@ fun (p *Parser) parseSimpleStmt(labelOk bool) *ast.Stmt {
     var op = p.tok
     switch op {
     case token.ADD_ASSIGN, token.ASSIGN, token.DIV_ASSIGN, token.MOD_ASSIGN, token.MUL_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.SUB_ASSIGN, token.XOR_ASSIGN:
-        {
-            p.next()
-            var y = p.parseRhs()
-            var stmt = ast.Stmt{
-                kind: ast.STMT_ASSIGN,
-                assign: {
-                    x: x,
-                    op: op,
-                    y: y,
-                },
-            }
-            return &&stmt
+        p.next()
+        var y = p.parseRhs()
+        var stmt = ast.Stmt{
+            kind: ast.STMT_ASSIGN,
+            assign: {
+                x: x,
+                op: op,
+                y: y,
+            },
         }
+        return &&stmt
     case token.INC, token.DEC:
-        {
-            p.next()
-            var stmt = ast.Stmt{
-                kind: ast.STMT_POSTFIX,
-                postfix: {
-                    x: x,
-                    op: op,
-                },
-            }
-            return &&stmt
+        p.next()
+        var stmt = ast.Stmt{
+            kind: ast.STMT_POSTFIX,
+            postfix: {
+                x: x,
+                op: op,
+            },
         }
+        return &&stmt
     default:
         break
     }
