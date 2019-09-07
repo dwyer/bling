@@ -30,7 +30,6 @@ typ NodeKind enum {
     EXPR_KEY_VALUE
     EXPR_PAREN
     EXPR_SELECTOR
-    EXPR_SIZEOF
     EXPR_STAR
     EXPR_TERNARY
     EXPR_UNARY
@@ -549,8 +548,6 @@ fun (x *Expr) pos() token.Pos {
         return x.paren.pos
     case EXPR_SELECTOR:
         return x.selector.x.pos()
-    case EXPR_SIZEOF:
-        return x.sizeof_.pos
     case EXPR_STAR:
         return x.star.pos
     case EXPR_TERNARY:

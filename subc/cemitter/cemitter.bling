@@ -130,12 +130,6 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         }
         emitExpr(e, expr.selector.sel)
         break
-    case ast.EXPR_SIZEOF:
-        emitter.emitToken(e, token.SIZEOF)
-        emitter.emitToken(e, token.LPAREN)
-        emitType(e, expr.sizeof_.x, nil)
-        emitter.emitToken(e, token.RPAREN)
-        break
     case ast.EXPR_STAR:
         emitter.emitToken(e, token.MUL)
         emitExpr(e, expr.star.x)
@@ -157,6 +151,11 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         if expr.unary.op == token.LAND {
             emitter.emitString(e, "$$ESC")
             emitter.emitToken(e, token.LPAREN)
+        } else if expr.unary.op == token.SIZEOF {
+            emitter.emitToken(e, token.SIZEOF)
+            emitter.emitToken(e, token.LPAREN)
+            emitType(e, expr.unary.x, nil)
+            emitter.emitToken(e, token.RPAREN)
         } else {
             emitter.emitToken(e, expr.unary.op)
         }

@@ -4,19 +4,20 @@
     * `x?.sel` => `x ? x.sel : nil`
     * assert that both sizes resolve to pointers
 * allow packages to contain more than one file
-* Implement var args.
+* var args
+    * Implement var args.
     * Rewrite `print` to accept var args.
 * Implement methods on `typ` defs.
 * Implicit nil: var decls without assignment are nil by default
 * cmd/blingc: Add `run` option.
 * string: Replace C strings with Bling strings
     * convert `charstr` and `charptr` to `string` and `[]i8` or similar.
-* Slice: allow native arrays (and nil) to be assigned to Slice
-* Slice: Change name to Array or similar
+* Slice:
+    * allow native arrays (and nil) to be assigned to Slice
+    * Change name to Array or similar
 * Make `void` a keyword?
 * switch: allow init expr
 * Change cast syntax from `typ T(x)` to `T(x)`
-* Make `sizeof` a builtin func.
 * Remove '#' token from bling.
 * var, let, and const
     * var: typical variable

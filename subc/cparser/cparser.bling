@@ -150,9 +150,10 @@ fun unaryExpr(p *parser.Parser) *ast.Expr {
         }
         p.expect(token.RPAREN)
         var y = ast.Expr{
-            kind: ast.EXPR_SIZEOF,
-            sizeof_: {
+            kind: ast.EXPR_UNARY,
+            unary: {
                 pos: pos,
+                op: token.SIZEOF,
                 x: x,
             },
         }

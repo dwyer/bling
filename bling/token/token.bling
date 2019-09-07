@@ -171,7 +171,7 @@ var tokens [?]runtime.charptr = {
     PACKAGE: "package",
     RETURN: "return",
     SIGNED: "signed",
-    SIZEOF: "sizeof",
+    // SIZEOF: "sizeof",
     STATIC: "static",
     STRUCT: "struct",
     SWITCH: "switch",
@@ -252,8 +252,9 @@ var keywords = makemap(Token)
 fun lookup(ident runtime.charptr) Token {
     if len(keywords) == 0 {
         for var i = _keywordBeg + 1; i < _keywordEnd; i++ {
-            var s = i.string()
-            runtime.Map_set(&keywords, s, &i)
+            if var s = i.string(); s {
+                runtime.Map_set(&keywords, s, &i)
+            }
         }
     }
     var tok = IDENT

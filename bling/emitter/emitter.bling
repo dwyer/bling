@@ -156,12 +156,6 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         emitToken(e, token.PERIOD)
         emitExpr(e, expr.selector.sel)
         break
-    case ast.EXPR_SIZEOF:
-        emitToken(e, token.SIZEOF)
-        emitToken(e, token.LPAREN)
-        emitType(e, expr.sizeof_.x)
-        emitToken(e, token.RPAREN)
-        break
     case ast.EXPR_STAR:
         emitToken(e, token.MUL)
         emitExpr(e, expr.star.x)
@@ -180,8 +174,15 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         emitExpr(e, expr.ternary.y)
         break
     case ast.EXPR_UNARY:
-        emitToken(e, expr.unary.op)
-        emitExpr(e, expr.unary.x)
+        if expr.unary.op == token.SIZEOF {
+            emitToken(e, expr.unary.op)
+            emitToken(e, token.LPAREN)
+            emitType(e, expr.unary.x)
+            emitToken(e, token.RPAREN)
+        } else {
+            emitToken(e, expr.unary.op)
+            emitExpr(e, expr.unary.x)
+        }
         break
     default:
         panic("Unknown expr")

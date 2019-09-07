@@ -73,6 +73,7 @@ typ builtinId enum {
     MAKEMAP
     PANIC
     PRINT
+    SIZEOF
     numBuiltinIds
 }
 
@@ -853,6 +854,10 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
                 }
                 type = &&t
                 return type
+            case SIZEOF:
+                type = expr.call.args[0]
+                c.checkType(type)
+                return c.lookupIdent("u64")
             default:
                 assert(!type.builtin.isExpr)
                 for var i = 0; i < len(expr.call.args); i++ {
@@ -913,9 +918,6 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
         return c.checkExpr(expr.paren.x)
     case ast.EXPR_SELECTOR:
         return c.checkSelector(expr)
-    case ast.EXPR_SIZEOF:
-        c.checkType(expr.sizeof_.x)
-        return c.lookupIdent("u64")
     case ast.EXPR_STAR:
         var type = c.checkExpr(expr.star.x)
         var base = getBaseType(type)
@@ -1308,6 +1310,7 @@ var predeclareFuncs [?]struct {
     MAKEMAP: { "makemap", 1, false, expression, },
     PANIC: { "panic", 1, false, statement, },
     PRINT: { "print", 1, false, statement, },
+    SIZEOF: { "sizeof", 1, false, expression, },
 }
 
 fun defPredeclaredFuncs() {
