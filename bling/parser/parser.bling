@@ -73,19 +73,19 @@ fun error(p *Parser, pos token.Pos, msg runtime.charptr) {
 
 fun errorExpected(p *Parser, pos token.Pos, msg runtime.charptr) {
     var buf = bytes.Buffer{}
-    bytes.Buffer_write(&buf, "expected ", -1, nil)
-    bytes.Buffer_write(&buf, msg, -1, nil)
+    buf.write("expected ", -1, nil)
+    buf.write(msg, -1, nil)
     if pos == p.pos {
         if p.lit {
-            bytes.Buffer_write(&buf, ", found ", -1, nil)
-            bytes.Buffer_write(&buf, p.lit, -1, nil)
+            buf.write(", found ", -1, nil)
+            buf.write(p.lit, -1, nil)
         } else {
-            bytes.Buffer_write(&buf, ", found '", -1, nil)
-            bytes.Buffer_write(&buf, token.string(p.tok), -1, nil)
-            bytes.Buffer_writeByte(&buf, '\'', nil)
+            buf.write(", found '", -1, nil)
+            buf.write(token.string(p.tok), -1, nil)
+            buf.writeByte('\'', nil)
         }
     }
-    msg = bytes.Buffer_string(&buf)
+    msg = buf.toString()
     error(p, pos, msg)
     runtime.free(msg)
 }

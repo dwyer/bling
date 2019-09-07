@@ -358,11 +358,11 @@ fun File_lineString(f *File, line int) runtime.charptr {
     var i = f.lines[line - 1]
     var ch = f.src[i]
     while ch > 0 && ch != '\n' {
-        bytes.Buffer_writeByte(&buf, ch, nil)
+        buf.writeByte(ch, nil)
         i++
         ch = f.src[i]
     }
-    return bytes.Buffer_string(&buf)
+    return buf.toString()
 }
 
 fun newFileSet() *FileSet {

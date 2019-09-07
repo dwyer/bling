@@ -15,11 +15,11 @@ typ Emitter struct {
 }
 
 fun Emitter_string(e *Emitter) runtime.charptr {
-    return bytes.Buffer_string(&e.buf)
+    return e.buf.toString()
 }
 
 fun emitBytes(e *Emitter, s runtime.charstr, n int) {
-    bytes.Buffer_write(&e.buf, s, n, nil)
+    e.buf.write(s, n, nil)
 }
 
 fun emitString(e *Emitter, s runtime.charstr) {

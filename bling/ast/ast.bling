@@ -458,12 +458,12 @@ fun Scope_print(s *Scope) {
         var iter = runtime.NewMapIter(&s.objects)
         var key runtime.charptr = nil
         while runtime.MapIter_next(&iter, &key, nil) {
-            var s = C.sprintf("%s- %s", bytes.Buffer_string(&buf), key)
+            var s = C.sprintf("%s- %s", buf.toString(), key)
             print(s)
             runtime.free(s)
         }
         s = s.outer
-        bytes.Buffer_writeByte(&buf, '\t', nil)
+        buf.writeByte('\t', nil)
     }
 }
 

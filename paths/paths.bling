@@ -22,7 +22,7 @@ fun clean(path runtime.charstr) runtime.charptr {
     var out = bytes.Buffer{}
     var rooted = path[0] == '/'
     if rooted {
-        bytes.Buffer_writeByte(&out, '/', nil)
+        out.writeByte('/', nil)
         r++
     }
     for ; r < n; {
@@ -34,18 +34,18 @@ fun clean(path runtime.charstr) runtime.charptr {
             r += 2
             panic("not implemented")
         } else {
-            if (rooted && bytes.Buffer_len(&out) != 1) || (!rooted && bytes.Buffer_len(&out) != 0) {
-                bytes.Buffer_writeByte(&out, '/', nil)
+            if (rooted && out.len() != 1) || (!rooted && out.len() != 0) {
+                out.writeByte('/', nil)
             }
             for ; r < n && path[r] != '/'; r++ {
-                bytes.Buffer_writeByte(&out, path[r], nil)
+                out.writeByte(path[r], nil)
             }
         }
     }
-    if bytes.Buffer_len(&out) == 0 {
+    if out.len() == 0 {
         return runtime.strdup(".")
     }
-    return bytes.Buffer_string(&out)
+    return out.toString()
 }
 
 fun dir(path runtime.charstr) runtime.charptr {

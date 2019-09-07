@@ -15,12 +15,12 @@ fun readAll(file *os.File, error **runtime.Error) runtime.charptr {
         if err != nil {
             goto end
         }
-        bytes.Buffer_write(&b, buf, n, nil)
+        b.write(buf, n, nil)
         if n < bufsiz {
             break
         }
     }
-    ret = bytes.Buffer_string(&b)
+    ret = b.toString()
 end:
     if err != nil {
         runtime.Error_move(err, error)
