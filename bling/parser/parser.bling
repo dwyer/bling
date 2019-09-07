@@ -664,7 +664,7 @@ fun (p *Parser) parseEnumType() *ast.Expr {
 
 fun (p *Parser) parseQualifiedType(tok token.Token) *ast.Expr {
     p.expect(tok)
-    var type *ast.Expr = p.parseType() // XXX
+    var type = p.parseType()
     type.is_const = true
     return type
 }

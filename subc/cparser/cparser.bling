@@ -173,7 +173,7 @@ fun castExpr(p *parser.Parser) *ast.Expr {
             var type = typeName(p)
             p.expect(token.RPAREN)
             if p.tok == token.LBRACE {
-                var x *ast.Expr = initializer(p) // XXX
+                var x = initializer(p)
                 x.composite.type = type
                 return x
             }
@@ -187,7 +187,7 @@ fun castExpr(p *parser.Parser) *ast.Expr {
             }
             return &&y
         } else {
-            var x *ast.Expr = expression(p) // XXX
+            var x = expression(p)
             if x.kind != ast.EXPR_COMPOSITE_LIT {
                 var y = ast.Expr{
                     kind: ast.EXPR_PAREN,
@@ -460,7 +460,7 @@ fun paramTypeList(p *parser.Parser) []*ast.Decl {
 
 fun typeName(p *parser.Parser) *ast.Expr {
     var type = specifierQualifierList(p)
-    var decl *ast.Decl = abstractDeclarator(p, type) // XXX
+    var decl = abstractDeclarator(p, type)
     type = decl.field.type
     runtime.free(decl)
     return type

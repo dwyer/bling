@@ -172,7 +172,7 @@ fun newPackage(b *Builder, path runtime.charstr) Package {
     runtime.free(genPath)
     runtime.free(base)
     for var i = 0; i < len(pkg.pkg.imports); i++ {
-        var dep *Package = _buildPackage(b, pkg.pkg.imports[i].path) // XXX
+        var dep = _buildPackage(b, pkg.pkg.imports[i].path)
         append(pkg.deps, dep)
         if pkg.srcModTime < dep.srcModTime {
             pkg.srcModTime = dep.srcModTime

@@ -715,7 +715,7 @@ fun (c *Checker) lookupIdent(name runtime.charptr) *ast.Expr {
 }
 
 fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
-    var type *ast.Expr = c.checkExpr(expr.selector.x) // XXX
+    var type = c.checkExpr(expr.selector.x)
     if type == nil {
         // x is a scope
         var x = expr.selector.x
