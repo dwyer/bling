@@ -35,6 +35,10 @@ fun memcmp(dst *const void, src *const void, n Size) int {
     return C.memcmp(dst, src, n)
 }
 
+fun memdup(src *const void, size Size) voidptr {
+    return memcpy(malloc(size), src, size)
+}
+
 fun memset(dst voidptr, c int, n Size) voidptr {
     return C.memset(dst, c, n)
 }
@@ -191,6 +195,29 @@ fun nilArray(s *Slice, size int) voidptr {
     return (typ *Slice(s))._array
 }
 
+fun bytetocharptr(b []char) charptr {
+    return nilArray(typ *Slice(&b), 1)
+}
+
+fun charstobytes(s charstr) []char { // TODO DELETE THIS
+    var n = strlen(s)
+    var buf = Slice{
+        _len: n,
+        _cap: n,
+        _array: memdup(s, n),
+    }
+    return typ []char(buf)
+}
+
+fun makebuf(n int) []char {
+    var buf = Slice{
+        _len: n,
+        _cap: n,
+        _array: malloc(n),
+    }
+    return typ []char(buf)
+}
+
 var MAP_LOAD_FACTOR const float = 0.65
 
 var DEFAULT_CAP const int = 8
@@ -206,10 +233,6 @@ fun djb2(s charstr) uintptr {
         ch = *s
     }
     return hash
-}
-
-fun memdup(src *const void, size Size) voidptr {
-    return memcpy(malloc(size), src, size)
 }
 
 fun Map_init(m *Map) {

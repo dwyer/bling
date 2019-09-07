@@ -189,7 +189,7 @@ fun emitInclude(e *emitter.Emitter, path runtime.charstr) {
 
 fun writeFile(path runtime.charstr, out runtime.charstr) {
     mkdirForFile(path)
-    ioutil.writeFile(path, out, 0644, nil)
+    ioutil.writeFile(path, runtime.charstobytes(out), 0644, nil)
 }
 
 fun genHeader(b *Builder, pkg *Package) {

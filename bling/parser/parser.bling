@@ -55,11 +55,11 @@ fun (p *Parser) next() {
     p.tok = p.scanner.scan(&p.pos, &p.lit)
 }
 
-fun (p *Parser) init(fset *token.FileSet, filename runtime.charstr, src runtime.charptr) {
+fun (p *Parser) init(fset *token.FileSet, filename runtime.charstr, src []char) {
     assert(fset)
-    p.file = fset.addFile(filename, -1, runtime.strlen(src))
+    p.file = fset.addFile(filename, -1, len(src))
     p.lit = nil
-    p.scanner.init(p.file, src)
+    p.scanner.init(p.file, runtime.bytetocharptr(src))
     p.scanner.dontInsertSemis = !bytes.hasSuffix(filename, ".bling")
     p.exprLev = 0
     p.typeNames = makemap(*ast.Expr)
@@ -73,15 +73,15 @@ fun (p *Parser) error(pos token.Pos, msg runtime.charptr) {
 
 fun (p *Parser) errorExpected(pos token.Pos, msg runtime.charptr) {
     var buf = bytes.Buffer{}
-    buf.write("expected ", -1, nil)
-    buf.write(msg, -1, nil)
+    buf.writeString("expected ", nil)
+    buf.writeString(msg, nil)
     if pos == p.pos {
         if p.lit {
-            buf.write(", found ", -1, nil)
-            buf.write(p.lit, -1, nil)
+            buf.writeString(", found ", nil)
+            buf.writeString(p.lit, nil)
         } else {
-            buf.write(", found '", -1, nil)
-            buf.write(p.tok.string(), -1, nil)
+            buf.writeString(", found '", nil)
+            buf.writeString(p.tok.string(), nil)
             buf.writeByte('\'', nil)
         }
     }
@@ -1220,6 +1220,6 @@ fun parseFile(fset *token.FileSet, filename runtime.charstr) *ast.File {
     }
     var p = Parser{}
     p.init(fset, filename, src)
-    runtime.free(src)
+    runtime.Slice_unmake(&src)
     return p._parseFile()
 }

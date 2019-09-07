@@ -14,16 +14,24 @@ typ Emitter struct {
     forwardDecl bool
 }
 
+fun (e *Emitter) bytes() []char {
+    return e.buf
+}
+
 fun Emitter_string(e *Emitter) runtime.charptr {
     return e.buf.toString()
 }
 
-fun emitBytes(e *Emitter, s runtime.charstr, n int) {
-    e.buf.write(s, n, nil)
+fun emitBytes(e *Emitter, s []char) {
+    e.buf.write(s, nil)
+}
+
+fun emitChars(e *Emitter, s runtime.charstr, n int) {
+    e.buf.writeChars(s, n, nil)
 }
 
 fun emitString(e *Emitter, s runtime.charstr) {
-    emitBytes(e, s, runtime.strlen(s))
+    e.buf.writeString(s, nil)
 }
 
 fun emitSpace(e *Emitter) {

@@ -43,16 +43,21 @@ fun close(fd int, e **runtime.Error) {
     }
 }
 
-fun read(fd int, b voidptr, n Size, e **runtime.Error) int {
-    var r = C.read(fd, b, n)
+fun read(fd int, b []char, e **runtime.Error) int {
+    var n = len(b)
+    if n == 0 {
+        return 0
+    }
+    var buf = (typ *runtime.Slice(&b))._array
+    var r = C.read(fd, buf, n)
     if r < 0 {
         _throwErrno(e)
     }
     return r
 }
 
-fun write(fd int, b *const void, n Size, e **runtime.Error) int {
-    var r = C.write(fd, b, n)
+fun write(fd int, b []char, e **runtime.Error) int {
+    var r = C.write(fd, &b[0], len(b))
     if r < 0 {
         _throwErrno(e)
     }

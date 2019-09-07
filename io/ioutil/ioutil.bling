@@ -4,28 +4,29 @@ import "bytes"
 import "os"
 import "runtime"
 
-fun readAll(file *os.File, error **runtime.Error) runtime.charptr {
+fun readAll(file *os.File, error **runtime.Error) []char {
     var bufsiz const int = 1024
-    var ret runtime.charptr = nil
     var err *runtime.Error = nil
     var b = bytes.Buffer{}
+    var buf = runtime.makebuf(1024)
     for ;; {
-        var buf [bufsiz]char
-        var n = os.read(file, buf, bufsiz, &err)
+        var n = file.read(buf, &err)
         if err != nil {
             goto end
         }
-        b.write(buf, n, nil)
+        if n < bufsiz {
+            runtime.Array_setLen(typ *runtime.Slice(&buf), 1, n)
+        }
+        b.write(buf, nil)
         if n < bufsiz {
             break
         }
     }
-    ret = b.toString()
 end:
     if err != nil {
         runtime.Error_move(err, error)
     }
-    return ret
+    return b
 }
 
 fun readDir(name runtime.charstr, error **runtime.Error) []*os.FileInfo {
@@ -37,10 +38,10 @@ fun readDir(name runtime.charstr, error **runtime.Error) []*os.FileInfo {
     }
     info = os.readdir(file, &err)
     if err != nil {
-        os.close(file, nil)
+        file.close(nil)
         goto end
     }
-    os.close(file, &err)
+    file.close(&err)
 end:
     if err != nil {
         runtime.Error_move(err, error)
@@ -48,8 +49,8 @@ end:
     return info
 }
 
-fun readFile(name runtime.charstr, error **runtime.Error) runtime.charptr {
-    var ret runtime.charptr = nil
+fun readFile(name runtime.charstr, error **runtime.Error) []char {
+    var ret = []char{}
     var err *runtime.Error = nil
     var file = os.open(name, &err)
     if err != nil {
@@ -57,10 +58,10 @@ fun readFile(name runtime.charstr, error **runtime.Error) runtime.charptr {
     }
     ret = readAll(file, &err)
     if err != nil {
-        os.close(file, nil)
+        file.close(nil)
         goto end
     }
-    os.close(file, &err)
+    file.close(&err)
 end:
     if err != nil {
         runtime.Error_move(err, error)
@@ -68,18 +69,18 @@ end:
     return ret
 }
 
-fun writeFile(filename runtime.charstr, data runtime.charstr, perm int, error **runtime.Error) {
+fun writeFile(filename runtime.charstr, data []char, perm int, error **runtime.Error) {
     var err *runtime.Error = nil
     var file = os.create(filename, &err)
     if err != nil {
         goto end
     }
-    os.write(file, data, &err)
+    file.write(data, &err)
     if err != nil {
-        os.close(file, nil)
+        file.close(nil)
         goto end
     }
-    os.close(file, nil)
+    file.close(nil)
 end:
     if err != nil {
         runtime.Error_move(err, error)

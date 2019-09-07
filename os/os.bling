@@ -61,7 +61,7 @@ fun _throwPathError(path runtime.charstr, err *runtime.Error, e **runtime.Error)
 fun _throwFileError(file *File, err *runtime.Error, e **runtime.Error) {
     if err {
         if e == nil {
-            close(file, nil) // close the file before we panic
+            file.close(nil) // close the file before we panic
         }
         _throwPathError(file.name, err, e)
     }
@@ -94,21 +94,21 @@ fun create(filename runtime.charstr, e **runtime.Error) *File {
     return openFile(filename, O_CREAT | O_TRUNC | O_RDWR, 0644, e)
 }
 
-fun read(file *File, b runtime.charptr, n int, e **runtime.Error) int {
+fun (file *File) read(b []char, e **runtime.Error) int {
     var err *runtime.Error = nil
-    var r = sys.read(file.fd, b, n, &err)
+    var r = sys.read(file.fd, b, &err)
     _throwFileError(file, err, e)
     return r
 }
 
-fun write(file *File, b runtime.charstr, e **runtime.Error) int {
+fun (file *File) write(b []char, e **runtime.Error) int {
     var err *runtime.Error = nil
-    var n = sys.write(file.fd, b, runtime.strlen(b), &err)
+    var n = sys.write(file.fd, b, &err)
     _throwFileError(file, err, e)
     return n
 }
 
-fun close(file *File, e **runtime.Error) {
+fun (file *File) close(e **runtime.Error) {
     var err *runtime.Error = nil
     if file._isDir {
         sys.closedir(typ voidptr(file.fd), &err)

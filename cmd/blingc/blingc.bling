@@ -21,8 +21,8 @@ fun emitRawFile(e *emitter.Emitter, filename runtime.charstr) {
     if err {
         panic(err.error)
     }
-    emitter.emitString(e, src)
-    runtime.free(src)
+    emitter.emitBytes(e, src)
+    runtime.Slice_unmake(&src)
 }
 
 fun isForwardDecl(decl *ast.Decl) bool {
@@ -76,7 +76,6 @@ fun compileC(argv [?]runtime.charptr) {
         emitter.emitFile(&e, file)
         argv++
     }
-    var out = emitter.Emitter_string(&e)
     var file = os.stdout
     var err *runtime.Error = nil
     if dst {
@@ -85,12 +84,12 @@ fun compileC(argv [?]runtime.charptr) {
             panic(err.error)
         }
     }
-    os.write(file, out, &err)
+    file.write(e.bytes(), &err)
     if err {
         panic(err.error)
     }
     if dst {
-        os.close(file, &err)
+        file.close(&err)
         if err {
             panic(err.error)
         }
@@ -131,11 +130,10 @@ fun compileBling(argv [?]runtime.charptr) {
     cemitter.emitPackage(&e, pkg)
     argv++
     assert(!*argv)
-    var out = emitter.Emitter_string(&e)
     if dst {
         if bytes.hasSuffix(dst, ".out") {
             var tmp = paths.join2(os.tempDir(), "tmp.c")
-            ioutil.writeFile(tmp, out, 0644, nil)
+            ioutil.writeFile(tmp, e.bytes(), 0644, nil)
             var args = [?]runtime.charptr{
                 "/usr/bin/cc",
                 "-o",
@@ -151,10 +149,10 @@ fun compileBling(argv [?]runtime.charptr) {
                 panic(C.sprintf("- failed with code %d", code))
             }
         } else {
-            ioutil.writeFile(dst, out, 0644, nil)
+            ioutil.writeFile(dst, e.bytes(), 0644, nil)
         }
     } else {
-        os.write(os.stdout, out, &err)
+        os.stdout.write(e.bytes(), &err)
     }
 }
 

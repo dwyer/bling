@@ -30,10 +30,10 @@ fun join(a [?]runtime.charstr, size int, sep runtime.charstr) runtime.charptr {
         return runtime.strdup(a[0])
     }
     var b Buffer = makearray(char)
-    b.write(a[0], runtime.strlen(a[0]), nil)
+    b.writeChars(a[0], runtime.strlen(a[0]), nil)
     for var i = 1; i < size; i++ {
-        b.write(sep, runtime.strlen(sep), nil)
-        b.write(a[i], runtime.strlen(a[i]), nil)
+        b.writeChars(sep, runtime.strlen(sep), nil)
+        b.writeChars(a[i], runtime.strlen(a[i]), nil)
     }
     return b.toString()
 }
@@ -70,7 +70,20 @@ fun (b *Buffer) toString() runtime.charptr {
     return s
 }
 
-fun (b *Buffer) write(p runtime.charstr, size int, error **runtime.Error) int {
+fun (b *Buffer) write(p []char, error **runtime.Error) int {
+    b.init()
+    for var i = 0; i < len(p); i++ {
+        append(*b, p[i])
+    }
+    return len(p)
+}
+
+fun (b *Buffer) writeByte(p char, error **runtime.Error) {
+    b.init()
+    append(*b, p)
+}
+
+fun (b *Buffer) writeChars(p runtime.charstr, size int, error **runtime.Error) int {
     b.init()
     if size < 0 {
         size = runtime.strlen(p)
@@ -81,7 +94,6 @@ fun (b *Buffer) write(p runtime.charstr, size int, error **runtime.Error) int {
     return size
 }
 
-fun (b *Buffer) writeByte(p char, error **runtime.Error) {
-    b.init()
-    append(*b, p)
+fun (b *Buffer) writeString(p runtime.charstr, error **runtime.Error) int {
+    return b.writeChars(p, -1, error)
 }
