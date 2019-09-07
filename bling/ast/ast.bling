@@ -420,7 +420,7 @@ fun newObject(kind ObjKind, name runtime.charptr) *Object {
     return &&obj
 }
 
-fun Scope_new(outer *Scope) *Scope {
+fun newScope(outer *Scope) *Scope {
     var s = Scope{
         outer: outer,
         objects: runtime.Map_make(sizeof(*Object)),
@@ -429,14 +429,14 @@ fun Scope_new(outer *Scope) *Scope {
     return &&s
 }
 
-fun Scope_unmake(s *Scope) {
+fun (s *Scope) unmake() {
     if s {
         runtime.Map_unmake(&s.objects)
         runtime.Slice_unmake(&s.keys)
     }
 }
 
-fun Scope_insert(s *Scope, obj *Object) *Object {
+fun (s *Scope) insert(obj *Object) *Object {
     var alt *Object = nil
     runtime.Map_get(&s.objects, obj.name, &alt)
     if alt == nil {
@@ -446,13 +446,13 @@ fun Scope_insert(s *Scope, obj *Object) *Object {
     return alt
 }
 
-fun Scope_lookup(s *Scope, name runtime.charptr) *Object {
+fun (s *Scope) lookup(name runtime.charptr) *Object {
     var obj *Object = nil
     runtime.Map_get(&s.objects, name, &obj)
     return obj
 }
 
-fun Scope_print(s *Scope) {
+fun (s *Scope) print() {
     var buf = bytes.Buffer{}
     while s {
         var iter = runtime.NewMapIter(&s.objects)
@@ -467,9 +467,9 @@ fun Scope_print(s *Scope) {
     }
 }
 
-fun Scope_deepLookup(s *Scope, name runtime.charptr) *Object {
+fun (s *Scope) deepLookup(name runtime.charptr) *Object {
     for ; s != nil; s = s.outer {
-        var obj = Scope_lookup(s, name)
+        var obj = s.lookup(name)
         if obj != nil {
             return obj
         }
@@ -478,7 +478,7 @@ fun Scope_deepLookup(s *Scope, name runtime.charptr) *Object {
 }
 
 fun resolve(scope *Scope, ident *Expr) bool {
-    var obj = Scope_deepLookup(scope, ident.ident.name)
+    var obj = scope.deepLookup(ident.ident.name)
     if obj != nil {
         ident.ident.obj = obj
         return true
@@ -486,7 +486,7 @@ fun resolve(scope *Scope, ident *Expr) bool {
     return false
 }
 
-fun Scope_free(s *Scope) {
+fun (s *Scope) free() {
     runtime.Map_unmake(&s.objects)
     runtime.free(s)
 }

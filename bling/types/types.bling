@@ -507,14 +507,14 @@ fun (c *Checker) declare(decl *ast.Decl, data voidptr, scope *ast.Scope, kind as
     obj.data = data
     obj.scope = scope
     ident.ident.obj = obj
-    var alt = ast.Scope_insert(scope, obj)
+    var alt = scope.insert(obj)
     if alt != nil {
         c.error(decl.pos, C.sprintf("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl)))
     }
 }
 
 fun (c *Checker) openScope() {
-    c.pkg.scope = ast.Scope_new(c.pkg.scope)
+    c.pkg.scope = ast.newScope(c.pkg.scope)
 }
 
 fun (c *Checker) closeScope() {
@@ -706,7 +706,7 @@ fun (c *Checker) checkCompositeLit(x *ast.Expr) *ast.Expr {
 }
 
 fun (c *Checker) lookupIdent(name runtime.charptr) *ast.Expr {
-    var obj = ast.Scope_deepLookup(c.pkg.scope, name)
+    var obj = c.pkg.scope.deepLookup(name)
     assert(obj)
     assert(obj.kind == ast.ObjKind_TYP)
     assert(obj.decl.kind == ast.DECL_TYPE)
@@ -741,7 +741,7 @@ fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
     if var alias = getTypeAlias(type); alias != nil {
         // if type is an alias, check its scope for a method
         if var scope *ast.Scope = alias.ident.obj.data; scope {
-            if var obj = ast.Scope_lookup(scope, expr.selector.sel.ident.name); obj {
+            if var obj = scope.lookup(expr.selector.sel.ident.name); obj {
                 c.resolve(scope, expr.selector.sel)
                 assert(obj.kind == ast.ObjKind_FUN)
                 expr.selector.tok = token.FUNC
@@ -1201,7 +1201,7 @@ fun (c *Checker) checkFile(file *ast.File) {
                 var obj = type.ident.obj
                 var typeScope *ast.Scope = obj.data
                 if obj.data == nil {
-                    typeScope = ast.Scope_new(c.pkg.scope)
+                    typeScope = ast.newScope(c.pkg.scope)
                     typeScope.pkgName = type
                     obj.data = typeScope
                 }
@@ -1243,7 +1243,7 @@ fun checkFile(conf *Config, path runtime.charstr, fset *token.FileSet, file *ast
     } else {
         info = newInfo()
     }
-    var scope = ast.Scope_new(universe())
+    var scope = ast.newScope(universe())
     scope.pkgName = file.name
     var pkg Package = {
         path: runtime.strdup(path),
@@ -1319,7 +1319,7 @@ fun defPredeclaredTypes() {
             },
         }
         obj.decl = &&decl
-        assert(ast.Scope_insert(_universe, obj) == nil)
+        assert(_universe.insert(obj) == nil)
     }
 }
 
@@ -1366,7 +1366,7 @@ fun defPredeclaredFuncs() {
         var obj = ast.newObject(ast.ObjKind_FUN, name.ident.name)
         obj.decl = &&decl
         obj.decl.func.name.ident.obj = obj
-        assert(ast.Scope_insert(_universe, obj) == nil)
+        assert(_universe.insert(obj) == nil)
     }
 }
 
@@ -1383,7 +1383,7 @@ var predeclareConsts [?]struct {
 
 fun defPredeclaredConsts() {
     for var i = 0; predeclareConsts[i].name; i++ {
-        var obj = ast.Scope_lookup(_universe, predeclareConsts[i].type)
+        var obj = _universe.lookup(predeclareConsts[i].type)
         var name = ast.Expr{
             kind: ast.EXPR_IDENT,
             ident: {
@@ -1409,13 +1409,13 @@ fun defPredeclaredConsts() {
         obj = ast.newObject(ast.ObjKind_CON, name.ident.name)
         obj.decl = &&decl
         obj.decl.value.name.ident.obj = obj
-        assert(ast.Scope_insert(_universe, obj) == nil)
+        assert(_universe.insert(obj) == nil)
     }
 }
 
 fun universe() *ast.Scope {
     if _universe == nil {
-        _universe = ast.Scope_new(nil)
+        _universe = ast.newScope(nil)
         defPredeclaredTypes()
         defPredeclaredConsts()
         defPredeclaredFuncs()
