@@ -466,11 +466,11 @@ typ Checker struct {
 
 fun Checker_log(c *Checker, fatal bool, pos token.Pos, msg runtime.charstr) {
     var position = token.Position{}
-    var file = token.FileSet_file(c.fset, pos)
+    var file = c.fset.file(pos)
     if file {
-        position = token.File_position(file, pos)
+        position = file.position(pos)
     }
-    var errMsg = C.sprintf("%s: %s\n%s", token.Position_string(&position), msg, token.File_lineString(file, position.line))
+    var errMsg = C.sprintf("%s: %s\n%s", position.string(), msg, file.lineString(position.line))
     if fatal {
         panic(errMsg)
     } else {

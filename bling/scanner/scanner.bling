@@ -17,7 +17,7 @@ typ Scanner struct {
 fun next0(s *Scanner) {
     s.offset = s.rd_offset
     if s.ch == '\n' {
-        token.File_addLine(s.file, s.offset)
+        s.file.addLine(s.offset)
     }
     s.ch = s.src[s.rd_offset]
     s.rd_offset++
@@ -201,7 +201,7 @@ fun scan(s *Scanner, pos *token.Pos, lit *runtime.charptr) token.Token {
 scan_again:
     tok = token.ILLEGAL
     skip_whitespace(s)
-    *pos = token.File_pos(s.file, s.offset)
+    *pos = s.file.pos(s.offset)
     var insertSemi = false
     *lit = nil
     if is_letter(s.ch) {

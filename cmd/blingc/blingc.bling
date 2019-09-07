@@ -15,7 +15,7 @@ import "runtime"
 import "subc/cemitter"
 import "subc/cparser"
 
-fun emit_rawfile(e *emitter.Emitter, filename runtime.charstr) {
+fun emitRawFile(e *emitter.Emitter, filename runtime.charstr) {
     var err *runtime.Error = nil
     var src = ioutil.readFile(filename, &err)
     if err {
@@ -45,7 +45,7 @@ fun isForwardDecl(decl *ast.Decl) bool {
     }
 }
 
-fun compile_c(argv [?]runtime.charptr) {
+fun compileC(argv [?]runtime.charptr) {
     var dst runtime.charstr = nil
     while **argv == '-' {
         if runtime.streq(*argv, "-o") {
@@ -97,7 +97,7 @@ fun compile_c(argv [?]runtime.charptr) {
     }
 }
 
-fun compile_bling(argv [?]runtime.charptr) {
+fun compileBling(argv [?]runtime.charptr) {
     var err *runtime.Error = nil
     var conf = types.Config{
         strict: true,
@@ -116,7 +116,7 @@ fun compile_bling(argv [?]runtime.charptr) {
         return
     }
     var e = emitter.Emitter{}
-    emit_rawfile(&e, "bootstrap/bootstrap.h")
+    emitRawFile(&e, "bootstrap/bootstrap.h")
     var fset = token.newFileSet()
     var filename = *argv
     var file *ast.File = nil
@@ -187,9 +187,9 @@ fun main(argc int, argv [?]runtime.charptr) int {
     }
     if runtime.streq(*argv, "-c") {
         argv++
-        compile_c(argv)
+        compileC(argv)
         return 0
     }
-    compile_bling(argv)
+    compileBling(argv)
     return 0
 }

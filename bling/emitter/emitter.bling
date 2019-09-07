@@ -44,7 +44,7 @@ fun emitToken(e *Emitter, tok token.Token) {
     if e.skipSemi && tok == token.SEMICOLON {
         return
     }
-    emitString(e, token.string(tok))
+    emitString(e, tok.string())
 }
 
 fun hasPrefix(s runtime.charstr, prefix runtime.charstr) bool {
@@ -542,7 +542,7 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
             emitExpr(e, decl.value.value)
             break
         default:
-            panic(C.sprintf("bad kind for ast$DECL_VALUE: %s", token.string(decl.value.kind)))
+            panic(C.sprintf("bad kind for ast$DECL_VALUE: %s", decl.value.kind.string()))
             break
         }
         break

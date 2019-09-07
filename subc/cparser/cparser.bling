@@ -172,7 +172,7 @@ fun unaryExpr(p *parser.Parser) *ast.Expr {
             return &&y
         }
     case token.DEC, token.INC:
-        parser.error(p, p.pos, C.sprintf("unary `%s` not supported in subc", token.string(p.tok)))
+        parser.error(p, p.pos, C.sprintf("unary `%s` not supported in subc", p.tok.string()))
         return nil
     default:
         return postfixExpr(p, nil)
@@ -222,7 +222,7 @@ fun binaryExpr(p *parser.Parser, prec1 int) *ast.Expr {
     var x = castExpr(p)
     for ;; {
         var op = p.tok
-        var oprec = token.precedence(op)
+        var oprec = op.precedence()
         if oprec < prec1 {
             return x
         }
@@ -904,7 +904,7 @@ fun typeSpecifier(p *parser.Parser) *ast.Expr {
     var x *ast.Expr = nil
     switch p.tok {
     case token.SIGNED, token.UNSIGNED:
-        parser.error(p, p.pos, C.sprintf("`%s` is not supported in subc", token.string(p.tok)))
+        parser.error(p, p.pos, C.sprintf("`%s` is not supported in subc", p.tok.string()))
         break
     case token.STRUCT, token.UNION:
         x = structOrUnionSpec(p)

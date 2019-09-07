@@ -57,7 +57,7 @@ fun next(p *Parser) {
 
 fun init(p *Parser, fset *token.FileSet, filename runtime.charstr, src runtime.charptr) {
     assert(fset)
-    p.file = token.FileSet_addFile(fset, filename, -1, runtime.strlen(src))
+    p.file = fset.addFile(filename, -1, runtime.strlen(src))
     p.lit = nil
     scanner.init(&p.scanner, p.file, src)
     p.scanner.dontInsertSemis = !bytes.hasSuffix(filename, ".bling")
@@ -67,8 +67,8 @@ fun init(p *Parser, fset *token.FileSet, filename runtime.charstr, src runtime.c
 }
 
 fun error(p *Parser, pos token.Pos, msg runtime.charptr) {
-    var position = token.File_position(p.file, pos)
-    panic(C.sprintf("%s: %s\n%s", token.Position_string(&position), msg, token.File_lineString(p.file, position.line)))
+    var position = p.file.position(pos)
+    panic(C.sprintf("%s: %s\n%s", position.string(), msg, p.file.lineString(position.line)))
 }
 
 fun errorExpected(p *Parser, pos token.Pos, msg runtime.charptr) {
@@ -81,7 +81,7 @@ fun errorExpected(p *Parser, pos token.Pos, msg runtime.charptr) {
             buf.write(p.lit, -1, nil)
         } else {
             buf.write(", found '", -1, nil)
-            buf.write(token.string(p.tok), -1, nil)
+            buf.write(p.tok.string(), -1, nil)
             buf.writeByte('\'', nil)
         }
     }
@@ -103,9 +103,9 @@ fun expect(p *Parser, tok token.Token) token.Pos {
     if p.tok != tok {
         var lit = p.lit
         if lit == nil {
-            lit = token.string(p.tok)
+            lit = p.tok.string()
         }
-        errorExpected(p, pos, token.string(tok))
+        errorExpected(p, pos, tok.string())
     }
     next(p)
     return pos
@@ -407,7 +407,7 @@ fun parseBinaryExpr(p *Parser, prec1 int) *ast.Expr {
     var x = parseUnaryExpr(p)
     for ;; {
         var op = p.tok
-        var oprec = token.precedence(op)
+        var oprec = op.precedence()
         if oprec < prec1 {
             return x
         }
@@ -1170,7 +1170,7 @@ fun parseDecl(p *Parser) *ast.Decl {
     case token.FUNC:
         return parseFuncDecl(p)
     default:
-        error(p, p.pos, C.sprintf("cant handle it: %s", token.string(p.tok)))
+        error(p, p.pos, C.sprintf("cant handle it: %s", p.tok.string()))
         return nil
     }
 }

@@ -243,7 +243,7 @@ var tokens [?]runtime.charptr = {
     XOR_ASSIGN: "^=",
 }
 
-fun string(tok Token) runtime.charptr {
+fun (tok Token) string() runtime.charptr {
     return tokens[tok]
 }
 
@@ -252,7 +252,7 @@ var keywords = makemap(Token)
 fun lookup(ident runtime.charptr) Token {
     if len(keywords) == 0 {
         for var i = _keywordBeg + 1; i < _keywordEnd; i++ {
-            var s = string(i)
+            var s = i.string()
             runtime.Map_set(&keywords, s, &i)
         }
     }
@@ -261,7 +261,7 @@ fun lookup(ident runtime.charptr) Token {
     return tok
 }
 
-fun precedence(op Token) int {
+fun (op Token) precedence() int {
     switch op {
     case MUL, DIV, MOD:
         return 10
@@ -288,7 +288,7 @@ fun precedence(op Token) int {
     }
 }
 
-fun Position_string(p *Position) runtime.charptr {
+fun (p *Position) string() runtime.charptr {
     return C.sprintf("%s:%d:%d", p.filename, p.line, p.column)
 }
 
@@ -296,14 +296,14 @@ fun getInt(a *[]int, i int) int {
     return (*a)[i]
 }
 
-fun File_addLine(f *File, offset int) {
+fun (f *File) addLine(offset int) {
     var i = len(f.lines)
     if (i == 0 || getInt(&f.lines, i - 1) < offset) && offset < f.size {
         append(f.lines, offset)
     }
 }
 
-fun File_pos(f *File, offset int) Pos {
+fun (f *File) pos(offset int) Pos {
     return f.base + offset
 }
 
@@ -321,7 +321,7 @@ fun searchInts(a *[]int, x int) int {
     return i - 1
 }
 
-fun _File_position(f *File, p Pos, adjusted bool) Position {
+fun (f *File) _position(p Pos, adjusted bool) Position {
     var offset = p - f.base
     var i = searchInts(&f.lines, offset)
     var pos = Position{
@@ -335,22 +335,22 @@ fun _File_position(f *File, p Pos, adjusted bool) Position {
 
 var noPos const Pos = 0
 
-fun File_positionFor(f *File, p Pos, adjusted bool) Position {
+fun (f *File) positionFor(p Pos, adjusted bool) Position {
     var pos = Position{}
     if p != noPos {
         if p < f.base || p > f.base + f.size {
             panic("illegal Pos value")
         }
-        pos = _File_position(f, p, adjusted)
+        pos = f._position(p, adjusted)
     }
     return pos
 }
 
-fun File_position(f *File, p Pos) Position {
-    return File_positionFor(f, p, true)
+fun (f *File) position(p Pos) Position {
+    return f.positionFor(p, true)
 }
 
-fun File_lineString(f *File, line int) runtime.charptr {
+fun (f *File) lineString(line int) runtime.charptr {
     if line < 1 {
         return nil
     }
@@ -373,7 +373,7 @@ fun newFileSet() *FileSet {
     return &&fset
 }
 
-fun FileSet_addFile(s *FileSet, filename runtime.charstr, base int, size int) *File {
+fun (s *FileSet) addFile(filename runtime.charstr, base int, size int) *File {
     if base < 0 {
         base = s.base
     }
@@ -407,7 +407,7 @@ fun searchFiles(files *[]*File, x int) int {
     return -1
 }
 
-fun FileSet_file(s *FileSet, p Pos) *File {
+fun (s *FileSet) file(p Pos) *File {
     var f = s.last
     if f != nil && f.base <= p && p <= f.base + f.size {
         return f
@@ -423,7 +423,7 @@ fun FileSet_file(s *FileSet, p Pos) *File {
     return nil
 }
 
-fun FileSet_print(fset *FileSet) {
+fun (fset *FileSet) print() {
     for var i = 0; i < len(fset.files); i++ {
         var f = fset.files[i]
         var s = C.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
