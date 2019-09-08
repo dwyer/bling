@@ -1058,6 +1058,6 @@ fun parseFile(fset *token.FileSet, filename runtime.charstr) *ast.File {
     p.init(fset, filename, src)
     p.cMode = true
     var file = _parseFile(&p)
-    runtime.Slice_unmake(&src)
+    delete(src)
     return file
 }

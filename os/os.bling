@@ -187,7 +187,7 @@ fun readdir(file *File, e **runtime.Error) []*FileInfo {
         }
         append(arr, info)
     }
-    runtime.Slice_unmake(&names)
+    delete(names)
     return arr
 }
 

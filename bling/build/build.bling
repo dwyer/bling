@@ -120,7 +120,7 @@ fun getSrcModTime(path runtime.charstr) os.Time {
         }
         file.free()
     }
-    runtime.Slice_unmake(&files)
+    delete(files)
     return t
 }
 
@@ -249,7 +249,7 @@ fun buildCPackage(b *Builder, path runtime.charstr) *Package {
     for var i = 0; i < len(files); i++ {
         files[i].free()
     }
-    runtime.Slice_unmake(&files)
+    delete(files)
     return &&pkg
 }
 

@@ -48,7 +48,7 @@ fun newScope(outer *Scope) *Scope {
 fun (s *Scope) unmake() {
     if s {
         runtime.Map_unmake(&s.objects)
-        runtime.Slice_unmake(&s.keys)
+        delete(s.keys)
     }
 }
 

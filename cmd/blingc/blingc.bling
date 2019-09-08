@@ -22,7 +22,7 @@ fun emitRawFile(e *emitter.Emitter, filename runtime.charstr) {
         panic(err.error)
     }
     emitter.emitBytes(e, src)
-    runtime.Slice_unmake(&src)
+    delete(src)
 }
 
 fun isForwardDecl(decl *ast.Decl) bool {

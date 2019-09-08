@@ -1172,7 +1172,7 @@ fun parseDir(fset *token.FileSet, path runtime.charstr, first **runtime.Error) [
             append(files, parseFile(fset, name))
         }
     }
-    runtime.Slice_unmake(&infos)
+    delete(infos)
     return files
 }
 
@@ -1218,6 +1218,6 @@ fun parseFile(fset *token.FileSet, filename runtime.charstr) *ast.File {
     }
     var p = Parser{}
     p.init(fset, filename, src)
-    // runtime.Slice_unmake(&src) // XXX src now belongs to the FileSet
+    // delete(src) // XXX src now belongs to the FileSet
     return p._parseFile()
 }

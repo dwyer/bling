@@ -49,7 +49,7 @@ fun Map_make(valSize int) Map {
 }
 
 fun Map_unmake(m *Map) {
-    Slice_unmake(&m._pairs)
+    delete(m._pairs)
 }
 
 fun Map_len(m *const Map) int {
@@ -127,7 +127,7 @@ fun Map_set(m *Map, key charstr, val *const void) {
                 _mapSetUnsafe(m, p.key, p.val)
             }
         }
-        Slice_unmake(&pairs)
+        delete(pairs)
     }
 }
 

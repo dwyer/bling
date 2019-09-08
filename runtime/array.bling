@@ -12,10 +12,6 @@ fun Array_unmake(s Slice) {
     free(s._array)
 }
 
-fun Slice_unmake(s voidptr) {
-    free((typ *Slice(s))._array)
-}
-
 fun Slice_len(s *const Slice) int {
     return s._len
 }
