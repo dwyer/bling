@@ -1,0 +1,758 @@
+package types
+
+import "C"
+import "bling/ast"
+import "bling/parser"
+import "bling/token"
+import "runtime"
+
+typ Checker struct {
+    conf *Config
+    fset *token.FileSet
+    pkg *Package
+    info *Info
+    result *ast.Expr
+}
+
+fun (c *Checker) log(fatal bool, pos token.Pos, msg runtime.charstr) {
+    var position = token.Position{}
+    var file = c.fset.file(pos)
+    if file {
+        position = file.position(pos)
+    }
+    var errMsg = C.sprintf("%s: %s\n%s", position.string(), msg, file.lineString(position.line))
+    if fatal {
+        panic(errMsg)
+    } else {
+        print(errMsg)
+    }
+    runtime.free(errMsg)
+}
+
+fun (c *Checker) warning(pos token.Pos, msg runtime.charstr) {
+    // c.log(false, pos, msg)
+}
+
+fun (c *Checker) error(pos token.Pos, msg runtime.charstr) {
+    c.log(true, pos, msg)
+}
+
+fun (c *Checker) resolve(s *ast.Scope, x *ast.Expr) {
+    assert(x.kind == ast.EXPR_IDENT)
+    if x.ident.obj {
+        c.error(x.pos(), C.sprintf("already resolved: %s", x.ident.name))
+    }
+    if ast.resolve(s, x) {
+        return
+    }
+    c.error(x.pos(), C.sprintf("unresolved: %s", x.ident.name))
+}
+
+fun (c *Checker) declare(decl *ast.Decl, data voidptr, scope *ast.Scope, kind ast.ObjKind, ident *ast.Expr) {
+    if ident.ident.obj != nil {
+        c.error(decl.pos, C.sprintf("already declared: %s", ident.ident.name))
+    }
+    var obj = ast.newObject(kind, ident.ident.name)
+    obj.decl = decl
+    obj.data = data
+    obj.scope = scope
+    ident.ident.obj = obj
+    var alt = scope.insert(obj)
+    if alt != nil && kind != ast.ObjKind_PKG { // TODO declare pkgs in seperate scope
+        c.error(decl.pos, C.sprintf("incompatible redefinition of `%s`: %s", declString(obj.decl), declString(decl)))
+    }
+}
+
+fun (c *Checker) openScope() {
+    c.pkg.scope = ast.newScope(c.pkg.scope)
+}
+
+fun (c *Checker) closeScope() {
+    c.pkg.scope = c.pkg.scope.outer
+}
+
+fun (c *Checker) checkType(t *ast.Expr) {
+    assert(t)
+    switch t.kind {
+    case ast.EXPR_IDENT:
+        c.resolve(c.pkg.scope, t)
+        break
+    case ast.EXPR_SELECTOR:
+        var type = c.checkExpr(t.selector.x)
+        assert(type == nil)
+        assert(ast.isIdent(t.selector.x))
+        assert(t.selector.x.ident.obj.kind == ast.ObjKind_PKG)
+        var oldScope = c.pkg.scope
+        c.pkg.scope = t.selector.x.ident.obj.data
+        c.checkType(t.selector.sel)
+        c.pkg.scope = oldScope
+        break
+    case ast.EXPR_STAR:
+        c.checkType(t.star.x)
+        break
+    case ast.TYPE_ARRAY:
+        c.checkType(t.array_.elt)
+        if t.array_.len {
+            var len = c.checkExpr(t.array_.len)
+            typ void(len)
+        }
+        break
+    case ast.TYPE_ELLIPSIS:
+        break
+    case ast.TYPE_ENUM:
+        for var i = 0; i < len(t.enum_.enums); i++ {
+            var decl = t.enum_.enums[i]
+            if t.enum_.name {
+                decl.value.type = t.enum_.name
+            }
+            c.declare(decl, nil, c.pkg.scope, ast.ObjKind_CON, decl.value.name)
+            if decl.value.value {
+                c.checkExpr(decl.value.value)
+            }
+        }
+        break
+    case ast.TYPE_FUNC:
+        for var i = 0; i < len(t.func.params); i++ {
+            var param = t.func.params[i]
+            assert(param.kind == ast.DECL_FIELD)
+            c.checkType(param.field.type)
+        }
+        if t.func.result {
+            c.checkType(t.func.result)
+        }
+        break
+    case ast.TYPE_MAP:
+        if t.map_.val {
+            c.checkType(t.map_.val)
+        }
+        break
+    case ast.TYPE_STRUCT:
+        if len(t.struct_.fields) > 0 {
+            c.openScope()
+            for var i = 0; i < len(t.struct_.fields); i++ {
+                var field = t.struct_.fields[i]
+                c.checkType(field.field.type)
+                if field.field.name {
+                    c.declare(field, nil, c.pkg.scope, ast.ObjKind_VAL, field.field.name)
+                }
+            }
+            c.closeScope()
+        }
+        break
+    default:
+        c.error(t.pos(), "unknown type")
+        break
+    }
+}
+
+fun (c *Checker) checkIdent(expr *ast.Expr) *ast.Expr {
+    assert(expr.kind == ast.EXPR_IDENT)
+    if expr.ident.obj == nil {
+        c.error(expr.pos(), "unresolved identifier")
+    }
+    return getDeclType(expr.ident.obj.decl)
+}
+
+fun (c *Checker) checkArrayLit(x *ast.Expr) {
+    var baseT = getBaseType(x.composite.type)
+    for var i = 0; i < len(x.composite.list); i++ {
+        var elt = x.composite.list[i]
+        if elt.kind == ast.EXPR_KEY_VALUE {
+            elt.key_value.isArray = true
+            var indexT = c.checkExpr(elt.key_value.key)
+            if !isInteger(indexT) {
+                c.error(elt.pos(), C.sprintf("not a valid index: %s", exprString(elt.key_value.key)))
+            }
+            elt = elt.key_value.value
+        }
+        if elt.kind == ast.EXPR_COMPOSITE_LIT {
+            if elt.composite.type == nil {
+                elt.composite.type = baseT.array_.elt
+            } else {
+                c.checkType(elt.composite.type)
+            }
+            c.checkCompositeLit(elt)
+        } else {
+            c.checkExpr(elt)
+        }
+    }
+}
+
+fun (c *Checker) checkStructLit(x *ast.Expr) {
+    assert(x.composite.type)
+    var expectKV = false
+    for var i = 0; i < len(x.composite.list); i++ {
+        var elt = x.composite.list[i]
+        var fieldT *ast.Expr = nil
+        if elt.kind == ast.EXPR_KEY_VALUE {
+            elt.key_value.isArray = false
+            expectKV = true
+            var key = elt.key_value.key
+            if !ast.isIdent(key) {
+                c.error(x.pos(), "key must be an identifier")
+            }
+            var field = getStructFieldByName(x.composite.type, key)
+            if field == nil {
+                c.error(key.pos(),
+                    C.sprintf("no member named '%s' in '%s'",
+                        exprString(key), typeString(x.composite.type)))
+            }
+            key.ident.obj = field.field.name.ident.obj
+            fieldT = field.field.type
+            elt = elt.key_value.value
+        } else {
+            if expectKV {
+                c.error(x.pos(), "expected a key/value expr")
+            }
+            var field = getStructField(x.composite.type, i)
+            fieldT = field.field.type
+        }
+        var eltT *ast.Expr = nil
+        if elt.kind == ast.EXPR_COMPOSITE_LIT {
+            if elt.composite.type == nil {
+                elt.composite.type = fieldT
+            } else {
+                c.checkType(elt.composite.type)
+            }
+            eltT = c.checkCompositeLit(elt)
+        } else {
+            eltT = c.checkExpr(elt)
+        }
+        if !areAssignable(fieldT, eltT) {
+            c.error(elt.pos(), C.sprintf("cannot init field of type `%s` with value of type `%s`", typeString(fieldT), typeString(eltT)))
+        }
+    }
+}
+
+fun (c *Checker) checkCompositeLit(x *ast.Expr) *ast.Expr {
+    var t = x.composite.type
+    assert(t)
+    var baseT = getBaseType(t)
+    switch baseT.kind {
+    case ast.TYPE_ARRAY:
+        c.checkArrayLit(x)
+        break
+    case ast.TYPE_STRUCT:
+        c.checkStructLit(x)
+        break
+    default:
+        c.error(x.pos(), "composite type must be an array or a struct")
+        break
+    }
+    return t
+}
+
+fun (c *Checker) lookupIdent(name runtime.charptr) *ast.Expr {
+    var obj = c.pkg.scope.deepLookup(name)
+    assert(obj)
+    assert(obj.kind == ast.ObjKind_TYP)
+    assert(obj.decl.kind == ast.DECL_TYPE)
+    var t = obj.decl.type.name
+    assert(t.ident.obj)
+    return t
+}
+
+fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
+    var type = c.checkExpr(expr.selector.x)
+    if type == nil {
+        // x is a scope
+        var x = expr.selector.x
+        assert(x.kind == ast.EXPR_IDENT)
+        var decl = x.ident.obj.decl
+        assert(decl.kind == ast.DECL_IMPORT)
+        var oldScope = c.pkg.scope
+        c.pkg.scope = x.ident.obj.data
+        type = c.checkExpr(expr.selector.sel)
+        c.pkg.scope = oldScope
+        expr.selector.tok = token.DOLLAR
+        return type
+    }
+    var isArgPtr = false
+    if type.kind == ast.EXPR_STAR {
+        expr.selector.tok = token.ARROW
+        type = type.star.x
+        isArgPtr = true
+    } else {
+        assert(expr.selector.tok != token.ARROW)
+    }
+    if var alias = getTypeAlias(type); alias != nil {
+        // if type is an alias, check its scope for a method
+        if var scope *ast.Scope = alias.ident.obj.data; scope {
+            if var obj = scope.lookup(expr.selector.sel.ident.name); obj {
+                c.resolve(scope, expr.selector.sel)
+                assert(obj.kind == ast.ObjKind_FUN)
+                expr.selector.tok = token.FUNC
+                var recvType = obj.decl.func.recv.field.type
+                var isRecvTypePtr = recvType.kind == ast.EXPR_STAR
+                if isRecvTypePtr && !isArgPtr {
+                    var refer = ast.Expr{
+                        kind: ast.EXPR_UNARY,
+                        unary: {
+                            op: token.AND,
+                            x: expr.selector.x,
+                        },
+                    }
+                    expr.selector.x = &&refer
+                } else if !isRecvTypePtr && isArgPtr {
+                    var deref = ast.Expr{
+                        kind: ast.EXPR_STAR,
+                        star: {
+                            x: expr.selector.x,
+                        },
+                    }
+                    expr.selector.x = &&deref
+                }
+                return obj.decl.func.type
+            }
+        }
+    }
+    if var base = getBaseType(type); base.kind == ast.TYPE_STRUCT {
+        if var field = getStructFieldByName(type, expr.selector.sel); field == nil {
+            c.error(expr.pos(),
+            C.sprintf("no member named '%s' in '%s'",
+            exprString(expr.selector.sel), typeString(type)))
+            return nil
+        } else {
+            expr.selector.sel.ident.obj = field.field.name.ident.obj
+            return field.field.type
+        }
+    }
+    c.error(expr.pos(), "selector on invalid type")
+    return nil
+}
+
+fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
+    assert(expr)
+    switch expr.kind {
+    case ast.EXPR_BINARY:
+        var typ1 = c.checkExpr(expr.binary.x)
+        var typ2 = c.checkExpr(expr.binary.y)
+        if !areComparable(typ1, typ2) {
+            c.error(expr.pos(), C.sprintf("not compariable: %s and %s", typeString(typ1), typeString(typ2)))
+        }
+        switch expr.binary.op {
+        case token.EQUAL, token.GT, token.GT_EQUAL, token.LAND, token.LOR, token.LT, token.LT_EQUAL, token.NOT_EQUAL:
+            return c.lookupIdent("bool")
+        default:
+            return typ1
+        }
+    case ast.EXPR_BASIC_LIT:
+        switch expr.basic.kind {
+        case token.CHAR:
+            return c.lookupIdent("char")
+        case token.FLOAT:
+            return c.lookupIdent("float")
+        case token.INT:
+            return c.lookupIdent("int")
+        case token.STRING:
+            return makePtr(c.lookupIdent("char"))
+        default:
+            c.error(expr.pos(), "unreachable")
+            return nil
+        }
+    case ast.EXPR_CALL:
+        var func = expr.call.func
+        var type = c.checkExpr(func)
+        if type.kind == ast.EXPR_STAR {
+            type = type.star.x
+        }
+        if type.kind == ast.TYPE_BUILTIN {
+            var n = len(expr.call.args)
+            if type.builtin.variadic {
+                assert(n >= type.builtin.nargs)
+            } else {
+                assert(n == type.builtin.nargs)
+            }
+            switch type.builtin.id {
+            case LEN:
+                c.checkExpr(expr.call.args[0])
+                return c.lookupIdent("int")
+            case MAKEARRAY:
+                type = expr.call.args[0]
+                c.checkType(type)
+                if !isType(type) {
+                    c.error(type.pos(), "expected a type")
+                }
+                var t = ast.Expr{
+                    kind: ast.TYPE_ARRAY,
+                    array_: {
+                        elt: type,
+                        dynamic: true,
+                    },
+                }
+                type = &&t
+                return type
+            case MAKEMAP:
+                type = expr.call.args[0]
+                c.checkType(type)
+                if !isType(type) {
+                    c.error(type.pos(), "expected a type")
+                }
+                var t = ast.Expr{
+                    kind: ast.TYPE_MAP,
+                    map_: {
+                        val: type,
+                    },
+                }
+                type = &&t
+                return type
+            case SIZEOF:
+                type = expr.call.args[0]
+                c.checkType(type)
+                return c.lookupIdent("u64")
+            default:
+                assert(!type.builtin.isExpr)
+                for var i = 0; i < len(expr.call.args); i++ {
+                    c.checkExpr(expr.call.args[i])
+                }
+                return nil
+            }
+        } else if type.kind == ast.TYPE_FUNC {
+            var j = 0
+            for var i = 0; i < len(expr.call.args); i++ {
+                var param = type.func.params[j]
+                if param == nil {
+                    c.error(expr.pos(), "too many args")
+                    break
+                }
+                var type = c.checkExpr(expr.call.args[i])
+                assert(param.kind == ast.DECL_FIELD)
+                if !areAssignable(param.field.type, type) {
+                    c.error(expr.pos(), C.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
+                }
+                if param.field.type.kind != ast.TYPE_ELLIPSIS {
+                    j++
+                }
+            }
+            return type.func.result
+        } else {
+            c.error(expr.pos(), C.sprintf("`%s` is not a func", exprString(expr.call.func)))
+        }
+    case ast.EXPR_COMPOSITE_LIT:
+        c.checkType(expr.composite.type)
+        c.checkCompositeLit(expr)
+        return expr.composite.type
+    case ast.EXPR_CAST:
+        c.checkType(expr.cast.type)
+        c.checkExpr(expr.cast.expr)
+        return expr.cast.type
+    case ast.EXPR_IDENT:
+        c.resolve(c.pkg.scope, expr)
+        return c.checkIdent(expr)
+    case ast.EXPR_INDEX:
+        var type = c.checkExpr(expr.index.x)
+        var base = getBaseType(type)
+        switch base.kind {
+        case ast.TYPE_ARRAY:
+            type = base.array_.elt
+            break
+        case ast.EXPR_STAR:
+            type = base.star.x
+            break
+        default:
+            c.error(expr.pos(), C.sprintf("indexing a non-array or pointer `%s`", typeString(type)))
+            break
+        }
+        var typ2 = c.checkExpr(expr.index.index)
+        typ void(typ2)
+        return type
+    case ast.EXPR_PAREN:
+        return c.checkExpr(expr.paren.x)
+    case ast.EXPR_SELECTOR:
+        return c.checkSelector(expr)
+    case ast.EXPR_STAR:
+        var type = c.checkExpr(expr.star.x)
+        var base = getBaseType(type)
+        switch base.kind {
+        case ast.EXPR_STAR:
+            return base.star.x
+        case ast.TYPE_ARRAY:
+            c.warning(expr.pos(), C.sprintf("derefencing an array `%s`", typeString(type)))
+            return base.array_.elt
+        default:
+            c.error(expr.pos(), C.sprintf("derefencing a non-pointer `%s`", typeString(type)))
+            return nil
+        }
+    case ast.EXPR_TERNARY:
+        var t1 = c.checkExpr(expr.ternary.cond)
+        assert(isArithmetic(t1))
+        var t2 = expr.ternary.x ? c.checkExpr(expr.ternary.x) : t1
+        var t3 = c.checkExpr(expr.ternary.y)
+        if !areComparable(t2, t3) {
+            c.error(expr.pos(), "not comparable")
+        }
+        return t2
+    case ast.EXPR_UNARY:
+        var type = c.checkExpr(expr.unary.x)
+        switch expr.unary.op {
+        case token.AND:
+            if !isLhs(expr.unary.x) {
+                c.error(expr.pos(), C.sprintf("invalid lvalue `%s`", exprString(expr.unary.x)))
+            }
+            return makePtr(type)
+        case token.LAND:
+            return makePtr(type)
+        default:
+            break
+        }
+        return type
+    default:
+        c.error(expr.pos(), "unknown expr")
+        return nil
+    }
+}
+
+fun (c *Checker) checkStmt(stmt *ast.Stmt) {
+    switch stmt.kind {
+    case ast.STMT_ASSIGN:
+        if !isLhs(stmt.assign.x) {
+            c.error(stmt.pos(), C.sprintf("invalid lvalue `%s`", exprString(stmt.assign.x)))
+        }
+        var a = c.checkExpr(stmt.assign.x)
+        if a.is_const {
+            c.error(stmt.pos(), "cannot assign to const var")
+        }
+        var b = c.checkExpr(stmt.assign.y)
+        if !areAssignable(a, b) {
+            c.error(stmt.pos(), C.sprintf("not assignable: `%s` and `%s`", typeString(a), typeString(b)))
+        }
+        break
+    case ast.STMT_BLOCK:
+        c.openScope()
+        for var i = 0; i < len(stmt.block.stmts); i++ {
+            c.checkStmt(stmt.block.stmts[i])
+        }
+        c.closeScope()
+        break
+    case ast.STMT_DECL:
+        c.checkDecl(stmt.decl.decl)
+        break
+    case ast.STMT_EXPR:
+        c.checkExpr(stmt.expr.x)
+        break
+    case ast.STMT_EMPTY:
+        break
+    case ast.STMT_IF:
+        if stmt.if_.init {
+            c.openScope()
+            c.checkStmt(stmt.if_.init)
+        }
+        c.checkExpr(stmt.if_.cond)
+        c.checkStmt(stmt.if_.body)
+        if stmt.if_.else_ {
+            c.checkStmt(stmt.if_.else_)
+        }
+        if stmt.if_.init {
+            c.closeScope()
+        }
+        break
+    case ast.STMT_ITER:
+        if stmt.iter.init || stmt.iter.post {
+            c.openScope()
+        }
+        if stmt.iter.init {
+            c.checkStmt(stmt.iter.init)
+        }
+        if stmt.iter.cond {
+            c.checkExpr(stmt.iter.cond)
+        }
+        if stmt.iter.post {
+            c.checkStmt(stmt.iter.post)
+        }
+        c.checkStmt(stmt.iter.body)
+        if stmt.iter.init || stmt.iter.post {
+            c.closeScope()
+        }
+        break
+    case ast.STMT_JUMP:
+        break
+    case ast.STMT_LABEL:
+        c.checkStmt(stmt.label.stmt)
+        break
+    case ast.STMT_POSTFIX:
+        c.checkExpr(stmt.postfix.x)
+        break
+    case ast.STMT_RETURN:
+        if stmt.return_.x {
+            var a = c.result
+            var b = c.checkExpr(stmt.return_.x)
+            if a == nil {
+                c.error(stmt.pos(), "returning value in void function")
+            }
+            if !areAssignable(a, b) {
+                c.error(stmt.pos(), C.sprintf("not returnable: %s and %s", typeString(a), typeString(b)))
+            }
+        }
+        break
+    case ast.STMT_SWITCH:
+        var type1 = c.checkExpr(stmt.switch_.tag)
+        for var i = 0; i < len(stmt.switch_.stmts); i++ {
+            var clause = stmt.switch_.stmts[i]
+            assert(clause.kind == ast.STMT_CASE)
+            for var j = 0; j < len(clause.case_.exprs); j++ {
+                var type2 = c.checkExpr(clause.case_.exprs[j])
+                if !areComparable(type1, type2) {
+                    c.error(stmt.pos(), C.sprintf("not comparable: %s and %s", typeString(type1), typeString(type2)))
+                }
+            }
+            c.openScope()
+            for var j = 0; j < len(clause.case_.stmts); j++ {
+                c.checkStmt(clause.case_.stmts[j])
+            }
+            c.closeScope()
+        }
+        break
+    default:
+        c.error(stmt.pos(), "unknown stmt")
+    }
+}
+
+fun (c *Checker) checkImport(imp *ast.Decl) *Package {
+    var path = constant_stringVal(imp.imp.path)
+    var pkg *Package = nil
+    runtime.Map_get(&c.info.imports, path, &pkg)
+    if pkg == nil {
+        var files = parser.parseDir(c.fset, path, nil)
+        pkg = check(c.conf, path, c.fset, files, c.info)
+        assert(runtime.Map_get(&c.info.imports, path, nil))
+    }
+    imp.imp.name = makeIdent(pkg.scope.pkgName.ident.name)
+    c.declare(imp, pkg.scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
+    return pkg
+}
+
+fun (c *Checker) checkDecl(decl *ast.Decl) {
+    switch decl.kind {
+    case ast.DECL_FUNC:
+        c.openScope()
+        if var recv = decl.func.recv; recv != nil {
+            // declare recv in method scope
+            c.declare(recv, nil, c.pkg.scope, ast.ObjKind_VAL, recv.field.name)
+        }
+        var type = decl.func.type
+        for var i = 0; i < len(type.func.params); i++ {
+            if var param = type.func.params[i]; param.field.name != nil {
+                c.declare(param, nil, c.pkg.scope, ast.ObjKind_VAL,
+                param.field.name)
+            }
+        }
+        if var body = decl.func.body; body != nil && !c.conf.ignoreFuncBodies {
+            c.result = type.func.result
+            for var i = 0; i < len(body.block.stmts); i++ {
+                c.checkStmt(body.block.stmts[i])
+            }
+            c.result = nil
+        }
+        c.closeScope()
+        break
+    case ast.DECL_PRAGMA:
+        break
+    case ast.DECL_TYPE:
+        switch decl.type.type.kind {
+        case ast.TYPE_ENUM:
+            decl.type.type.enum_.name = decl.type.name
+            break
+        case ast.TYPE_STRUCT:
+            decl.type.type.struct_.name = decl.type.name
+            break
+        default:
+            break
+        }
+        c.checkType(decl.type.type)
+        break
+    case ast.DECL_VALUE:
+        var valType *ast.Expr = nil
+        if decl.value.type != nil {
+            c.checkType(decl.value.type)
+        }
+        if decl.value.value != nil {
+            if decl.value.value.kind == ast.EXPR_COMPOSITE_LIT {
+                if decl.value.value.composite.type == nil {
+                    decl.value.value.composite.type = decl.value.type
+                } else {
+                    c.checkType(decl.value.value.composite.type)
+                }
+                valType = c.checkCompositeLit(decl.value.value)
+            } else {
+                valType = c.checkExpr(decl.value.value)
+            }
+        }
+        if decl.value.type == nil {
+            decl.value.type = valType
+        }
+        if valType != nil {
+            var varType = decl.value.type
+            if !areAssignable(varType, valType) {
+                c.error(decl.pos, C.sprintf("not assignable %s and %s",
+                    typeString(varType), typeString(valType)))
+            }
+        }
+        c.declare(decl, nil, c.pkg.scope, ast.ObjKind_VAL, decl.value.name)
+        break
+    default:
+        c.error(decl.pos, "unreachable")
+    }
+}
+
+fun (c *Checker) checkFiles(files []*ast.File) {
+    for var j = 0; j < len(files); j++ {
+        var file = files[j]
+        for var i = 0; i < len(file.imports); i++ {
+            var pkg = c.checkImport(file.imports[i])
+            append(c.pkg.imports, pkg)
+        }
+    }
+    for var j = 0; j < len(files); j++ {
+        var decls = files[j].decls
+        for var i = 0; i < len(decls); i++ {
+            if var decl = decls[i]; decl.kind == ast.DECL_TYPE {
+                c.declare(decl, nil, c.pkg.scope, ast.ObjKind_TYP, decl.type.name)
+            }
+        }
+    }
+    for var j = 0; j < len(files); j++ {
+        var decls = files[j].decls
+        for var i = 0; i < len(decls); i++ {
+            if var decl = decls[i]; decl.kind == ast.DECL_FUNC {
+                c.checkType(decl.func.type)
+                var scope = c.pkg.scope
+                if var recv = decl.func.recv; recv {
+                    var type = recv.field.type
+                    c.checkType(type)
+                    if type.kind == ast.EXPR_STAR {
+                        type = type.star.x
+                    }
+                    if type.kind != ast.EXPR_IDENT {
+                        c.error(recv.field.type.pos(),
+                        "can't declare method on non-alias")
+                    }
+                    scope = type.ident.obj.data // declare method in type scope
+                    if type.ident.obj.data == nil {
+                        scope = ast.newScope(c.pkg.scope)
+                        scope.pkgName = type
+                        type.ident.obj.data = scope
+                    }
+                    assert(type.ident.obj.data)
+                    assert(scope.pkgName)
+                }
+                c.declare(decl, nil, scope, ast.ObjKind_FUN, decl.func.name)
+            }
+        }
+    }
+    for var j = 0; j < len(files); j++ {
+        var decls = files[j].decls
+        for var i = 0; i < len(decls); i++ {
+            if var decl = decls[i]; decl.kind == ast.DECL_TYPE {
+                c.checkDecl(decls[i])
+            }
+        }
+    }
+    for var j = 0; j < len(files); j++ {
+        var decls = files[j].decls
+        for var i = 0; i < len(decls); i++ {
+            if var decl = decls[i]; decl.kind != ast.DECL_TYPE {
+                c.checkDecl(decls[i])
+            }
+        }
+    }
+}

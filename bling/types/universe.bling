@@ -1,0 +1,219 @@
+package types
+
+import "bling/ast"
+import "runtime"
+
+typ BasicKind enum {
+    INVALID
+    VOID
+    BOOL
+    CHAR
+    INT
+    INT8
+    INT16
+    INT32
+    INT64
+    UINT
+    UINT8
+    UINT16
+    UINT32
+    UINT64
+    UINTPTR
+    FLOAT32
+    FLOAT64
+    VOID_POINTER
+    UNSAFE_POINTER
+}
+
+typ BasicInfo enum {
+    IS_BOOLEAN = 1 << 0
+    IS_INTEGER = 1 << 1
+    IS_UNSIGNED = 1 << 2
+    IS_FLOAT = 1 << 3
+    IS_COMPLEX = 1 << 4
+    IS_STRING = 1 << 5
+    IS_UNTYPED = 1 << 6
+    IS_ORDERED = IS_INTEGER | IS_FLOAT | IS_STRING
+    IS_NUMERIC = IS_INTEGER | IS_FLOAT | IS_COMPLEX
+    IS_CONST_EXPR = IS_BOOLEAN | IS_NUMERIC | IS_STRING
+}
+
+typ Basic struct {
+    kind BasicKind
+    info BasicInfo
+    name runtime.charptr
+}
+
+var _universe *ast.Scope = nil
+
+var predeclaredTypes [?]const Basic = {
+    INVALID: { INVALID, 0, "invalid type", },
+    VOID: { VOID, IS_UNTYPED, "void", },
+    BOOL: { BOOL, IS_BOOLEAN, "bool", },
+    CHAR: { CHAR, IS_INTEGER, "char", },
+    INT: { INT, IS_INTEGER, "int", },
+    INT8: { INT8, IS_INTEGER, "i8", },
+    INT16: { INT16, IS_INTEGER, "i16", },
+    INT32: { INT32, IS_INTEGER, "i32", },
+    INT64: { INT64, IS_INTEGER, "i64", },
+    UINT: { UINT, IS_INTEGER | IS_UNSIGNED, "uint", },
+    UINT8: { UINT8, IS_INTEGER | IS_UNSIGNED, "u8", },
+    UINT16: { UINT16, IS_INTEGER | IS_UNSIGNED, "u16", },
+    UINT32: { UINT32, IS_INTEGER | IS_UNSIGNED, "u32", },
+    UINT64: { UINT64, IS_INTEGER | IS_UNSIGNED, "u64", },
+    UINTPTR: { UINTPTR, IS_INTEGER | IS_UNSIGNED, "uintptr", },
+    FLOAT32: { FLOAT32, IS_FLOAT, "float", },
+    FLOAT64: { FLOAT64, IS_FLOAT, "double", },
+    VOID_POINTER: { VOID_POINTER, 0, "voidptr", },
+}
+
+fun defPredeclaredTypes() {
+    for var i = 0; i < UNSAFE_POINTER; i++ {
+        if !predeclaredTypes[i].name {
+            continue
+        }
+        var obj = ast.newObject(ast.ObjKind_TYP, predeclaredTypes[i].name)
+        var name = ast.Expr{
+            kind: ast.EXPR_IDENT,
+            ident: {
+                name: runtime.strdup(predeclaredTypes[i].name),
+                obj: obj,
+            },
+        }
+        var type = ast.Expr{
+            kind: ast.TYPE_NATIVE,
+            native: {
+                kind: predeclaredTypes[i].kind,
+                info: predeclaredTypes[i].info,
+                name: runtime.strdup(predeclaredTypes[i].name),
+            },
+        }
+        var decl = ast.Decl{
+            kind: ast.DECL_TYPE,
+            type: {
+                name: &&name,
+                type: &&type,
+            },
+        }
+        obj.decl = &&decl
+        assert(_universe.insert(obj) == nil)
+    }
+}
+
+typ builtinId enum {
+    APPEND
+    ASSERT
+    LEN
+    MAKEARRAY
+    MAKEMAP
+    PANIC
+    PRINT
+    SIZEOF
+    numBuiltinIds
+}
+
+typ exprKind enum {
+    expression
+    statement
+}
+
+var predeclareFuncs [?]struct {
+    name runtime.charptr
+    nargs int
+    variadic bool
+    kind exprKind
+} = {
+    APPEND: { "append", 2, false, statement, },
+    ASSERT: { "assert", 1, false, statement, },
+    LEN: { "len", 1, false, expression, },
+    MAKEARRAY: { "makearray", 1, false, expression, },
+    MAKEMAP: { "makemap", 1, false, expression, },
+    PANIC: { "panic", 1, false, statement, },
+    PRINT: { "print", 1, false, statement, },
+    SIZEOF: { "sizeof", 1, false, expression, },
+}
+
+fun defPredeclaredFuncs() {
+    for var i = 0; i < numBuiltinIds; i++ {
+        var name = ast.Expr{
+            kind: ast.EXPR_IDENT,
+            ident: {
+                name: runtime.strdup(predeclareFuncs[i].name),
+            },
+        }
+        var type = ast.Expr{
+            kind: ast.TYPE_BUILTIN,
+            builtin: {
+                name: runtime.strdup(predeclareFuncs[i].name),
+                nargs: predeclareFuncs[i].nargs,
+                variadic: predeclareFuncs[i].variadic,
+                isExpr: predeclareFuncs[i].kind == expression,
+                id: i,
+            },
+        }
+        var decl = ast.Decl{
+            kind: ast.DECL_FUNC,
+            func: {
+                name: &&name,
+                type: &&type,
+            },
+        }
+        var obj = ast.newObject(ast.ObjKind_FUN, name.ident.name)
+        obj.decl = &&decl
+        obj.decl.func.name.ident.obj = obj
+        assert(_universe.insert(obj) == nil)
+    }
+}
+
+var predeclareConsts [?]struct {
+    name runtime.charptr
+    type runtime.charptr
+    value int
+} = {
+    {"nil", "voidptr", 0},
+    {"false", "bool", 0},
+    {"true", "bool", 1},
+    {nil},
+}
+
+fun defPredeclaredConsts() {
+    for var i = 0; predeclareConsts[i].name; i++ {
+        var obj = _universe.lookup(predeclareConsts[i].type)
+        var name = ast.Expr{
+            kind: ast.EXPR_IDENT,
+            ident: {
+                name: runtime.strdup(predeclareConsts[i].name),
+            },
+        }
+        var expr = ast.Expr{
+            kind: ast.EXPR_CONST,
+            const_: {
+                name: runtime.strdup(predeclareConsts[i].name),
+                type: obj.decl.type.name,
+                value: predeclareConsts[i].value,
+            },
+        }
+        var decl = ast.Decl{
+            kind: ast.DECL_VALUE,
+            value: {
+                name: &&name,
+                type: obj.decl.type.name,
+                value: &&expr,
+            },
+        }
+        obj = ast.newObject(ast.ObjKind_CON, name.ident.name)
+        obj.decl = &&decl
+        obj.decl.value.name.ident.obj = obj
+        assert(_universe.insert(obj) == nil)
+    }
+}
+
+fun universe() *ast.Scope {
+    if _universe == nil {
+        _universe = ast.newScope(nil)
+        defPredeclaredTypes()
+        defPredeclaredConsts()
+        defPredeclaredFuncs()
+    }
+    return _universe
+}
