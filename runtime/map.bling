@@ -48,7 +48,7 @@ fun Map_make(valSize int) Map {
     return m
 }
 
-fun Map_unmake(m *Map) {
+fun Map_unmake(m Map) {
     delete(m._pairs)
 }
 

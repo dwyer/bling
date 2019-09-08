@@ -647,7 +647,7 @@ fun _emitPackage(e *emitter.Emitter, done *map runtime.charptr, pkg *types.Packa
 fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
     var done = makemap(runtime.charptr)
     _emitPackage(e, &done, pkg)
-    runtime.Map_unmake(&done)
+    delete(done)
 }
 
 fun emitHeader(e *emitter.Emitter, pkg *types.Package) {

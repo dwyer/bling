@@ -47,7 +47,7 @@ fun newScope(outer *Scope) *Scope {
 
 fun (s *Scope) unmake() {
     if s {
-        runtime.Map_unmake(&s.objects)
+        delete(s.objects)
         delete(s.keys)
     }
 }
@@ -94,6 +94,6 @@ fun (s *Scope) deepLookup(name runtime.charptr) *Object {
 }
 
 fun (s *Scope) free() {
-    runtime.Map_unmake(&s.objects)
+    delete(s.objects)
     delete(s)
 }

@@ -13,6 +13,7 @@
 
 #define delete(x) _Generic((x), \
         runtime$Slice: runtime$Array_unmake, \
+        runtime$Map: runtime$Map_unmake, \
         default: runtime$free)(x)
 
 #define append(a, x) do { \
