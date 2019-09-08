@@ -45,11 +45,10 @@ fun newScope(outer *Scope) *Scope {
     return &&s
 }
 
-fun (s *Scope) unmake() {
-    if s {
-        delete(s.objects)
-        delete(s.keys)
-    }
+fun (s *Scope) delete() {
+    delete(s.objects)
+    delete(s.keys)
+    delete(s)
 }
 
 fun (s *Scope) insert(obj *Object) *Object {
@@ -91,9 +90,4 @@ fun (s *Scope) deepLookup(name runtime.charptr) *Object {
         }
     }
     return nil
-}
-
-fun (s *Scope) free() {
-    delete(s.objects)
-    delete(s)
 }
