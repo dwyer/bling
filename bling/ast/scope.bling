@@ -1,0 +1,99 @@
+package ast
+
+import "C"
+import "bytes"
+import "runtime"
+
+typ ObjKind enum {
+    ObjKind_BAD
+    ObjKind_CON
+    ObjKind_FUN
+    ObjKind_PKG
+    ObjKind_TYP
+    ObjKind_VAL
+}
+
+typ Object struct {
+    kind ObjKind
+    name runtime.charptr
+    decl *Decl
+    data voidptr
+    scope *Scope
+}
+
+fun newObject(kind ObjKind, name runtime.charptr) *Object {
+    var obj = Object{
+        kind: kind,
+        name: name,
+    }
+    return &&obj
+}
+
+typ Scope struct {
+    outer *Scope
+    objects map *Object
+    keys []runtime.charptr
+    pkgName *Expr
+}
+
+fun newScope(outer *Scope) *Scope {
+    var s = Scope{
+        outer: outer,
+        objects: runtime.Map_make(sizeof(*Object)),
+        keys: makearray(runtime.charptr),
+    }
+    return &&s
+}
+
+fun (s *Scope) unmake() {
+    if s {
+        runtime.Map_unmake(&s.objects)
+        runtime.Slice_unmake(&s.keys)
+    }
+}
+
+fun (s *Scope) insert(obj *Object) *Object {
+    var alt *Object = nil
+    runtime.Map_get(&s.objects, obj.name, &alt)
+    if alt == nil {
+        runtime.Map_set(&s.objects, obj.name, &obj)
+        append(s.keys, obj.name)
+    }
+    return alt
+}
+
+fun (s *Scope) lookup(name runtime.charptr) *Object {
+    var obj *Object = nil
+    runtime.Map_get(&s.objects, name, &obj)
+    return obj
+}
+
+fun (s *Scope) print() {
+    var buf = bytes.Buffer{}
+    while s {
+        var iter = runtime.NewMapIter(&s.objects)
+        var key runtime.charptr = nil
+        while runtime.MapIter_next(&iter, &key, nil) {
+            var s = C.sprintf("%s- %s", buf.toString(), key)
+            print(s)
+            runtime.free(s)
+        }
+        s = s.outer
+        buf.writeByte('\t', nil)
+    }
+}
+
+fun (s *Scope) deepLookup(name runtime.charptr) *Object {
+    for ; s != nil; s = s.outer {
+        var obj = s.lookup(name)
+        if obj != nil {
+            return obj
+        }
+    }
+    return nil
+}
+
+fun (s *Scope) free() {
+    runtime.Map_unmake(&s.objects)
+    runtime.free(s)
+}
