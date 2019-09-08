@@ -210,7 +210,7 @@ scanAgain:
     *lit = nil
     if isLetter(s.ch) {
         *lit = s.scanIdent()
-        if runtime.strlen(*lit) > 1 {
+        if len(*lit) > 1 {
             tok = token.lookup(*lit)
             if tok != token.IDENT {
                 delete(*lit)

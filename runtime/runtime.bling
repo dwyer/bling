@@ -61,7 +61,7 @@ fun bytetocharptr(b []char) charptr {
 }
 
 fun charstobytes(s charstr) []char { // TODO DELETE THIS
-    var n = strlen(s)
+    var n = len(s)
     var buf = Slice{
         _len: n,
         _cap: n,

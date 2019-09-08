@@ -26,7 +26,9 @@
 
 #define len(x) _Generic((x), \
         runtime$Slice: runtime$Slice_len, \
-        runtime$Map: runtime$Map_len)((x))
+        runtime$Map: runtime$Map_len, \
+        char const*: runtime$strlen, \
+        char *: runtime$strlen)((x))
 
 #define makearray(T) (runtime$Slice){}
 #define makemap(T) (runtime$Map){._valSize = sizeof(T)}

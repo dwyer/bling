@@ -26,7 +26,7 @@ typ Info struct {
 fun constant_stringVal(x *ast.Expr) charptr {
     assert(x.kind == ast.EXPR_BASIC_LIT)
     var lit charstr = x.basic.value
-    var n = runtime.strlen(lit) - 2
+    var n = len(lit) - 2
     var val charptr = runtime.malloc(n + 1)
     for var i = 0; i < n; i++ {
         val[i] = lit[i + 1]

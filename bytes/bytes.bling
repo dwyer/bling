@@ -30,16 +30,16 @@ fun join(a [?]charstr, size int, sep charstr) charptr {
         return runtime.strdup(a[0])
     }
     var b Buffer = []char{}
-    b.writeChars(a[0], runtime.strlen(a[0]), nil)
+    b.writeChars(a[0], len(a[0]), nil)
     for var i = 1; i < size; i++ {
-        b.writeChars(sep, runtime.strlen(sep), nil)
-        b.writeChars(a[i], runtime.strlen(a[i]), nil)
+        b.writeChars(sep, len(sep), nil)
+        b.writeChars(a[i], len(a[i]), nil)
     }
     return b.toString()
 }
 
 fun lastIndexByte(b charstr, c char) int {
-    for var i = runtime.strlen(b) - 1; i >= 0; i-- {
+    for var i = len(b) - 1; i >= 0; i-- {
         if c == b[i] {
             return i
         }
@@ -86,7 +86,7 @@ fun (b *Buffer) writeByte(p char, error **runtime.Error) {
 fun (b *Buffer) writeChars(p charstr, size int, error **runtime.Error) int {
     b.init()
     if size < 0 {
-        size = runtime.strlen(p)
+        size = len(p)
     }
     for var i = 0; i < size; i++ {
         append(*b, p[i])

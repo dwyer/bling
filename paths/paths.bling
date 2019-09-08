@@ -18,7 +18,7 @@ fun clean(path charstr) charptr {
         return runtime.strdup(".")
     }
     var r = 0
-    var n = runtime.strlen(path)
+    var n = len(path)
     var out = bytes.Buffer{}
     var rooted = path[0] == '/'
     if rooted {
@@ -61,7 +61,7 @@ fun dir(path charstr) charptr {
 }
 
 fun ext(path charstr) charstr {
-    var n = runtime.strlen(path) - 1
+    var n = len(path) - 1
     while n > 0 && path[n] != '.' {
         n--
     }
