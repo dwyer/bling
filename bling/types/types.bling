@@ -122,51 +122,54 @@ fun makePtr(type *ast.Expr) *ast.Expr {
     return &&x
 }
 
-fun getUnderlyingType(ident *ast.Expr) *ast.Expr {
+fun underlyingType(t *ast.Expr) *ast.Expr {
     for ;; {
-        switch ident.kind {
+        switch t.kind {
         case ast.EXPR_IDENT:
-            if ident.ident.obj == nil {
-                panic(C.sprintf("not resolved: %s", typeString(ident)))
+            if t.ident.obj == nil {
+                panic(C.sprintf("not resolved: %s", typeString(t)))
             }
-            var decl = ident.ident.obj.decl
+            var decl = t.ident.obj.decl
             if decl.kind != ast.DECL_TYPE {
-                panic(C.sprintf("not a type: %s", typeString(ident)))
+                panic(C.sprintf("not a type: %s", typeString(t)))
             }
             return decl.type.type
+        case ast.EXPR_PAREN:
+            t = t.paren.x
+            break
+        case ast.EXPR_SELECTOR:
+            t = t.selector.sel
+            break
         default:
-            panic(C.sprintf("not an alias: %s", typeString(ident)))
-            return nil
+            return t
         }
     }
 }
 
-fun getBaseType(type *ast.Expr) *ast.Expr {
+fun baseType(t *ast.Expr) *ast.Expr {
     for ;; {
-        switch type.kind {
-        case ast.EXPR_IDENT:
-            type = getUnderlyingType(type)
+        switch t.kind {
+        case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
+            t = underlyingType(t)
             break
-        case ast.EXPR_SELECTOR:
-            type = type.selector.sel
-            break
-        case ast.EXPR_STAR, ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_MAP, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
-            return type
+        case ast.EXPR_STAR, ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_MAP,
+                ast.TYPE_NATIVE, ast.TYPE_STRUCT:
+            return t
         default:
-            panic(C.sprintf("not a type: %s", typeString(type)))
+            panic(C.sprintf("not a type: %s", typeString(t)))
         }
     }
 }
 
 fun isDynamicArray(t *ast.Expr) bool {
-    t = getBaseType(t)
+    t = baseType(t)
     return t && t.kind == ast.TYPE_ARRAY && t.array_.dynamic
 }
 
-fun getType(x *ast.Expr) *ast.Expr {
+fun exprType(x *ast.Expr) *ast.Expr {
     switch x.kind {
     case ast.EXPR_PAREN:
-        return getType(x.paren.x)
+        return exprType(x.paren.x)
     case ast.EXPR_CAST:
         return x.cast.type
     case ast.EXPR_IDENT:
@@ -178,9 +181,9 @@ fun getType(x *ast.Expr) *ast.Expr {
         }
         break
     case ast.EXPR_SELECTOR:
-        return getType(x.selector.sel)
+        return exprType(x.selector.sel)
     case ast.EXPR_STAR:
-        var t = getType(x.star.x)
+        var t = exprType(x.star.x)
         assert(t.kind == ast.EXPR_STAR)
         return t.star.x
     default:
@@ -190,28 +193,23 @@ fun getType(x *ast.Expr) *ast.Expr {
     return nil
 }
 
-fun isArithmetic(type *ast.Expr) bool {
-    switch type.kind {
-    case ast.EXPR_IDENT:
-        return isArithmetic(getBaseType(type))
-    case ast.EXPR_STAR, ast.TYPE_ENUM:
-        return true
-    case ast.TYPE_NATIVE:
-        return !runtime.streq(type.native.name, "void")
-    default:
-        return false
-    }
+fun isNative(t *ast.Expr, info BasicInfo) bool {
+    t = baseType(t)
+    return t.kind == ast.TYPE_NATIVE && t.native.info & info
 }
 
-fun isNative(type *ast.Expr, name runtime.charstr) bool {
-    switch type.kind {
-    case ast.EXPR_IDENT:
-        return runtime.streq(type.ident.name, name)
-    case ast.TYPE_NATIVE:
-        return true
-    default:
-        return false
-    }
+fun isBoolean(type *ast.Expr) bool {
+    return isNative(type, IS_BOOLEAN)
+}
+
+fun isInteger(t *ast.Expr) bool {
+    t = baseType(t)
+    return t.kind == ast.EXPR_STAR || t.kind == ast.TYPE_ENUM || isNative(t, IS_INTEGER)
+}
+
+fun isNumeric(t *ast.Expr) bool {
+    t = baseType(t)
+    return t.kind == ast.EXPR_STAR || t.kind == ast.TYPE_ENUM || isNative(t, IS_NUMERIC)
 }
 
 fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
@@ -237,7 +235,7 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
     }
     switch a.kind {
     case ast.EXPR_IDENT:
-        return b.kind == ast.EXPR_IDENT && a.ident.obj == b.ident.obj
+        return a.ident.obj == b.ident.obj
     case ast.EXPR_STAR:
         return areIdentical(a.star.x, b.star.x)
     case ast.TYPE_ARRAY:
@@ -263,6 +261,8 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
             }
         }
         return true
+    case ast.TYPE_NATIVE:
+        return a.native.info == b.native.info
     default:
         panic(C.sprintf("not implemented: %s == %s", typeString(a), typeString(b)))
         return false
@@ -270,12 +270,12 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
 }
 
 fun isPointer(t *ast.Expr) bool {
-    t = getBaseType(t)
+    t = baseType(t)
     return t.kind == ast.EXPR_STAR || (t.kind == ast.TYPE_ARRAY && !t.array_.dynamic)
 }
 
 fun pointerBase(t *ast.Expr) *ast.Expr {
-    t = getBaseType(t)
+    t = baseType(t)
     switch t.kind {
     case ast.EXPR_STAR:
         return t.star.x
@@ -294,8 +294,8 @@ fun areAssignable(a *ast.Expr, b *ast.Expr) bool {
     if areIdentical(a, b) {
         return true
     }
-    a = getBaseType(a)
-    b = getBaseType(b)
+    a = baseType(a)
+    b = baseType(b)
     if isDynamicArray(a) {
         return isDynamicArray(b) && areIdentical(a.array_.elt, b.array_.elt)
     }
@@ -305,13 +305,10 @@ fun areAssignable(a *ast.Expr, b *ast.Expr) bool {
     if isPointer(a) && isPointer(b) {
         return areAssignable(pointerBase(a), pointerBase(b))
     }
-    if isNative(a, "bool") && isArithmetic(b) {
+    if isBoolean(a) && isNumeric(b) {
         return true
     }
-    if b.kind == ast.TYPE_ENUM && isArithmetic(a) {
-        return true
-    }
-    if a.kind == ast.TYPE_ENUM && isArithmetic(b) {
+    if isNumeric(a) && isNumeric(b) {
         return true
     }
     return areIdentical(a, b)
@@ -321,12 +318,12 @@ fun areComparable(a *ast.Expr, b *ast.Expr) bool {
     if areIdentical(a, b) {
         return true
     }
-    a = getBaseType(a)
-    b = getBaseType(b)
-    if isArithmetic(a) && isArithmetic(b) {
+    a = baseType(a)
+    b = baseType(b)
+    if isNumeric(a) && isNumeric(b) {
         return true
     }
-    if a.kind == ast.EXPR_STAR && isNative(b, "int") {
+    if a.kind == ast.EXPR_STAR && isInteger(a) {
         return true
     }
     return areIdentical(a, b)
@@ -369,7 +366,7 @@ fun getDeclType(decl *ast.Decl) *ast.Expr {
 }
 
 fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
-    var base *ast.Expr = getBaseType(type)
+    var base *ast.Expr = baseType(type)
     assert(base.kind == ast.TYPE_STRUCT)
     assert(name.kind == ast.EXPR_IDENT)
     for var i = 0; i < len(base.struct_.fields); i++ {
@@ -390,7 +387,7 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
 }
 
 fun getStructField(type *ast.Expr, index int) *ast.Decl {
-    var base = getBaseType(type)
+    var base = baseType(type)
     if base.kind != ast.TYPE_STRUCT {
         panic(C.sprintf("not a struct: %s", typeString(type)))
     }
@@ -401,18 +398,6 @@ fun getStructField(type *ast.Expr, index int) *ast.Decl {
         return base.struct_.fields[index]
     }
     return nil
-}
-
-fun isInteger(x *ast.Expr) bool {
-    var base = getBaseType(x)
-    switch base.kind {
-    case ast.TYPE_ENUM:
-        return true
-    case ast.TYPE_NATIVE:
-        return base.native.info | IS_INTEGER
-    default:
-        return false
-    }
 }
 
 fun newInfo() *Info {

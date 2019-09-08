@@ -99,10 +99,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitter.emitString(e, expr.ident.name)
         break
     case ast.EXPR_INDEX:
-        var t = types.getType(expr.index.x)
-        assert(t)
-        t = types.getBaseType(t)
-        assert(t)
+        var t = types.baseType(types.exprType(expr.index.x))
         if types.isDynamicArray(t) {
             emitter.emitToken(e, token.GET)
             emitter.emitToken(e, token.LPAREN)
@@ -376,8 +373,7 @@ fun _emitFields(e *emitter.Emitter, fields []*ast.Decl) {
             emitter.emitToken(e, token.SEMICOLON)
             emitter.emitNewline(e)
         } else {
-            var base = types.getBaseType(field.field.type)
-            assert(base.kind == ast.TYPE_STRUCT)
+            var base = types.baseType(field.field.type)
             _emitFields(e, base.struct_.fields)
         }
     }

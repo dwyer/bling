@@ -161,7 +161,7 @@ fun (c *Checker) checkIdent(expr *ast.Expr) *ast.Expr {
 }
 
 fun (c *Checker) checkArrayLit(x *ast.Expr) {
-    var baseT = getBaseType(x.composite.type)
+    var baseT = baseType(x.composite.type)
     for var i = 0; i < len(x.composite.list); i++ {
         var elt = x.composite.list[i]
         if elt.kind == ast.EXPR_KEY_VALUE {
@@ -234,7 +234,7 @@ fun (c *Checker) checkStructLit(x *ast.Expr) {
 fun (c *Checker) checkCompositeLit(x *ast.Expr) *ast.Expr {
     var t = x.composite.type
     assert(t)
-    var baseT = getBaseType(t)
+    var baseT = baseType(t)
     switch baseT.kind {
     case ast.TYPE_ARRAY:
         c.checkArrayLit(x)
@@ -311,7 +311,7 @@ fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
             }
         }
     }
-    if var base = getBaseType(type); base.kind == ast.TYPE_STRUCT {
+    if var base = baseType(type); base.kind == ast.TYPE_STRUCT {
         if var field = getStructFieldByName(type, expr.selector.sel); field == nil {
             c.error(expr.pos(),
             C.sprintf("no member named '%s' in '%s'",
@@ -332,13 +332,17 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
     case ast.EXPR_BINARY:
         var typ1 = c.checkExpr(expr.binary.x)
         var typ2 = c.checkExpr(expr.binary.y)
-        if !areComparable(typ1, typ2) {
-            c.error(expr.pos(), C.sprintf("not compariable: %s and %s", typeString(typ1), typeString(typ2)))
-        }
         switch expr.binary.op {
-        case token.EQUAL, token.GT, token.GT_EQUAL, token.LAND, token.LOR, token.LT, token.LT_EQUAL, token.NOT_EQUAL:
+        case token.EQUAL, token.GT, token.GT_EQUAL, token.LT, token.LT_EQUAL, token.NOT_EQUAL:
+            if !areComparable(typ1, typ2) {
+                c.error(expr.pos(), C.sprintf("not compariable: %s and %s", typeString(typ1), typeString(typ2)))
+            }
+            return c.lookupIdent("bool")
+        case token.LAND, token.LOR:
             return c.lookupIdent("bool")
         default:
+            assert(isNumeric(typ1))
+            assert(isNumeric(typ2))
             return typ1
         }
     case ast.EXPR_BASIC_LIT:
@@ -446,7 +450,7 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
         return c.checkIdent(expr)
     case ast.EXPR_INDEX:
         var type = c.checkExpr(expr.index.x)
-        var base = getBaseType(type)
+        var base = baseType(type)
         switch base.kind {
         case ast.TYPE_ARRAY:
             type = base.array_.elt
@@ -469,7 +473,7 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
         return c.checkSelector(expr)
     case ast.EXPR_STAR:
         var type = c.checkExpr(expr.star.x)
-        var base = getBaseType(type)
+        var base = baseType(type)
         switch base.kind {
         case ast.EXPR_STAR:
             return base.star.x
@@ -481,14 +485,24 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
             return nil
         }
     case ast.EXPR_TERNARY:
-        var t1 = c.checkExpr(expr.ternary.cond)
-        assert(isArithmetic(t1))
-        var t2 = expr.ternary.x ? c.checkExpr(expr.ternary.x) : t1
-        var t3 = c.checkExpr(expr.ternary.y)
-        if !areComparable(t2, t3) {
-            c.error(expr.pos(), "not comparable")
+        if expr.ternary.x {
+            var t1 = c.checkExpr(expr.ternary.cond)
+            assert(isBoolean(t1))
+            var t2 = c.checkExpr(expr.ternary.x)
+            var t3 = c.checkExpr(expr.ternary.y)
+            if !areComparable(t2, t3) {
+                c.error(expr.pos(), "not comparable")
+            }
+            return t2
+        } else {
+            var t2 = c.checkExpr(expr.ternary.cond)
+            assert(isNumeric(t2))
+            var t3 = c.checkExpr(expr.ternary.y)
+            if !areComparable(t2, t3) {
+                c.error(expr.pos(), "not comparable")
+            }
+            return t2
         }
-        return t2
     case ast.EXPR_UNARY:
         var type = c.checkExpr(expr.unary.x)
         switch expr.unary.op {
