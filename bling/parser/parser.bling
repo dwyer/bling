@@ -15,7 +15,7 @@ typ Parser struct {
     scanner scanner.Scanner
     pos token.Pos
     tok token.Token
-    lit runtime.charptr
+    lit charptr
     cMode bool
     exprLev int
     numIdents int
@@ -55,7 +55,7 @@ fun (p *Parser) next() {
     p.tok = p.scanner.scan(&p.pos, &p.lit)
 }
 
-fun (p *Parser) init(fset *token.FileSet, filename runtime.charstr, src []char) {
+fun (p *Parser) init(fset *token.FileSet, filename charstr, src []char) {
     assert(fset)
     p.file = fset.addFile(filename, -1, len(src))
     p.lit = nil
@@ -66,12 +66,12 @@ fun (p *Parser) init(fset *token.FileSet, filename runtime.charstr, src []char) 
     p.next()
 }
 
-fun (p *Parser) error(pos token.Pos, msg runtime.charptr) {
+fun (p *Parser) error(pos token.Pos, msg charptr) {
     var position = p.file.position(pos)
     panic(C.sprintf("%s: %s\n%s", position.string(), msg, p.file.lineString(position.line)))
 }
 
-fun (p *Parser) errorExpected(pos token.Pos, msg runtime.charptr) {
+fun (p *Parser) errorExpected(pos token.Pos, msg charptr) {
     var buf = bytes.Buffer{}
     buf.writeString("expected ", nil)
     buf.writeString(msg, nil)
@@ -1150,15 +1150,15 @@ fun (p *Parser) parseDecl() *ast.Decl {
     }
 }
 
-fun isBlingFile(name runtime.charstr) bool {
+fun isBlingFile(name charstr) bool {
     return bytes.hasSuffix(name, ".bling")
 }
 
-fun isTestFile(name runtime.charstr) bool {
+fun isTestFile(name charstr) bool {
     return paths.match("*_test.bling", name)
 }
 
-fun parseDir(fset *token.FileSet, path runtime.charstr, first **runtime.Error) []*ast.File {
+fun parseDir(fset *token.FileSet, path charstr, first **runtime.Error) []*ast.File {
     var err *runtime.Error = nil
     var infos = ioutil.readDir(path, &err)
     var files = []*ast.File{}
@@ -1210,7 +1210,7 @@ fun (p *Parser) _parseFile() *ast.File {
     return &&file
 }
 
-fun parseFile(fset *token.FileSet, filename runtime.charstr) *ast.File {
+fun parseFile(fset *token.FileSet, filename charstr) *ast.File {
     var err *runtime.Error = nil
     var src = ioutil.readFile(filename, &err)
     if err {

@@ -14,17 +14,17 @@ import "runtime"
 import "subc/cemitter"
 import "subc/cparser"
 
-var AR_PATH runtime.charstr = "/usr/bin/ar"
+var AR_PATH charstr = "/usr/bin/ar"
 
-var CC_PATH runtime.charstr = "/usr/bin/cc"
+var CC_PATH charstr = "/usr/bin/cc"
 
-var GEN_PATH runtime.charstr = "gen"
+var GEN_PATH charstr = "gen"
 
-var INCL_PATH runtime.charstr = "."
+var INCL_PATH charstr = "."
 
 var VERBOSE const bool = true
 
-fun printStrArray(s []runtime.charptr) {
+fun printStrArray(s []charptr) {
     for var i = 0; i < len(s); i++ {
         if i {
             C.printf(" ")
@@ -34,11 +34,11 @@ fun printStrArray(s []runtime.charptr) {
     C.printf("\n")
 }
 
-fun execute(cmd *[]runtime.charptr) {
+fun execute(cmd *[]charptr) {
     if VERBOSE {
         printStrArray(*cmd)
     }
-    var args = runtime.nilArray(typ *runtime.Slice(cmd), sizeof(runtime.charptr))
+    var args = runtime.nilArray(typ *runtime.Slice(cmd), sizeof(charptr))
     var code = os.exec(args, nil)
     if code != 0 {
         panic(C.sprintf("- failed with code %d", code))
@@ -46,20 +46,20 @@ fun execute(cmd *[]runtime.charptr) {
     delete(args)
 }
 
-fun mkdirForFile(path runtime.charstr) {
+fun mkdirForFile(path charstr) {
     var dir = paths.dir(path)
     os.mkdirAll(dir, 0755, nil)
     delete(dir)
 }
 
 typ Package struct {
-    path runtime.charptr
+    path charptr
     pkg *types.Package
-    hPath runtime.charptr
-    cPath runtime.charptr
-    objPath runtime.charptr
-    objPaths []runtime.charptr
-    libPath runtime.charptr
+    hPath charptr
+    cPath charptr
+    objPath charptr
+    objPaths []charptr
+    libPath charptr
     libModTime os.Time
     srcModTime os.Time
     deps []*Package
@@ -84,21 +84,21 @@ fun newBuilder(fset *token.FileSet) *Builder {
     return &&builder
 }
 
-fun genObj(b *Builder, dst runtime.charstr, src runtime.charstr) {
-    var cmd = []runtime.charptr{}
+fun genObj(b *Builder, dst charstr, src charstr) {
+    var cmd = []charptr{}
     append(cmd, CC_PATH)
-    append(cmd, typ runtime.charptr("-g"))
-    append(cmd, typ runtime.charptr("-I"))
+    append(cmd, typ charptr("-g"))
+    append(cmd, typ charptr("-I"))
     append(cmd, INCL_PATH)
-    append(cmd, typ runtime.charptr("-c"))
-    append(cmd, typ runtime.charptr("-o"))
+    append(cmd, typ charptr("-c"))
+    append(cmd, typ charptr("-o"))
     append(cmd, dst)
     append(cmd, src)
     mkdirForFile(dst)
     execute(&cmd)
 }
 
-fun getFileModTime(path runtime.charstr) os.Time {
+fun getFileModTime(path charstr) os.Time {
     var t os.Time = 0
     if var info = os.stat(path, nil); info != nil {
         t = info.modTime()
@@ -107,7 +107,7 @@ fun getFileModTime(path runtime.charstr) os.Time {
     return t
 }
 
-fun getSrcModTime(path runtime.charstr) os.Time {
+fun getSrcModTime(path charstr) os.Time {
     var t os.Time = 0
     var files = ioutil.readDir(path, nil)
     for var i = 0; i < len(files); i++ {
@@ -126,7 +126,7 @@ fun getSrcModTime(path runtime.charstr) os.Time {
 
 fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
     var src = cFile.name()
-    var dst runtime.charptr = nil
+    var dst charptr = nil
     {
         var i = bytes.lastIndexByte(src, '.')
         var base = runtime.strdup(src)
@@ -145,7 +145,7 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
     return objFile
 }
 
-fun newPackage(b *Builder, path runtime.charstr) Package {
+fun newPackage(b *Builder, path charstr) Package {
     var base = paths.base(path)
     var files = parser.parseDir(b.fset, path, nil)
     var typesPkg = types.check(&b.conf, path, b.fset, files, b.info)
@@ -181,13 +181,13 @@ fun newPackage(b *Builder, path runtime.charstr) Package {
     return pkg
 }
 
-fun emitInclude(e *emitter.Emitter, path runtime.charstr) {
+fun emitInclude(e *emitter.Emitter, path charstr) {
     var s = C.sprintf("#include \"%s\"\n", path)
     emitter.emitString(e, s)
     delete(s)
 }
 
-fun writeFile(path runtime.charstr, out runtime.charstr) {
+fun writeFile(path charstr, out charstr) {
     mkdirForFile(path)
     ioutil.writeFile(path, runtime.charstobytes(out), 0644, nil)
 }
@@ -215,7 +215,7 @@ fun getCFile(b *Builder, pkg *Package) {
     delete(out)
 }
 
-fun buildCPackage(b *Builder, path runtime.charstr) *Package {
+fun buildCPackage(b *Builder, path charstr) *Package {
     var pkg = newPackage(b, path)
     var files = ioutil.readDir(path, nil)
     for var i = 0; i < len(files); i++ {
@@ -231,9 +231,9 @@ fun buildCPackage(b *Builder, path runtime.charstr) *Package {
     }
     if b.force || pkg.srcModTime > pkg.libModTime {
         genHeader(b, &pkg)
-        var cmd = []runtime.charptr{}
+        var cmd = []charptr{}
         append(cmd, AR_PATH)
-        append(cmd, typ runtime.charptr("rsc"))
+        append(cmd, typ charptr("rsc"))
         append(cmd, pkg.libPath)
         for var i = 0; i < len(files); i++ {
             var file = files[i]
@@ -253,17 +253,17 @@ fun buildCPackage(b *Builder, path runtime.charstr) *Package {
     return &&pkg
 }
 
-fun buildBlingPackage(b *Builder, path runtime.charstr) *Package {
+fun buildBlingPackage(b *Builder, path charstr) *Package {
     var pkg = newPackage(b, path)
     if b.force || pkg.srcModTime > pkg.libModTime {
         genHeader(b, &pkg)
         getCFile(b, &pkg)
         genObj(b, pkg.objPath, pkg.cPath)
         if pkg.isCmd {
-            var cmd = []runtime.charptr{}
+            var cmd = []charptr{}
             append(cmd, CC_PATH)
-            append(cmd, typ runtime.charptr("-g"))
-            append(cmd, typ runtime.charptr("-o"))
+            append(cmd, typ charptr("-g"))
+            append(cmd, typ charptr("-o"))
             append(cmd, pkg.libPath)
             append(cmd, pkg.objPath)
             var pkg *Package = nil
@@ -273,9 +273,9 @@ fun buildBlingPackage(b *Builder, path runtime.charstr) *Package {
             }
             execute(&cmd)
         } else {
-            var cmd = []runtime.charptr{}
+            var cmd = []charptr{}
             append(cmd, AR_PATH)
-            append(cmd, typ runtime.charptr("rsc"))
+            append(cmd, typ charptr("rsc"))
             append(cmd, pkg.libPath)
             append(cmd, pkg.objPath)
             execute(&cmd)
@@ -284,7 +284,7 @@ fun buildBlingPackage(b *Builder, path runtime.charstr) *Package {
     return &&pkg
 }
 
-fun _buildPackage(b *Builder, path runtime.charstr) *Package {
+fun _buildPackage(b *Builder, path charstr) *Package {
     var pkg *Package = nil
     runtime.Map_get(&b.pkgs, path, &pkg)
     if pkg {
@@ -299,7 +299,7 @@ fun _buildPackage(b *Builder, path runtime.charstr) *Package {
     return pkg
 }
 
-fun buildPackage(b *Builder, path runtime.charstr) {
+fun buildPackage(b *Builder, path charstr) {
     var clean = paths.clean(path)
     _buildPackage(b, "runtime")
     _buildPackage(b, clean)

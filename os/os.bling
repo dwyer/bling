@@ -21,12 +21,12 @@ typ FileMode u32
 
 typ File struct {
     fd uintptr
-    name runtime.charptr
+    name charptr
     _isDir bool
 }
 
 typ FileInfo struct {
-    _name runtime.charptr
+    _name charptr
     _sys voidptr
 }
 
@@ -49,7 +49,7 @@ var stdin *File = &_stdin
 var stdout *File = &_stdout
 var stderr *File = &_stderr
 
-fun _throwPathError(path runtime.charstr, err *runtime.Error, e **runtime.Error) {
+fun _throwPathError(path charstr, err *runtime.Error, e **runtime.Error) {
     if err {
         var msg = err.error
         err.error = C.sprintf("PathError: %s: %s", path, msg)
@@ -67,7 +67,7 @@ fun _throwFileError(file *File, err *runtime.Error, e **runtime.Error) {
     }
 }
 
-fun newFile(fd uintptr, name runtime.charstr) *File {
+fun newFile(fd uintptr, name charstr) *File {
     var file File = {
         name: runtime.strdup(name),
         fd: fd,
@@ -75,7 +75,7 @@ fun newFile(fd uintptr, name runtime.charstr) *File {
     return &&file
 }
 
-fun openFile(filename runtime.charstr, mode int, perm int, e **runtime.Error) *File {
+fun openFile(filename charstr, mode int, perm int, e **runtime.Error) *File {
     var err *runtime.Error = nil
     var fd = sys.open(filename, mode, perm, &err)
     if err {
@@ -85,11 +85,11 @@ fun openFile(filename runtime.charstr, mode int, perm int, e **runtime.Error) *F
     return newFile(fd, filename)
 }
 
-fun open(filename runtime.charstr, e **runtime.Error) *File {
+fun open(filename charstr, e **runtime.Error) *File {
     return openFile(filename, O_RDONLY, 0, e)
 }
 
-fun create(filename runtime.charstr, e **runtime.Error) *File {
+fun create(filename charstr, e **runtime.Error) *File {
     return openFile(filename, O_CREAT | O_TRUNC | O_RDWR, 0644, e)
 }
 
@@ -117,7 +117,7 @@ fun (file *File) close(e **runtime.Error) {
     _throwPathError(file.name, err, e)
 }
 
-fun stat(name runtime.charstr, e **runtime.Error) *FileInfo {
+fun stat(name charstr, e **runtime.Error) *FileInfo {
     var st = sys.Stat{}
     var err *runtime.Error = nil
     sys.stat(name, &st, &err)
@@ -138,7 +138,7 @@ fun (info *FileInfo) free() {
     delete(info)
 }
 
-fun openDir(name runtime.charstr, e **runtime.Error) *File {
+fun openDir(name charstr, e **runtime.Error) *File {
     var err *runtime.Error = nil
     var dp = sys.opendir(name, &err)
     if err {
@@ -150,8 +150,8 @@ fun openDir(name runtime.charstr, e **runtime.Error) *File {
     return file
 }
 
-fun readdirnames(file *File, e **runtime.Error) []runtime.charptr {
-    var arr = []runtime.charptr{}
+fun readdirnames(file *File, e **runtime.Error) []charptr {
+    var arr = []charptr{}
     var dp sys.Dir = typ sys.Dir(file.fd)
     for ;; {
         var err *runtime.Error = nil
@@ -191,7 +191,7 @@ fun readdir(file *File, e **runtime.Error) []*FileInfo {
     return arr
 }
 
-fun (info *FileInfo) name() runtime.charptr {
+fun (info *FileInfo) name() charptr {
     return info._name
 }
 
@@ -219,7 +219,7 @@ fun (info *FileInfo) sys() voidptr {
     return info._sys
 }
 
-fun tempDir() runtime.charstr {
+fun tempDir() charstr {
     var tmpdir = sys.getenv("TMPDIR")
     if tmpdir {
         return tmpdir
@@ -227,13 +227,13 @@ fun tempDir() runtime.charstr {
     return "/tmp"
 }
 
-fun mkdir(path runtime.charstr, mode u32, e **runtime.Error) {
+fun mkdir(path charstr, mode u32, e **runtime.Error) {
     var err *runtime.Error = nil
     sys.mkdir(path, mode, &err)
     _throwPathError(path, err, e)
 }
 
-fun mkdirAll(path runtime.charstr, mode u32, e **runtime.Error) {
+fun mkdirAll(path charstr, mode u32, e **runtime.Error) {
     // TODO check if exists first
     var dir = paths.dir(path)
     if !runtime.streq(dir, ".") {
@@ -251,7 +251,7 @@ fun mkdirAll(path runtime.charstr, mode u32, e **runtime.Error) {
     }
 }
 
-fun exec(argv [?]const runtime.charptr, e **runtime.Error) int {
+fun exec(argv [?]const charptr, e **runtime.Error) int {
     var status = -1
     var err *runtime.Error = nil
     var pid = sys.fork(&err)

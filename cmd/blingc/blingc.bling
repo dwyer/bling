@@ -15,7 +15,7 @@ import "runtime"
 import "subc/cemitter"
 import "subc/cparser"
 
-fun emitRawFile(e *emitter.Emitter, filename runtime.charstr) {
+fun emitRawFile(e *emitter.Emitter, filename charstr) {
     var err *runtime.Error = nil
     var src = ioutil.readFile(filename, &err)
     if err {
@@ -45,8 +45,8 @@ fun isForwardDecl(decl *ast.Decl) bool {
     }
 }
 
-fun compileC(argv [?]runtime.charptr) {
-    var dst runtime.charstr = nil
+fun compileC(argv [?]charptr) {
+    var dst charstr = nil
     while **argv == '-' {
         if runtime.streq(*argv, "-o") {
             argv++
@@ -96,12 +96,12 @@ fun compileC(argv [?]runtime.charptr) {
     }
 }
 
-fun compileBling(argv [?]runtime.charptr) {
+fun compileBling(argv [?]charptr) {
     var err *runtime.Error = nil
     var conf = types.Config{
         strict: true,
     }
-    var dst runtime.charptr = nil
+    var dst charptr = nil
     while **argv == '-' {
         if runtime.streq(*argv, "-o") {
             argv++
@@ -134,7 +134,7 @@ fun compileBling(argv [?]runtime.charptr) {
         if bytes.hasSuffix(dst, ".out") {
             var tmp = paths.join2(os.tempDir(), "tmp.c")
             ioutil.writeFile(tmp, e.bytes(), 0644, nil)
-            var args = [?]runtime.charptr{
+            var args = [?]charptr{
                 "/usr/bin/cc",
                 "-o",
                 dst,
@@ -156,7 +156,7 @@ fun compileBling(argv [?]runtime.charptr) {
     }
 }
 
-fun buildPackage(argv [?]runtime.charptr) {
+fun buildPackage(argv [?]charptr) {
     assert(*argv)
     var builder = build.newBuilder(token.newFileSet())
     if runtime.streq(*argv, "-f") {
@@ -168,7 +168,7 @@ fun buildPackage(argv [?]runtime.charptr) {
     build.buildPackage(builder, path)
 }
 
-fun main(argc int, argv [?]runtime.charptr) int {
+fun main(argc int, argv [?]charptr) int {
     var progname = *argv
     argv++
     if !*argv {

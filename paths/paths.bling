@@ -3,7 +3,7 @@ package paths
 import "bytes"
 import "runtime"
 
-fun base(path runtime.charstr) runtime.charptr {
+fun base(path charstr) charptr {
     if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
@@ -13,7 +13,7 @@ fun base(path runtime.charstr) runtime.charptr {
     return runtime.strdup(path)
 }
 
-fun clean(path runtime.charstr) runtime.charptr {
+fun clean(path charstr) charptr {
     if runtime.streq(path, "") {
         return runtime.strdup(".")
     }
@@ -48,7 +48,7 @@ fun clean(path runtime.charstr) runtime.charptr {
     return out.toString()
 }
 
-fun dir(path runtime.charstr) runtime.charptr {
+fun dir(path charstr) charptr {
     if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
@@ -60,7 +60,7 @@ fun dir(path runtime.charstr) runtime.charptr {
     return runtime.strdup(".")
 }
 
-fun ext(path runtime.charstr) runtime.charstr {
+fun ext(path charstr) charstr {
     var n = runtime.strlen(path) - 1
     while n > 0 && path[n] != '.' {
         n--
@@ -68,30 +68,30 @@ fun ext(path runtime.charstr) runtime.charstr {
     return &path[n]
 }
 
-fun isAbs(path runtime.charstr) bool {
+fun isAbs(path charstr) bool {
     return path != nil && path[0] == '/'
 }
 
-fun join(elems *runtime.charstr, n int) runtime.charptr {
+fun join(elems *charstr, n int) charptr {
     return bytes.join(elems, n, "/")
 }
 
-fun join2(a runtime.charstr, b runtime.charstr) runtime.charptr {
-    var elems = [?]runtime.charstr{
+fun join2(a charstr, b charstr) charptr {
+    var elems = [?]charstr{
         a,
         b,
     }
     return join(elems, 2)
 }
 
-fun split(path runtime.charstr) *runtime.charptr {
-    var names *runtime.charptr = runtime.malloc(sizeof(runtime.charptr) * 2)
+fun split(path charstr) *charptr {
+    var names *charptr = runtime.malloc(sizeof(charptr) * 2)
     names[0] = dir(path)
     names[1] = base(path)
     return names
 }
 
-fun match(pattern runtime.charstr, path runtime.charstr) bool {
+fun match(pattern charstr, path charstr) bool {
     if pattern[0] == '\0' && path[0] == '\0' {
         return true
     }

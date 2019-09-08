@@ -71,11 +71,11 @@ fun (s *Scanner) switch2(tok0 token.Token, tok1 token.Token) token.Token {
     return s.switch4(tok0, tok1, '\0', token.ILLEGAL, token.ILLEGAL)
 }
 
-fun (s *Scanner) makeStringSlice(start int, end int) runtime.charptr {
+fun (s *Scanner) makeStringSlice(start int, end int) charptr {
     return runtime.strndup(&s.src[start], end - start)
 }
 
-fun (s *Scanner) scanIdent() runtime.charptr {
+fun (s *Scanner) scanIdent() charptr {
     var offs = s.offset
     while isLetter(s.ch) || isDigit(s.ch) || (s.dontInsertSemis && s.ch == '$') {
         s.next()
@@ -83,7 +83,7 @@ fun (s *Scanner) scanIdent() runtime.charptr {
     return s.makeStringSlice(offs, s.offset)
 }
 
-fun (s *Scanner) scanPragma() runtime.charptr {
+fun (s *Scanner) scanPragma() charptr {
     var offs = s.offset
     while s.ch > 0 && s.ch != '\n' {
         s.next()
@@ -106,7 +106,7 @@ fun isNumeric(ch int, kind NumKind) bool {
     }
 }
 
-fun (s *Scanner) scanNumber(tokp *token.Token) runtime.charptr {
+fun (s *Scanner) scanNumber(tokp *token.Token) charptr {
     var offs = s.offset
     var kind = NumKind_DECINT
     if s.ch == '0' {
@@ -140,7 +140,7 @@ fun (s *Scanner) scanNumber(tokp *token.Token) runtime.charptr {
     return s.makeStringSlice(offs, s.offset)
 }
 
-fun (s *Scanner) scanRune() runtime.charptr {
+fun (s *Scanner) scanRune() charptr {
     var offs = s.offset
     var n = 0
     var escape = false
@@ -156,7 +156,7 @@ fun (s *Scanner) scanRune() runtime.charptr {
     return s.makeStringSlice(offs, s.offset)
 }
 
-fun (s *Scanner) scanString() runtime.charptr {
+fun (s *Scanner) scanString() charptr {
     var offs = s.offset
     var n = 0
     var escape = false
@@ -172,7 +172,7 @@ fun (s *Scanner) scanString() runtime.charptr {
     return s.makeStringSlice(offs, s.offset)
 }
 
-fun (s *Scanner) error(offs int, msg runtime.charstr) {
+fun (s *Scanner) error(offs int, msg charstr) {
     panic(C.sprintf("scanner error: offset %d: %s", offs, msg))
 }
 
@@ -200,7 +200,7 @@ fun (s *Scanner) scanComment() {
     }
 }
 
-fun (s *Scanner) scan(pos *token.Pos, lit *runtime.charptr) token.Token {
+fun (s *Scanner) scan(pos *token.Pos, lit *charptr) token.Token {
     var tok token.Token
 scanAgain:
     tok = token.ILLEGAL

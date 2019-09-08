@@ -10,7 +10,7 @@ typ Emitter struct {
     buf bytes.Buffer
     indent int
     skipSemi bool
-    pkg runtime.charptr
+    pkg charptr
     forwardDecl bool
 }
 
@@ -18,7 +18,7 @@ fun (e *Emitter) bytes() []char {
     return e.buf
 }
 
-fun Emitter_string(e *Emitter) runtime.charptr {
+fun Emitter_string(e *Emitter) charptr {
     return e.buf.toString()
 }
 
@@ -26,11 +26,11 @@ fun emitBytes(e *Emitter, s []char) {
     e.buf.write(s, nil)
 }
 
-fun emitChars(e *Emitter, s runtime.charstr, n int) {
+fun emitChars(e *Emitter, s charstr, n int) {
     e.buf.writeChars(s, n, nil)
 }
 
-fun emitString(e *Emitter, s runtime.charstr) {
+fun emitString(e *Emitter, s charstr) {
     e.buf.writeString(s, nil)
 }
 
@@ -55,7 +55,7 @@ fun emitToken(e *Emitter, tok token.Token) {
     emitString(e, tok.string())
 }
 
-fun hasPrefix(s runtime.charstr, prefix runtime.charstr) bool {
+fun hasPrefix(s charstr, prefix charstr) bool {
     for var i = 0; prefix[i]; i++ {
         if s[i] != prefix[i] {
             return false

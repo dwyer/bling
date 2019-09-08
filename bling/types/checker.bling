@@ -15,7 +15,7 @@ typ Checker struct {
     file *ast.File
 }
 
-fun (c *Checker) log(fatal bool, pos token.Pos, msg runtime.charstr) {
+fun (c *Checker) log(fatal bool, pos token.Pos, msg charstr) {
     var position = token.Position{}
     var file = c.fset.file(pos)
     if file {
@@ -30,11 +30,11 @@ fun (c *Checker) log(fatal bool, pos token.Pos, msg runtime.charstr) {
     delete(errMsg)
 }
 
-fun (c *Checker) warning(pos token.Pos, msg runtime.charstr) {
+fun (c *Checker) warning(pos token.Pos, msg charstr) {
     // c.log(false, pos, msg)
 }
 
-fun (c *Checker) error(pos token.Pos, msg runtime.charstr) {
+fun (c *Checker) error(pos token.Pos, msg charstr) {
     c.log(true, pos, msg)
 }
 
@@ -249,7 +249,7 @@ fun (c *Checker) checkCompositeLit(x *ast.Expr) *ast.Expr {
     return t
 }
 
-fun (c *Checker) lookupIdent(name runtime.charptr) *ast.Expr {
+fun (c *Checker) lookupIdent(name charptr) *ast.Expr {
     var obj = c.pkg.scope.deepLookup(name)
     assert(obj)
     assert(obj.kind == ast.ObjKind_TYP)

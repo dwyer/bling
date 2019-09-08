@@ -13,8 +13,8 @@ typ Config struct {
 }
 
 typ Package struct {
-    path runtime.charptr
-    name runtime.charptr
+    path charptr
+    name charptr
     scope *ast.Scope
     imports []*Package
 }
@@ -23,11 +23,11 @@ typ Info struct {
     imports map *Package
 }
 
-fun constant_stringVal(x *ast.Expr) runtime.charptr {
+fun constant_stringVal(x *ast.Expr) charptr {
     assert(x.kind == ast.EXPR_BASIC_LIT)
-    var lit runtime.charstr = x.basic.value
+    var lit charstr = x.basic.value
     var n = runtime.strlen(lit) - 2
-    var val runtime.charptr = runtime.malloc(n + 1)
+    var val charptr = runtime.malloc(n + 1)
     for var i = 0; i < n; i++ {
         val[i] = lit[i + 1]
     }
@@ -35,25 +35,25 @@ fun constant_stringVal(x *ast.Expr) runtime.charptr {
     return val
 }
 
-fun declString(decl *ast.Decl) runtime.charptr {
+fun declString(decl *ast.Decl) charptr {
     var e = emitter.Emitter{}
     emitter.emitDecl(&e, decl)
     return emitter.Emitter_string(&e)
 }
 
-fun exprString(expr *ast.Expr) runtime.charptr {
+fun exprString(expr *ast.Expr) charptr {
     var e = emitter.Emitter{}
     emitter.emitExpr(&e, expr)
     return emitter.Emitter_string(&e)
 }
 
-fun stmtString(stmt *ast.Stmt) runtime.charptr {
+fun stmtString(stmt *ast.Stmt) charptr {
     var e = emitter.Emitter{}
     emitter.emitStmt(&e, stmt)
     return emitter.Emitter_string(&e)
 }
 
-fun typeString(expr *ast.Expr) runtime.charptr {
+fun typeString(expr *ast.Expr) charptr {
     var e = emitter.Emitter{}
     emitter.emitType(&e, expr)
     return emitter.Emitter_string(&e)
@@ -102,7 +102,7 @@ fun isTypeAlias(t *ast.Expr) bool {
     return getTypeAlias(t) != nil
 }
 
-fun makeIdent(name runtime.charstr) *ast.Expr {
+fun makeIdent(name charstr) *ast.Expr {
     var x = ast.Expr{
         kind: ast.EXPR_IDENT,
         ident: {
@@ -206,7 +206,12 @@ fun isPointer(t *ast.Expr) bool {
     case ast.TYPE_ARRAY:
         return !t.array_.dynamic
     case ast.TYPE_NATIVE:
-        return t.native.kind == STRING || t.native.kind == VOID_POINTER
+        switch t.native.kind {
+        case STRING, CHARPTR, CHARSTR, VOID_POINTER:
+            return true
+        default:
+            return false
+        }
     default:
         return false
     }
@@ -351,7 +356,7 @@ fun areComparable(a *ast.Expr, b *ast.Expr) bool {
     if a.kind == ast.EXPR_STAR && isInteger(a) {
         return true
     }
-    return areIdentical(a, b)
+    return areAssignable(a, b)
 }
 
 fun isLhs(expr *ast.Expr) bool {
@@ -432,7 +437,7 @@ fun newInfo() *Info {
     return &&info
 }
 
-fun checkFiles(conf *Config, path runtime.charstr, fset *token.FileSet,
+fun checkFiles(conf *Config, path charstr, fset *token.FileSet,
         files []*ast.File, info *Info) *Package {
     var file = files[0]
     if info {
@@ -463,7 +468,7 @@ fun checkFiles(conf *Config, path runtime.charstr, fset *token.FileSet,
     return c.pkg
 }
 
-fun check(conf *Config, path runtime.charstr, fset *token.FileSet,
+fun check(conf *Config, path charstr, fset *token.FileSet,
         files []*ast.File, info *Info) *Package {
     return checkFiles(conf, path, fset, files, info)
 }

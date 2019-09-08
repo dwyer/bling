@@ -4,9 +4,6 @@ import "C"
 
 typ Size C.size_t
 
-typ charptr *char
-typ charstr *const char
-
 fun _panic(s charstr) {
     print(s)
     var buf [1024]voidptr

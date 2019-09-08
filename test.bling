@@ -1,9 +1,9 @@
 typedef String struct {
-    _str runtime.charptr
+    _str charptr
     _len int
 }
 
-fun newString(str runtime.charptr) String {
+fun newString(str charptr) String {
     var s String = {
         _str: sys$strdup(str),
         _len: strlen(str),

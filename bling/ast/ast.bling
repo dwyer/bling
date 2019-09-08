@@ -75,7 +75,7 @@ typ ArrayType struct {
 typ BasicLit struct {
     pos token.Pos
     kind token.Token
-    value runtime.charptr
+    value charptr
 }
 
 typ BinaryExpr struct {
@@ -85,7 +85,7 @@ typ BinaryExpr struct {
 }
 
 typ BuiltinType struct {
-    name runtime.charptr
+    name charptr
     nargs int
     variadic bool
     isExpr bool
@@ -110,7 +110,7 @@ typ CompositeLit struct {
 }
 
 typ ConstExpr struct {
-    name runtime.charptr
+    name charptr
     type *Expr
     value int
 }
@@ -133,7 +133,7 @@ typ FuncExpr struct {
 
 typ Ident struct {
     pos token.Pos
-    name runtime.charptr
+    name charptr
     obj *Object
 }
 
@@ -156,7 +156,7 @@ typ MapType struct {
 typ NativeType struct {
     kind int
     info int
-    name runtime.charptr
+    name charptr
 }
 
 typ ParenExpr struct {
@@ -236,7 +236,7 @@ typ ImportDecl struct {
 }
 
 typ PragmaDecl struct {
-    lit runtime.charptr
+    lit charptr
 }
 
 typ TypeDecl struct {
@@ -369,7 +369,7 @@ typ Stmt struct {
 }
 
 typ File struct {
-    filename runtime.charstr
+    filename charstr
     name *Expr
     imports []*Decl
     decls []*Decl
@@ -377,7 +377,7 @@ typ File struct {
 }
 
 typ Package struct {
-    name runtime.charptr
+    name charptr
     scope *Scope
     files []*File
 }
@@ -399,7 +399,7 @@ fun isIdent(x *Expr) bool {
     return x.kind == EXPR_IDENT
 }
 
-fun isIdentNamed(x *Expr, name runtime.charstr) bool {
+fun isIdentNamed(x *Expr, name charstr) bool {
     return isIdent(x) && runtime.streq(x.ident.name, name)
 }
 
