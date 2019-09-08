@@ -228,7 +228,7 @@ fun (p *Parser) parseElement() *ast.Expr {
 }
 
 fun (p *Parser) parseElementList() []*ast.Expr {
-    var list = makearray(*ast.Expr)
+    var list = []*ast.Expr{}
     while p.tok != token.RBRACE && p.tok != token.EOF {
         var value = p.parseElement()
         append(list, value)
@@ -275,7 +275,7 @@ fun (p *Parser) parseIndexExpr(x *ast.Expr) *ast.Expr {
 }
 
 fun (p *Parser) parseCallExpr(x *ast.Expr) *ast.Expr {
-    var args = makearray(*ast.Expr)
+    var args = []*ast.Expr{}
     p.expect(token.LPAREN)
     p.exprLev++
     while p.tok != token.RPAREN {
@@ -498,7 +498,7 @@ fun (p *Parser) parseFieldDecl() *ast.Decl {
 fun (p *Parser) parseStructOrUnionType(keyword token.Token) *ast.Expr {
     var pos = p.pos
     p.expect(keyword)
-    var fields = makearray(*ast.Decl)
+    var fields = []*ast.Decl{}
     if p.accept(token.LBRACE) {
         for ;; {
             var field = p.parseFieldDecl()
@@ -552,7 +552,7 @@ fun (p *Parser) parseParam(anon bool) *ast.Decl {
 }
 
 fun (p *Parser) parseParameterList(anon bool) []*ast.Decl {
-    var params = makearray(*ast.Decl)
+    var params = []*ast.Decl{}
     for ;; {
         var param = p.parseParam(false)
         append(params, param)
@@ -583,7 +583,7 @@ fun (p *Parser) parseParameterList(anon bool) []*ast.Decl {
 }
 
 fun (p *Parser) parseParameters(anon bool) []*ast.Decl {
-    var params = makearray(*ast.Decl)
+    var params = []*ast.Decl{}
     p.expect(token.LPAREN)
     if p.tok != token.RPAREN {
         params = p.parseParameterList(anon)
@@ -633,7 +633,7 @@ fun (p *Parser) parseMapType() *ast.Expr {
 fun (p *Parser) parseEnumType() *ast.Expr {
     var pos = p.pos
     p.expect(token.ENUM)
-    var enums = makearray(*ast.Decl)
+    var enums = []*ast.Decl{}
     if p.accept(token.LBRACE) {
         while p.tok != token.RBRACE {
             var decl = ast.Decl{
@@ -857,9 +857,9 @@ fun (p *Parser) parseSwitchStmt() *ast.Stmt {
     var tag = p.parseExpr()
     p.exprLev = prevLev
     p.expect(token.LBRACE)
-    var clauses = makearray(*ast.Stmt)
+    var clauses = []*ast.Stmt{}
     while p.tok == token.CASE || p.tok == token.DEFAULT {
-        var exprs = makearray(*ast.Expr)
+        var exprs = []*ast.Expr{}
         var pos = p.pos
         if p.accept(token.CASE) {
             for ;; {
@@ -873,7 +873,7 @@ fun (p *Parser) parseSwitchStmt() *ast.Stmt {
             p.expect(token.DEFAULT)
         }
         p.expect(token.COLON)
-        var stmts = makearray(*ast.Stmt)
+        var stmts = []*ast.Stmt{}
         var loop = true
         while loop {
             switch p.tok {
@@ -998,7 +998,7 @@ fun (p *Parser) parseStmt() *ast.Stmt {
 }
 
 fun (p *Parser) parseStmtList() []*ast.Stmt {
-    var stmts = makearray(*ast.Stmt)
+    var stmts = []*ast.Stmt{}
     while p.tok != token.RBRACE {
         append(stmts, p.parseStmt())
     }
@@ -1161,7 +1161,7 @@ fun isTestFile(name runtime.charstr) bool {
 fun parseDir(fset *token.FileSet, path runtime.charstr, first **runtime.Error) []*ast.File {
     var err *runtime.Error = nil
     var infos = ioutil.readDir(path, &err)
-    var files = makearray(*ast.File)
+    var files = []*ast.File{}
     if err {
         runtime.Error_move(err, first)
         return files
@@ -1177,16 +1177,14 @@ fun parseDir(fset *token.FileSet, path runtime.charstr, first **runtime.Error) [
 }
 
 fun (p *Parser) _parseFile() *ast.File {
-    var name *ast.Expr = nil
-    var imports = makearray(*ast.Decl)
-    var decls = makearray(*ast.Decl)
+    var imports = []*ast.Decl{}
+    var decls = []*ast.Decl{}
     while p.tok == token.HASH {
         append(decls, p.parsePragma())
     }
-    if p.accept(token.PACKAGE) {
-        name = p.parseIdent()
-        p.expect(token.SEMICOLON)
-    }
+    p.expect(token.PACKAGE)
+    var name = p.parseIdent()
+    p.expect(token.SEMICOLON)
     while p.tok == token.IMPORT {
         var pos = p.expect(token.IMPORT)
         var path = p.parseBasicLit(token.STRING)
