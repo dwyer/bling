@@ -46,7 +46,7 @@
 
 typedef char bool;
 
-typedef char *string;
+typedef char const *string;
 typedef void *voidptr;
 typedef char *charptr;
 typedef char const *charstr;
