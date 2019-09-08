@@ -28,16 +28,8 @@ fun memcpy(dst voidptr, src *const void, n Size) voidptr {
     return C.memcpy(dst, src, n)
 }
 
-fun memcmp(dst *const void, src *const void, n Size) int {
-    return C.memcmp(dst, src, n)
-}
-
 fun memdup(src *const void, size Size) voidptr {
     return memcpy(malloc(size), src, size)
-}
-
-fun memset(dst voidptr, c int, n Size) voidptr {
-    return C.memset(dst, c, n)
 }
 
 fun strdup(s charstr) charptr {

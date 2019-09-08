@@ -9,14 +9,6 @@ fun errno() int {
     return C.getErrno()
 }
 
-fun errnoReset() {
-    C.setErrno(0)
-}
-
-fun errnoString() charptr {
-    return C.strerror(C.getErrno())
-}
-
 fun getenv(key charstr) charptr {
     return C.getenv(key)
 }

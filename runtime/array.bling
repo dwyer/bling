@@ -57,7 +57,7 @@ fun Array_setLen(s *Slice, size int, len int) {
     var old = s._len
     _setLen(s, size, len)
     if var diff = len - old; diff > 0 {
-        memset(Array_get(s, size, old, nil), 0, diff * size)
+        C.memset(Array_get(s, size, old, nil), 0, diff * size)
     }
 }
 
