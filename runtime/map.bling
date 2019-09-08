@@ -52,7 +52,7 @@ fun Map_unmake(m Map) {
     delete(m._pairs)
 }
 
-fun Map_len(m *const Map) int {
+fun Map_len(m Map) int {
     return m._len
 }
 
@@ -116,7 +116,7 @@ fun Map_get(m *const Map, key charstr, val voidptr) bool {
 
 fun Map_set(m *Map, key charstr, val *const void) {
     _mapSetUnsafe(m, key, val)
-    if var load_factor = typ float(Map_len(m)) / _mapCap(m); load_factor >= MAP_LOAD_FACTOR {
+    if var load_factor = typ float(Map_len(*m)) / _mapCap(m); load_factor >= MAP_LOAD_FACTOR {
         var newCap = _mapCap(m) * 2
         var pairs = m._pairs
         m._pairs = []MapPair{}

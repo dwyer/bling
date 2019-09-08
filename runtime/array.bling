@@ -12,7 +12,7 @@ fun Array_unmake(s Slice) {
     free(s._array)
 }
 
-fun Slice_len(s *const Slice) int {
+fun Slice_len(s Slice) int {
     return s._len
 }
 
