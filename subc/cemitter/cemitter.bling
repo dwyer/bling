@@ -7,6 +7,20 @@ import "bling/token"
 import "bling/types"
 import "runtime"
 
+fun isSimpleType(type *ast.Expr) bool {
+    for ;; {
+        switch type.kind {
+        case ast.TYPE_STRUCT:
+            return false
+        case ast.TYPE_ARRAY:
+            type = type.array_.elt
+            break
+        default:
+            return true
+        }
+    }
+}
+
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     switch expr.kind {
     case ast.EXPR_BASIC_LIT:
@@ -52,6 +66,11 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitExpr(e, expr.cast.expr)
         break
     case ast.EXPR_COMPOSITE_LIT:
+        if isSimpleType(expr.composite.type) {
+            emitter.emitToken(e, token.LPAREN)
+            emitType(e, expr.composite.type, nil)
+            emitter.emitToken(e, token.RPAREN)
+        }
         emitter.emitToken(e, token.LBRACE)
         if len(expr.composite.list) > 0 {
             emitter.emitNewline(e)
