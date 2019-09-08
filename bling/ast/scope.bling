@@ -76,7 +76,7 @@ fun (s *Scope) print() {
         while runtime.MapIter_next(&iter, &key, nil) {
             var s = C.sprintf("%s- %s", buf.toString(), key)
             print(s)
-            runtime.free(s)
+            delete(s)
         }
         s = s.outer
         buf.writeByte('\t', nil)
@@ -95,5 +95,5 @@ fun (s *Scope) deepLookup(name runtime.charptr) *Object {
 
 fun (s *Scope) free() {
     runtime.Map_unmake(&s.objects)
-    runtime.free(s)
+    delete(s)
 }

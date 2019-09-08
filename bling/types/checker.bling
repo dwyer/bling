@@ -27,7 +27,7 @@ fun (c *Checker) log(fatal bool, pos token.Pos, msg runtime.charstr) {
     } else {
         print(errMsg)
     }
-    runtime.free(errMsg)
+    delete(errMsg)
 }
 
 fun (c *Checker) warning(pos token.Pos, msg runtime.charstr) {

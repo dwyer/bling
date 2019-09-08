@@ -103,6 +103,7 @@ fun defPredeclaredTypes() {
 typ builtinId enum {
     APPEND
     ASSERT
+    DELETE
     LEN
     MAKEARRAY
     MAKEMAP
@@ -125,6 +126,7 @@ var predeclareFuncs [?]struct {
 } = {
     APPEND: { "append", 2, false, statement, },
     ASSERT: { "assert", 1, false, statement, },
+    DELETE: { "delete", 1, false, statement, },
     LEN: { "len", 1, false, expression, },
     MAKEARRAY: { "makearray", 1, false, expression, },
     MAKEMAP: { "makemap", 1, false, expression, },

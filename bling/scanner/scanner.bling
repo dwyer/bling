@@ -213,7 +213,7 @@ scanAgain:
         if runtime.strlen(*lit) > 1 {
             tok = token.lookup(*lit)
             if tok != token.IDENT {
-                runtime.free(*lit)
+                delete(*lit)
                 *lit = nil
             }
             switch tok {

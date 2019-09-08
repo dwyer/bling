@@ -53,7 +53,7 @@ fun _throwPathError(path runtime.charstr, err *runtime.Error, e **runtime.Error)
     if err {
         var msg = err.error
         err.error = C.sprintf("PathError: %s: %s", path, msg)
-        runtime.free(msg)
+        delete(msg)
         runtime.Error_move(err, e)
     }
 }
@@ -133,11 +133,9 @@ fun stat(name runtime.charstr, e **runtime.Error) *FileInfo {
 }
 
 fun (info *FileInfo) free() {
-    if info != nil {
-        runtime.free(info._name)
-        runtime.free(info._sys)
-        runtime.free(info)
-    }
+    delete(info._name)
+    delete(info._sys)
+    delete(info)
 }
 
 fun openDir(name runtime.charstr, e **runtime.Error) *File {
@@ -180,7 +178,7 @@ fun readdir(file *File, e **runtime.Error) []*FileInfo {
     }
     for var i = 0; i < len(names); i++ {
         var path = paths.join2(file.name, names[i])
-        runtime.free(names[i])
+        delete(names[i])
         var info *FileInfo = stat(path, &err)
         if err != nil {
             _throwFileError(file, err, e)
@@ -241,7 +239,7 @@ fun mkdirAll(path runtime.charstr, mode u32, e **runtime.Error) {
     if !runtime.streq(dir, ".") {
         mkdirAll(dir, mode, e)
     }
-    runtime.free(dir)
+    delete(dir)
     var err *runtime.Error = nil
     mkdir(path, mode, &err)
     switch sys.errno() {

@@ -8,6 +8,10 @@ typ Slice struct {
     _array *u8
 }
 
+fun Array_unmake(s Slice) {
+    free(s._array)
+}
+
 fun Slice_unmake(s voidptr) {
     free((typ *Slice(s))._array)
 }

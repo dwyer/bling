@@ -87,7 +87,7 @@ fun (p *Parser) errorExpected(pos token.Pos, msg runtime.charptr) {
     }
     msg = buf.toString()
     p.error(pos, msg)
-    runtime.free(msg)
+    delete(msg)
 }
 
 fun (p *Parser) accept(tok0 token.Token) bool {

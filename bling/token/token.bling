@@ -429,6 +429,6 @@ fun (fset *FileSet) print() {
         var f = fset.files[i]
         var s = C.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
         print(s)
-        runtime.free(s)
+        delete(s)
     }
 }

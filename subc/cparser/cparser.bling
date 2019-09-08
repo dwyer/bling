@@ -462,7 +462,7 @@ fun typeName(p *parser.Parser) *ast.Expr {
     var type = specifierQualifierList(p)
     var decl = abstractDeclarator(p, type)
     type = decl.field.type
-    runtime.free(decl)
+    delete(decl)
     return type
 }
 

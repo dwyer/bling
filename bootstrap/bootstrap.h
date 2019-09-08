@@ -11,6 +11,10 @@
 #define array(T) runtime$Slice
 #define map(T) runtime$Map
 
+#define delete(x) _Generic((x), \
+        runtime$Slice: runtime$Array_unmake, \
+        default: runtime$free)(x)
+
 #define append(a, x) do { \
     typeof(x) $0 = (x); \
     runtime$Array_append((runtime$Slice*)&(a), sizeof(x), &$0); \
