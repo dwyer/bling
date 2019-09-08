@@ -354,7 +354,7 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
         case token.INT:
             return c.lookupIdent("int")
         case token.STRING:
-            return makePtr(c.lookupIdent("char"))
+            return c.lookupIdent("string")
         default:
             c.error(expr.pos(), "unreachable")
             return nil
@@ -451,22 +451,22 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
     case ast.EXPR_INDEX:
         var type = c.checkExpr(expr.index.x)
         var base = baseType(type)
-        switch base.kind {
-        case ast.TYPE_ARRAY:
-            type = base.array_.elt
-            break
-        case ast.EXPR_STAR:
-            type = base.star.x
-            break
-        default:
-            c.error(expr.pos(),
-                C.sprintf("indexing a non-array or pointer `%s`", typeString(type)))
-            break
-        }
         if var idxType = c.checkExpr(expr.index.index); !isInteger(idxType) {
             c.error(expr.index.index.pos(), "index must be an integer")
         }
-        return type
+        switch base.kind {
+        case ast.TYPE_ARRAY:
+            return base.array_.elt
+        case ast.EXPR_STAR:
+            return base.star.x
+        default:
+            if isString(base) {
+                return c.lookupIdent("char")
+            }
+            c.error(expr.pos(), C.sprintf("indexing a non-array or pointer `%s`",
+                typeString(type)))
+            return type
+        }
     case ast.EXPR_PAREN:
         return c.checkExpr(expr.paren.x)
     case ast.EXPR_SELECTOR:
@@ -481,6 +481,9 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
             c.warning(expr.pos(), C.sprintf("derefencing an array `%s`", typeString(type)))
             return base.array_.elt
         default:
+            if isString(type) {
+                return c.lookupIdent("char")
+            }
             c.error(expr.pos(), C.sprintf("derefencing a non-pointer `%s`", typeString(type)))
             return nil
         }

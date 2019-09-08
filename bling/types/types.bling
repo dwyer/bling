@@ -198,8 +198,22 @@ fun isNative(t *ast.Expr, info BasicInfo) bool {
     return t.kind == ast.TYPE_NATIVE && t.native.info & info
 }
 
-fun isBoolean(type *ast.Expr) bool {
-    return isNative(type, IS_BOOLEAN)
+fun isPointer(t *ast.Expr) bool {
+    t = baseType(t)
+    switch t.kind {
+    case ast.EXPR_STAR:
+        return true
+    case ast.TYPE_ARRAY:
+        return !t.array_.dynamic
+    case ast.TYPE_NATIVE:
+        return t.native.kind == STRING || t.native.kind == VOID_POINTER
+    default:
+        return false
+    }
+}
+
+fun isBoolean(t *ast.Expr) bool {
+    return isNative(t, IS_BOOLEAN)
 }
 
 fun isInteger(t *ast.Expr) bool {
@@ -210,6 +224,19 @@ fun isInteger(t *ast.Expr) bool {
 fun isNumeric(t *ast.Expr) bool {
     t = baseType(t)
     return t.kind == ast.EXPR_STAR || t.kind == ast.TYPE_ENUM || isNative(t, IS_NUMERIC)
+}
+
+fun isCharPtr(t *ast.Expr) bool {
+    t = baseType(t)
+    if t.kind != ast.EXPR_STAR {
+        return false
+    }
+    t = baseType(t.star.x)
+    return t.kind == ast.TYPE_NATIVE && t.native.kind == CHAR
+}
+
+fun isString(t *ast.Expr) bool {
+    return isNative(t, IS_STRING) || isCharPtr(t)
 }
 
 fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
@@ -269,11 +296,6 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
     }
 }
 
-fun isPointer(t *ast.Expr) bool {
-    t = baseType(t)
-    return t.kind == ast.EXPR_STAR || (t.kind == ast.TYPE_ARRAY && !t.array_.dynamic)
-}
-
 fun pointerBase(t *ast.Expr) *ast.Expr {
     t = baseType(t)
     switch t.kind {
@@ -298,6 +320,9 @@ fun areAssignable(a *ast.Expr, b *ast.Expr) bool {
     b = baseType(b)
     if isDynamicArray(a) {
         return isDynamicArray(b) && areIdentical(a.array_.elt, b.array_.elt)
+    }
+    if isString(a) && isString(b) {
+        return true
     }
     if ast.isVoidPtr(a) || ast.isVoidPtr(b) {
         return true
