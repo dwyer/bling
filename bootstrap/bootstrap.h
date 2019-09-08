@@ -22,6 +22,7 @@
 } while (0)
 
 #define assert(x) do { if (!(x)) print("!!! ASSERT FAILED: " # x); } while (0)
+#define copy(x) _Generic((x) string: runtime$strdup)(x)
 
 #define len(x) _Generic((x), \
         runtime$Slice: runtime$Slice_len, \

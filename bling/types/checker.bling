@@ -373,6 +373,8 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
                 assert(n == type.builtin.nargs)
             }
             switch type.builtin.id {
+            case COPY:
+                return c.checkExpr(expr.call.args[0])
             case LEN:
                 c.checkExpr(expr.call.args[0])
                 return c.lookupIdent("int")
