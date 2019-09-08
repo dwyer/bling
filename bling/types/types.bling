@@ -1162,8 +1162,11 @@ fun (c *Checker) checkFiles(files []*ast.File) {
             var pkg = c.checkImport(file.imports[i])
             append(c.pkg.imports, pkg)
         }
-        for var i = 0; i < len(file.decls); i++ {
-            if var decl = file.decls[i]; decl.kind == ast.DECL_TYPE {
+    }
+    for var j = 0; j < len(files); j++ {
+        var decls = files[j].decls
+        for var i = 0; i < len(decls); i++ {
+            if var decl = decls[i]; decl.kind == ast.DECL_TYPE {
                 c.declare(decl, nil, c.pkg.scope, ast.ObjKind_TYP, decl.type.name)
             }
         }
@@ -1200,7 +1203,17 @@ fun (c *Checker) checkFiles(files []*ast.File) {
     for var j = 0; j < len(files); j++ {
         var decls = files[j].decls
         for var i = 0; i < len(decls); i++ {
-            c.checkDecl(decls[i])
+            if var decl = decls[i]; decl.kind == ast.DECL_TYPE {
+                c.checkDecl(decls[i])
+            }
+        }
+    }
+    for var j = 0; j < len(files); j++ {
+        var decls = files[j].decls
+        for var i = 0; i < len(decls); i++ {
+            if var decl = decls[i]; decl.kind != ast.DECL_TYPE {
+                c.checkDecl(decls[i])
+            }
         }
     }
 }
