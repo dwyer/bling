@@ -1,0 +1,81 @@
+package runtime
+
+import "C"
+
+typ Slice struct {
+    _len int
+    _cap int
+    _array *u8
+}
+
+fun Slice_unmake(s voidptr) {
+    free((typ *Slice(s))._array)
+}
+
+fun Slice_len(s *const Slice) int {
+    return s._len
+}
+
+fun Array_get(s *const Slice, size int, i int, dst voidptr) voidptr {
+    if i >= s._len {
+        panic(C.sprintf("out of range: index=%d, len=%d", i, s._len))
+    }
+    var ref = &s._array[i * size]
+    if dst {
+        if size == 1 {
+            *typ *u8(dst) = *ref
+        } else {
+            memcpy(dst, ref, size)
+        }
+    }
+    return ref
+}
+
+fun _setCap(s *Slice, size int, cap int) {
+    s._cap = cap
+    s._array = C.realloc(s._array, s._cap * size)
+}
+
+fun _setLen(s *Slice, size int, len int) {
+    var grow = false
+    var cap = s._cap
+    if cap == 0 {
+        cap = 1
+        grow = true
+    }
+    while cap < len {
+        cap *= 2
+        grow = true
+    }
+    if s._array == nil || grow {
+        _setCap(s, size, cap)
+    }
+    s._len = len
+}
+
+fun Array_setLen(s *Slice, size int, len int) {
+    var old = s._len
+    _setLen(s, size, len)
+    if var diff = len - old; diff > 0 {
+        memset(Array_get(s, size, old, nil), 0, diff * size)
+    }
+}
+
+fun Array_set(s *Slice, size int, i int, x *const void) {
+    if size == 1 {
+        s._array[i] = *typ *u8(x)
+    } else {
+        memcpy(Array_get(s, size, i, nil), x, size)
+    }
+}
+
+fun Array_append(s *Slice, size int, x *const void) {
+    _setLen(s, size, s._len + 1)
+    Array_set(s, size, s._len - 1, x)
+}
+
+fun nilArray(s *Slice, size int) voidptr {
+    var z = nil
+    Array_append(s, size, &z)
+    return (typ *Slice(s))._array
+}

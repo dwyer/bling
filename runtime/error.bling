@@ -1,0 +1,34 @@
+package runtime
+
+import "C"
+
+typ Error struct {
+    error charptr
+}
+
+fun NewError(msg charstr) *Error {
+    var err Error = {
+        error: C.strdup(msg),
+    }
+    return &&err
+}
+
+fun Error_move(src *Error, dst **Error) {
+    if dst != nil {
+        *dst = src
+    } else {
+        panic(C.sprintf("Unhandled error: %s", src.error))
+    }
+}
+
+fun Error_check(e **Error) {
+    if C.getErrno() {
+        var err *Error = NewError(C.strerror(C.getErrno()))
+        Error_move(err, e)
+    }
+}
+
+fun Error_free(e *Error) {
+    free(e.error)
+    free(e)
+}

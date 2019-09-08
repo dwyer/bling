@@ -76,7 +76,6 @@ fun newFile(fd uintptr, name runtime.charstr) *File {
 }
 
 fun openFile(filename runtime.charstr, mode int, perm int, e **runtime.Error) *File {
-    runtime.clearError()
     var err *runtime.Error = nil
     var fd = sys.open(filename, mode, perm, &err)
     if err {
