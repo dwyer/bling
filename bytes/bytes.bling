@@ -59,13 +59,13 @@ fun (b *Buffer) len() int {
 
 fun (b *Buffer) bytes() runtime.charptr {
     b.init()
-    return runtime.Array_get(b, 1, 0, nil)
+    return runtime.Array_get(typ *runtime.Slice(b), 1, 0, nil)
 }
 
 fun (b *Buffer) toString() runtime.charptr {
     b.init()
     var s runtime.charptr = runtime.malloc(b.len() + 1)
-    runtime.memcpy(s, runtime.Array_get(b, 1, 0, nil), b.len())
+    runtime.memcpy(s, runtime.Array_get(typ *runtime.Slice(b), 1, 0, nil), b.len())
     s[b.len()] = '\0'
     return s
 }

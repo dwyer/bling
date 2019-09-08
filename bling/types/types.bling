@@ -237,7 +237,7 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
     }
     switch a.kind {
     case ast.EXPR_IDENT:
-        return b.kind == ast.EXPR_IDENT && a.ident.obj == a.ident.obj
+        return b.kind == ast.EXPR_IDENT && a.ident.obj == b.ident.obj
     case ast.EXPR_STAR:
         return areIdentical(a.star.x, b.star.x)
     case ast.TYPE_ARRAY:
@@ -296,6 +296,9 @@ fun areAssignable(a *ast.Expr, b *ast.Expr) bool {
     }
     a = getBaseType(a)
     b = getBaseType(b)
+    if isDynamicArray(a) {
+        return isDynamicArray(b) && areIdentical(a.array_.elt, b.array_.elt)
+    }
     if ast.isVoidPtr(a) || ast.isVoidPtr(b) {
         return true
     }
@@ -318,6 +321,8 @@ fun areComparable(a *ast.Expr, b *ast.Expr) bool {
     if areIdentical(a, b) {
         return true
     }
+    a = getBaseType(a)
+    b = getBaseType(b)
     if isArithmetic(a) && isArithmetic(b) {
         return true
     }
