@@ -134,7 +134,7 @@ fun Map_set(m *Map, key charstr, val *const void) {
 fun Map_remove(m *Map, key charstr) bool {
     if _mapIsInitialized(m) {
         if var idx = _mapGetPairIdx(m, key); idx >= 0 {
-            var x = MapPair{}; m._pairs[idx] = x // TODO fix this
+            m._pairs[idx] = MapPair{}
             return true
         }
     }
