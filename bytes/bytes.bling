@@ -29,7 +29,7 @@ fun join(a [?]runtime.charstr, size int, sep runtime.charstr) runtime.charptr {
     case 1:
         return runtime.strdup(a[0])
     }
-    var b Buffer = makearray(char)
+    var b Buffer = []char{}
     b.writeChars(a[0], runtime.strlen(a[0]), nil)
     for var i = 1; i < size; i++ {
         b.writeChars(sep, runtime.strlen(sep), nil)
@@ -49,7 +49,7 @@ fun lastIndexByte(b runtime.charstr, c char) int {
 
 fun (b *Buffer) init() {
     if len(*b) == 0 {
-        *b = makearray(char)
+        *b = []char{}
     }
 }
 

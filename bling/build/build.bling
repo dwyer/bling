@@ -85,7 +85,7 @@ fun newBuilder(fset *token.FileSet) *Builder {
 }
 
 fun genObj(b *Builder, dst runtime.charstr, src runtime.charstr) {
-    var cmd = makearray(runtime.charptr)
+    var cmd = []runtime.charptr{}
     append(cmd, CC_PATH)
     append(cmd, typ runtime.charptr("-g"))
     append(cmd, typ runtime.charptr("-I"))
@@ -166,7 +166,7 @@ fun newPackage(b *Builder, path runtime.charstr) Package {
         libPath: libPath,
         libModTime: getFileModTime(libPath),
         srcModTime: getSrcModTime(path),
-        deps: makearray(*Package),
+        deps: []*Package{},
         isCmd: isCmd,
     }
     runtime.free(genPath)
@@ -231,7 +231,7 @@ fun buildCPackage(b *Builder, path runtime.charstr) *Package {
     }
     if b.force || pkg.srcModTime > pkg.libModTime {
         genHeader(b, &pkg)
-        var cmd = makearray(runtime.charptr)
+        var cmd = []runtime.charptr{}
         append(cmd, AR_PATH)
         append(cmd, typ runtime.charptr("rsc"))
         append(cmd, pkg.libPath)
@@ -260,7 +260,7 @@ fun buildBlingPackage(b *Builder, path runtime.charstr) *Package {
         getCFile(b, &pkg)
         genObj(b, pkg.objPath, pkg.cPath)
         if pkg.isCmd {
-            var cmd = makearray(runtime.charptr)
+            var cmd = []runtime.charptr{}
             append(cmd, CC_PATH)
             append(cmd, typ runtime.charptr("-g"))
             append(cmd, typ runtime.charptr("-o"))
@@ -273,7 +273,7 @@ fun buildBlingPackage(b *Builder, path runtime.charstr) *Package {
             }
             execute(&cmd)
         } else {
-            var cmd = makearray(runtime.charptr)
+            var cmd = []runtime.charptr{}
             append(cmd, AR_PATH)
             append(cmd, typ runtime.charptr("rsc"))
             append(cmd, pkg.libPath)

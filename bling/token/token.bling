@@ -369,7 +369,7 @@ fun (f *File) lineString(line int) runtime.charptr {
 fun newFileSet() *FileSet {
     var fset = FileSet{
         base: 1,
-        files: makearray(*File),
+        files: []*File{},
     }
     return &&fset
 }
@@ -381,7 +381,7 @@ fun (s *FileSet) addFile(filename runtime.charstr, base int, size int) *File {
     if base < s.base || size < 0 {
         panic("illegal base or size")
     }
-    var lines = makearray(int)
+    var lines = []int{}
     var zero = 0
     append(lines, zero)
     var file = File{

@@ -30,7 +30,7 @@ end:
 }
 
 fun readDir(name runtime.charstr, error **runtime.Error) []*os.FileInfo {
-    var info = makearray(*os.FileInfo)
+    var info = []*os.FileInfo{}
     var err *runtime.Error = nil
     var file = os.openDir(name, &err)
     if err != nil {

@@ -36,7 +36,7 @@ fun djb2(s charstr) uintptr {
 
 fun Map_init(m *Map) {
     assert(m._valSize)
-    m._pairs = makearray(MapPair)
+    m._pairs = []MapPair{}
     Array_setLen(typ *Slice(&m._pairs), sizeof(MapPair), DEFAULT_CAP)
 }
 
@@ -119,7 +119,7 @@ fun Map_set(m *Map, key charstr, val *const void) {
     if var load_factor = typ float(Map_len(m)) / _mapCap(m); load_factor >= MAP_LOAD_FACTOR {
         var newCap = _mapCap(m) * 2
         var pairs = m._pairs
-        m._pairs = makearray(MapPair)
+        m._pairs = []MapPair{}
         Array_setLen(typ *Slice(&m._pairs), sizeof(MapPair), newCap)
         m._len = 0
         for var i = 0; i < len(pairs); i++ {

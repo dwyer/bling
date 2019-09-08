@@ -40,7 +40,7 @@ fun newScope(outer *Scope) *Scope {
     var s = Scope{
         outer: outer,
         objects: runtime.Map_make(sizeof(*Object)),
-        keys: makearray(runtime.charptr),
+        keys: []runtime.charptr{},
     }
     return &&s
 }

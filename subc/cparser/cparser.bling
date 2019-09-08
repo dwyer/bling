@@ -63,7 +63,7 @@ fun postfixExpr(p *parser.Parser, x *ast.Expr) *ast.Expr {
             x = &&y
             break
         case token.LPAREN:
-            var args = makearray(*ast.Expr)
+            var args = []*ast.Expr{}
             p.expect(token.LPAREN)
             while p.tok != token.RPAREN {
                 var x *ast.Expr = nil
@@ -264,7 +264,7 @@ fun structOrUnionSpec(p *parser.Parser) *ast.Expr {
     if p.tok == token.IDENT {
         name = p.parseIdent()
     }
-    var fields = makearray(*ast.Decl)
+    var fields = []*ast.Decl{}
     if p.accept(token.LBRACE) {
         for ;; {
             var pos = p.pos
@@ -305,7 +305,7 @@ fun enumSpec(p *parser.Parser) *ast.Expr {
     if p.tok == token.IDENT {
         name = p.parseIdent()
     }
-    var enums = makearray(*ast.Decl)
+    var enums = []*ast.Decl{}
     if p.accept(token.LBRACE) {
         for ;; {
             var decl = ast.Decl{
@@ -377,7 +377,7 @@ fun declarator(p *parser.Parser, typePtr **ast.Expr) *ast.Expr {
         p.expect(token.RBRACK)
         *typePtr = &&type
     } else if p.accept(token.LPAREN) {
-        var params = makearray(*ast.Decl)
+        var params = []*ast.Decl{}
         if p.tok != token.RPAREN {
             params = paramTypeList(p)
         }
@@ -428,7 +428,7 @@ fun pointer(p *parser.Parser, type *ast.Expr) *ast.Expr {
 }
 
 fun paramTypeList(p *parser.Parser) []*ast.Decl {
-    var params = makearray(*ast.Decl)
+    var params = []*ast.Decl{}
     while p.tok != token.RPAREN {
         var param = parameterDeclaration(p)
         append(params, param)
@@ -494,7 +494,7 @@ fun abstractDeclarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
             p.expect(token.RBRACK)
             type = &&t
         } else if p.accept(token.LPAREN) {
-            var params = makearray(*ast.Decl)
+            var params = []*ast.Decl{}
             if p.tok != token.RPAREN {
                 params = paramTypeList(p)
             }
@@ -536,7 +536,7 @@ fun initializer(p *parser.Parser) *ast.Expr {
     if !p.accept(token.LBRACE) {
         return expression(p)
     }
-    var list = makearray(*ast.Expr)
+    var list = []*ast.Expr{}
     while p.tok != token.RBRACE && p.tok != token.EOF {
         var key *ast.Expr = nil
         var isArray = false
@@ -711,9 +711,9 @@ fun statement(p *parser.Parser) *ast.Stmt {
         var tag = expression(p)
         p.expect(token.RPAREN)
         p.expect(token.LBRACE)
-        var clauses = makearray(*ast.Stmt)
+        var clauses = []*ast.Stmt{}
         while p.tok == token.CASE || p.tok == token.DEFAULT {
-            var exprs = makearray(*ast.Expr)
+            var exprs = []*ast.Expr{}
             while p.accept(token.CASE) {
                 var expr = constantExpr(p)
                 p.expect(token.COLON)
@@ -723,7 +723,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
                 p.expect(token.DEFAULT)
                 p.expect(token.COLON)
             }
-            var stmts = makearray(*ast.Stmt)
+            var stmts = []*ast.Stmt{}
             for var loop = true; loop; {
                 switch p.tok {
                 case token.CASE, token.DEFAULT, token.RBRACE:
@@ -814,7 +814,7 @@ fun statement(p *parser.Parser) *ast.Stmt {
 }
 
 fun compoundStmt(p *parser.Parser, allow_single bool) *ast.Stmt {
-    var stmts = makearray(*ast.Stmt)
+    var stmts = []*ast.Stmt{}
     var pos token.Pos = 0
     if allow_single && p.tok != token.LBRACE {
         var stmt = statement(p)
@@ -1013,8 +1013,8 @@ fun declaration(p *parser.Parser, isExternal bool) *ast.Decl {
 }
 
 fun _parseFile(p *parser.Parser) *ast.File {
-    var decls = makearray(*ast.Decl)
-    var imports = makearray(*ast.Decl)
+    var decls = []*ast.Decl{}
+    var imports = []*ast.Decl{}
     var name *ast.Expr = nil
     while p.tok == token.HASH {
         var lit = p.parsePragma()

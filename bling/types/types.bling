@@ -440,7 +440,7 @@ fun checkFiles(conf *Config, path runtime.charstr, fset *token.FileSet,
         path: runtime.strdup(path),
         name: file.name ? runtime.strdup(file.name.ident.name) : nil,
         scope: scope,
-        imports: makearray(*Package),
+        imports: []*Package{},
     }
     var c Checker = {
         info: info,
