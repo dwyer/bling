@@ -12,6 +12,7 @@ typ Checker struct {
     pkg *Package
     info *Info
     result *ast.Expr
+    file *ast.File
 }
 
 fun (c *Checker) log(fatal bool, pos token.Pos, msg runtime.charstr) {
@@ -37,18 +38,25 @@ fun (c *Checker) error(pos token.Pos, msg runtime.charstr) {
     c.log(true, pos, msg)
 }
 
-fun (c *Checker) resolve(s *ast.Scope, x *ast.Expr) {
-    assert(x.kind == ast.EXPR_IDENT)
+fun (c *Checker) tryResolve(s *ast.Scope, x *ast.Expr) bool {
+    if x.kind != ast.EXPR_IDENT {
+        return false
+    }
     if x.ident.obj {
         c.error(x.pos(), C.sprintf("already resolved: %s", x.ident.name))
     }
-    if ast.resolve(s, x) {
+    return ast.resolve(s, x)
+}
+
+fun (c *Checker) resolve(s *ast.Scope, x *ast.Expr) {
+    if c.tryResolve(s, x) {
         return
     }
     c.error(x.pos(), C.sprintf("unresolved: %s", x.ident.name))
 }
 
-fun (c *Checker) declare(decl *ast.Decl, data voidptr, scope *ast.Scope, kind ast.ObjKind, ident *ast.Expr) {
+fun (c *Checker) declare(decl *ast.Decl, data voidptr, scope *ast.Scope,
+        kind ast.ObjKind, ident *ast.Expr) {
     if ident.ident.obj != nil {
         c.error(decl.pos, C.sprintf("already declared: %s", ident.ident.name))
     }
@@ -78,9 +86,8 @@ fun (c *Checker) checkType(t *ast.Expr) {
         c.resolve(c.pkg.scope, t)
         break
     case ast.EXPR_SELECTOR:
-        var type = c.checkExpr(t.selector.x)
-        assert(type == nil)
         assert(ast.isIdent(t.selector.x))
+        c.resolve(c.file.scope, t.selector.x)
         assert(t.selector.x.ident.obj.kind == ast.ObjKind_PKG)
         var oldScope = c.pkg.scope
         c.pkg.scope = t.selector.x.ident.obj.data
@@ -253,20 +260,18 @@ fun (c *Checker) lookupIdent(name runtime.charptr) *ast.Expr {
 }
 
 fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
-    var type = c.checkExpr(expr.selector.x)
-    if type == nil {
+    if c.tryResolve(c.file.scope, expr.selector.x) {
         // x is a scope
         var x = expr.selector.x
-        assert(x.kind == ast.EXPR_IDENT)
-        var decl = x.ident.obj.decl
-        assert(decl.kind == ast.DECL_IMPORT)
+        assert(x.ident.obj.kind == ast.ObjKind_PKG)
         var oldScope = c.pkg.scope
         c.pkg.scope = x.ident.obj.data
-        type = c.checkExpr(expr.selector.sel)
+        var type = c.checkExpr(expr.selector.sel)
         c.pkg.scope = oldScope
         expr.selector.tok = token.DOLLAR
         return type
     }
+    var type = c.checkExpr(expr.selector.x)
     var isArgPtr = false
     if type.kind == ast.EXPR_STAR {
         expr.selector.tok = token.ARROW
@@ -450,11 +455,13 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
             type = base.star.x
             break
         default:
-            c.error(expr.pos(), C.sprintf("indexing a non-array or pointer `%s`", typeString(type)))
+            c.error(expr.pos(),
+                C.sprintf("indexing a non-array or pointer `%s`", typeString(type)))
             break
         }
-        var typ2 = c.checkExpr(expr.index.index)
-        typ void(typ2)
+        if var idxType = c.checkExpr(expr.index.index); !isInteger(idxType) {
+            c.error(expr.index.index.pos(), "index must be an integer")
+        }
         return type
     case ast.EXPR_PAREN:
         return c.checkExpr(expr.paren.x)
@@ -617,7 +624,7 @@ fun (c *Checker) checkImport(imp *ast.Decl) *Package {
         assert(runtime.Map_get(&c.info.imports, path, nil))
     }
     imp.imp.name = makeIdent(pkg.scope.pkgName.ident.name)
-    c.declare(imp, pkg.scope, c.pkg.scope, ast.ObjKind_PKG, imp.imp.name)
+    c.declare(imp, pkg.scope, c.file.scope, ast.ObjKind_PKG, imp.imp.name)
     return pkg
 }
 
@@ -696,13 +703,16 @@ fun (c *Checker) checkDecl(decl *ast.Decl) {
 
 fun (c *Checker) checkFiles(files []*ast.File) {
     for var j = 0; j < len(files); j++ {
-        var file = files[j]
-        for var i = 0; i < len(file.imports); i++ {
-            var pkg = c.checkImport(file.imports[i])
+        c.file = files[j]
+        c.file.scope = ast.newScope(nil)
+        var imports = c.file.imports
+        for var i = 0; i < len(imports); i++ {
+            var pkg = c.checkImport(imports[i])
             append(c.pkg.imports, pkg)
         }
     }
     for var j = 0; j < len(files); j++ {
+        c.file = files[j]
         var decls = files[j].decls
         for var i = 0; i < len(decls); i++ {
             if var decl = decls[i]; decl.kind == ast.DECL_TYPE {
@@ -711,7 +721,8 @@ fun (c *Checker) checkFiles(files []*ast.File) {
         }
     }
     for var j = 0; j < len(files); j++ {
-        var decls = files[j].decls
+        c.file = files[j]
+        var decls = c.file.decls
         for var i = 0; i < len(decls); i++ {
             if var decl = decls[i]; decl.kind == ast.DECL_FUNC {
                 c.checkType(decl.func.type)
@@ -740,7 +751,8 @@ fun (c *Checker) checkFiles(files []*ast.File) {
         }
     }
     for var j = 0; j < len(files); j++ {
-        var decls = files[j].decls
+        c.file = files[j]
+        var decls = c.file.decls
         for var i = 0; i < len(decls); i++ {
             if var decl = decls[i]; decl.kind == ast.DECL_TYPE {
                 c.checkDecl(decls[i])
@@ -748,7 +760,8 @@ fun (c *Checker) checkFiles(files []*ast.File) {
         }
     }
     for var j = 0; j < len(files); j++ {
-        var decls = files[j].decls
+        c.file = files[j]
+        var decls = c.file.decls
         for var i = 0; i < len(decls); i++ {
             if var decl = decls[i]; decl.kind != ast.DECL_TYPE {
                 c.checkDecl(decls[i])

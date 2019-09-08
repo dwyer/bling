@@ -373,6 +373,7 @@ typ File struct {
     name *Expr
     imports []*Decl
     decls []*Decl
+    scope *Scope
 }
 
 typ Package struct {

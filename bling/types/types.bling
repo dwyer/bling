@@ -399,11 +399,12 @@ fun getStructField(type *ast.Expr, index int) *ast.Decl {
 }
 
 fun isInteger(x *ast.Expr) bool {
-    switch x.kind {
-    case ast.EXPR_IDENT:
-        return isInteger(x.ident.obj.decl.type.type)
-    case ast.TYPE_ENUM, ast.TYPE_NATIVE:
+    var base = getBaseType(x)
+    switch base.kind {
+    case ast.TYPE_ENUM:
         return true
+    case ast.TYPE_NATIVE:
+        return base.native.info | IS_INTEGER
     default:
         return false
     }
