@@ -4,7 +4,7 @@ import "runtime"
 
 typ Buffer []char
 
-fun hasSuffix(b charstr, suffix charstr) bool {
+fun hasSuffix(b string, suffix string) bool {
     for var i = 0; b[i]; i++ {
         if runtime.streq(&b[i], suffix) {
             return true
@@ -13,7 +13,7 @@ fun hasSuffix(b charstr, suffix charstr) bool {
     return false
 }
 
-fun indexByte(b charstr, c char) int {
+fun indexByte(b string, c char) int {
     for var i = 0; b[i]; i++ {
         if b[i] == c {
             return i
@@ -22,7 +22,7 @@ fun indexByte(b charstr, c char) int {
     return -1
 }
 
-fun join(a [?]charstr, size int, sep charstr) charptr {
+fun join(a [?]string, size int, sep string) charptr {
     switch size {
     case 0:
         return runtime.strdup("")
@@ -38,7 +38,7 @@ fun join(a [?]charstr, size int, sep charstr) charptr {
     return b.toString()
 }
 
-fun lastIndexByte(b charstr, c char) int {
+fun lastIndexByte(b string, c char) int {
     for var i = len(b) - 1; i >= 0; i-- {
         if c == b[i] {
             return i
@@ -83,7 +83,7 @@ fun (b *Buffer) writeByte(p char, error **runtime.Error) {
     append(*b, p)
 }
 
-fun (b *Buffer) writeChars(p charstr, size int, error **runtime.Error) int {
+fun (b *Buffer) writeChars(p *const char, size int, error **runtime.Error) int {
     b.init()
     if size < 0 {
         size = len(p)
@@ -94,6 +94,6 @@ fun (b *Buffer) writeChars(p charstr, size int, error **runtime.Error) int {
     return size
 }
 
-fun (b *Buffer) writeString(p charstr, error **runtime.Error) int {
+fun (b *Buffer) writeString(p string, error **runtime.Error) int {
     return b.writeChars(p, -1, error)
 }

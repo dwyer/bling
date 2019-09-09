@@ -374,7 +374,7 @@ fun newFileSet() *FileSet {
     return &&fset
 }
 
-fun (s *FileSet) addFile(filename charstr, base int, size int) *File {
+fun (s *FileSet) addFile(filename string, base int, size int) *File {
     if base < 0 {
         base = s.base
     }

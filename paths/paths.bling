@@ -60,7 +60,7 @@ fun dir(path string) charptr {
     return runtime.strdup(".")
 }
 
-fun ext(path string) charstr {
+fun ext(path string) string {
     var n = len(path) - 1
     while n > 0 && path[n] != '.' {
         n--

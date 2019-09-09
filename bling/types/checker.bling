@@ -15,7 +15,7 @@ typ Checker struct {
     file *ast.File
 }
 
-fun (c *Checker) log(fatal bool, pos token.Pos, msg charstr) {
+fun (c *Checker) log(fatal bool, pos token.Pos, msg string) {
     var position = token.Position{}
     var file = c.fset.file(pos)
     if file {
@@ -30,11 +30,11 @@ fun (c *Checker) log(fatal bool, pos token.Pos, msg charstr) {
     delete(errMsg)
 }
 
-fun (c *Checker) warning(pos token.Pos, msg charstr) {
+fun (c *Checker) warning(pos token.Pos, msg string) {
     // c.log(false, pos, msg)
 }
 
-fun (c *Checker) error(pos token.Pos, msg charstr) {
+fun (c *Checker) error(pos token.Pos, msg string) {
     c.log(true, pos, msg)
 }
 

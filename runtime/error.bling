@@ -6,7 +6,7 @@ typ Error struct {
     error charptr
 }
 
-fun NewError(msg charstr) *Error {
+fun NewError(msg string) *Error {
     var err Error = {
         error: C.strdup(msg),
     }

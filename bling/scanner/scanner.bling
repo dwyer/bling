@@ -172,7 +172,7 @@ fun (s *Scanner) scanString() charptr {
     return s.makeStringSlice(offs, s.offset)
 }
 
-fun (s *Scanner) error(offs int, msg charstr) {
+fun (s *Scanner) error(offs int, msg string) {
     panic(C.sprintf("scanner error: offset %d: %s", offs, msg))
 }
 

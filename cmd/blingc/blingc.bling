@@ -15,7 +15,7 @@ import "runtime"
 import "subc/cemitter"
 import "subc/cparser"
 
-fun emitRawFile(e *emitter.Emitter, filename charstr) {
+fun emitRawFile(e *emitter.Emitter, filename string) {
     var err *runtime.Error = nil
     var src = ioutil.readFile(filename, &err)
     if err {
@@ -46,7 +46,7 @@ fun isForwardDecl(decl *ast.Decl) bool {
 }
 
 fun compileC(argv [?]charptr) {
-    var dst charstr = nil
+    var dst string = nil
     while **argv == '-' {
         if runtime.streq(*argv, "-o") {
             argv++

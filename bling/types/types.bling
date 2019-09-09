@@ -25,7 +25,7 @@ typ Info struct {
 
 fun constant_stringVal(x *ast.Expr) charptr {
     assert(x.kind == ast.EXPR_BASIC_LIT)
-    var lit charstr = x.basic.value
+    var lit string = x.basic.value
     var n = len(lit) - 2
     var val charptr = runtime.malloc(n + 1)
     for var i = 0; i < n; i++ {
@@ -102,7 +102,7 @@ fun isTypeAlias(t *ast.Expr) bool {
     return getTypeAlias(t) != nil
 }
 
-fun makeIdent(name charstr) *ast.Expr {
+fun makeIdent(name string) *ast.Expr {
     var x = ast.Expr{
         kind: ast.EXPR_IDENT,
         ident: {
@@ -437,7 +437,7 @@ fun newInfo() *Info {
     return &&info
 }
 
-fun checkFiles(conf *Config, path charstr, fset *token.FileSet,
+fun checkFiles(conf *Config, path string, fset *token.FileSet,
         files []*ast.File, info *Info) *Package {
     var file = files[0]
     if info {
@@ -468,7 +468,7 @@ fun checkFiles(conf *Config, path charstr, fset *token.FileSet,
     return c.pkg
 }
 
-fun check(conf *Config, path charstr, fset *token.FileSet,
+fun check(conf *Config, path string, fset *token.FileSet,
         files []*ast.File, info *Info) *Package {
     return checkFiles(conf, path, fset, files, info)
 }

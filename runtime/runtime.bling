@@ -52,7 +52,7 @@ fun bytetocharptr(b []char) charptr {
     return nilArray(typ *Slice(&b), 1)
 }
 
-fun charstobytes(s charstr) []char { // TODO DELETE THIS
+fun charstobytes(s *const char) []char { // TODO DELETE THIS
     var n = len(s)
     var buf = Slice{
         _len: n,

@@ -23,7 +23,7 @@ typ Map struct {
     _pairs []MapPair
 }
 
-fun djb2(s charstr) uintptr {
+fun djb2(s string) uintptr {
     var hash uintptr = 5381
     var ch int = *s
     while ch {
@@ -89,7 +89,7 @@ fun _mapGetPairRef(m *const Map, key *const void) *MapPair {
     return nil
 }
 
-fun _mapSetUnsafe(m *Map, key charstr, val *const void) {
+fun _mapSetUnsafe(m *Map, key string, val *const void) {
     if !_mapIsInitialized(m) {
         Map_init(m)
     }
@@ -102,7 +102,7 @@ fun _mapSetUnsafe(m *Map, key charstr, val *const void) {
     }
 }
 
-fun Map_get(m *const Map, key charstr, val voidptr) bool {
+fun Map_get(m *const Map, key string, val voidptr) bool {
     if _mapIsInitialized(m) {
         if var p = _mapGetPairRef(m, key); p.val != nil {
             if val {
@@ -114,7 +114,7 @@ fun Map_get(m *const Map, key charstr, val voidptr) bool {
     return false
 }
 
-fun Map_set(m *Map, key charstr, val *const void) {
+fun Map_set(m *Map, key string, val *const void) {
     _mapSetUnsafe(m, key, val)
     if var load_factor = typ float(Map_len(*m)) / _mapCap(m); load_factor >= MAP_LOAD_FACTOR {
         var newCap = _mapCap(m) * 2
@@ -131,7 +131,7 @@ fun Map_set(m *Map, key charstr, val *const void) {
     }
 }
 
-fun Map_remove(m *Map, key charstr) bool {
+fun Map_remove(m *Map, key string) bool {
     if _mapIsInitialized(m) {
         if var idx = _mapGetPairIdx(m, key); idx >= 0 {
             m._pairs[idx] = MapPair{}
