@@ -20,33 +20,9 @@ fun isType(p *parser.Parser) bool {
     }
 }
 
-fun operand(p *parser.Parser) *ast.Expr {
-    switch p.tok {
-    case token.GET:
-        p.expect(token.GET)
-        p.expect(token.LPAREN)
-        typeName(p)
-        p.expect(token.COMMA)
-        var arr = expression(p)
-        p.expect(token.COMMA)
-        var index = expression(p)
-        p.expect(token.RPAREN)
-        var y = ast.Expr{
-            kind: ast.EXPR_INDEX,
-            index: {
-                x: arr,
-                index: index,
-            },
-        }
-        return &&y
-    default:
-        return p.parseOperand()
-    }
-}
-
 fun postfixExpr(p *parser.Parser, x *ast.Expr) *ast.Expr {
     if x == nil {
-        x = operand(p)
+        x = p.parseOperand()
     }
     for ;; {
         switch p.tok {

@@ -27,7 +27,6 @@ typ Token enum {
     FALLTHROUGH
     FOR
     FUNC
-    GET
     GOTO
     IF
     IMPORT
@@ -163,7 +162,6 @@ var tokens [?]string = {
     FALLTHROUGH: "fallthrough",
     FOR: "for",
     FUNC: "fun",
-    GET: "get",
     GOTO: "goto",
     IF: "if",
     IMPORT: "import",

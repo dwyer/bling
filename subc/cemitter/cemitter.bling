@@ -101,7 +101,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     case ast.EXPR_INDEX:
         var t = types.baseType(types.exprType(expr.index.x))
         if types.isDynamicArray(t) {
-            emitter.emitToken(e, token.GET)
+            emitter.emitString(e, "$$arrayget")
             emitter.emitToken(e, token.LPAREN)
             emitType(e, t.array_.elt, nil)
             emitter.emitToken(e, token.COMMA)
