@@ -39,7 +39,7 @@ typ Scope struct {
 fun newScope(outer *Scope) *Scope {
     var s = Scope{
         outer: outer,
-        objects: runtime.Map_make(sizeof(*Object)),
+        objects: makemap(*Object),
         keys: []string{},
     }
     return &&s

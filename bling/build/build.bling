@@ -79,7 +79,7 @@ fun newBuilder(fset *token.FileSet) *Builder {
         fset: fset,
         info: types.newInfo(),
         force: false,
-        pkgs: runtime.Map_make(sizeof(*Package)),
+        pkgs: makemap(*Package),
     }
     return &&builder
 }
