@@ -30,7 +30,7 @@ fun emitChars(e *Emitter, s charstr, n int) {
     e.buf.writeChars(s, n, nil)
 }
 
-fun emitString(e *Emitter, s charstr) {
+fun emitString(e *Emitter, s string) {
     e.buf.writeString(s, nil)
 }
 
@@ -55,7 +55,7 @@ fun emitToken(e *Emitter, tok token.Token) {
     emitString(e, tok.string())
 }
 
-fun hasPrefix(s charstr, prefix charstr) bool {
+fun hasPrefix(s string, prefix string) bool {
     for var i = 0; prefix[i]; i++ {
         if s[i] != prefix[i] {
             return false

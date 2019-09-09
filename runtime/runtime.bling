@@ -4,7 +4,7 @@ import "C"
 
 typ Size C.size_t
 
-fun _panic(s charstr) {
+fun _panic(s string) {
     print(s)
     var buf [1024]voidptr
     var n = C.backtrace(buf, 1024)
@@ -12,7 +12,7 @@ fun _panic(s charstr) {
     C.exit(1)
 }
 
-fun _print(s charstr) {
+fun _print(s string) {
     C.printf("%s\n", s);
 }
 
@@ -32,19 +32,19 @@ fun memdup(src *const void, size Size) voidptr {
     return memcpy(malloc(size), src, size)
 }
 
-fun strdup(s charstr) charptr {
+fun strdup(s string) charptr {
     return C.strdup(s)
 }
 
-fun strndup(s charstr, n Size) charptr {
+fun strndup(s string, n Size) charptr {
     return C.strndup(s, n)
 }
 
-fun strlen(s charstr) Size {
+fun strlen(s string) Size {
     return C.strlen(s)
 }
 
-fun streq(a charstr, b charstr) bool {
+fun streq(a string, b string) bool {
     return C.strcmp(a, b) == 0
 }
 

@@ -29,7 +29,7 @@ end:
     return b
 }
 
-fun readDir(name charstr, error **runtime.Error) []*os.FileInfo {
+fun readDir(name string, error **runtime.Error) []*os.FileInfo {
     var info = []*os.FileInfo{}
     var err *runtime.Error = nil
     var file = os.openDir(name, &err)
@@ -49,7 +49,7 @@ end:
     return info
 }
 
-fun readFile(name charstr, error **runtime.Error) []char {
+fun readFile(name string, error **runtime.Error) []char {
     var ret = []char{}
     var err *runtime.Error = nil
     var file = os.open(name, &err)
@@ -69,7 +69,7 @@ end:
     return ret
 }
 
-fun writeFile(filename charstr, data []char, perm int, error **runtime.Error) {
+fun writeFile(filename string, data []char, perm int, error **runtime.Error) {
     var err *runtime.Error = nil
     var file = os.create(filename, &err)
     if err != nil {

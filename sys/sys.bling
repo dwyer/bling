@@ -9,7 +9,7 @@ fun errno() int {
     return C.getErrno()
 }
 
-fun getenv(key charstr) charptr {
+fun getenv(key string) string {
     return C.getenv(key)
 }
 
@@ -21,7 +21,7 @@ fun _throwErrno(e **runtime.Error) {
     }
 }
 
-fun open(filename charstr, oflag int, perm int, e **runtime.Error) int {
+fun open(filename string, oflag int, perm int, e **runtime.Error) int {
     var fd = C.open(filename, oflag, perm)
     if fd < 0 {
         _throwErrno(e)
@@ -210,7 +210,7 @@ typ Errno enum {
 
 typ Dir voidptr
 
-fun opendir(filename charstr, e **runtime.Error) Dir {
+fun opendir(filename string, e **runtime.Error) Dir {
     var d = C.opendir(filename)
     if d == nil {
         _throwErrno(e)
@@ -235,13 +235,13 @@ fun readdir(dir Dir, e **runtime.Error) Dirent {
     return dirent
 }
 
-fun Dirent_name(dirent Dirent) charptr {
+fun (dirent Dirent) name() string {
     return C.Dirent_name(dirent)
 }
 
 typ Stat C.Stat
 
-fun stat(path charstr, s *Stat, e **runtime.Error) {
+fun stat(path string, s *Stat, e **runtime.Error) {
     if C.stat(path, s) != 0 {
         _throwErrno(e)
     }
@@ -277,7 +277,7 @@ typ S enum {
     S_IFMT = 0xf000
 }
 
-fun mkdir(path charstr, mode u32, e **runtime.Error) {
+fun mkdir(path string, mode u32, e **runtime.Error) {
     if C.mkdir(path, mode) != 0 {
         _throwErrno(e)
     }
@@ -289,7 +289,7 @@ fun environ() *charptr {
 
 typ Pid int
 
-fun exec(path charstr, argv [?]const charptr, envv [?]const charptr, e **runtime.Error) {
+fun exec(path string, argv [?]const charptr, envv [?]const charptr, e **runtime.Error) {
     if C.execve(path, argv, envv) == -1 {
         _throwErrno(e)
     }

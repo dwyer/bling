@@ -49,7 +49,7 @@ var stdin *File = &_stdin
 var stdout *File = &_stdout
 var stderr *File = &_stderr
 
-fun _throwPathError(path charstr, err *runtime.Error, e **runtime.Error) {
+fun _throwPathError(path string, err *runtime.Error, e **runtime.Error) {
     if err {
         var msg = err.error
         err.error = C.sprintf("PathError: %s: %s", path, msg)
@@ -67,7 +67,7 @@ fun _throwFileError(file *File, err *runtime.Error, e **runtime.Error) {
     }
 }
 
-fun newFile(fd uintptr, name charstr) *File {
+fun newFile(fd uintptr, name string) *File {
     var file File = {
         name: runtime.strdup(name),
         fd: fd,
@@ -75,7 +75,7 @@ fun newFile(fd uintptr, name charstr) *File {
     return &&file
 }
 
-fun openFile(filename charstr, mode int, perm int, e **runtime.Error) *File {
+fun openFile(filename string, mode int, perm int, e **runtime.Error) *File {
     var err *runtime.Error = nil
     var fd = sys.open(filename, mode, perm, &err)
     if err {
@@ -85,11 +85,11 @@ fun openFile(filename charstr, mode int, perm int, e **runtime.Error) *File {
     return newFile(fd, filename)
 }
 
-fun open(filename charstr, e **runtime.Error) *File {
+fun open(filename string, e **runtime.Error) *File {
     return openFile(filename, O_RDONLY, 0, e)
 }
 
-fun create(filename charstr, e **runtime.Error) *File {
+fun create(filename string, e **runtime.Error) *File {
     return openFile(filename, O_CREAT | O_TRUNC | O_RDWR, 0644, e)
 }
 
@@ -117,7 +117,7 @@ fun (file *File) close(e **runtime.Error) {
     _throwPathError(file.name, err, e)
 }
 
-fun stat(name charstr, e **runtime.Error) *FileInfo {
+fun stat(name string, e **runtime.Error) *FileInfo {
     var st = sys.Stat{}
     var err *runtime.Error = nil
     sys.stat(name, &st, &err)
@@ -138,7 +138,7 @@ fun (info *FileInfo) free() {
     delete(info)
 }
 
-fun openDir(name charstr, e **runtime.Error) *File {
+fun openDir(name string, e **runtime.Error) *File {
     var err *runtime.Error = nil
     var dp = sys.opendir(name, &err)
     if err {
@@ -159,7 +159,7 @@ fun readdirnames(file *File, e **runtime.Error) []charptr {
         if dirent == nil {
             break
         }
-        var name = sys.Dirent_name(dirent)
+        var name = dirent.name()
         if name[0] == '.' {
             continue
         }
@@ -219,7 +219,7 @@ fun (info *FileInfo) sys() voidptr {
     return info._sys
 }
 
-fun tempDir() charstr {
+fun tempDir() string {
     var tmpdir = sys.getenv("TMPDIR")
     if tmpdir {
         return tmpdir
@@ -227,13 +227,13 @@ fun tempDir() charstr {
     return "/tmp"
 }
 
-fun mkdir(path charstr, mode u32, e **runtime.Error) {
+fun mkdir(path string, mode u32, e **runtime.Error) {
     var err *runtime.Error = nil
     sys.mkdir(path, mode, &err)
     _throwPathError(path, err, e)
 }
 
-fun mkdirAll(path charstr, mode u32, e **runtime.Error) {
+fun mkdirAll(path string, mode u32, e **runtime.Error) {
     // TODO check if exists first
     var dir = paths.dir(path)
     if !runtime.streq(dir, ".") {

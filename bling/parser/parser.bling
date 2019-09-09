@@ -55,7 +55,7 @@ fun (p *Parser) next() {
     p.tok = p.scanner.scan(&p.pos, &p.lit)
 }
 
-fun (p *Parser) init(fset *token.FileSet, filename charstr, src []char) {
+fun (p *Parser) init(fset *token.FileSet, filename string, src []char) {
     assert(fset)
     p.file = fset.addFile(filename, -1, len(src))
     p.lit = nil
@@ -1150,15 +1150,15 @@ fun (p *Parser) parseDecl() *ast.Decl {
     }
 }
 
-fun isBlingFile(name charstr) bool {
+fun isBlingFile(name string) bool {
     return bytes.hasSuffix(name, ".bling")
 }
 
-fun isTestFile(name charstr) bool {
+fun isTestFile(name string) bool {
     return paths.match("*_test.bling", name)
 }
 
-fun parseDir(fset *token.FileSet, path charstr, first **runtime.Error) []*ast.File {
+fun parseDir(fset *token.FileSet, path string, first **runtime.Error) []*ast.File {
     var err *runtime.Error = nil
     var infos = ioutil.readDir(path, &err)
     var files = []*ast.File{}
@@ -1210,7 +1210,7 @@ fun (p *Parser) _parseFile() *ast.File {
     return &&file
 }
 
-fun parseFile(fset *token.FileSet, filename charstr) *ast.File {
+fun parseFile(fset *token.FileSet, filename string) *ast.File {
     var err *runtime.Error = nil
     var src = ioutil.readFile(filename, &err)
     if err {

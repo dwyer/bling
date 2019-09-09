@@ -3,7 +3,7 @@ package paths
 import "bytes"
 import "runtime"
 
-fun base(path charstr) charptr {
+fun base(path string) charptr {
     if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
@@ -13,7 +13,7 @@ fun base(path charstr) charptr {
     return runtime.strdup(path)
 }
 
-fun clean(path charstr) charptr {
+fun clean(path string) charptr {
     if runtime.streq(path, "") {
         return runtime.strdup(".")
     }
@@ -48,7 +48,7 @@ fun clean(path charstr) charptr {
     return out.toString()
 }
 
-fun dir(path charstr) charptr {
+fun dir(path string) charptr {
     if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
@@ -60,7 +60,7 @@ fun dir(path charstr) charptr {
     return runtime.strdup(".")
 }
 
-fun ext(path charstr) charstr {
+fun ext(path string) charstr {
     var n = len(path) - 1
     while n > 0 && path[n] != '.' {
         n--
@@ -68,30 +68,30 @@ fun ext(path charstr) charstr {
     return &path[n]
 }
 
-fun isAbs(path charstr) bool {
+fun isAbs(path string) bool {
     return path != nil && path[0] == '/'
 }
 
-fun join(elems *charstr, n int) charptr {
+fun join(elems *string, n int) charptr {
     return bytes.join(elems, n, "/")
 }
 
-fun join2(a charstr, b charstr) charptr {
-    var elems = [?]charstr{
+fun join2(a string, b string) charptr {
+    var elems = [?]string{
         a,
         b,
     }
     return join(elems, 2)
 }
 
-fun split(path charstr) *charptr {
+fun split(path string) *charptr {
     var names *charptr = runtime.malloc(sizeof(charptr) * 2)
     names[0] = dir(path)
     names[1] = base(path)
     return names
 }
 
-fun match(pattern charstr, path charstr) bool {
+fun match(pattern string, path string) bool {
     if pattern[0] == '\0' && path[0] == '\0' {
         return true
     }

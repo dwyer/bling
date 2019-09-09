@@ -369,7 +369,7 @@ typ Stmt struct {
 }
 
 typ File struct {
-    filename charstr
+    filename string
     name *Expr
     imports []*Decl
     decls []*Decl
@@ -399,7 +399,7 @@ fun isIdent(x *Expr) bool {
     return x.kind == EXPR_IDENT
 }
 
-fun isIdentNamed(x *Expr, name charstr) bool {
+fun isIdentNamed(x *Expr, name string) bool {
     return isIdent(x) && runtime.streq(x.ident.name, name)
 }
 
