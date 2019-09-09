@@ -168,6 +168,11 @@ fun isDynamicArray(t *ast.Expr) bool {
     return t && t.kind == ast.TYPE_ARRAY && t.array_.dynamic
 }
 
+fun isMap(t *ast.Expr) bool {
+    t = baseType(t)
+    return t && t.kind == ast.TYPE_MAP
+}
+
 fun exprType(x *ast.Expr) *ast.Expr {
     switch x.kind {
     case ast.EXPR_PAREN:

@@ -34,7 +34,14 @@
 #define makemap(T) (runtime$Map){._valSize = sizeof(T)}
 
 #define $$arrayget(T, a, i) (*(T*)runtime$Array_get((runtime$Slice*)&(a), sizeof(T), (i), nil))
-#define get(T, a, i) (*(T*)runtime$Array_get((runtime$Slice*)&(a), sizeof(T), (i), nil))
+
+#define $$mapget(T, m, k) ({ \
+        T $$0; \
+        runtime$Map_get((runtime$Map*)&(m), (k), &$$0); \
+        $$0; \
+        })
+
+#define $$mapset(m, k, v) runtime$Map_set((runtime$Map*)&(m), (k), ({ typeof(v) $$0 = (v); &$$0; }))
 
 #define nil ((void*)0)
 

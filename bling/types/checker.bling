@@ -453,19 +453,22 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
     case ast.EXPR_INDEX:
         var type = c.checkExpr(expr.index.x)
         var base = baseType(type)
-        if var idxType = c.checkExpr(expr.index.index); !isInteger(idxType) {
-            c.error(expr.index.index.pos(), "index must be an integer")
-        }
+        var idxType = c.checkExpr(expr.index.index)
         switch base.kind {
-        case ast.TYPE_ARRAY:
-            return base.array_.elt
         case ast.EXPR_STAR:
             return base.star.x
+        case ast.TYPE_ARRAY:
+            if !isInteger(idxType) {
+                c.error(expr.index.index.pos(), "index must be an integer")
+            }
+            return base.array_.elt
+        case ast.TYPE_MAP:
+            return base.map_.val
         default:
             if isString(base) {
                 return c.lookupIdent("char")
             }
-            c.error(expr.pos(), C.sprintf("indexing a non-array or pointer `%s`",
+            c.error(expr.pos(), C.sprintf("indexing a non-array, map, or pointer `%s`",
                 typeString(type)))
             return type
         }

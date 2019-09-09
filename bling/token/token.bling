@@ -255,9 +255,11 @@ fun lookup(ident string) Token {
             }
         }
     }
-    var tok = IDENT
-    runtime.Map_get(&keywords, ident, &tok)
-    return tok
+    var tok Token
+    if runtime.Map_get(&keywords, ident, &tok) {
+        return tok
+    }
+    return IDENT
 }
 
 fun (op Token) precedence() int {

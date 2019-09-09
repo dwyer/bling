@@ -1,5 +1,7 @@
 package runtime
 
+import "C"
+
 var MAP_LOAD_FACTOR const float = 0.65
 var DEFAULT_CAP const int = 8
 
@@ -105,11 +107,14 @@ fun _mapSetUnsafe(m *Map, key string, val *const void) {
 fun Map_get(m *const Map, key string, val voidptr) bool {
     if _mapIsInitialized(m) {
         if var p = _mapGetPairRef(m, key); p.val != nil {
-            if val {
+            if val != nil {
                 memcpy(val, p.val, m._valSize)
             }
             return true
         }
+    }
+    if val != nil {
+        C.memset(val, 0, m._valSize)
     }
     return false
 }

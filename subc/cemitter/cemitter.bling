@@ -105,8 +105,21 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
             emitter.emitToken(e, token.LPAREN)
             emitType(e, t.array_.elt, nil)
             emitter.emitToken(e, token.COMMA)
+            emitter.emitSpace(e)
             emitExpr(e, expr.index.x)
             emitter.emitToken(e, token.COMMA)
+            emitter.emitSpace(e)
+            emitExpr(e, expr.index.index)
+            emitter.emitToken(e, token.RPAREN)
+        } else if types.isMap(t) {
+            emitter.emitString(e, "$$mapget")
+            emitter.emitToken(e, token.LPAREN)
+            emitType(e, t.map_.val, nil)
+            emitter.emitToken(e, token.COMMA)
+            emitter.emitSpace(e)
+            emitExpr(e, expr.index.x)
+            emitter.emitToken(e, token.COMMA)
+            emitter.emitSpace(e)
             emitExpr(e, expr.index.index)
             emitter.emitToken(e, token.RPAREN)
         } else {
@@ -189,12 +202,30 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
 fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
     switch stmt.kind {
     case ast.STMT_ASSIGN:
-        emitExpr(e, stmt.assign.x)
-        emitter.emitSpace(e)
-        emitter.emitToken(e, stmt.assign.op)
-        emitter.emitSpace(e)
-        emitExpr(e, stmt.assign.y)
-        emitter.emitToken(e, token.SEMICOLON)
+        var isMap = false
+        var x = stmt.assign.x
+        if x.kind == ast.EXPR_INDEX {
+            var t = types.baseType(types.exprType(x.index.x))
+            isMap = types.isMap(t)
+        }
+        if isMap {
+            emitter.emitString(e, "$$mapset")
+            emitter.emitToken(e, token.LPAREN)
+            emitExpr(e, x.index.x)
+            emitter.emitToken(e, token.COMMA)
+            emitExpr(e, x.index.index)
+            emitter.emitToken(e, token.COMMA)
+            emitExpr(e, stmt.assign.y)
+            emitter.emitToken(e, token.RPAREN)
+            emitter.emitToken(e, token.SEMICOLON)
+        } else {
+            emitExpr(e, stmt.assign.x)
+            emitter.emitSpace(e)
+            emitter.emitToken(e, stmt.assign.op)
+            emitter.emitSpace(e)
+            emitExpr(e, stmt.assign.y)
+            emitter.emitToken(e, token.SEMICOLON)
+        }
         break
     case ast.STMT_BLOCK:
         emitter.emitToken(e, token.LBRACE)

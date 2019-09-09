@@ -14,14 +14,10 @@ import "runtime"
 import "subc/cemitter"
 import "subc/cparser"
 
-var AR_PATH string = "/usr/bin/ar"
-
-var CC_PATH string = "/usr/bin/cc"
-
-var GEN_PATH string = "gen"
-
-var INCL_PATH string = "."
-
+var AR_PATH const string = "/usr/bin/ar"
+var CC_PATH const string = "/usr/bin/cc"
+var GEN_PATH const string = "gen"
+var INCL_PATH const string = "."
 var VERBOSE const bool = true
 
 fun printStrArray(s []string) {
@@ -55,6 +51,7 @@ fun mkdirForFile(path string) {
 typ Package struct {
     path string
     pkg *types.Package
+    genPath string
     hPath string
     cPath string
     objPath string
@@ -99,12 +96,13 @@ fun genObj(b *Builder, dst string, src string) {
 }
 
 fun getFileModTime(path string) os.Time {
-    var t os.Time = 0
-    if var info = os.stat(path, nil); info != nil {
-        t = info.modTime()
+    var err *runtime.Error = nil
+    if var info = os.stat(path, &err); err == nil {
+        var t = info.modTime()
         info.free()
+        return t
     }
-    return t
+    return 0
 }
 
 fun getSrcModTime(path string) os.Time {
@@ -159,6 +157,7 @@ fun newPackage(b *Builder, path string) Package {
     var pkg = Package{
         path: runtime.strdup(path),
         pkg: typesPkg,
+        genPath: genPath,
         hPath: C.sprintf("%s/%s.h", genPath, base),
         cPath: C.sprintf("%s/%s.c", genPath, base),
         objPath: C.sprintf("%s/%s.o", genPath, base),
@@ -168,7 +167,6 @@ fun newPackage(b *Builder, path string) Package {
         deps: []*Package{},
         isCmd: isCmd,
     }
-    delete(genPath)
     delete(base)
     for var i = 0; i < len(pkg.pkg.imports); i++ {
         var dep = _buildPackage(b, pkg.pkg.imports[i].path)
@@ -255,6 +253,7 @@ fun buildCPackage(b *Builder, path string) *Package {
 fun buildBlingPackage(b *Builder, path string) *Package {
     var pkg = newPackage(b, path)
     if b.force || pkg.srcModTime > pkg.libModTime {
+        mkdirForFile(pkg.libPath)
         genHeader(b, &pkg)
         getCFile(b, &pkg)
         genObj(b, pkg.objPath, pkg.cPath)
