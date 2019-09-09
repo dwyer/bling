@@ -75,7 +75,7 @@ typ ArrayType struct {
 typ BasicLit struct {
     pos token.Pos
     kind token.Token
-    value charptr
+    value string
 }
 
 typ BinaryExpr struct {
@@ -85,7 +85,7 @@ typ BinaryExpr struct {
 }
 
 typ BuiltinType struct {
-    name charptr
+    name string
     nargs int
     variadic bool
     isExpr bool
@@ -110,7 +110,7 @@ typ CompositeLit struct {
 }
 
 typ ConstExpr struct {
-    name charptr
+    name string
     type *Expr
     value int
 }
@@ -133,7 +133,7 @@ typ FuncExpr struct {
 
 typ Ident struct {
     pos token.Pos
-    name charptr
+    name string
     obj *Object
 }
 
@@ -156,7 +156,7 @@ typ MapType struct {
 typ NativeType struct {
     kind int
     info int
-    name charptr
+    name string
 }
 
 typ ParenExpr struct {
@@ -236,7 +236,7 @@ typ ImportDecl struct {
 }
 
 typ PragmaDecl struct {
-    lit charptr
+    lit string
 }
 
 typ TypeDecl struct {
@@ -377,7 +377,7 @@ typ File struct {
 }
 
 typ Package struct {
-    name charptr
+    name string
     scope *Scope
     files []*File
 }

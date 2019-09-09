@@ -21,12 +21,12 @@ typ FileMode u32
 
 typ File struct {
     fd uintptr
-    name charptr
+    name string
     _isDir bool
 }
 
 typ FileInfo struct {
-    _name charptr
+    _name string
     _sys voidptr
 }
 
@@ -150,8 +150,8 @@ fun openDir(name string, e **runtime.Error) *File {
     return file
 }
 
-fun readdirnames(file *File, e **runtime.Error) []charptr {
-    var arr = []charptr{}
+fun readdirnames(file *File, e **runtime.Error) []string {
+    var arr = []string{}
     var dp sys.Dir = typ sys.Dir(file.fd)
     for ;; {
         var err *runtime.Error = nil
@@ -191,7 +191,7 @@ fun readdir(file *File, e **runtime.Error) []*FileInfo {
     return arr
 }
 
-fun (info *FileInfo) name() charptr {
+fun (info *FileInfo) name() string {
     return info._name
 }
 
@@ -251,7 +251,7 @@ fun mkdirAll(path string, mode u32, e **runtime.Error) {
     }
 }
 
-fun exec(argv [?]const charptr, e **runtime.Error) int {
+fun exec(argv [?]const string, e **runtime.Error) int {
     var status = -1
     var err *runtime.Error = nil
     var pid = sys.fork(&err)

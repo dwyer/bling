@@ -4,6 +4,7 @@ import "C"
 import "bling/ast"
 import "bling/emitter"
 import "bling/token"
+import "bytes"
 import "runtime"
 
 typ Config struct {
@@ -13,8 +14,8 @@ typ Config struct {
 }
 
 typ Package struct {
-    path charptr
-    name charptr
+    path string
+    name string
     scope *ast.Scope
     imports []*Package
 }
@@ -23,11 +24,12 @@ typ Info struct {
     imports map *Package
 }
 
-fun constant_stringVal(x *ast.Expr) charptr {
+fun constant_stringVal(x *ast.Expr) string {
     assert(x.kind == ast.EXPR_BASIC_LIT)
     var lit string = x.basic.value
     var n = len(lit) - 2
-    var val charptr = runtime.malloc(n + 1)
+    var b = bytes.Buffer{}
+    var val *char = runtime.malloc(n + 1)
     for var i = 0; i < n; i++ {
         val[i] = lit[i + 1]
     }
@@ -35,25 +37,25 @@ fun constant_stringVal(x *ast.Expr) charptr {
     return val
 }
 
-fun declString(decl *ast.Decl) charptr {
+fun declString(decl *ast.Decl) string {
     var e = emitter.Emitter{}
     emitter.emitDecl(&e, decl)
     return emitter.Emitter_string(&e)
 }
 
-fun exprString(expr *ast.Expr) charptr {
+fun exprString(expr *ast.Expr) string {
     var e = emitter.Emitter{}
     emitter.emitExpr(&e, expr)
     return emitter.Emitter_string(&e)
 }
 
-fun stmtString(stmt *ast.Stmt) charptr {
+fun stmtString(stmt *ast.Stmt) string {
     var e = emitter.Emitter{}
     emitter.emitStmt(&e, stmt)
     return emitter.Emitter_string(&e)
 }
 
-fun typeString(expr *ast.Expr) charptr {
+fun typeString(expr *ast.Expr) string {
     var e = emitter.Emitter{}
     emitter.emitType(&e, expr)
     return emitter.Emitter_string(&e)

@@ -13,7 +13,7 @@ fun _panic(s string) {
 }
 
 fun _print(s string) {
-    C.printf("%s\n", s);
+    C.printf("%s\n", s)
 }
 
 fun malloc(n Size) voidptr {
@@ -32,11 +32,11 @@ fun memdup(src *const void, size Size) voidptr {
     return memcpy(malloc(size), src, size)
 }
 
-fun strdup(s string) charptr {
+fun strdup(s string) string {
     return C.strdup(s)
 }
 
-fun strndup(s string, n Size) charptr {
+fun strndup(s string, n Size) string {
     return C.strndup(s, n)
 }
 
@@ -48,10 +48,6 @@ fun streq(a string, b string) bool {
     return C.strcmp(a, b) == 0
 }
 
-fun bytetocharptr(b []char) charptr {
-    return nilArray(typ *Slice(&b), 1)
-}
-
 fun charstobytes(s *const char) []char { // TODO DELETE THIS
     var n = len(s)
     var buf = Slice{
@@ -60,6 +56,24 @@ fun charstobytes(s *const char) []char { // TODO DELETE THIS
         _array: memdup(s, n),
     }
     return typ []char(buf)
+}
+
+fun stringToBytes(s string) []char {
+    var n = len(s)
+    var buf = Slice{
+        _len: n,
+        _cap: n,
+        _array: memdup(s, n),
+    }
+    return typ []char(buf)
+}
+
+fun bytesToString(b []char) string {
+    var n = len(b)
+    var s *char = malloc(n+1)
+    memcpy(s, (typ Slice(b))._array, n)
+    s[n] = '\0'
+    return s
 }
 
 fun makebuf(n int) []char {

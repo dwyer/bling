@@ -10,7 +10,7 @@ typ Emitter struct {
     buf bytes.Buffer
     indent int
     skipSemi bool
-    pkg charptr
+    pkg string
     forwardDecl bool
 }
 
@@ -18,7 +18,7 @@ fun (e *Emitter) bytes() []char {
     return e.buf
 }
 
-fun Emitter_string(e *Emitter) charptr {
+fun Emitter_string(e *Emitter) string {
     return e.buf.toString()
 }
 

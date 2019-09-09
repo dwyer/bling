@@ -53,13 +53,13 @@ fun mkdirForFile(path string) {
 }
 
 typ Package struct {
-    path charptr
+    path string
     pkg *types.Package
-    hPath charptr
-    cPath charptr
-    objPath charptr
-    objPaths []charptr
-    libPath charptr
+    hPath string
+    cPath string
+    objPath string
+    objPaths []string
+    libPath string
     libModTime os.Time
     srcModTime os.Time
     deps []*Package
@@ -126,11 +126,10 @@ fun getSrcModTime(path string) os.Time {
 
 fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
     var src = cFile.name()
-    var dst charptr = nil
+    var dst string = nil
     {
         var i = bytes.lastIndexByte(src, '.')
-        var base = runtime.strdup(src)
-        base[i] = '\0'
+        var base = runtime.strndup(src, i)
         dst = C.sprintf("%s/%s.o", GEN_PATH, base)
         delete(base)
     }

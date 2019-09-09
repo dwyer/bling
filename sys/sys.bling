@@ -283,13 +283,13 @@ fun mkdir(path string, mode u32, e **runtime.Error) {
     }
 }
 
-fun environ() *charptr {
+fun environ() *string {
     return C.getEnviron()
 }
 
 typ Pid int
 
-fun exec(path string, argv [?]const charptr, envv [?]const charptr, e **runtime.Error) {
+fun exec(path string, argv [?]const string, envv [?]const string, e **runtime.Error) {
     if C.execve(path, argv, envv) == -1 {
         _throwErrno(e)
     }

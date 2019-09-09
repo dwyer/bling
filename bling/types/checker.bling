@@ -249,7 +249,7 @@ fun (c *Checker) checkCompositeLit(x *ast.Expr) *ast.Expr {
     return t
 }
 
-fun (c *Checker) lookupIdent(name charptr) *ast.Expr {
+fun (c *Checker) lookupIdent(name string) *ast.Expr {
     var obj = c.pkg.scope.deepLookup(name)
     assert(obj)
     assert(obj.kind == ast.ObjKind_TYP)

@@ -3,7 +3,7 @@ package runtime
 import "C"
 
 typ Error struct {
-    error charptr
+    error string
 }
 
 fun NewError(msg string) *Error {

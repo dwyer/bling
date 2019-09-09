@@ -15,13 +15,13 @@ typ ObjKind enum {
 
 typ Object struct {
     kind ObjKind
-    name charptr
+    name string
     decl *Decl
     data voidptr
     scope *Scope
 }
 
-fun newObject(kind ObjKind, name charptr) *Object {
+fun newObject(kind ObjKind, name string) *Object {
     var obj = Object{
         kind: kind,
         name: name,
@@ -32,7 +32,7 @@ fun newObject(kind ObjKind, name charptr) *Object {
 typ Scope struct {
     outer *Scope
     objects map *Object
-    keys []charptr
+    keys []string
     pkgName *Expr
 }
 
@@ -40,7 +40,7 @@ fun newScope(outer *Scope) *Scope {
     var s = Scope{
         outer: outer,
         objects: runtime.Map_make(sizeof(*Object)),
-        keys: []charptr{},
+        keys: []string{},
     }
     return &&s
 }
@@ -61,7 +61,7 @@ fun (s *Scope) insert(obj *Object) *Object {
     return alt
 }
 
-fun (s *Scope) lookup(name charptr) *Object {
+fun (s *Scope) lookup(name string) *Object {
     var obj *Object = nil
     runtime.Map_get(&s.objects, name, &obj)
     return obj
@@ -71,7 +71,7 @@ fun (s *Scope) print() {
     var buf = bytes.Buffer{}
     while s {
         var iter = runtime.NewMapIter(&s.objects)
-        var key charptr = nil
+        var key string = nil
         while runtime.MapIter_next(&iter, &key, nil) {
             var s = C.sprintf("%s- %s", buf.toString(), key)
             print(s)
@@ -82,7 +82,7 @@ fun (s *Scope) print() {
     }
 }
 
-fun (s *Scope) deepLookup(name charptr) *Object {
+fun (s *Scope) deepLookup(name string) *Object {
     for ; s != nil; s = s.outer {
         var obj = s.lookup(name)
         if obj != nil {

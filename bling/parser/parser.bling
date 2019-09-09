@@ -15,7 +15,7 @@ typ Parser struct {
     scanner scanner.Scanner
     pos token.Pos
     tok token.Token
-    lit charptr
+    lit string
     cMode bool
     exprLev int
     numIdents int
@@ -66,12 +66,12 @@ fun (p *Parser) init(fset *token.FileSet, filename string, src []char) {
     p.next()
 }
 
-fun (p *Parser) error(pos token.Pos, msg charptr) {
+fun (p *Parser) error(pos token.Pos, msg string) {
     var position = p.file.position(pos)
     panic(C.sprintf("%s: %s\n%s", position.string(), msg, p.file.lineString(position.line)))
 }
 
-fun (p *Parser) errorExpected(pos token.Pos, msg charptr) {
+fun (p *Parser) errorExpected(pos token.Pos, msg string) {
     var buf = bytes.Buffer{}
     buf.writeString("expected ", nil)
     buf.writeString(msg, nil)

@@ -22,7 +22,7 @@ fun indexByte(b string, c char) int {
     return -1
 }
 
-fun join(a [?]string, size int, sep string) charptr {
+fun join(a [?]string, size int, sep string) string {
     switch size {
     case 0:
         return runtime.strdup("")
@@ -57,17 +57,14 @@ fun (b *Buffer) len() int {
     return len(*b)
 }
 
-fun (b *Buffer) bytes() charptr {
+fun (b *Buffer) bytes() *char {
     b.init()
     return runtime.Array_get(typ *runtime.Slice(b), 1, 0, nil)
 }
 
-fun (b *Buffer) toString() charptr {
+fun (b *Buffer) toString() string {
     b.init()
-    var s charptr = runtime.malloc(b.len() + 1)
-    runtime.memcpy(s, runtime.Array_get(typ *runtime.Slice(b), 1, 0, nil), b.len())
-    s[b.len()] = '\0'
-    return s
+    return runtime.bytesToString(*b)
 }
 
 fun (b *Buffer) write(p []char, error **runtime.Error) int {

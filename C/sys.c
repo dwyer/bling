@@ -18,8 +18,8 @@ extern char *C$strerror(int n) {
     return strerror(n);
 }
 
-extern int C$execve(const char *path, char *const argv[], char *const envp[]) {
-    return execve(path, argv, envp);
+extern int C$execve(char const *path, char const *const argv[], char const *const envp[]) {
+    return execve(path, (void *)argv, (void *)envp);
 }
 
 extern char *C$getenv(const char *key) {
@@ -74,8 +74,8 @@ extern C$Pid C$fork() {
     return fork();
 }
 
-extern char **C$getEnviron() {
-    extern char **environ;
+extern const char **C$getEnviron() {
+    extern const char **environ;
     return environ;
 }
 

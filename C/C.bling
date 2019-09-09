@@ -2,7 +2,7 @@ package C
 
 typ size_t u64
 
-fun getEnviron() **char
+fun getEnviron() **const char
 
 fun getErrno() int
 fun setErrno(int)
@@ -53,7 +53,7 @@ fun mkdir(path *const char, mode u32) int
 
 typ Pid int
 
-fun execve(path *const char, argv [?]const *char, envp [?]const *char) int
+fun execve(path *const char, argv [?]const *const char, envp [?]const *const char) int
 
 fun fork() Pid
 fun exit(int)

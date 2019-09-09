@@ -123,7 +123,7 @@ typ Prec enum {
 
 typ File struct {
     set *FileSet
-    name charptr
+    name string
     base int
     size int
     lines []int
@@ -138,13 +138,13 @@ typ FileSet struct {
 }
 
 typ Position struct {
-    filename charptr
+    filename string
     offset int
     line int
     column int
 }
 
-var tokens [?]charptr = {
+var tokens [?]string = {
     ILLEGAL: "ILLEGAL",
     CHAR: "CHAR",
     FLOAT: "FLOAT",
@@ -243,13 +243,13 @@ var tokens [?]charptr = {
     XOR_ASSIGN: "^=",
 }
 
-fun (tok Token) string() charptr {
+fun (tok Token) string() string {
     return tokens[tok]
 }
 
 var keywords = makemap(Token)
 
-fun lookup(ident charptr) Token {
+fun lookup(ident string) Token {
     if len(keywords) == 0 {
         for var i = _keywordBeg + 1; i < _keywordEnd; i++ {
             if var s = i.string(); s {
@@ -289,7 +289,7 @@ fun (op Token) precedence() int {
     }
 }
 
-fun (p *Position) string() charptr {
+fun (p *Position) string() string {
     return C.sprintf("%s:%d:%d", p.filename, p.line, p.column)
 }
 
@@ -351,7 +351,7 @@ fun (f *File) position(p Pos) Position {
     return f.positionFor(p, true)
 }
 
-fun (f *File) lineString(line int) charptr {
+fun (f *File) lineString(line int) string {
     if line < 1 {
         return nil
     }

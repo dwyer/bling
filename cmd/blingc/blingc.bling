@@ -45,7 +45,7 @@ fun isForwardDecl(decl *ast.Decl) bool {
     }
 }
 
-fun compileC(argv [?]charptr) {
+fun compileC(argv [?]string) {
     var dst string = nil
     while **argv == '-' {
         if runtime.streq(*argv, "-o") {
@@ -96,12 +96,12 @@ fun compileC(argv [?]charptr) {
     }
 }
 
-fun compileBling(argv [?]charptr) {
+fun compileBling(argv [?]string) {
     var err *runtime.Error = nil
     var conf = types.Config{
         strict: true,
     }
-    var dst charptr = nil
+    var dst string = nil
     while **argv == '-' {
         if runtime.streq(*argv, "-o") {
             argv++
@@ -131,32 +131,13 @@ fun compileBling(argv [?]charptr) {
     argv++
     assert(!*argv)
     if dst {
-        if bytes.hasSuffix(dst, ".out") {
-            var tmp = paths.join2(os.tempDir(), "tmp.c")
-            ioutil.writeFile(tmp, e.bytes(), 0644, nil)
-            var args = [?]charptr{
-                "/usr/bin/cc",
-                "-o",
-                dst,
-                tmp,
-                "bazel-bin/bootstrap/libbootstrap.a",
-                "bazel-bin/os/libos.a",
-                "bazel-bin/sys/libsys.a",
-                nil,
-            }
-            var code = os.exec(args, nil)
-            if code != 0 {
-                panic(C.sprintf("- failed with code %d", code))
-            }
-        } else {
-            ioutil.writeFile(dst, e.bytes(), 0644, nil)
-        }
+        ioutil.writeFile(dst, e.bytes(), 0644, nil)
     } else {
         os.stdout.write(e.bytes(), &err)
     }
 }
 
-fun buildPackage(argv [?]charptr) {
+fun buildPackage(argv [?]string) {
     assert(*argv)
     var builder = build.newBuilder(token.newFileSet())
     if runtime.streq(*argv, "-f") {
@@ -168,7 +149,7 @@ fun buildPackage(argv [?]charptr) {
     build.buildPackage(builder, path)
 }
 
-fun main(argc int, argv [?]charptr) int {
+fun main(argc int, argv [?]string) int {
     var progname = *argv
     argv++
     if !*argv {

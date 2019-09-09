@@ -43,7 +43,7 @@ typ BasicInfo enum {
 typ Basic struct {
     kind BasicKind
     info BasicInfo
-    name charptr
+    name string
 }
 
 var _universe *ast.Scope = nil
@@ -124,7 +124,7 @@ typ exprKind enum {
 }
 
 var predeclareFuncs [?]struct {
-    name charptr
+    name string
     nargs int
     variadic bool
     kind exprKind
@@ -174,8 +174,8 @@ fun defPredeclaredFuncs() {
 }
 
 var predeclareConsts [?]struct {
-    name charptr
-    type charptr
+    name string
+    type string
     value int
 } = {
     {"nil", "voidptr", 0},

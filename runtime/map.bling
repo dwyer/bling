@@ -13,7 +13,7 @@ typ MapStats struct {
 var stats MapStats = {}
 
 typ MapPair struct {
-    key voidptr
+    key string
     val voidptr
 }
 
@@ -153,13 +153,13 @@ fun NewMapIter(m *const Map) MapIter {
     return iter
 }
 
-fun MapIter_next(m *MapIter, key *charptr, val voidptr) int {
+fun MapIter_next(m *MapIter, key *string, val voidptr) int {
     while m._idx < len(m._map._pairs) {
         var p = &m._map._pairs[m._idx]
         m._idx++
         if p.key {
             if key {
-                *typ *voidptr(key) = p.key
+                *key = p.key
             }
             if val {
                 memcpy(val, p.val, m._map._valSize)
