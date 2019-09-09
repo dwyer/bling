@@ -374,11 +374,7 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
             }
             switch type.builtin.id {
             case COPY:
-                var t = c.checkExpr(expr.call.args[0])
-                if var b = baseType(t); b.kind == ast.TYPE_NATIVE && b.native.kind == CHARSTR {
-                    return c.lookupIdent("charptr")
-                }
-                return t
+                return c.checkExpr(expr.call.args[0])
             case LEN:
                 c.checkExpr(expr.call.args[0])
                 return c.lookupIdent("int")

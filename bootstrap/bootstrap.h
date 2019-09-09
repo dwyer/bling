@@ -49,7 +49,6 @@ typedef char bool;
 typedef char const *string;
 typedef void *voidptr;
 typedef char *charptr;
-typedef char const *charstr;
 
 typedef char i8;
 typedef short i16;

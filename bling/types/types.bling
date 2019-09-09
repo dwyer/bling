@@ -207,7 +207,7 @@ fun isPointer(t *ast.Expr) bool {
         return !t.array_.dynamic
     case ast.TYPE_NATIVE:
         switch t.native.kind {
-        case STRING, CHARPTR, CHARSTR, VOID_POINTER:
+        case STRING, CHARPTR, VOID_POINTER:
             return true
         default:
             return false

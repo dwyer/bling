@@ -23,7 +23,6 @@ typ BasicKind enum {
     FLOAT64
     STRING
     CHARPTR
-    CHARSTR
     VOID_POINTER
     UNSAFE_POINTER
 }
@@ -69,7 +68,6 @@ var predeclaredTypes [?]const Basic = {
     FLOAT64: { FLOAT64, IS_FLOAT, "double", },
     STRING: { STRING, IS_STRING, "string", },
     CHARPTR: { CHARPTR, IS_STRING, "charptr", },
-    CHARSTR: { CHARSTR, IS_STRING, "charstr", },
     VOID_POINTER: { VOID_POINTER, 0, "voidptr", },
 }
 
