@@ -20,7 +20,7 @@ fun malloc(n Size) voidptr {
     return C.malloc(n)
 }
 
-fun free(ptr voidptr) {
+fun free(ptr *const void) {
     C.free(ptr)
 }
 

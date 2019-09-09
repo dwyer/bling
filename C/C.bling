@@ -13,7 +13,7 @@ fun strerror(int) *char
 fun printf(s *const char, ...)
 fun sprintf(s *const char, ...) *char
 
-fun free(ptr *void)
+fun free(ptr *const void)
 fun malloc(n size_t) *void
 fun realloc(ptr *void, n size_t) *void
 

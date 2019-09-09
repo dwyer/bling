@@ -54,8 +54,8 @@ extern void *C$malloc(C$size_t n) {
     return malloc(n);
 }
 
-extern void C$free(void *ptr) {
-    free(ptr);
+extern void C$free(void const *ptr) {
+    free((void *)ptr);
 }
 
 extern void *C$realloc(void *ptr, C$size_t n) {
