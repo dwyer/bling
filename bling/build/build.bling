@@ -283,8 +283,7 @@ fun buildBlingPackage(b *Builder, path string) *Package {
 }
 
 fun _buildPackage(b *Builder, path string) *Package {
-    var pkg *Package = nil
-    runtime.Map_get(&b.pkgs, path, &pkg)
+    var pkg = b.pkgs[path]
     if pkg {
         return pkg
     }
@@ -293,7 +292,7 @@ fun _buildPackage(b *Builder, path string) *Package {
     } else {
         pkg = buildBlingPackage(b, path)
     }
-    runtime.Map_set(&b.pkgs, path, &pkg)
+    b.pkgs[path] = pkg
     return pkg
 }
 

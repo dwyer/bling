@@ -638,12 +638,11 @@ fun (c *Checker) checkStmt(stmt *ast.Stmt) {
 
 fun (c *Checker) checkImport(imp *ast.Decl) *Package {
     var path = constant_stringVal(imp.imp.path)
-    var pkg *Package = nil
-    runtime.Map_get(&c.info.imports, path, &pkg)
+    var pkg = c.info.imports[path]
     if pkg == nil {
         var files = parser.parseDir(c.fset, path, nil)
         pkg = check(c.conf, path, c.fset, files, c.info)
-        assert(runtime.Map_get(&c.info.imports, path, nil))
+        assert(c.info.imports[path])
     }
     imp.imp.name = makeIdent(pkg.scope.pkgName.ident.name)
     c.declare(imp, pkg.scope, c.file.scope, ast.ObjKind_PKG, imp.imp.name)

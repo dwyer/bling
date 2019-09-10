@@ -14,7 +14,7 @@ fun isType(p *parser.Parser) bool {
     case token.ARRAY, token.CONST, token.ENUM, token.EXTERN, token.MAP, token.SIGNED, token.STATIC, token.STRUCT, token.UNION, token.UNSIGNED:
         return true
     case token.IDENT:
-        return runtime.Map_get(&p.typeNames, p.lit, nil)
+        return p.typeNames[p.lit] != nil
     default:
         return false
     }
@@ -927,10 +927,8 @@ fun declaration(p *parser.Parser, isExternal bool) *ast.Decl {
                 type: type,
             },
         }
-        var d = &&decl
-        var obj = ast.newObject(ast.ObjKind_TYP, name.ident.name)
-        runtime.Map_set(&p.typeNames, name.ident.name, &type)
-        return d
+        p.typeNames[name.ident.name] = type
+        return &&decl
     }
     var type = declarationSpecifiers(p, true)
     var name = declarator(p, &type)

@@ -448,9 +448,7 @@ fun checkFiles(conf *Config, path string, fset *token.FileSet,
         files []*ast.File, info *Info) *Package {
     var file = files[0]
     if info {
-        var pkg *Package = nil
-        runtime.Map_get(&info.imports, path, &pkg)
-        if pkg {
+        if var pkg = info.imports[path]; pkg != nil {
             return pkg
         }
     } else {
@@ -470,7 +468,7 @@ fun checkFiles(conf *Config, path string, fset *token.FileSet,
         conf: conf,
         pkg: &&pkg,
     }
-    runtime.Map_set(&info.imports, path, &c.pkg)
+    info.imports[path] = c.pkg
     c.checkFiles(files)
     return c.pkg
 }

@@ -635,9 +635,8 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
 }
 
 fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
-    var obj *ast.Object = nil
     for var i = 0; i < len(scope.keys); i++ {
-        runtime.Map_get(&scope.objects, scope.keys[i], &obj)
+        var obj = scope.objects[scope.keys[i]]
         if obj.kind == kind {
             emitter.emitNewline(e)
             emitDecl(e, obj.decl)
@@ -658,10 +657,10 @@ fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
 }
 
 fun _emitPackage(e *emitter.Emitter, done *map string, pkg *types.Package) {
-    if runtime.Map_get(done, pkg.path, nil) {
+    if (*done)[pkg.path] != nil {
         return
     }
-    runtime.Map_set(done, pkg.path, &pkg.path)
+    (*done)[pkg.path] = pkg.path
     for var i = 0; i < len(pkg.imports); i++ {
         _emitPackage(e, done, pkg.imports[i])
     }

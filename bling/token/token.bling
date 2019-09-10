@@ -250,13 +250,12 @@ var keywords = makemap(Token)
 fun lookup(ident string) Token {
     if len(keywords) == 0 {
         for var i = _keywordBeg + 1; i < _keywordEnd; i++ {
-            if var s = i.string(); s {
-                runtime.Map_set(&keywords, s, &i)
+            if var s = i.string(); s != nil {
+                keywords[s] = i
             }
         }
     }
-    var tok Token
-    if runtime.Map_get(&keywords, ident, &tok) {
+    if var tok = keywords[ident]; tok != ILLEGAL {
         return tok
     }
     return IDENT

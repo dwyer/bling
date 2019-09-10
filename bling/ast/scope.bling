@@ -52,19 +52,16 @@ fun (s *Scope) delete() {
 }
 
 fun (s *Scope) insert(obj *Object) *Object {
-    var alt *Object = nil
-    runtime.Map_get(&s.objects, obj.name, &alt)
+    var alt = s.objects[obj.name]
     if alt == nil {
-        runtime.Map_set(&s.objects, obj.name, &obj)
+        s.objects[obj.name] = obj
         append(s.keys, obj.name)
     }
     return alt
 }
 
 fun (s *Scope) lookup(name string) *Object {
-    var obj *Object = nil
-    runtime.Map_get(&s.objects, name, &obj)
-    return obj
+    return s.objects[name]
 }
 
 fun (s *Scope) print() {
