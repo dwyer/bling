@@ -55,15 +55,6 @@ fun (e *Emitter) emitToken(tok token.Token) {
     e.emitString(tok.string())
 }
 
-fun hasPrefix(s string, prefix string) bool {
-    for var i = 0; prefix[i]; i++ {
-        if s[i] != prefix[i] {
-            return false
-        }
-    }
-    return true
-}
-
 fun isSimpleType(t *ast.Expr) bool {
     if t == nil {
         return false
@@ -81,7 +72,7 @@ fun isSimpleType(t *ast.Expr) bool {
 
 fun emitExpr(e *Emitter, expr *ast.Expr) {
     if !expr {
-        panic("emitter$emitExpr: expr is nil")
+        panic("expr is nil")
     }
     switch expr.kind {
     case ast.EXPR_BASIC_LIT:
@@ -524,20 +515,6 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
             if decl.value.name {
                 e.emitSpace()
                 emitExpr(e, decl.value.name)
-            }
-            var omitType = false
-            if decl.value.value {
-                switch decl.value.value.kind {
-                case ast.EXPR_COMPOSITE_LIT:
-                    omitType = isSimpleType(decl.value.value.composite.type)
-                    break
-                default:
-                    break
-                }
-            }
-            if !omitType {
-                e.emitSpace()
-                emitType(e, decl.value.type)
             }
             if decl.value.value {
                 e.emitSpace()

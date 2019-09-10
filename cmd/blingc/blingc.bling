@@ -150,6 +150,9 @@ fun buildPackage(argv [?]string) {
 }
 
 fun main(argc int, argv [?]string) int {
+    // for var i = 0; i < argc; i++ {
+    //     append(os.args, argv[i])
+    // }
     var progname = *argv
     argv++
     if !*argv {

@@ -5,6 +5,8 @@ import "paths"
 import "runtime"
 import "sys"
 
+var args = []string{}
+
 typ O enum {
     O_RDONLY = sys.O_RDONLY
     O_WRONLY = sys.O_WRONLY
@@ -266,4 +268,8 @@ fun exec(argv [?]const string, e **runtime.Error) int {
         runtime.Error_move(err, e)
     }
     return status
+}
+
+fun exit(status int) {
+    sys.exit(status)
 }

@@ -310,3 +310,7 @@ fun waitpid(pid Pid, status *int, opts int, e **runtime.Error) Pid {
     }
     return wpid
 }
+
+fun exit(status int) {
+    C.exit(status)
+}

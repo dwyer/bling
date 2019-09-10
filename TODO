@@ -1,3 +1,7 @@
+* main:
+    * change `main` function signature to `fun()`, use `os.args` to get the args
+      and `os.exit()` to return.
+        * Allow other packages to access global args.
 * Packages:
     * Remove `package` keyword, use filename for package names instead.
     * Allow single files to have their own scope
