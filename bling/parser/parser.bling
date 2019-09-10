@@ -297,12 +297,13 @@ fun (p *Parser) parseCallExpr(x *ast.Expr) *ast.Expr {
     return &&call
 }
 
-fun (p *Parser) parseSelector(x *ast.Expr) *ast.Expr {
+fun (p *Parser) parseSelector(x *ast.Expr, tok token.Token) *ast.Expr {
+    p.expect(tok)
     var y = ast.Expr{
         kind: ast.EXPR_SELECTOR,
         selector: {
             x: x,
-            tok: token.PERIOD,
+            tok: tok,
             sel: p.parseIdent(),
         },
     }
@@ -313,8 +314,8 @@ fun (p *Parser) parsePrimaryExpr() *ast.Expr {
     for var x = p.parseOperand();; {
         switch p.tok {
         case token.PERIOD:
-            p.next()
-            x = p.parseSelector(p.checkExprOrType(x))
+        case token.QUESTION_PERIOD:
+            x = p.parseSelector(p.checkExprOrType(x), p.tok)
             break
         case token.LBRACK:
             x = p.parseIndexExpr(p.checkExpr(x))

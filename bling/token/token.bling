@@ -71,6 +71,7 @@ typ Token enum {
     LPAREN
     PERIOD
     QUESTION_MARK
+    QUESTION_PERIOD
     RBRACE
     RBRACK
     RPAREN
@@ -201,6 +202,7 @@ var tokens [?]string = {
     LPAREN: "(",
     PERIOD: ".",
     QUESTION_MARK: "?",
+    QUESTION_PERIOD: "?.",
     RBRACE: "}",
     RBRACK: "]",
     RPAREN: ")",

@@ -21,6 +21,72 @@ fun isSimpleType(type *ast.Expr) bool {
     }
 }
 
+fun emitZeroValue(e *emitter.Emitter, t *ast.Expr) {
+    var b = types.baseType(t)
+    switch b.kind {
+    case ast.EXPR_STAR:
+        e.emitString("nil")
+        break
+    case ast.TYPE_ARRAY:
+    case ast.TYPE_STRUCT:
+        e.emitToken(token.LPAREN)
+        emitType(e, t, nil)
+        e.emitToken(token.RPAREN)
+        e.emitToken(token.LBRACK)
+        e.emitToken(token.RBRACK)
+        break
+    default:
+        e.emitToken(token.LPAREN)
+        emitType(e, t, nil)
+        e.emitToken(token.RPAREN)
+        e.emitString("0")
+        break
+    }
+}
+
+fun emitSelectorExpr(e *emitter.Emitter, expr *ast.Expr) {
+    if expr.kind == ast.EXPR_SELECTOR {
+        if expr.selector.tok == token.QUESTION_PERIOD {
+            emitSelectorExpr(e, expr.selector.x)
+            e.emitSpace()
+            e.emitToken(token.LAND)
+            e.emitSpace()
+        }
+        emitSelector(e, expr, true)
+    } else {
+        emitExpr(e, expr)
+    }
+}
+
+fun emitSelector(e *emitter.Emitter, expr *ast.Expr, ignoreOpt bool) {
+    var isOpt = expr.selector.tok == token.QUESTION_PERIOD 
+    if !ignoreOpt && isOpt {
+        e.emitToken(token.LPAREN)
+        emitSelectorExpr(e, expr.selector.x)
+        e.emitSpace()
+        e.emitToken(token.QUESTION_MARK)
+        e.emitSpace()
+        emitSelector(e, expr, true)
+        e.emitSpace()
+        e.emitToken(token.COLON)
+        e.emitSpace()
+        emitZeroValue(e, types.exprType(expr.selector.sel))
+        e.emitToken(token.RPAREN)
+    } else {
+        if expr.selector.x.kind == ast.EXPR_SELECTOR {
+            emitSelector(e, expr.selector.x, true)
+        } else {
+            emitExpr(e, expr.selector.x)
+        }
+        if var t = types.exprType(expr.selector.x); types.isPointer(t) {
+            e.emitToken(token.ARROW)
+        } else {
+            e.emitToken(token.PERIOD)
+        }
+        emitExpr(e, expr.selector.sel)
+    }
+}
+
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     switch expr.kind {
     case ast.EXPR_BASIC_LIT:
@@ -150,14 +216,13 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         break
     case ast.EXPR_SELECTOR:
         switch expr.selector.tok {
-        case token.ARROW, token.PERIOD:
-            emitExpr(e, expr.selector.x)
-            e.emitToken(expr.selector.tok)
+        case token.PERIOD, token.QUESTION_PERIOD:
+            emitSelector(e, expr, false)
             break
         default:
+            emitExpr(e, expr.selector.sel)
             break
         }
-        emitExpr(e, expr.selector.sel)
         break
     case ast.EXPR_STAR:
         e.emitToken(token.MUL)

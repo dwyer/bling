@@ -154,11 +154,11 @@ fun baseType(t *ast.Expr) *ast.Expr {
         case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
             t = underlyingType(t)
             break
-        case ast.EXPR_STAR, ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_MAP,
-                ast.TYPE_NATIVE, ast.TYPE_STRUCT:
+        case ast.EXPR_STAR, ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_FUNC,
+                ast.TYPE_MAP, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
             return t
         default:
-            panic(C.sprintf("not a type: %s", typeString(t)))
+            panic(C.sprintf("not a type: `%s`", typeString(t)))
         }
     }
 }
@@ -177,12 +177,30 @@ fun exprType(x *ast.Expr) *ast.Expr {
     switch x.kind {
     case ast.EXPR_PAREN:
         return exprType(x.paren.x)
+    case ast.EXPR_CALL:
+        if var t = baseType(exprType(x.call.func)); t.kind == ast.TYPE_FUNC {
+            return t.func.result
+        }
+        break
     case ast.EXPR_CAST:
         return x.cast.type
     case ast.EXPR_IDENT:
         switch x.ident.obj.kind {
         case ast.ObjKind_CON, ast.ObjKind_VAL:
             return x.ident.obj.decl.value.type
+        case ast.ObjKind_FUN:
+            return x.ident.obj.decl.func.type
+        default:
+            break
+        }
+        break
+    case ast.EXPR_INDEX:
+        var t = baseType(exprType(x.index.x))
+        switch t.kind {
+        case ast.TYPE_ARRAY:
+            return t.array_.elt
+        case ast.TYPE_MAP:
+            return t.map_.val
         default:
             break
         }

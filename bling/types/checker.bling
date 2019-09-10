@@ -274,11 +274,8 @@ fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
     var type = c.checkExpr(expr.selector.x)
     var isArgPtr = false
     if type.kind == ast.EXPR_STAR {
-        expr.selector.tok = token.ARROW
         type = type.star.x
         isArgPtr = true
-    } else {
-        assert(expr.selector.tok != token.ARROW)
     }
     if var alias = getTypeAlias(type); alias != nil {
         // if type is an alias, check its scope for a method

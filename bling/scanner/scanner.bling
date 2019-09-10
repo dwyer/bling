@@ -271,7 +271,12 @@ scanAgain:
             tok = token.SEMICOLON
             break
         case '?':
-            tok = token.QUESTION_MARK
+            if s.ch == '.' {
+                s.next()
+                tok = token.QUESTION_PERIOD
+            } else {
+                tok = token.QUESTION_MARK
+            }
             break
         case '[':
             tok = token.LBRACK
