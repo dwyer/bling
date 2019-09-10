@@ -313,9 +313,9 @@ fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
     }
     if var base = baseType(type); base.kind == ast.TYPE_STRUCT {
         if var field = getStructFieldByName(type, expr.selector.sel); field == nil {
-            c.error(expr.pos(),
-            C.sprintf("no member named '%s' in '%s'",
-            exprString(expr.selector.sel), typeString(type)))
+            c.error(expr.selector.sel.pos(),
+                C.sprintf("no member named '%s' in '%s'",
+                exprString(expr.selector.sel), typeString(type)))
             return nil
         } else {
             expr.selector.sel.ident.obj = field.field.name.ident.obj
