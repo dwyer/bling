@@ -180,7 +180,7 @@ fun newPackage(b *Builder, path string) Package {
 
 fun emitInclude(e *emitter.Emitter, path string) {
     var s = C.sprintf("#include \"%s\"\n", path)
-    emitter.emitString(e, s)
+    e.emitString(s)
     delete(s)
 }
 
@@ -191,14 +191,14 @@ fun writeFile(path string, out string) {
 
 fun genHeader(b *Builder, pkg *Package) {
     var e = emitter.Emitter{}
-    emitter.emitString(&e, "#pragma once")
-    emitter.emitNewline(&e)
+    e.emitString("#pragma once")
+    e.emitNewline()
     emitInclude(&e, "bootstrap/bootstrap.h")
     for var i = 0; i < len(pkg.deps); i++ {
         emitInclude(&e, pkg.deps[i].hPath)
     }
     cemitter.emitHeader(&e, pkg.pkg)
-    var out = emitter.Emitter_string(&e)
+    var out = e.string()
     writeFile(pkg.hPath, out)
     delete(out)
 }
@@ -207,7 +207,7 @@ fun getCFile(b *Builder, pkg *Package) {
     var e = emitter.Emitter{}
     emitInclude(&e, pkg.hPath)
     cemitter.emitBody(&e, pkg.pkg)
-    var out = emitter.Emitter_string(&e)
+    var out = e.string()
     writeFile(pkg.cPath, out)
     delete(out)
 }

@@ -18,41 +18,41 @@ fun (e *Emitter) bytes() []char {
     return e.buf
 }
 
-fun Emitter_string(e *Emitter) string {
+fun (e *Emitter) string() string {
     return e.buf.toString()
 }
 
-fun emitBytes(e *Emitter, s []char) {
+fun (e *Emitter) emitBytes(s []char) {
     e.buf.write(s, nil)
 }
 
-fun emitChars(e *Emitter, s [?]const char, n int) {
+fun (e *Emitter) emitChars(s [?]const char, n int) {
     e.buf.writeChars(s, n, nil)
 }
 
-fun emitString(e *Emitter, s string) {
+fun (e *Emitter) emitString(s string) {
     e.buf.writeString(s, nil)
 }
 
-fun emitSpace(e *Emitter) {
-    emitString(e, " ")
+fun (e *Emitter) emitSpace() {
+    e.emitString(" ")
 }
 
-fun emitNewline(e *Emitter) {
-    emitString(e, "\n")
+fun (e *Emitter) emitNewline() {
+    e.emitString("\n")
 }
 
-fun emitTabs(e *Emitter) {
+fun (e *Emitter) emitTabs() {
     for var i = 0; i < e.indent; i++ {
-        emitString(e, "    ")
+        e.emitString("    ")
     }
 }
 
-fun emitToken(e *Emitter, tok token.Token) {
+fun (e *Emitter) emitToken(tok token.Token) {
     if e.skipSemi && tok == token.SEMICOLON {
         return
     }
-    emitString(e, tok.string())
+    e.emitString(tok.string())
 }
 
 fun hasPrefix(s string, prefix string) bool {
@@ -85,110 +85,110 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
     }
     switch expr.kind {
     case ast.EXPR_BASIC_LIT:
-        emitString(e, expr.basic.value)
+        e.emitString(expr.basic.value)
         break
     case ast.EXPR_BINARY:
         emitExpr(e, expr.binary.x)
-        emitSpace(e)
-        emitToken(e, expr.binary.op)
-        emitSpace(e)
+        e.emitSpace()
+        e.emitToken(expr.binary.op)
+        e.emitSpace()
         emitExpr(e, expr.binary.y)
         break
     case ast.EXPR_CALL:
         emitExpr(e, expr.call.func)
-        emitToken(e, token.LPAREN)
+        e.emitToken(token.LPAREN)
         for var i = 0; i < len(expr.call.args); i++ {
             if i > 0 {
-                emitToken(e, token.COMMA)
-                emitSpace(e)
+                e.emitToken(token.COMMA)
+                e.emitSpace()
             }
             emitExpr(e, expr.call.args[i])
         }
-        emitToken(e, token.RPAREN)
+        e.emitToken(token.RPAREN)
         break
     case ast.EXPR_CAST:
-        emitToken(e, token.TYPE)
-        emitSpace(e)
+        e.emitToken(token.TYPE)
+        e.emitSpace()
         emitType(e, expr.cast.type)
-        emitToken(e, token.LPAREN)
+        e.emitToken(token.LPAREN)
         emitExpr(e, expr.cast.expr)
-        emitToken(e, token.RPAREN)
+        e.emitToken(token.RPAREN)
         break
     case ast.EXPR_COMPOSITE_LIT:
         if isSimpleType(expr.composite.type) {
             emitType(e, expr.composite.type)
         }
-        emitToken(e, token.LBRACE)
+        e.emitToken(token.LBRACE)
         if len(expr.composite.list) > 0 {
-            emitNewline(e)
+            e.emitNewline()
             e.indent++
             for var i = 0; i < len(expr.composite.list); i++ {
-                emitTabs(e)
+                e.emitTabs()
                 emitExpr(e, expr.composite.list[i])
-                emitToken(e, token.COMMA)
-                emitNewline(e)
+                e.emitToken(token.COMMA)
+                e.emitNewline()
             }
             e.indent--
-            emitTabs(e)
+            e.emitTabs()
         }
-        emitToken(e, token.RBRACE)
+        e.emitToken(token.RBRACE)
         break
     case ast.EXPR_IDENT:
-        emitString(e, expr.ident.name)
+        e.emitString(expr.ident.name)
         break
     case ast.EXPR_INDEX:
         if isSimpleType(expr.index.x) {
             emitExpr(e, expr.index.x)
         } else {
-            emitToken(e, token.LPAREN)
+            e.emitToken(token.LPAREN)
             emitExpr(e, expr.index.x)
-            emitToken(e, token.RPAREN)
+            e.emitToken(token.RPAREN)
         }
-        emitToken(e, token.LBRACK)
+        e.emitToken(token.LBRACK)
         emitExpr(e, expr.index.index)
-        emitToken(e, token.RBRACK)
+        e.emitToken(token.RBRACK)
         break
     case ast.EXPR_KEY_VALUE:
         emitExpr(e, expr.key_value.key)
-        emitToken(e, token.COLON)
-        emitSpace(e)
+        e.emitToken(token.COLON)
+        e.emitSpace()
         emitExpr(e, expr.key_value.value)
         break
     case ast.EXPR_PAREN:
-        emitToken(e, token.LPAREN)
+        e.emitToken(token.LPAREN)
         emitExpr(e, expr.paren.x)
-        emitToken(e, token.RPAREN)
+        e.emitToken(token.RPAREN)
         break
     case ast.EXPR_SELECTOR:
         emitExpr(e, expr.selector.x)
-        emitToken(e, token.PERIOD)
+        e.emitToken(token.PERIOD)
         emitExpr(e, expr.selector.sel)
         break
     case ast.EXPR_STAR:
-        emitToken(e, token.MUL)
+        e.emitToken(token.MUL)
         emitExpr(e, expr.star.x)
         break
     case ast.EXPR_TERNARY:
         emitExpr(e, expr.ternary.cond)
-        emitSpace(e)
-        emitToken(e, token.QUESTION_MARK)
+        e.emitSpace()
+        e.emitToken(token.QUESTION_MARK)
         if expr.ternary.x {
-            emitSpace(e)
+            e.emitSpace()
             emitExpr(e, expr.ternary.x)
-            emitSpace(e)
+            e.emitSpace()
         }
-        emitToken(e, token.COLON)
-        emitSpace(e)
+        e.emitToken(token.COLON)
+        e.emitSpace()
         emitExpr(e, expr.ternary.y)
         break
     case ast.EXPR_UNARY:
         if expr.unary.op == token.SIZEOF {
-            emitToken(e, expr.unary.op)
-            emitToken(e, token.LPAREN)
+            e.emitToken(expr.unary.op)
+            e.emitToken(token.LPAREN)
             emitType(e, expr.unary.x)
-            emitToken(e, token.RPAREN)
+            e.emitToken(token.RPAREN)
         } else {
-            emitToken(e, expr.unary.op)
+            e.emitToken(expr.unary.op)
             emitExpr(e, expr.unary.x)
         }
         break
@@ -202,45 +202,45 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
     switch stmt.kind {
     case ast.STMT_ASSIGN:
         emitExpr(e, stmt.assign.x)
-        emitSpace(e)
-        emitToken(e, stmt.assign.op)
-        emitSpace(e)
+        e.emitSpace()
+        e.emitToken(stmt.assign.op)
+        e.emitSpace()
         emitExpr(e, stmt.assign.y)
         break
     case ast.STMT_BLOCK:
-        emitToken(e, token.LBRACE)
-        emitNewline(e)
+        e.emitToken(token.LBRACE)
+        e.emitNewline()
         e.indent++
         for var i = 0; i < len(stmt.block.stmts); i++ {
             switch stmt.block.stmts[i].kind {
             case ast.STMT_LABEL:
                 break
             default:
-                emitTabs(e)
+                e.emitTabs()
                 break
             }
             emitStmt(e, stmt.block.stmts[i])
-            emitNewline(e)
+            e.emitNewline()
         }
         e.indent--
-        emitTabs(e)
-        emitToken(e, token.RBRACE)
+        e.emitTabs()
+        e.emitToken(token.RBRACE)
         break
     case ast.STMT_CASE:
         if len(stmt.case_.exprs) > 0 {
-            emitToken(e, token.CASE)
-            emitSpace(e)
+            e.emitToken(token.CASE)
+            e.emitSpace()
             for var i = 0; i < len(stmt.case_.exprs); i++ {
                 if i > 0 {
-                    emitToken(e, token.COMMA)
-                    emitSpace(e)
+                    e.emitToken(token.COMMA)
+                    e.emitSpace()
                 }
                 emitExpr(e, stmt.case_.exprs[i])
             }
         } else {
-            emitToken(e, token.DEFAULT)
+            e.emitToken(token.DEFAULT)
         }
-        emitToken(e, token.COLON)
+        e.emitToken(token.COLON)
         if len(stmt.case_.stmts) > 0 {
             var first = stmt.case_.stmts[0]
             var oneline = false
@@ -251,16 +251,16 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
                 break
             }
             if oneline {
-                emitSpace(e)
+                e.emitSpace()
                 emitStmt(e, first)
-                emitNewline(e)
+                e.emitNewline()
             } else {
-                emitNewline(e)
+                e.emitNewline()
                 e.indent++
                 for var i = 0; i < len(stmt.case_.stmts); i++ {
-                    emitTabs(e)
+                    e.emitTabs()
                     emitStmt(e, stmt.case_.stmts[i])
-                    emitNewline(e)
+                    e.emitNewline()
                 }
                 e.indent--
             }
@@ -270,87 +270,87 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
         emitDecl(e, stmt.decl.decl)
         break
     case ast.STMT_EMPTY:
-        emitToken(e, token.SEMICOLON)
+        e.emitToken(token.SEMICOLON)
         break
     case ast.STMT_EXPR:
         emitExpr(e, stmt.expr.x)
         break
     case ast.STMT_IF:
-        emitToken(e, token.IF)
-        emitSpace(e)
+        e.emitToken(token.IF)
+        e.emitSpace()
         emitExpr(e, stmt.if_.cond)
-        emitSpace(e)
+        e.emitSpace()
         emitStmt(e, stmt.if_.body)
         if stmt.if_.else_ {
-            emitSpace(e)
-            emitToken(e, token.ELSE)
-            emitSpace(e)
+            e.emitSpace()
+            e.emitToken(token.ELSE)
+            e.emitSpace()
             emitStmt(e, stmt.if_.else_)
         }
         break
     case ast.STMT_ITER:
-        emitToken(e, stmt.iter.kind)
+        e.emitToken(stmt.iter.kind)
         if stmt.iter.kind == token.FOR {
-            emitSpace(e)
+            e.emitSpace()
             if stmt.iter.init {
                 emitStmt(e, stmt.iter.init)
             }
-            emitToken(e, token.SEMICOLON)
+            e.emitToken(token.SEMICOLON)
         }
         if stmt.iter.cond {
-            emitSpace(e)
+            e.emitSpace()
             emitExpr(e, stmt.iter.cond)
         }
         if stmt.iter.kind == token.FOR {
-            emitToken(e, token.SEMICOLON)
+            e.emitToken(token.SEMICOLON)
             if stmt.iter.post {
-                emitSpace(e)
+                e.emitSpace()
                 e.skipSemi = true
                 emitStmt(e, stmt.iter.post)
                 e.skipSemi = false
             }
         }
-        emitSpace(e)
+        e.emitSpace()
         emitStmt(e, stmt.iter.body)
         break
     case ast.STMT_JUMP:
-        emitToken(e, stmt.jump.keyword)
+        e.emitToken(stmt.jump.keyword)
         if stmt.jump.label {
-            emitSpace(e)
+            e.emitSpace()
             emitExpr(e, stmt.jump.label)
         }
         break
     case ast.STMT_LABEL:
         emitExpr(e, stmt.label.label)
-        emitToken(e, token.COLON)
-        emitNewline(e)
-        emitTabs(e)
+        e.emitToken(token.COLON)
+        e.emitNewline()
+        e.emitTabs()
         emitStmt(e, stmt.label.stmt)
         break
     case ast.STMT_POSTFIX:
         emitExpr(e, stmt.postfix.x)
-        emitToken(e, stmt.postfix.op)
+        e.emitToken(stmt.postfix.op)
         break
     case ast.STMT_RETURN:
-        emitToken(e, token.RETURN)
+        e.emitToken(token.RETURN)
         if stmt.return_.x {
-            emitSpace(e)
+            e.emitSpace()
             emitExpr(e, stmt.return_.x)
         }
         break
     case ast.STMT_SWITCH:
-        emitToken(e, token.SWITCH)
-        emitSpace(e)
+        e.emitToken(token.SWITCH)
+        e.emitSpace()
         emitExpr(e, stmt.switch_.tag)
-        emitSpace(e)
-        emitToken(e, token.LBRACE)
-        emitNewline(e)
+        e.emitSpace()
+        e.emitToken(token.LBRACE)
+        e.emitNewline()
         for var i = 0; i < len(stmt.switch_.stmts); i++ {
-            emitTabs(e)
+            e.emitTabs()
             emitStmt(e, stmt.switch_.stmts[i])
         }
-        emitTabs(e)
-        emitToken(e, token.RBRACE)
+        e.emitTabs()
+        e.emitToken(token.RBRACE)
         break
     default:
         panic("Unknown stmt")
@@ -364,8 +364,8 @@ fun is_void(type *ast.Expr) bool {
 
 fun emitType(e *Emitter, type *ast.Expr) {
     if type.is_const {
-        emitToken(e, token.CONST)
-        emitSpace(e)
+        e.emitToken(token.CONST)
+        e.emitSpace()
     }
     switch type.kind {
     case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
@@ -374,107 +374,107 @@ fun emitType(e *Emitter, type *ast.Expr) {
     case ast.EXPR_STAR:
         type = type.star.x
         if type.kind == ast.TYPE_FUNC {
-            emitToken(e, token.FUNC)
-            emitToken(e, token.LPAREN)
+            e.emitToken(token.FUNC)
+            e.emitToken(token.LPAREN)
             for var i = 0; i < len(type.func.params); i++ {
                 if i > 0 {
-                    emitToken(e, token.COMMA)
-                    emitSpace(e)
+                    e.emitToken(token.COMMA)
+                    e.emitSpace()
                 }
                 emitDecl(e, type.func.params[i])
             }
-            emitToken(e, token.RPAREN)
+            e.emitToken(token.RPAREN)
             if !is_void(type.func.result) {
-                emitSpace(e)
+                e.emitSpace()
                 emitType(e, type.func.result)
             }
         } else {
-            emitToken(e, token.MUL)
+            e.emitToken(token.MUL)
             emitType(e, type)
         }
         break
     case ast.TYPE_ARRAY:
-        emitToken(e, token.LBRACK)
+        e.emitToken(token.LBRACK)
         if !type.array_.dynamic {
             if type.array_.len {
                 emitExpr(e, type.array_.len)
             } else {
-                emitToken(e, token.QUESTION_MARK)
+                e.emitToken(token.QUESTION_MARK)
             }
         }
-        emitToken(e, token.RBRACK)
+        e.emitToken(token.RBRACK)
         emitType(e, type.array_.elt)
         break
     case ast.TYPE_BUILTIN:
-        emitString(e, "/* builtin func ")
-        emitString(e, type.builtin.name)
-        emitString(e, " */")
+        e.emitString("/* builtin func ")
+        e.emitString(type.builtin.name)
+        e.emitString(" */")
         break
     case ast.TYPE_ELLIPSIS:
-        emitToken(e, token.ELLIPSIS)
+        e.emitToken(token.ELLIPSIS)
         break
     case ast.TYPE_ENUM:
-        emitToken(e, token.ENUM)
+        e.emitToken(token.ENUM)
         if len(type.enum_.enums) > 0 {
-            emitSpace(e)
-            emitToken(e, token.LBRACE)
-            emitNewline(e)
+            e.emitSpace()
+            e.emitToken(token.LBRACE)
+            e.emitNewline()
             e.indent++
             for var i = 0; i < len(type.enum_.enums); i++ {
                 var decl = type.enum_.enums[i]
-                emitTabs(e)
+                e.emitTabs()
                 emitExpr(e, decl.value.name)
                 if decl.value.value {
-                    emitSpace(e)
-                    emitToken(e, token.ASSIGN)
-                    emitSpace(e)
+                    e.emitSpace()
+                    e.emitToken(token.ASSIGN)
+                    e.emitSpace()
                     emitExpr(e, decl.value.value)
                 }
-                emitNewline(e)
+                e.emitNewline()
             }
             e.indent--
-            emitTabs(e)
-            emitToken(e, token.RBRACE)
+            e.emitTabs()
+            e.emitToken(token.RBRACE)
         }
         break
     case ast.TYPE_FUNC:
-        emitToken(e, token.LPAREN)
+        e.emitToken(token.LPAREN)
         for var i = 0; i < len(type.func.params); i++ {
             if i > 0 {
-                emitToken(e, token.COMMA)
-                emitSpace(e)
+                e.emitToken(token.COMMA)
+                e.emitSpace()
             }
             emitDecl(e, type.func.params[i])
         }
-        emitToken(e, token.RPAREN)
+        e.emitToken(token.RPAREN)
         if !is_void(type.func.result) {
-            emitSpace(e)
+            e.emitSpace()
             emitType(e, type.func.result)
         }
         break
     case ast.TYPE_MAP:
-        emitToken(e, token.MAP)
-        emitSpace(e)
+        e.emitToken(token.MAP)
+        e.emitSpace()
         emitType(e, type.map_.val)
         break
     case ast.TYPE_NATIVE:
-        emitString(e, type.native.name)
+        e.emitString(type.native.name)
         break
     case ast.TYPE_STRUCT:
-        emitToken(e, type.struct_.tok)
+        e.emitToken(type.struct_.tok)
         if len(type.struct_.fields) > 0 {
-            emitSpace(e)
-            emitToken(e, token.LBRACE)
-            emitNewline(e)
+            e.emitSpace()
+            e.emitToken(token.LBRACE)
+            e.emitNewline()
             e.indent++
             for var i = 0; i < len(type.struct_.fields); i++ {
-                emitTabs(e)
+                e.emitTabs()
                 emitDecl(e, type.struct_.fields[i])
-                emitNewline(e)
+                e.emitNewline()
             }
             e.indent--
-            emitTabs(e)
-            emitToken(e, token.RBRACE)
+            e.emitTabs()
+            e.emitToken(token.RBRACE)
         }
         break
     default:
@@ -487,42 +487,42 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
     case ast.DECL_FIELD:
         if decl.field.name != nil {
             emitExpr(e, decl.field.name)
-            emitSpace(e)
+            e.emitSpace()
         }
         emitType(e, decl.field.type)
         break
     case ast.DECL_FUNC:
-        emitToken(e, token.FUNC)
-        emitSpace(e)
+        e.emitToken(token.FUNC)
+        e.emitSpace()
         emitExpr(e, decl.func.name)
         emitType(e, decl.func.type)
         if decl.func.body {
-            emitSpace(e)
+            e.emitSpace()
             emitStmt(e, decl.func.body)
         }
         break
     case ast.DECL_IMPORT:
-        emitToken(e, token.IMPORT)
-        emitSpace(e)
+        e.emitToken(token.IMPORT)
+        e.emitSpace()
         emitExpr(e, decl.imp.path)
         break
     case ast.DECL_TYPE:
-        emitToken(e, token.TYPE)
-        emitSpace(e)
+        e.emitToken(token.TYPE)
+        e.emitSpace()
         emitExpr(e, decl.type.name)
-        emitSpace(e)
+        e.emitSpace()
         emitType(e, decl.type.type)
         break
     case ast.DECL_PRAGMA:
-        emitToken(e, token.HASH)
-        emitString(e, decl.pragma.lit)
+        e.emitToken(token.HASH)
+        e.emitString(decl.pragma.lit)
         break
     case ast.DECL_VALUE:
         switch decl.value.kind {
         case token.VAR:
-            emitToken(e, token.VAR)
+            e.emitToken(token.VAR)
             if decl.value.name {
-                emitSpace(e)
+                e.emitSpace()
                 emitExpr(e, decl.value.name)
             }
             var omitType = false
@@ -536,20 +536,20 @@ fun emitDecl(e *Emitter, decl *ast.Decl) {
                 }
             }
             if !omitType {
-                emitSpace(e)
+                e.emitSpace()
                 emitType(e, decl.value.type)
             }
             if decl.value.value {
-                emitSpace(e)
-                emitToken(e, token.ASSIGN)
-                emitSpace(e)
+                e.emitSpace()
+                e.emitToken(token.ASSIGN)
+                e.emitSpace()
                 emitExpr(e, decl.value.value)
             }
             break
         case token.CONST:
-            emitToken(e, token.HASH)
-            emitString(e, "define")
-            emitSpace(e)
+            e.emitToken(token.HASH)
+            e.emitString("define")
+            e.emitSpace()
             emitExpr(e, decl.value.value)
             break
         default:
@@ -567,25 +567,25 @@ fun emitFile(e *Emitter, file *ast.File) {
     if file.name {
         e.pkg = file.name.ident.name
     }
-    emitString(e, "//")
-    emitString(e, file.filename)
-    emitNewline(e)
+    e.emitString("//")
+    e.emitString(file.filename)
+    e.emitNewline()
     if file.name != nil {
-        emitToken(e, token.PACKAGE)
-        emitSpace(e)
+        e.emitToken(token.PACKAGE)
+        e.emitSpace()
         emitExpr(e, file.name)
-        emitNewline(e)
-        emitNewline(e)
+        e.emitNewline()
+        e.emitNewline()
     }
     for var i = 0; i < len(file.imports); i++ {
-        emitToken(e, token.IMPORT)
-        emitSpace(e)
+        e.emitToken(token.IMPORT)
+        e.emitSpace()
         emitExpr(e, file.imports[i].imp.path)
-        emitNewline(e)
+        e.emitNewline()
     }
     for var i = 0; i < len(file.decls); i++ {
-        emitNewline(e)
+        e.emitNewline()
         emitDecl(e, file.decls[i])
-        emitNewline(e)
+        e.emitNewline()
     }
 }

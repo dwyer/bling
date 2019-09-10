@@ -21,7 +21,7 @@ fun emitRawFile(e *emitter.Emitter, filename string) {
     if err {
         panic(err.error)
     }
-    emitter.emitBytes(e, src)
+    e.emitBytes(src)
     delete(src)
 }
 

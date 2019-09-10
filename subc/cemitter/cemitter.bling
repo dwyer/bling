@@ -24,13 +24,13 @@ fun isSimpleType(type *ast.Expr) bool {
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     switch expr.kind {
     case ast.EXPR_BASIC_LIT:
-        emitter.emitString(e, expr.basic.value)
+        e.emitString(expr.basic.value)
         break
     case ast.EXPR_BINARY:
         emitExpr(e, expr.binary.x)
-        emitter.emitSpace(e)
-        emitter.emitToken(e, expr.binary.op)
-        emitter.emitSpace(e)
+        e.emitSpace()
+        e.emitToken(expr.binary.op)
+        e.emitSpace()
         emitExpr(e, expr.binary.y)
         break
     case ast.EXPR_CALL:
@@ -41,14 +41,14 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
             func = func.selector.sel
         }
         emitExpr(e, expr.call.func)
-        emitter.emitToken(e, token.LPAREN)
+        e.emitToken(token.LPAREN)
         if recv != nil {
             emitExpr(e, recv)
         }
         for var i = 0; i < len(expr.call.args); i++ {
             if i > 0 || recv != nil {
-                emitter.emitToken(e, token.COMMA)
-                emitter.emitSpace(e)
+                e.emitToken(token.COMMA)
+                e.emitSpace()
             }
             var arg = expr.call.args[i]
             if types.isType(arg) {
@@ -57,34 +57,34 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
                 emitExpr(e, arg)
             }
         }
-        emitter.emitToken(e, token.RPAREN)
+        e.emitToken(token.RPAREN)
         break
     case ast.EXPR_CAST:
-        emitter.emitToken(e, token.LPAREN)
+        e.emitToken(token.LPAREN)
         emitType(e, expr.cast.type, nil)
-        emitter.emitToken(e, token.RPAREN)
+        e.emitToken(token.RPAREN)
         emitExpr(e, expr.cast.expr)
         break
     case ast.EXPR_COMPOSITE_LIT:
         if isSimpleType(expr.composite.type) {
-            emitter.emitToken(e, token.LPAREN)
+            e.emitToken(token.LPAREN)
             emitType(e, expr.composite.type, nil)
-            emitter.emitToken(e, token.RPAREN)
+            e.emitToken(token.RPAREN)
         }
-        emitter.emitToken(e, token.LBRACE)
+        e.emitToken(token.LBRACE)
         if len(expr.composite.list) > 0 {
-            emitter.emitNewline(e)
+            e.emitNewline()
             e.indent++
             for var i = 0; i < len(expr.composite.list); i++ {
-                emitter.emitTabs(e)
+                e.emitTabs()
                 emitExpr(e, expr.composite.list[i])
-                emitter.emitToken(e, token.COMMA)
-                emitter.emitNewline(e)
+                e.emitToken(token.COMMA)
+                e.emitNewline()
             }
             e.indent--
-            emitter.emitTabs(e)
+            e.emitTabs()
         }
-        emitter.emitToken(e, token.RBRACE)
+        e.emitToken(token.RBRACE)
         break
     case ast.EXPR_IDENT:
         if expr.ident.obj == nil {
@@ -93,66 +93,66 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         if expr.ident.obj && expr.ident.obj.scope && expr.ident.obj.scope.pkgName {
             if !runtime.streq(expr.ident.obj.scope.pkgName.ident.name, "main") {
                 emitExpr(e, expr.ident.obj.scope.pkgName)
-                emitter.emitToken(e, token.DOLLAR)
+                e.emitToken(token.DOLLAR)
             }
         }
-        emitter.emitString(e, expr.ident.name)
+        e.emitString(expr.ident.name)
         break
     case ast.EXPR_INDEX:
         var t = types.baseType(types.exprType(expr.index.x))
         if types.isDynamicArray(t) {
-            emitter.emitString(e, "$$arrayget")
-            emitter.emitToken(e, token.LPAREN)
+            e.emitString("$$arrayget")
+            e.emitToken(token.LPAREN)
             emitType(e, t.array_.elt, nil)
-            emitter.emitToken(e, token.COMMA)
-            emitter.emitSpace(e)
+            e.emitToken(token.COMMA)
+            e.emitSpace()
             emitExpr(e, expr.index.x)
-            emitter.emitToken(e, token.COMMA)
-            emitter.emitSpace(e)
+            e.emitToken(token.COMMA)
+            e.emitSpace()
             emitExpr(e, expr.index.index)
-            emitter.emitToken(e, token.RPAREN)
+            e.emitToken(token.RPAREN)
         } else if types.isMap(t) {
-            emitter.emitString(e, "$$mapget")
-            emitter.emitToken(e, token.LPAREN)
+            e.emitString("$$mapget")
+            e.emitToken(token.LPAREN)
             emitType(e, t.map_.val, nil)
-            emitter.emitToken(e, token.COMMA)
-            emitter.emitSpace(e)
+            e.emitToken(token.COMMA)
+            e.emitSpace()
             emitExpr(e, expr.index.x)
-            emitter.emitToken(e, token.COMMA)
-            emitter.emitSpace(e)
+            e.emitToken(token.COMMA)
+            e.emitSpace()
             emitExpr(e, expr.index.index)
-            emitter.emitToken(e, token.RPAREN)
+            e.emitToken(token.RPAREN)
         } else {
             emitExpr(e, expr.index.x)
-            emitter.emitToken(e, token.LBRACK)
+            e.emitToken(token.LBRACK)
             emitExpr(e, expr.index.index)
-            emitter.emitToken(e, token.RBRACK)
+            e.emitToken(token.RBRACK)
         }
         break
     case ast.EXPR_KEY_VALUE:
         if expr.key_value.isArray {
-            emitter.emitToken(e, token.LBRACK)
+            e.emitToken(token.LBRACK)
             emitExpr(e, expr.key_value.key)
-            emitter.emitToken(e, token.RBRACK)
+            e.emitToken(token.RBRACK)
         } else {
-            emitter.emitToken(e, token.PERIOD)
+            e.emitToken(token.PERIOD)
             emitExpr(e, expr.key_value.key)
         }
-        emitter.emitSpace(e)
-        emitter.emitToken(e, token.ASSIGN)
-        emitter.emitSpace(e)
+        e.emitSpace()
+        e.emitToken(token.ASSIGN)
+        e.emitSpace()
         emitExpr(e, expr.key_value.value)
         break
     case ast.EXPR_PAREN:
-        emitter.emitToken(e, token.LPAREN)
+        e.emitToken(token.LPAREN)
         emitExpr(e, expr.paren.x)
-        emitter.emitToken(e, token.RPAREN)
+        e.emitToken(token.RPAREN)
         break
     case ast.EXPR_SELECTOR:
         switch expr.selector.tok {
         case token.ARROW, token.PERIOD:
             emitExpr(e, expr.selector.x)
-            emitter.emitToken(e, expr.selector.tok)
+            e.emitToken(expr.selector.tok)
             break
         default:
             break
@@ -160,37 +160,37 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         emitExpr(e, expr.selector.sel)
         break
     case ast.EXPR_STAR:
-        emitter.emitToken(e, token.MUL)
+        e.emitToken(token.MUL)
         emitExpr(e, expr.star.x)
         break
     case ast.EXPR_TERNARY:
         emitExpr(e, expr.ternary.cond)
-        emitter.emitSpace(e)
-        emitter.emitToken(e, token.QUESTION_MARK)
+        e.emitSpace()
+        e.emitToken(token.QUESTION_MARK)
         if expr.ternary.x {
-            emitter.emitSpace(e)
+            e.emitSpace()
             emitExpr(e, expr.ternary.x)
-            emitter.emitSpace(e)
+            e.emitSpace()
         }
-        emitter.emitToken(e, token.COLON)
-        emitter.emitSpace(e)
+        e.emitToken(token.COLON)
+        e.emitSpace()
         emitExpr(e, expr.ternary.y)
         break
     case ast.EXPR_UNARY:
         if expr.unary.op == token.LAND {
-            emitter.emitString(e, "$$ESC")
-            emitter.emitToken(e, token.LPAREN)
+            e.emitString("$$ESC")
+            e.emitToken(token.LPAREN)
         } else if expr.unary.op == token.SIZEOF {
-            emitter.emitToken(e, token.SIZEOF)
-            emitter.emitToken(e, token.LPAREN)
+            e.emitToken(token.SIZEOF)
+            e.emitToken(token.LPAREN)
             emitType(e, expr.unary.x, nil)
-            emitter.emitToken(e, token.RPAREN)
+            e.emitToken(token.RPAREN)
         } else {
-            emitter.emitToken(e, expr.unary.op)
+            e.emitToken(expr.unary.op)
         }
         emitExpr(e, expr.unary.x)
         if expr.unary.op == token.LAND {
-            emitter.emitToken(e, token.RPAREN)
+            e.emitToken(token.RPAREN)
         }
         break
     default:
@@ -209,185 +209,185 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
             isMap = types.isMap(t)
         }
         if isMap {
-            emitter.emitString(e, "$$mapset")
-            emitter.emitToken(e, token.LPAREN)
+            e.emitString("$$mapset")
+            e.emitToken(token.LPAREN)
             emitExpr(e, x.index.x)
-            emitter.emitToken(e, token.COMMA)
+            e.emitToken(token.COMMA)
             emitExpr(e, x.index.index)
-            emitter.emitToken(e, token.COMMA)
+            e.emitToken(token.COMMA)
             emitExpr(e, stmt.assign.y)
-            emitter.emitToken(e, token.RPAREN)
-            emitter.emitToken(e, token.SEMICOLON)
+            e.emitToken(token.RPAREN)
+            e.emitToken(token.SEMICOLON)
         } else {
             emitExpr(e, stmt.assign.x)
-            emitter.emitSpace(e)
-            emitter.emitToken(e, stmt.assign.op)
-            emitter.emitSpace(e)
+            e.emitSpace()
+            e.emitToken(stmt.assign.op)
+            e.emitSpace()
             emitExpr(e, stmt.assign.y)
-            emitter.emitToken(e, token.SEMICOLON)
+            e.emitToken(token.SEMICOLON)
         }
         break
     case ast.STMT_BLOCK:
-        emitter.emitToken(e, token.LBRACE)
-        emitter.emitNewline(e)
+        e.emitToken(token.LBRACE)
+        e.emitNewline()
         e.indent++
         for var i = 0; i < len(stmt.block.stmts); i++ {
             switch stmt.block.stmts[i].kind {
             case ast.STMT_LABEL:
                 break
             default:
-                emitter.emitTabs(e)
+                e.emitTabs()
                 break
             }
             emitStmt(e, stmt.block.stmts[i])
-            emitter.emitNewline(e)
+            e.emitNewline()
         }
         e.indent--
-        emitter.emitTabs(e)
-        emitter.emitToken(e, token.RBRACE)
+        e.emitTabs()
+        e.emitToken(token.RBRACE)
         break
     case ast.STMT_CASE:
         if len(stmt.case_.exprs) > 0 {
             for var i = 0; i < len(stmt.case_.exprs); i++ {
                 if i > 0 {
-                    emitter.emitToken(e, token.COLON)
-                    emitter.emitNewline(e)
-                    emitter.emitTabs(e)
+                    e.emitToken(token.COLON)
+                    e.emitNewline()
+                    e.emitTabs()
                 }
-                emitter.emitToken(e, token.CASE)
-                emitter.emitSpace(e)
+                e.emitToken(token.CASE)
+                e.emitSpace()
                 emitExpr(e, stmt.case_.exprs[i])
             }
         } else {
-            emitter.emitToken(e, token.DEFAULT)
+            e.emitToken(token.DEFAULT)
         }
-        emitter.emitToken(e, token.COLON)
-        emitter.emitSpace(e)
-        emitter.emitToken(e, token.LBRACE)
-        emitter.emitNewline(e)
+        e.emitToken(token.COLON)
+        e.emitSpace()
+        e.emitToken(token.LBRACE)
+        e.emitNewline()
         e.indent++
         for var i = 0; i < len(stmt.case_.stmts); i++ {
-            emitter.emitTabs(e)
+            e.emitTabs()
             emitStmt(e, stmt.case_.stmts[i])
-            emitter.emitNewline(e)
+            e.emitNewline()
         }
         e.indent--
-        emitter.emitTabs(e)
-        emitter.emitToken(e, token.RBRACE)
-        emitter.emitNewline(e)
+        e.emitTabs()
+        e.emitToken(token.RBRACE)
+        e.emitNewline()
         break
     case ast.STMT_DECL:
         emitDecl(e, stmt.decl.decl)
         break
     case ast.STMT_EMPTY:
-        emitter.emitToken(e, token.SEMICOLON)
+        e.emitToken(token.SEMICOLON)
         break
     case ast.STMT_EXPR:
         emitExpr(e, stmt.expr.x)
-        emitter.emitToken(e, token.SEMICOLON)
+        e.emitToken(token.SEMICOLON)
         break
     case ast.STMT_IF:
         if stmt.if_.init {
-            emitter.emitToken(e, token.LBRACE)
-            emitter.emitNewline(e)
+            e.emitToken(token.LBRACE)
+            e.emitNewline()
             e.indent++
-            emitter.emitTabs(e)
+            e.emitTabs()
             emitStmt(e, stmt.if_.init)
-            emitter.emitNewline(e)
-            emitter.emitTabs(e)
+            e.emitNewline()
+            e.emitTabs()
         }
-        emitter.emitToken(e, token.IF)
-        emitter.emitSpace(e)
-        emitter.emitToken(e, token.LPAREN)
+        e.emitToken(token.IF)
+        e.emitSpace()
+        e.emitToken(token.LPAREN)
         emitExpr(e, stmt.if_.cond)
-        emitter.emitToken(e, token.RPAREN)
-        emitter.emitSpace(e)
+        e.emitToken(token.RPAREN)
+        e.emitSpace()
         emitStmt(e, stmt.if_.body)
         if stmt.if_.else_ {
-            emitter.emitSpace(e)
-            emitter.emitToken(e, token.ELSE)
-            emitter.emitSpace(e)
+            e.emitSpace()
+            e.emitToken(token.ELSE)
+            e.emitSpace()
             emitStmt(e, stmt.if_.else_)
         }
         if stmt.if_.init {
-            emitter.emitNewline(e)
+            e.emitNewline()
             e.indent--
-            emitter.emitTabs(e)
-            emitter.emitToken(e, token.RBRACE)
+            e.emitTabs()
+            e.emitToken(token.RBRACE)
         }
         break
     case ast.STMT_ITER:
-        emitter.emitToken(e, stmt.iter.kind)
-        emitter.emitSpace(e)
-        emitter.emitToken(e, token.LPAREN)
+        e.emitToken(stmt.iter.kind)
+        e.emitSpace()
+        e.emitToken(token.LPAREN)
         if stmt.iter.kind == token.FOR {
             if stmt.iter.init {
                 emitStmt(e, stmt.iter.init)
-                emitter.emitSpace(e)
+                e.emitSpace()
             } else {
-                emitter.emitToken(e, token.SEMICOLON)
-                emitter.emitSpace(e)
+                e.emitToken(token.SEMICOLON)
+                e.emitSpace()
             }
         }
         if stmt.iter.cond {
             emitExpr(e, stmt.iter.cond)
         }
         if stmt.iter.kind == token.FOR {
-            emitter.emitToken(e, token.SEMICOLON)
-            emitter.emitSpace(e)
+            e.emitToken(token.SEMICOLON)
+            e.emitSpace()
             if stmt.iter.post {
                 e.skipSemi = true
                 emitStmt(e, stmt.iter.post)
                 e.skipSemi = false
             }
         }
-        emitter.emitToken(e, token.RPAREN)
-        emitter.emitSpace(e)
+        e.emitToken(token.RPAREN)
+        e.emitSpace()
         emitStmt(e, stmt.iter.body)
         break
     case ast.STMT_JUMP:
-        emitter.emitToken(e, stmt.jump.keyword)
+        e.emitToken(stmt.jump.keyword)
         if stmt.jump.label {
-            emitter.emitSpace(e)
+            e.emitSpace()
             emitExpr(e, stmt.jump.label)
         }
-        emitter.emitToken(e, token.SEMICOLON)
+        e.emitToken(token.SEMICOLON)
         break
     case ast.STMT_LABEL:
         emitExpr(e, stmt.label.label)
-        emitter.emitToken(e, token.COLON)
-        emitter.emitNewline(e)
-        emitter.emitTabs(e)
+        e.emitToken(token.COLON)
+        e.emitNewline()
+        e.emitTabs()
         emitStmt(e, stmt.label.stmt)
         break
     case ast.STMT_POSTFIX:
         emitExpr(e, stmt.postfix.x)
-        emitter.emitToken(e, stmt.postfix.op)
-        emitter.emitToken(e, token.SEMICOLON)
+        e.emitToken(stmt.postfix.op)
+        e.emitToken(token.SEMICOLON)
         break
     case ast.STMT_RETURN:
-        emitter.emitToken(e, token.RETURN)
+        e.emitToken(token.RETURN)
         if stmt.return_.x {
-            emitter.emitSpace(e)
+            e.emitSpace()
             emitExpr(e, stmt.return_.x)
         }
-        emitter.emitToken(e, token.SEMICOLON)
+        e.emitToken(token.SEMICOLON)
         break
     case ast.STMT_SWITCH:
-        emitter.emitToken(e, token.SWITCH)
-        emitter.emitSpace(e)
-        emitter.emitToken(e, token.LPAREN)
+        e.emitToken(token.SWITCH)
+        e.emitSpace()
+        e.emitToken(token.LPAREN)
         emitExpr(e, stmt.switch_.tag)
-        emitter.emitToken(e, token.RPAREN)
-        emitter.emitSpace(e)
-        emitter.emitToken(e, token.LBRACE)
-        emitter.emitNewline(e)
+        e.emitToken(token.RPAREN)
+        e.emitSpace()
+        e.emitToken(token.LBRACE)
+        e.emitNewline()
         for var i = 0; i < len(stmt.switch_.stmts); i++ {
-            emitter.emitTabs(e)
+            e.emitTabs()
             emitStmt(e, stmt.switch_.stmts[i])
         }
-        emitter.emitTabs(e)
-        emitter.emitToken(e, token.RBRACE)
+        e.emitTabs()
+        e.emitToken(token.RBRACE)
         break
     default:
         panic("Unknown stmt")
@@ -399,10 +399,10 @@ fun _emitFields(e *emitter.Emitter, fields []*ast.Decl) {
     for var i = 0; i < len(fields); i++ {
         var field = fields[i]
         if field.field.name || field.field.type.kind == ast.TYPE_STRUCT {
-            emitter.emitTabs(e)
+            e.emitTabs()
             emitDecl(e, field)
-            emitter.emitToken(e, token.SEMICOLON)
-            emitter.emitNewline(e)
+            e.emitToken(token.SEMICOLON)
+            e.emitNewline()
         } else {
             var base = types.baseType(field.field.type)
             _emitFields(e, base.struct_.fields)
@@ -414,22 +414,22 @@ fun emitFuncType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr, recv *ast.D
     if type.func.result != nil {
         emitType(e, type.func.result, name)
     } else {
-        emitter.emitString(e, "void")
-        emitter.emitSpace(e)
+        e.emitString("void")
+        e.emitSpace()
         emitExpr(e, name)
     }
-    emitter.emitToken(e, token.LPAREN)
+    e.emitToken(token.LPAREN)
     if recv != nil {
         emitDecl(e, recv)
     }
     for var i = 0; i < len(type.func.params); i++ {
         if i > 0 || recv != nil {
-            emitter.emitToken(e, token.COMMA)
-            emitter.emitSpace(e)
+            e.emitToken(token.COMMA)
+            e.emitSpace()
         }
         emitDecl(e, type.func.params[i])
     }
-    emitter.emitToken(e, token.RPAREN)
+    e.emitToken(token.RPAREN)
 }
 
 fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
@@ -447,73 +447,73 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         var base = type.star.x
         if base.kind == ast.TYPE_FUNC {
             emitType(e, base.func.result, nil)
-            emitter.emitToken(e, token.LPAREN)
-            emitter.emitToken(e, token.MUL)
+            e.emitToken(token.LPAREN)
+            e.emitToken(token.MUL)
             if name != nil {
                 emitExpr(e, name)
             }
-            emitter.emitToken(e, token.RPAREN)
-            emitter.emitToken(e, token.LPAREN)
+            e.emitToken(token.RPAREN)
+            e.emitToken(token.LPAREN)
             for var i = 0; i < len(base.func.params); i++ {
                 if i > 0 {
-                    emitter.emitToken(e, token.COMMA)
-                    emitter.emitSpace(e)
+                    e.emitToken(token.COMMA)
+                    e.emitSpace()
                 }
                 emitDecl(e, base.func.params[i])
             }
-            emitter.emitToken(e, token.RPAREN)
+            e.emitToken(token.RPAREN)
             name = nil
         } else {
             emitType(e, base, nil)
-            emitter.emitToken(e, token.MUL)
+            e.emitToken(token.MUL)
         }
         break
     case ast.TYPE_ARRAY:
         if type.array_.dynamic {
-            emitter.emitToken(e, token.ARRAY)
-            emitter.emitToken(e, token.LPAREN)
+            e.emitToken(token.ARRAY)
+            e.emitToken(token.LPAREN)
             emitType(e, type.array_.elt, nil)
-            emitter.emitToken(e, token.RPAREN)
+            e.emitToken(token.RPAREN)
         } else {
             emitType(e, type.array_.elt, name)
-            emitter.emitToken(e, token.LBRACK)
+            e.emitToken(token.LBRACK)
             if type.array_.len {
                 emitExpr(e, type.array_.len)
             }
-            emitter.emitToken(e, token.RBRACK)
+            e.emitToken(token.RBRACK)
             name = nil
         }
         break
     case ast.TYPE_ELLIPSIS:
-        emitter.emitToken(e, token.ELLIPSIS)
+        e.emitToken(token.ELLIPSIS)
         break
     case ast.TYPE_ENUM:
-        emitter.emitToken(e, token.ENUM)
+        e.emitToken(token.ENUM)
         if type.enum_.name {
-            emitter.emitSpace(e)
+            e.emitSpace()
             emitExpr(e, type.enum_.name)
         }
         if !e.forwardDecl && len(type.enum_.enums) > 0 {
-            emitter.emitSpace(e)
-            emitter.emitToken(e, token.LBRACE)
-            emitter.emitNewline(e)
+            e.emitSpace()
+            e.emitToken(token.LBRACE)
+            e.emitNewline()
             e.indent++
             for var i = 0; i < len(type.enum_.enums); i++ {
                 var decl = type.enum_.enums[i]
-                emitter.emitTabs(e)
+                e.emitTabs()
                 emitExpr(e, decl.value.name)
                 if decl.value.value {
-                    emitter.emitSpace(e)
-                    emitter.emitToken(e, token.ASSIGN)
-                    emitter.emitSpace(e)
+                    e.emitSpace()
+                    e.emitToken(token.ASSIGN)
+                    e.emitSpace()
                     emitExpr(e, decl.value.value)
                 }
-                emitter.emitToken(e, token.COMMA)
-                emitter.emitNewline(e)
+                e.emitToken(token.COMMA)
+                e.emitNewline()
             }
             e.indent--
-            emitter.emitTabs(e)
-            emitter.emitToken(e, token.RBRACE)
+            e.emitTabs()
+            e.emitToken(token.RBRACE)
         }
         break
     case ast.TYPE_FUNC:
@@ -521,37 +521,37 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         name = nil
         break
     case ast.TYPE_MAP:
-        emitter.emitToken(e, token.MAP)
-        emitter.emitToken(e, token.LPAREN)
+        e.emitToken(token.MAP)
+        e.emitToken(token.LPAREN)
         emitExpr(e, type.map_.val)
-        emitter.emitToken(e, token.RPAREN)
+        e.emitToken(token.RPAREN)
         break
     case ast.TYPE_STRUCT:
-        emitter.emitToken(e, type.struct_.tok)
+        e.emitToken(type.struct_.tok)
         if type.struct_.name {
-            emitter.emitSpace(e)
+            e.emitSpace()
             emitExpr(e, type.struct_.name)
         }
         if !e.forwardDecl && len(type.struct_.fields) > 0 {
-            emitter.emitSpace(e)
-            emitter.emitToken(e, token.LBRACE)
-            emitter.emitNewline(e)
+            e.emitSpace()
+            e.emitToken(token.LBRACE)
+            e.emitNewline()
             e.indent++
             _emitFields(e, type.struct_.fields)
             e.indent--
-            emitter.emitTabs(e)
-            emitter.emitToken(e, token.RBRACE)
+            e.emitTabs()
+            e.emitToken(token.RBRACE)
         }
         break
     default:
         panic(C.sprintf("Unknown type: %d", type.kind))
     }
     if type.is_const {
-        emitter.emitSpace(e)
-        emitter.emitToken(e, token.CONST)
+        e.emitSpace()
+        e.emitToken(token.CONST)
     }
     if name {
-        emitter.emitSpace(e)
+        e.emitSpace()
         emitExpr(e, name)
     }
 }
@@ -564,22 +564,22 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
     case ast.DECL_FUNC:
         emitFuncType(e, decl.func.type, decl.func.name, decl.func.recv)
         if !e.forwardDecl && decl.func.body {
-            emitter.emitSpace(e)
+            e.emitSpace()
             emitStmt(e, decl.func.body)
         } else {
-            emitter.emitToken(e, token.SEMICOLON)
+            e.emitToken(token.SEMICOLON)
         }
         break
     case ast.DECL_PRAGMA:
-        emitter.emitString(e, "//")
-        emitter.emitToken(e, token.HASH)
-        emitter.emitString(e, decl.pragma.lit)
+        e.emitString("//")
+        e.emitToken(token.HASH)
+        e.emitString(decl.pragma.lit)
         break
     case ast.DECL_TYPE:
-        emitter.emitToken(e, token.TYPEDEF)
-        emitter.emitSpace(e)
+        e.emitToken(token.TYPEDEF)
+        e.emitSpace()
         emitType(e, decl.type.type, decl.type.name)
-        emitter.emitToken(e, token.SEMICOLON)
+        e.emitToken(token.SEMICOLON)
         break
     case ast.DECL_VALUE:
         if e.forwardDecl {
@@ -596,17 +596,17 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
             }
         }
         if e.forwardDecl && decl.value.value {
-            emitter.emitToken(e, token.EXTERN)
-            emitter.emitSpace(e)
+            e.emitToken(token.EXTERN)
+            e.emitSpace()
         }
         emitType(e, decl.value.type, decl.value.name)
         if !e.forwardDecl && decl.value.value {
-            emitter.emitSpace(e)
-            emitter.emitToken(e, token.ASSIGN)
-            emitter.emitSpace(e)
+            e.emitSpace()
+            e.emitToken(token.ASSIGN)
+            e.emitSpace()
             emitExpr(e, decl.value.value)
         }
-        emitter.emitToken(e, token.SEMICOLON)
+        e.emitToken(token.SEMICOLON)
         break
     default:
         panic("Unknown decl")
@@ -615,22 +615,22 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
 }
 
 fun emitFile(e *emitter.Emitter, file *ast.File) {
-    emitter.emitString(e, "//")
-    emitter.emitString(e, file.filename)
-    emitter.emitNewline(e)
-    emitter.emitNewline(e)
+    e.emitString("//")
+    e.emitString(file.filename)
+    e.emitNewline()
+    e.emitNewline()
     if file.name != nil {
-        emitter.emitToken(e, token.PACKAGE)
-        emitter.emitToken(e, token.LPAREN)
+        e.emitToken(token.PACKAGE)
+        e.emitToken(token.LPAREN)
         emitExpr(e, file.name)
-        emitter.emitToken(e, token.RPAREN)
-        emitter.emitToken(e, token.SEMICOLON)
-        emitter.emitNewline(e)
+        e.emitToken(token.RPAREN)
+        e.emitToken(token.SEMICOLON)
+        e.emitNewline()
     }
     for var i = 0; len(file.decls); i++ {
-        emitter.emitNewline(e)
+        e.emitNewline()
         emitDecl(e, file.decls[i])
-        emitter.emitNewline(e)
+        e.emitNewline()
     }
 }
 
@@ -638,9 +638,9 @@ fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
     for var i = 0; i < len(scope.keys); i++ {
         var obj = scope.objects[scope.keys[i]]
         if obj.kind == kind {
-            emitter.emitNewline(e)
+            e.emitNewline()
             emitDecl(e, obj.decl)
-            emitter.emitNewline(e)
+            e.emitNewline()
         }
         if kind == ast.ObjKind_FUN && obj.kind == ast.ObjKind_TYP {
             if var scope *ast.Scope = obj.data; scope {
