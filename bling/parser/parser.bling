@@ -752,29 +752,31 @@ fun (p *Parser) parseSimpleStmt(labelOk bool) *ast.Stmt {
 
 fun (p *Parser) parseForStmt() *ast.Stmt {
     var pos = p.expect(token.FOR)
-    var prevLev = p.exprLev
-    p.exprLev = -1
     var init *ast.Stmt = nil
-    if !p.accept(token.SEMICOLON) {
-        switch p.tok {
-        case token.VAR:
-            init = p.parseStmt()
-            break
-        default:
-            init = p.parseSimpleStmt(false)
-            break
-        }
-    }
     var cond *ast.Expr = nil
-    if p.tok != token.SEMICOLON {
-        cond = p.parseRhs()
-    }
-    p.expect(token.SEMICOLON)
     var post *ast.Stmt = nil
     if p.tok != token.LBRACE {
-        post = p.parseSimpleStmt(false)
+        var prevLev = p.exprLev
+        p.exprLev = -1
+        if !p.accept(token.SEMICOLON) {
+            switch p.tok {
+            case token.VAR:
+                init = p.parseStmt()
+                break
+            default:
+                init = p.parseSimpleStmt(false)
+                break
+            }
+        }
+        if p.tok != token.SEMICOLON {
+            cond = p.parseRhs()
+        }
+        p.expect(token.SEMICOLON)
+        if p.tok != token.LBRACE {
+            post = p.parseSimpleStmt(false)
+        }
+        p.exprLev = prevLev
     }
-    p.exprLev = prevLev
     var body = p.parseBlockStmt()
     var stmt = ast.Stmt{
         kind: ast.STMT_ITER,
