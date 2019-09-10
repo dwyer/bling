@@ -495,7 +495,7 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
     case ast.EXPR_TERNARY:
         if expr.ternary.x {
             var t1 = c.checkExpr(expr.ternary.cond)
-            assert(isBoolean(t1))
+            // assert(isBoolean(t1))
             var t2 = c.checkExpr(expr.ternary.x)
             var t3 = c.checkExpr(expr.ternary.y)
             if !areComparable(t2, t3) {
