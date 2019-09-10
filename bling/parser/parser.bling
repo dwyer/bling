@@ -217,7 +217,7 @@ fun (p *Parser) parseElement() *ast.Expr {
         var key = value
         var x = ast.Expr{
             kind: ast.EXPR_KEY_VALUE,
-            key_value: {
+            keyValue: {
                 key: key,
                 value: p.parseValue(),
             },
@@ -665,7 +665,7 @@ fun (p *Parser) parseEnumType() *ast.Expr {
 fun (p *Parser) parseQualifiedType(tok token.Token) *ast.Expr {
     p.expect(tok)
     var type = p.parseType()
-    type.is_const = true
+    type.isConst = true
     return type
 }
 

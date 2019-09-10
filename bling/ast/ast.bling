@@ -202,7 +202,7 @@ typ UnaryExpr struct {
 
 typ Expr struct {
     Node
-    is_const bool
+    isConst bool
     union {
         array_ ArrayType
         basic BasicLit
@@ -217,7 +217,7 @@ typ Expr struct {
         func FuncExpr
         ident Ident
         index IndexExpr
-        key_value KeyValueExpr
+        keyValue KeyValueExpr
         map_ MapType
         native NativeType
         paren ParenExpr
@@ -448,7 +448,7 @@ fun (x *Expr) pos() token.Pos {
     case EXPR_INDEX:
         return x.index.x.pos()
     case EXPR_KEY_VALUE:
-        return x.key_value.key.pos()
+        return x.keyValue.key.pos()
     case EXPR_PAREN:
         return x.paren.pos
     case EXPR_SELECTOR:

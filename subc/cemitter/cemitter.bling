@@ -130,18 +130,18 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         }
         break
     case ast.EXPR_KEY_VALUE:
-        if expr.key_value.isArray {
+        if expr.keyValue.isArray {
             e.emitToken(token.LBRACK)
-            emitExpr(e, expr.key_value.key)
+            emitExpr(e, expr.keyValue.key)
             e.emitToken(token.RBRACK)
         } else {
             e.emitToken(token.PERIOD)
-            emitExpr(e, expr.key_value.key)
+            emitExpr(e, expr.keyValue.key)
         }
         e.emitSpace()
         e.emitToken(token.ASSIGN)
         e.emitSpace()
-        emitExpr(e, expr.key_value.value)
+        emitExpr(e, expr.keyValue.value)
         break
     case ast.EXPR_PAREN:
         e.emitToken(token.LPAREN)
@@ -546,7 +546,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
     default:
         panic(C.sprintf("Unknown type: %d", type.kind))
     }
-    if type.is_const {
+    if type.isConst {
         e.emitSpace()
         e.emitToken(token.CONST)
     }

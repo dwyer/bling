@@ -165,12 +165,12 @@ fun (c *Checker) checkArrayLit(x *ast.Expr) {
     for var i = 0; i < len(x.composite.list); i++ {
         var elt = x.composite.list[i]
         if elt.kind == ast.EXPR_KEY_VALUE {
-            elt.key_value.isArray = true
-            var indexT = c.checkExpr(elt.key_value.key)
+            elt.keyValue.isArray = true
+            var indexT = c.checkExpr(elt.keyValue.key)
             if !isInteger(indexT) {
-                c.error(elt.pos(), C.sprintf("not a valid index: %s", exprString(elt.key_value.key)))
+                c.error(elt.pos(), C.sprintf("not a valid index: %s", exprString(elt.keyValue.key)))
             }
-            elt = elt.key_value.value
+            elt = elt.keyValue.value
         }
         if elt.kind == ast.EXPR_COMPOSITE_LIT {
             if elt.composite.type == nil {
@@ -192,9 +192,9 @@ fun (c *Checker) checkStructLit(x *ast.Expr) {
         var elt = x.composite.list[i]
         var fieldT *ast.Expr = nil
         if elt.kind == ast.EXPR_KEY_VALUE {
-            elt.key_value.isArray = false
+            elt.keyValue.isArray = false
             expectKV = true
-            var key = elt.key_value.key
+            var key = elt.keyValue.key
             if !ast.isIdent(key) {
                 c.error(x.pos(), "key must be an identifier")
             }
@@ -206,7 +206,7 @@ fun (c *Checker) checkStructLit(x *ast.Expr) {
             }
             key.ident.obj = field.field.name.ident.obj
             fieldT = field.field.type
-            elt = elt.key_value.value
+            elt = elt.keyValue.value
         } else {
             if expectKV {
                 c.error(x.pos(), "expected a key/value expr")
@@ -538,7 +538,7 @@ fun (c *Checker) checkStmt(stmt *ast.Stmt) {
             c.error(stmt.pos(), C.sprintf("invalid lvalue `%s`", exprString(stmt.assign.x)))
         }
         var a = c.checkExpr(stmt.assign.x)
-        if a.is_const {
+        if a.isConst {
             c.error(stmt.pos(), "cannot assign to const var")
         }
         var b = c.checkExpr(stmt.assign.y)

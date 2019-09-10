@@ -382,7 +382,7 @@ fun declarator(p *parser.Parser, typePtr **ast.Expr) *ast.Expr {
 
 fun typeQualifier(p *parser.Parser, type *ast.Expr) *ast.Expr {
     if p.accept(token.CONST) {
-        type.is_const = true
+        type.isConst = true
     }
     return type
 }
@@ -529,7 +529,7 @@ fun initializer(p *parser.Parser) *ast.Expr {
         if key {
             var x = ast.Expr{
                 kind: ast.EXPR_KEY_VALUE,
-                key_value: {
+                keyValue: {
                     key: key,
                     value: value,
                     isArray: isArray,
@@ -899,7 +899,7 @@ fun declarationSpecifiers(p *parser.Parser, isTop bool) *ast.Expr {
     var isConst = p.accept(token.CONST)
     var type = typeSpecifier(p)
     if isConst {
-        type.is_const = isConst
+        type.isConst = isConst
     }
     return type
 }

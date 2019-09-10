@@ -140,10 +140,10 @@ fun emitExpr(e *Emitter, expr *ast.Expr) {
         e.emitToken(token.RBRACK)
         break
     case ast.EXPR_KEY_VALUE:
-        emitExpr(e, expr.key_value.key)
+        emitExpr(e, expr.keyValue.key)
         e.emitToken(token.COLON)
         e.emitSpace()
-        emitExpr(e, expr.key_value.value)
+        emitExpr(e, expr.keyValue.value)
         break
     case ast.EXPR_PAREN:
         e.emitToken(token.LPAREN)
@@ -349,12 +349,12 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
     }
 }
 
-fun is_void(type *ast.Expr) bool {
+fun isVoid(type *ast.Expr) bool {
     return type == nil || (type.kind == ast.EXPR_IDENT && runtime.streq(type.ident.name, "void"))
 }
 
 fun emitType(e *Emitter, type *ast.Expr) {
-    if type.is_const {
+    if type.isConst {
         e.emitToken(token.CONST)
         e.emitSpace()
     }
@@ -375,7 +375,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
                 emitDecl(e, type.func.params[i])
             }
             e.emitToken(token.RPAREN)
-            if !is_void(type.func.result) {
+            if !isVoid(type.func.result) {
                 e.emitSpace()
                 emitType(e, type.func.result)
             }
@@ -438,7 +438,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
             emitDecl(e, type.func.params[i])
         }
         e.emitToken(token.RPAREN)
-        if !is_void(type.func.result) {
+        if !isVoid(type.func.result) {
             e.emitSpace()
             emitType(e, type.func.result)
         }
