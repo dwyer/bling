@@ -384,7 +384,7 @@ fun (p *Parser) parseUnaryExpr() *ast.Expr {
 
 fun (p *Parser) parseBinaryExpr(prec1 int) *ast.Expr {
     var x = p.parseUnaryExpr()
-    for ;; {
+    for {
         var op = p.tok
         var oprec = op.precedence()
         if oprec < prec1 {
@@ -500,7 +500,7 @@ fun (p *Parser) parseStructOrUnionType(keyword token.Token) *ast.Expr {
     p.expect(keyword)
     var fields = []*ast.Decl{}
     if p.accept(token.LBRACE) {
-        for ;; {
+        for {
             var field = p.parseFieldDecl()
             append(fields, field)
             if p.tok == token.RBRACE {
@@ -553,7 +553,7 @@ fun (p *Parser) parseParam(anon bool) *ast.Decl {
 
 fun (p *Parser) parseParameterList(anon bool) []*ast.Decl {
     var params = []*ast.Decl{}
-    for ;; {
+    for {
         var param = p.parseParam(false)
         append(params, param)
         if !p.accept(token.COMMA) {
@@ -864,7 +864,7 @@ fun (p *Parser) parseSwitchStmt() *ast.Stmt {
         var exprs = []*ast.Expr{}
         var pos = p.pos
         if p.accept(token.CASE) {
-            for ;; {
+            for {
                 var expr = p.parseRhs()
                 append(exprs, expr)
                 if !p.accept(token.COMMA) {

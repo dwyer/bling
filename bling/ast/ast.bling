@@ -412,7 +412,7 @@ fun isVoid(x *Expr) bool {
 }
 
 fun isVoidPtr(x *Expr) bool {
-    for ;; {
+    for {
         switch x.kind {
         case EXPR_IDENT:
             if x.ident.obj == nil {

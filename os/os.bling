@@ -155,7 +155,7 @@ fun openDir(name string, e **runtime.Error) *File {
 fun readdirnames(file *File, e **runtime.Error) []string {
     var arr = []string{}
     var dp sys.Dir = typ sys.Dir(file.fd)
-    for ;; {
+    for {
         var err *runtime.Error = nil
         var dirent = sys.readdir(dp, &err)
         if dirent == nil {

@@ -62,7 +62,7 @@ fun typeString(expr *ast.Expr) string {
 }
 
 fun isType(expr *ast.Expr) bool {
-    for ;; {
+    for {
         switch expr.kind {
         case ast.EXPR_IDENT:
             if expr.ident.obj == nil {
@@ -84,7 +84,7 @@ fun isType(expr *ast.Expr) bool {
 }
 
 fun getTypeAlias(t *ast.Expr) *ast.Expr {
-    for ;; {
+    for {
         switch t.kind {
         case ast.EXPR_SELECTOR:
             t = t.selector.sel
@@ -125,7 +125,7 @@ fun makePtr(type *ast.Expr) *ast.Expr {
 }
 
 fun underlyingType(t *ast.Expr) *ast.Expr {
-    for ;; {
+    for {
         switch t.kind {
         case ast.EXPR_IDENT:
             if t.ident.obj == nil {
@@ -149,7 +149,7 @@ fun underlyingType(t *ast.Expr) *ast.Expr {
 }
 
 fun baseType(t *ast.Expr) *ast.Expr {
-    for ;; {
+    for {
         switch t.kind {
         case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
             t = underlyingType(t)

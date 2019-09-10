@@ -9,7 +9,7 @@ fun readAll(file *os.File, error **runtime.Error) []char {
     var err *runtime.Error = nil
     var b = bytes.Buffer{}
     var buf = runtime.makebuf(1024)
-    for ;; {
+    for {
         var n = file.read(buf, &err)
         if err != nil {
             goto end

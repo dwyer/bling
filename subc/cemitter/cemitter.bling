@@ -8,7 +8,7 @@ import "bling/types"
 import "runtime"
 
 fun isSimpleType(type *ast.Expr) bool {
-    for ;; {
+    for {
         switch type.kind {
         case ast.TYPE_STRUCT:
             return false

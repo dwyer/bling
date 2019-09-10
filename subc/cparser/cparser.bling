@@ -24,7 +24,7 @@ fun postfixExpr(p *parser.Parser, x *ast.Expr) *ast.Expr {
     if x == nil {
         x = p.parseOperand()
     }
-    for ;; {
+    for {
         switch p.tok {
         case token.LBRACK:
             p.expect(token.LBRACK)
@@ -183,7 +183,7 @@ fun castExpr(p *parser.Parser) *ast.Expr {
 
 fun binaryExpr(p *parser.Parser, prec1 int) *ast.Expr {
     var x = castExpr(p)
-    for ;; {
+    for {
         var op = p.tok
         var oprec = op.precedence()
         if oprec < prec1 {
@@ -242,7 +242,7 @@ fun structOrUnionSpec(p *parser.Parser) *ast.Expr {
     }
     var fields = []*ast.Decl{}
     if p.accept(token.LBRACE) {
-        for ;; {
+        for {
             var pos = p.pos
             var type = specifierQualifierList(p)
             var name = declarator(p, &type)
@@ -283,7 +283,7 @@ fun enumSpec(p *parser.Parser) *ast.Expr {
     }
     var enums = []*ast.Decl{}
     if p.accept(token.LBRACE) {
-        for ;; {
+        for {
             var decl = ast.Decl{
                 kind: ast.DECL_VALUE,
                 pos: p.pos,
@@ -453,7 +453,7 @@ fun abstractDeclarator(p *parser.Parser, type *ast.Expr) *ast.Decl {
         p.expect(token.RPAREN)
         isPtr = true
     }
-    for ;; {
+    for {
         if p.accept(token.LBRACK) {
             var len *ast.Expr = nil
             if p.tok != token.RBRACK {

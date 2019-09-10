@@ -116,7 +116,7 @@ fun (s *Scanner) scanNumber(tokp *token.Token) string {
             s.next()
         }
     }
-    for ;; {
+    for {
         if !(isNumeric(s.ch, kind) || s.ch == '.') {
             break
         }
@@ -144,7 +144,7 @@ fun (s *Scanner) scanRune() string {
     var offs = s.offset
     var n = 0
     var escape = false
-    for ;; {
+    for {
         if n > 0 && s.ch == '\'' && !escape {
             break
         }
@@ -160,7 +160,7 @@ fun (s *Scanner) scanString() string {
     var offs = s.offset
     var n = 0
     var escape = false
-    for ;; {
+    for {
         if n > 0 && s.ch == '"' && !escape {
             break
         }
