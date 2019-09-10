@@ -35,7 +35,7 @@ fun join(a [?]string, size int, sep string) string {
         b.writeChars(sep, len(sep), nil)
         b.writeChars(a[i], len(a[i]), nil)
     }
-    return b.toString()
+    return b.string()
 }
 
 fun lastIndexByte(b string, c char) int {
@@ -62,7 +62,7 @@ fun (b *Buffer) bytes() *char {
     return runtime.Array_get(typ *runtime.Slice(b), 1, 0, nil)
 }
 
-fun (b *Buffer) toString() string {
+fun (b *Buffer) string() string {
     b.init()
     return runtime.bytesToString(*b)
 }

@@ -85,7 +85,7 @@ fun (p *Parser) errorExpected(pos token.Pos, msg string) {
             buf.writeByte('\'', nil)
         }
     }
-    msg = buf.toString()
+    msg = buf.string()
     p.error(pos, msg)
     delete(msg)
 }

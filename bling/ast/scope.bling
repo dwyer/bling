@@ -70,7 +70,7 @@ fun (s *Scope) print() {
         var iter = runtime.NewMapIter(&s.objects)
         var key string = nil
         while runtime.MapIter_next(&iter, &key, nil) {
-            var s = C.sprintf("%s- %s", buf.toString(), key)
+            var s = C.sprintf("%s- %s", buf.string(), key)
             print(s)
             delete(s)
         }

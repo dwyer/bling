@@ -45,7 +45,7 @@ fun clean(path string) string {
     if out.len() == 0 {
         return runtime.strdup(".")
     }
-    return out.toString()
+    return out.string()
 }
 
 fun dir(path string) string {

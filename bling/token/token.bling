@@ -362,7 +362,7 @@ fun (f *File) lineString(line int) string {
         i++
         ch = f.src[i]
     }
-    return buf.toString()
+    return buf.string()
 }
 
 fun newFileSet() *FileSet {

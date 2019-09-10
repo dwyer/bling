@@ -19,7 +19,7 @@ fun (e *Emitter) bytes() []char {
 }
 
 fun (e *Emitter) string() string {
-    return e.buf.toString()
+    return e.buf.string()
 }
 
 fun (e *Emitter) emitBytes(s []char) {
