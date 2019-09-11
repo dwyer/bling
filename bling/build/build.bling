@@ -264,10 +264,9 @@ fun buildBlingPackage(b *Builder, path string) *Package {
             append(cmd, typ string("-o"))
             append(cmd, pkg.libPath)
             append(cmd, pkg.objPath)
-            let pkg *Package = nil
-            let iter = runtime.NewMapIter(&b.pkgs)
-            while runtime.MapIter_next(&iter, nil, &pkg) {
-                append(cmd, pkg.libPath)
+            var key string
+            for let iter = runtime.newMapIter(&b.pkgs); runtime.MapIter_next(&iter, &key); {
+                append(cmd, b.pkgs[key].libPath)
             }
             execute(&cmd)
         } else {

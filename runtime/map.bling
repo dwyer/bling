@@ -151,14 +151,14 @@ typ MapIter struct {
     _idx int
 }
 
-fun NewMapIter(m *const Map) MapIter {
+fun newMapIter(m *const Map) MapIter {
     let iter MapIter = {
         _map: m,
     }
     return iter
 }
 
-fun MapIter_next(m *MapIter, key *string, val voidptr) int {
+fun MapIter_next(m *MapIter, key *string) bool {
     while m._idx < len(m._map._pairs) {
         let p = &m._map._pairs[m._idx]
         m._idx++
@@ -166,11 +166,8 @@ fun MapIter_next(m *MapIter, key *string, val voidptr) int {
             if key {
                 *key = p.key
             }
-            if val {
-                memcpy(val, p.val, m._map._valSize)
-            }
-            return 1
+            return true
         }
     }
-    return 0
+    return false
 }
