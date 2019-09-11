@@ -198,22 +198,22 @@ fun (info *FileInfo) name() string {
 }
 
 fun (info *FileInfo) size() u64 {
-    let st = typ *sys.Stat(info.sys())
+    let st = (*sys.Stat)(info.sys())
     return st.size
 }
 
 fun (info *FileInfo) mode() FileMode {
-    let st = typ *sys.Stat(info.sys())
+    let st = (*sys.Stat)(info.sys())
     return st.mode
 }
 
 fun (info *FileInfo) modTime() Time {
-    let st = typ *sys.Stat(info.sys())
+    let st = (*sys.Stat)(info.sys())
     return st.mtime
 }
 
 fun (info *FileInfo) isDir() bool {
-    let st = typ *sys.Stat(info.sys())
+    let st = (*sys.Stat)(info.sys())
     return ((st.mode & 0170000) == 0040000)
 }
 

@@ -364,6 +364,7 @@ fun (p *Parser) parseUnaryExpr() *ast.Expr {
         if p.tok == token.LBRACE {
             return p.parseLiteralValue(type)
         }
+        p.expect(token.LPAREN)
         let y = ast.Expr{
             kind: ast.EXPR_CAST,
             cast: {
@@ -372,6 +373,7 @@ fun (p *Parser) parseUnaryExpr() *ast.Expr {
                 expr: p.parseUnaryExpr(),
             },
         }
+        p.expect(token.RPAREN)
         return &&y
     default:
         return p.parsePrimaryExpr()

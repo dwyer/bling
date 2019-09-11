@@ -157,6 +157,9 @@ fun (c *Checker) checkIdent(expr *ast.Expr) *ast.Expr {
     if expr.ident.obj == nil {
         c.error(expr.pos(), "unresolved identifier")
     }
+    if expr.ident.obj.kind == ast.ObjKind_TYP {
+        return nil
+    }
     return declType(expr.ident.obj.decl)
 }
 
@@ -273,6 +276,9 @@ fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
     }
     var type = c.checkExpr(expr.selector.x)
     var isArgPtr = false
+    while type.kind == ast.EXPR_PAREN {
+        type = type.paren.x
+    }
     if type.kind == ast.EXPR_STAR {
         type = type.star.x
         isArgPtr = true
@@ -326,6 +332,16 @@ fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
 fun (c *Checker) checkCallExpr(expr *ast.Expr) *ast.Expr {
     let func = expr.call.func
     var type = c.checkExpr(func)
+    if type == nil {
+        if isType(func) {
+            assert(len(expr.call.args) == 1)
+            c.checkExpr(expr.call.args[0])
+            return func
+        } else {
+            c.error(expr.call.func.pos(), "not a func")
+            return nil
+        }
+    }
     if type.kind == ast.TYPE_BUILTIN {
         let n = len(expr.call.args)
         if type.builtin.variadic {
@@ -397,10 +413,6 @@ fun (c *Checker) checkCallExpr(expr *ast.Expr) *ast.Expr {
             }
         }
         return type.func.result
-    } else if isType(expr.call.func) {
-        assert(len(expr.call.args) == 1)
-        c.checkExpr(expr.call.args[0])
-        return expr.call.func
     } else {
         c.error(expr.pos(), C.sprintf("`%s` is a `%s` not a func",
         exprString(expr.call.func),
@@ -483,6 +495,9 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
         return c.checkSelector(expr)
     case ast.EXPR_STAR:
         let type = c.checkExpr(expr.star.x)
+        if type == nil {
+            return nil
+        }
         let base = baseType(type)
         switch base.kind {
         case ast.EXPR_STAR:
@@ -494,7 +509,8 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
             if isString(type) {
                 return c.lookupIdent("char")
             }
-            c.error(expr.pos(), C.sprintf("derefencing a non-pointer `%s`", typeString(type)))
+            c.error(expr.pos(), C.sprintf("derefencing a non-pointer `%s`",
+                typeString(type)))
             return nil
         }
     case ast.EXPR_TERNARY:
@@ -531,7 +547,7 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
         }
         return type
     default:
-        c.error(expr.pos(), "unknown expr")
+        c.checkType(expr)
         return nil
     }
 }

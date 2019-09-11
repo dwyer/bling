@@ -55,7 +55,7 @@ fun charstobytes(s *const char) []char { // TODO DELETE THIS
         _cap: n,
         _array: memdup(s, n),
     }
-    return typ []char(buf)
+    return []char(buf)
 }
 
 fun stringToBytes(s string) []char {
@@ -65,7 +65,7 @@ fun stringToBytes(s string) []char {
         _cap: n,
         _array: memdup(s, n),
     }
-    return typ []char(buf)
+    return []char(buf)
 }
 
 fun bytesToString(b []char) string {
@@ -82,5 +82,5 @@ fun makebuf(n int) []char {
         _cap: n,
         _array: malloc(n),
     }
-    return typ []char(buf)
+    return []char(buf)
 }

@@ -34,7 +34,7 @@ fun execute(cmd *[]string) {
     if VERBOSE {
         printStrArray(*cmd)
     }
-    let args = runtime.nilArray(typ *runtime.Slice(cmd), sizeof(string))
+    let args = runtime.nilArray((*runtime.Slice)(cmd), sizeof(string))
     let code = os.exec(args, nil)
     if code != 0 {
         panic(C.sprintf("- failed with code %d", code))

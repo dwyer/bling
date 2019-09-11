@@ -23,7 +23,7 @@ fun Array_get(s *const Slice, size int, i int, dst voidptr) voidptr {
     let ref = &s._array[i * size]
     if dst {
         if size == 1 {
-            *typ *u8(dst) = *ref
+            *(*u8)(dst) = *ref
         } else {
             memcpy(dst, ref, size)
         }
@@ -63,7 +63,7 @@ fun Array_setLen(s *Slice, size int, len int) {
 
 fun Array_set(s *Slice, size int, i int, x *const void) {
     if size == 1 {
-        s._array[i] = *typ *u8(x)
+        s._array[i] = *(*u8)(x)
     } else {
         memcpy(Array_get(s, size, i, nil), x, size)
     }

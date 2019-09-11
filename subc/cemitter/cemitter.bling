@@ -516,6 +516,10 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
     case ast.EXPR_IDENT:
         emitExpr(e, type)
         break
+    case ast.EXPR_PAREN:
+        emitType(e, type.paren.x, name)
+        name = nil
+        break
     case ast.EXPR_SELECTOR:
         emitExpr(e, type.selector.sel) // XXX
         break

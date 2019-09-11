@@ -66,6 +66,9 @@ fun isType(expr *ast.Expr) bool {
         switch expr.kind {
         case ast.EXPR_IDENT:
             return expr.ident.obj.kind == ast.ObjKind_TYP
+        case ast.EXPR_PAREN:
+            expr = expr.paren.x
+            break
         case ast.EXPR_SELECTOR:
             expr = expr.selector.sel
             break
@@ -151,6 +154,9 @@ fun baseType(t *ast.Expr) *ast.Expr {
         case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
             t = underlyingType(t)
             break
+        case ast.EXPR_PAREN:
+            t = t.paren.x
+            break
         case ast.EXPR_STAR, ast.TYPE_ARRAY, ast.TYPE_ENUM, ast.TYPE_FUNC,
                 ast.TYPE_MAP, ast.TYPE_NATIVE, ast.TYPE_STRUCT:
             return t
@@ -205,9 +211,10 @@ fun exprType(x *ast.Expr) *ast.Expr {
     case ast.EXPR_SELECTOR:
         return exprType(x.selector.sel)
     case ast.EXPR_STAR:
-        let t = exprType(x.star.x)
-        assert(t.kind == ast.EXPR_STAR)
-        return t.star.x
+        if let t = exprType(x.star.x); t.kind == ast.EXPR_STAR {
+            return t.star.x
+        }
+        break
     default:
         break
     }
@@ -402,6 +409,10 @@ fun exprObject(x *ast.Expr) *ast.Object {
             x = x.star.x
             break
         default:
+            if x.kind == ast.EXPR_CALL && isType(x.call.func) {
+                x = x.call.args[0]
+                break
+            }
             return nil
         }
     }

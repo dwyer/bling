@@ -362,6 +362,11 @@ fun emitType(e *Emitter, type *ast.Expr) {
     case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
         emitExpr(e, type)
         break
+    case ast.EXPR_PAREN:
+        e.emitToken(token.LPAREN)
+        emitType(e, type.paren.x)
+        e.emitToken(token.RPAREN)
+        break
     case ast.EXPR_STAR:
         type = type.star.x
         if type.kind == ast.TYPE_FUNC {
