@@ -112,7 +112,7 @@ fun (file *File) write(b []char, e **runtime.Error) int {
 fun (file *File) close(e **runtime.Error) {
     let err *runtime.Error = nil
     if file._isDir {
-        sys.closedir(typ voidptr(file.fd), &err)
+        sys.closedir(voidptr(file.fd), &err)
     } else {
         sys.close(file.fd, &err)
     }
@@ -147,14 +147,14 @@ fun openDir(name string, e **runtime.Error) *File {
         _throwPathError(name, err, e)
         return nil
     }
-    let file = newFile(typ uintptr(dp), name)
+    let file = newFile(uintptr(dp), name)
     file._isDir = true
     return file
 }
 
 fun readdirnames(file *File, e **runtime.Error) []string {
     let arr = []string{}
-    let dp sys.Dir = typ sys.Dir(file.fd)
+    let dp sys.Dir = sys.Dir(file.fd)
     for {
         let err *runtime.Error = nil
         let dirent = sys.readdir(dp, &err)

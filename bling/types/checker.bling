@@ -101,7 +101,7 @@ fun (c *Checker) checkType(t *ast.Expr) {
         c.checkType(t.array_.elt)
         if t.array_.len {
             let len = c.checkExpr(t.array_.len)
-            typ void(len)
+            void(len)
         }
         break
     case ast.TYPE_ELLIPSIS:

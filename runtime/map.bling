@@ -121,7 +121,7 @@ fun Map_get(m *const Map, key string, val voidptr) bool {
 
 fun Map_set(m *Map, key string, val *const void) {
     _mapSetUnsafe(m, key, val)
-    if let load_factor = typ float(Map_len(*m)) / _mapCap(m); load_factor >= MAP_LOAD_FACTOR {
+    if let load_factor = float(Map_len(*m)) / _mapCap(m); load_factor >= MAP_LOAD_FACTOR {
         let newCap = _mapCap(m) * 2
         let pairs = m._pairs
         m._pairs = []MapPair{}
