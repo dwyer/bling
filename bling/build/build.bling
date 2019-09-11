@@ -84,11 +84,11 @@ fun newBuilder(fset *token.FileSet) *Builder {
 fun genObj(b *Builder, dst string, src string) {
     let cmd = []string{}
     append(cmd, CC_PATH)
-    append(cmd, typ string("-g"))
-    append(cmd, typ string("-I"))
+    append(cmd, "-g")
+    append(cmd, "-I")
     append(cmd, INCL_PATH)
-    append(cmd, typ string("-c"))
-    append(cmd, typ string("-o"))
+    append(cmd, "-c")
+    append(cmd, "-o")
     append(cmd, dst)
     append(cmd, src)
     mkdirForFile(dst)
@@ -230,7 +230,7 @@ fun buildCPackage(b *Builder, path string) *Package {
         genHeader(b, &pkg)
         let cmd = []string{}
         append(cmd, AR_PATH)
-        append(cmd, typ string("rsc"))
+        append(cmd, "rsc")
         append(cmd, pkg.libPath)
         for var i = 0; i < len(files); i++ {
             let file = files[i]
@@ -260,8 +260,8 @@ fun buildBlingPackage(b *Builder, path string) *Package {
         if pkg.isCmd {
             let cmd = []string{}
             append(cmd, CC_PATH)
-            append(cmd, typ string("-g"))
-            append(cmd, typ string("-o"))
+            append(cmd, "-g")
+            append(cmd, "-o")
             append(cmd, pkg.libPath)
             append(cmd, pkg.objPath)
             var key string
@@ -272,7 +272,7 @@ fun buildBlingPackage(b *Builder, path string) *Package {
         } else {
             let cmd = []string{}
             append(cmd, AR_PATH)
-            append(cmd, typ string("rsc"))
+            append(cmd, "rsc")
             append(cmd, pkg.libPath)
             append(cmd, pkg.objPath)
             execute(&cmd)
