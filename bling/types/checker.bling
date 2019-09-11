@@ -537,7 +537,7 @@ fun (c *Checker) checkStmt(stmt *ast.Stmt) {
         }
         if let obj = exprObject(stmt.assign.x); obj.kind == ast.ObjKind_VAL {
             if obj.decl.value.kind == token.LET {
-                c.warning(stmt.assign.x.pos(), "cannot assign to a let value")
+                c.error(stmt.assign.x.pos(), "cannot assign to a let value")
             }
         } else {
             c.error(stmt.assign.x.pos(), "invalid lvalue")
