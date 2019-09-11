@@ -36,4 +36,5 @@
 * Implement `import ( ... )` decl.
 * Make semicolons optional before `}` and `)'.
 * ast: Replace CastExpr with CallExpr.
-* swtich/case: Implicit break.
+* switch/case: Implicit break.
+* prepend $ to all C keywords; then disable C keywords in Bling.
