@@ -387,7 +387,7 @@ fun isExprType(x *Expr) bool {
 }
 
 fun resolve(scope *Scope, ident *Expr) bool {
-    var obj = scope.deepLookup(ident.ident.name)
+    let obj = scope.deepLookup(ident.ident.name)
     if obj != nil {
         ident.ident.obj = obj
         return true

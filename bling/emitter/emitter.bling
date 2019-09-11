@@ -233,8 +233,8 @@ fun emitStmt(e *Emitter, stmt *ast.Stmt) {
         }
         e.emitToken(token.COLON)
         if len(stmt.case_.stmts) > 0 {
-            var first = stmt.case_.stmts[0]
-            var oneline = false
+            let first = stmt.case_.stmts[0]
+            let oneline = false
             switch first.kind {
             case ast.STMT_BLOCK, ast.STMT_JUMP, ast.STMT_RETURN:
                 break
@@ -412,7 +412,7 @@ fun emitType(e *Emitter, type *ast.Expr) {
             e.emitNewline()
             e.indent++
             for var i = 0; i < len(type.enum_.enums); i++ {
-                var decl = type.enum_.enums[i]
+                let decl = type.enum_.enums[i]
                 e.emitTabs()
                 emitExpr(e, decl.value.name)
                 if decl.value.value {

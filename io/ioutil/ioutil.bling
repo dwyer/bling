@@ -5,12 +5,12 @@ import "os"
 import "runtime"
 
 fun readAll(file *os.File, error **runtime.Error) []char {
-    var bufsiz const int = 1024
-    var err *runtime.Error = nil
-    var b = bytes.Buffer{}
-    var buf = runtime.makebuf(1024)
+    let bufsiz const int = 1024
+    let err *runtime.Error = nil
+    let b = bytes.Buffer{}
+    let buf = runtime.makebuf(1024)
     for {
-        var n = file.read(buf, &err)
+        let n = file.read(buf, &err)
         if err != nil {
             goto end
         }
@@ -31,8 +31,8 @@ end:
 
 fun readDir(name string, error **runtime.Error) []*os.FileInfo {
     var info = []*os.FileInfo{}
-    var err *runtime.Error = nil
-    var file = os.openDir(name, &err)
+    let err *runtime.Error = nil
+    let file = os.openDir(name, &err)
     if err != nil {
         goto end
     }
@@ -51,8 +51,8 @@ end:
 
 fun readFile(name string, error **runtime.Error) []char {
     var ret = []char{}
-    var err *runtime.Error = nil
-    var file = os.open(name, &err)
+    let err *runtime.Error = nil
+    let file = os.open(name, &err)
     if err != nil {
         goto end
     }
@@ -70,8 +70,8 @@ end:
 }
 
 fun writeFile(filename string, data []char, perm int, error **runtime.Error) {
-    var err *runtime.Error = nil
-    var file = os.create(filename, &err)
+    let err *runtime.Error = nil
+    let file = os.create(filename, &err)
     if err != nil {
         goto end
     }

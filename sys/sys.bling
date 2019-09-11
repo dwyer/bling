@@ -14,15 +14,15 @@ fun getenv(key string) string {
 }
 
 fun _throwErrno(e **runtime.Error) {
-    var errno = C.getErrno()
+    let errno = C.getErrno()
     if errno != 0 {
-        var err = runtime.NewError(C.strerror(errno))
+        let err = runtime.NewError(C.strerror(errno))
         runtime.Error_move(err, e)
     }
 }
 
 fun open(filename string, oflag int, perm int, e **runtime.Error) int {
-    var fd = C.open(filename, oflag, perm)
+    let fd = C.open(filename, oflag, perm)
     if fd < 0 {
         _throwErrno(e)
     }
@@ -36,12 +36,12 @@ fun close(fd int, e **runtime.Error) {
 }
 
 fun read(fd int, b []char, e **runtime.Error) int {
-    var n = len(b)
+    let n = len(b)
     if n == 0 {
         return 0
     }
-    var buf = (typ *runtime.Slice(&b))._array
-    var r = C.read(fd, buf, n)
+    let buf = (typ *runtime.Slice(&b))._array
+    let r = C.read(fd, buf, n)
     if r < 0 {
         _throwErrno(e)
     }
@@ -49,7 +49,7 @@ fun read(fd int, b []char, e **runtime.Error) int {
 }
 
 fun write(fd int, b []char, e **runtime.Error) int {
-    var r = C.write(fd, &b[0], len(b))
+    let r = C.write(fd, &b[0], len(b))
     if r < 0 {
         _throwErrno(e)
     }
@@ -211,7 +211,7 @@ typ Errno enum {
 typ Dir voidptr
 
 fun opendir(filename string, e **runtime.Error) Dir {
-    var d = C.opendir(filename)
+    let d = C.opendir(filename)
     if d == nil {
         _throwErrno(e)
     }
@@ -228,7 +228,7 @@ typ Dirent voidptr
 
 fun readdir(dir Dir, e **runtime.Error) Dirent {
     C.setErrno(0)
-    var dirent = C.readdir(dir)
+    let dirent = C.readdir(dir)
     if C.getErrno() != 0 {
         _throwErrno(e)
     }
@@ -296,7 +296,7 @@ fun exec(path string, argv [?]const string, envv [?]const string, e **runtime.Er
 }
 
 fun fork(e **runtime.Error) Pid {
-    var pid = C.fork()
+    let pid = C.fork()
     if pid == -1 {
         _throwErrno(e)
     }
@@ -304,7 +304,7 @@ fun fork(e **runtime.Error) Pid {
 }
 
 fun waitpid(pid Pid, status *int, opts int, e **runtime.Error) Pid {
-    var wpid = C.waitpid(pid, status, opts)
+    let wpid = C.waitpid(pid, status, opts)
     if wpid == -1 {
         _throwErrno(e)
     }

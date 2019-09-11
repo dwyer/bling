@@ -22,7 +22,7 @@ fun isSimpleType(type *ast.Expr) bool {
 }
 
 fun emitZeroValue(e *emitter.Emitter, t *ast.Expr) {
-    var b = types.baseType(t)
+    let b = types.baseType(t)
     switch b.kind {
     case ast.EXPR_STAR:
         e.emitString("nil")
@@ -59,7 +59,7 @@ fun emitSelectorExpr(e *emitter.Emitter, expr *ast.Expr) {
 }
 
 fun emitSelector(e *emitter.Emitter, expr *ast.Expr, ignoreOpt bool) {
-    var isOpt = expr.selector.tok == token.QUESTION_PERIOD 
+    let isOpt = expr.selector.tok == token.QUESTION_PERIOD 
     if !ignoreOpt && isOpt {
         e.emitToken(token.LPAREN)
         emitSelectorExpr(e, expr.selector.x)
@@ -78,7 +78,7 @@ fun emitSelector(e *emitter.Emitter, expr *ast.Expr, ignoreOpt bool) {
         } else {
             emitExpr(e, expr.selector.x)
         }
-        if var t = types.exprType(expr.selector.x); types.isPointer(t) {
+        if let t = types.exprType(expr.selector.x); types.isPointer(t) {
             e.emitToken(token.ARROW)
         } else {
             e.emitToken(token.PERIOD)
@@ -116,7 +116,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
                 e.emitToken(token.COMMA)
                 e.emitSpace()
             }
-            var arg = expr.call.args[i]
+            let arg = expr.call.args[i]
             if types.isType(arg) {
                 emitType(e, arg, nil)
             } else {
@@ -165,7 +165,7 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         e.emitString(expr.ident.name)
         break
     case ast.EXPR_INDEX:
-        var t = types.baseType(types.exprType(expr.index.x))
+        let t = types.baseType(types.exprType(expr.index.x))
         if types.isDynamicArray(t) {
             e.emitString("$$arrayget")
             e.emitToken(token.LPAREN)
@@ -268,9 +268,9 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
     switch stmt.kind {
     case ast.STMT_ASSIGN:
         var isMap = false
-        var x = stmt.assign.x
+        let x = stmt.assign.x
         if x.kind == ast.EXPR_INDEX {
-            var t = types.baseType(types.exprType(x.index.x))
+            let t = types.baseType(types.exprType(x.index.x))
             isMap = types.isMap(t)
         }
         if isMap {
@@ -462,14 +462,14 @@ fun emitStmt(e *emitter.Emitter, stmt *ast.Stmt) {
 
 fun _emitFields(e *emitter.Emitter, fields []*ast.Decl) {
     for var i = 0; i < len(fields); i++ {
-        var field = fields[i]
+        let field = fields[i]
         if field.field.name || field.field.type.kind == ast.TYPE_STRUCT {
             e.emitTabs()
             emitDecl(e, field)
             e.emitToken(token.SEMICOLON)
             e.emitNewline()
         } else {
-            var base = types.baseType(field.field.type)
+            let base = types.baseType(field.field.type)
             _emitFields(e, base.struct_.fields)
         }
     }
@@ -509,7 +509,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
         emitExpr(e, type.selector.sel) // XXX
         break
     case ast.EXPR_STAR:
-        var base = type.star.x
+        let base = type.star.x
         if base.kind == ast.TYPE_FUNC {
             emitType(e, base.func.result, nil)
             e.emitToken(token.LPAREN)
@@ -564,7 +564,7 @@ fun emitType(e *emitter.Emitter, type *ast.Expr, name *ast.Expr) {
             e.emitNewline()
             e.indent++
             for var i = 0; i < len(type.enum_.enums); i++ {
-                var decl = type.enum_.enums[i]
+                let decl = type.enum_.enums[i]
                 e.emitTabs()
                 emitExpr(e, decl.value.name)
                 if decl.value.value {
@@ -704,14 +704,14 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
 
 fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
     for var i = 0; i < len(scope.keys); i++ {
-        var obj = scope.objects[scope.keys[i]]
+        let obj = scope.objects[scope.keys[i]]
         if obj.kind == kind {
             e.emitNewline()
             emitDecl(e, obj.decl)
             e.emitNewline()
         }
         if kind == ast.ObjKind_FUN && obj.kind == ast.ObjKind_TYP {
-            if var scope *ast.Scope = obj.data; scope {
+            if let scope *ast.Scope = obj.data; scope {
                 emitObjects(e, scope, kind)
             }
         }
@@ -739,13 +739,13 @@ fun _emitPackage(e *emitter.Emitter, done *map string, pkg *types.Package) {
 }
 
 fun emitPackage(e *emitter.Emitter, pkg *types.Package) {
-    var done = makemap(string)
+    let done = makemap(string)
     _emitPackage(e, &done, pkg)
     delete(done)
 }
 
 fun emitHeader(e *emitter.Emitter, pkg *types.Package) {
-    var old = e.forwardDecl
+    let old = e.forwardDecl
     e.forwardDecl = true
     emitObjects(e, pkg.scope, ast.ObjKind_TYP)
     e.forwardDecl = false
@@ -757,7 +757,7 @@ fun emitHeader(e *emitter.Emitter, pkg *types.Package) {
 }
 
 fun emitBody(e *emitter.Emitter, pkg *types.Package) {
-    var old = e.forwardDecl
+    let old = e.forwardDecl
     e.forwardDecl = false
     emitObjects(e, pkg.scope, ast.ObjKind_VAL)
     emitObjects(e, pkg.scope, ast.ObjKind_FUN)

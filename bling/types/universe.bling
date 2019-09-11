@@ -47,7 +47,7 @@ typ Basic struct {
 
 var _universe *ast.Scope = nil
 
-var predeclaredTypes [?]const Basic = {
+let predeclaredTypes [?]const Basic = {
     INVALID: { INVALID, 0, "invalid type", },
     VOID: { VOID, IS_UNTYPED, "void", },
     BOOL: { BOOL, IS_BOOLEAN, "bool", },
@@ -74,15 +74,15 @@ fun defPredeclaredTypes() {
         if !predeclaredTypes[i].name {
             continue
         }
-        var obj = ast.newObject(ast.ObjKind_TYP, predeclaredTypes[i].name)
-        var name = ast.Expr{
+        let obj = ast.newObject(ast.ObjKind_TYP, predeclaredTypes[i].name)
+        let name = ast.Expr{
             kind: ast.EXPR_IDENT,
             ident: {
                 name: runtime.strdup(predeclaredTypes[i].name),
                 obj: obj,
             },
         }
-        var type = ast.Expr{
+        let type = ast.Expr{
             kind: ast.TYPE_NATIVE,
             native: {
                 kind: predeclaredTypes[i].kind,
@@ -90,7 +90,7 @@ fun defPredeclaredTypes() {
                 name: runtime.strdup(predeclaredTypes[i].name),
             },
         }
-        var decl = ast.Decl{
+        let decl = ast.Decl{
             kind: ast.DECL_TYPE,
             type: {
                 name: &&name,
@@ -121,7 +121,7 @@ typ exprKind enum {
     statement
 }
 
-var predeclareFuncs [?]struct {
+let predeclareFuncs [?]struct {
     name string
     nargs int
     variadic bool
@@ -141,13 +141,13 @@ var predeclareFuncs [?]struct {
 
 fun defPredeclaredFuncs() {
     for var i = 0; i < numBuiltinIds; i++ {
-        var name = ast.Expr{
+        let name = ast.Expr{
             kind: ast.EXPR_IDENT,
             ident: {
                 name: runtime.strdup(predeclareFuncs[i].name),
             },
         }
-        var type = ast.Expr{
+        let type = ast.Expr{
             kind: ast.TYPE_BUILTIN,
             builtin: {
                 name: runtime.strdup(predeclareFuncs[i].name),
@@ -157,21 +157,21 @@ fun defPredeclaredFuncs() {
                 id: i,
             },
         }
-        var decl = ast.Decl{
+        let decl = ast.Decl{
             kind: ast.DECL_FUNC,
             func: {
                 name: &&name,
                 type: &&type,
             },
         }
-        var obj = ast.newObject(ast.ObjKind_FUN, name.ident.name)
+        let obj = ast.newObject(ast.ObjKind_FUN, name.ident.name)
         obj.decl = &&decl
         obj.decl.func.name.ident.obj = obj
         assert(_universe.insert(obj) == nil)
     }
 }
 
-var predeclareConsts [?]struct {
+let predeclareConsts [?]struct {
     name string
     type string
     value int
@@ -185,13 +185,13 @@ var predeclareConsts [?]struct {
 fun defPredeclaredConsts() {
     for var i = 0; predeclareConsts[i].name; i++ {
         var obj = _universe.lookup(predeclareConsts[i].type)
-        var name = ast.Expr{
+        let name = ast.Expr{
             kind: ast.EXPR_IDENT,
             ident: {
                 name: runtime.strdup(predeclareConsts[i].name),
             },
         }
-        var expr = ast.Expr{
+        let expr = ast.Expr{
             kind: ast.EXPR_CONST,
             const_: {
                 name: runtime.strdup(predeclareConsts[i].name),
@@ -199,7 +199,7 @@ fun defPredeclaredConsts() {
                 value: predeclareConsts[i].value,
             },
         }
-        var decl = ast.Decl{
+        let decl = ast.Decl{
             kind: ast.DECL_VALUE,
             value: {
                 name: &&name,

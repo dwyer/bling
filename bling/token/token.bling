@@ -145,7 +145,7 @@ typ Position struct {
     column int
 }
 
-var tokens [?]string = {
+let tokens [?]string = {
     ILLEGAL: "ILLEGAL",
     CHAR: "CHAR",
     FLOAT: "FLOAT",
@@ -254,12 +254,12 @@ var keywords = makemap(Token)
 fun lookup(ident string) Token {
     if len(keywords) == 0 {
         for var i = _keywordBeg + 1; i < _keywordEnd; i++ {
-            if var s = i.string(); s != nil {
+            if let s = i.string(); s != nil {
                 keywords[s] = i
             }
         }
     }
-    if var tok = keywords[ident]; tok != ILLEGAL {
+    if let tok = keywords[ident]; tok != ILLEGAL {
         return tok
     }
     return IDENT
@@ -301,7 +301,7 @@ fun getInt(a *[]int, i int) int {
 }
 
 fun (f *File) addLine(offset int) {
-    var i = len(f.lines)
+    let i = len(f.lines)
     if (i == 0 || getInt(&f.lines, i - 1) < offset) && offset < f.size {
         append(f.lines, offset)
     }
@@ -315,7 +315,7 @@ fun searchInts(a *[]int, x int) int {
     var i = 0
     var j = len(*a)
     while i < j {
-        var h = i + (j - i) / 2
+        let h = i + (j - i) / 2
         if getInt(a, h) <= x {
             i = h + 1
         } else {
@@ -326,9 +326,9 @@ fun searchInts(a *[]int, x int) int {
 }
 
 fun (f *File) _position(p Pos, adjusted bool) Position {
-    var offset = p - f.base
-    var i = searchInts(&f.lines, offset)
-    var pos = Position{
+    let offset = p - f.base
+    let i = searchInts(&f.lines, offset)
+    let pos = Position{
         filename: f.name,
         offset: offset,
         line: i + 1,
@@ -337,7 +337,7 @@ fun (f *File) _position(p Pos, adjusted bool) Position {
     return pos
 }
 
-var noPos const Pos = 0
+let noPos const Pos = 0
 
 fun (f *File) positionFor(p Pos, adjusted bool) Position {
     var pos = Position{}
@@ -370,7 +370,7 @@ fun (f *File) lineString(line int) string {
 }
 
 fun newFileSet() *FileSet {
-    var fset = FileSet{
+    let fset = FileSet{
         base: 1,
         files: []*File{},
     }
@@ -384,16 +384,16 @@ fun (s *FileSet) addFile(filename string, base int, size int) *File {
     if base < s.base || size < 0 {
         panic("illegal base or size")
     }
-    var lines = []int{}
-    var zero = 0
+    let lines = []int{}
+    let zero = 0
     append(lines, zero)
-    var file = File{
+    let file = File{
         name: runtime.strdup(filename),
         base: base,
         size: size,
         lines: lines,
     }
-    var f = &&file
+    let f = &&file
     base += size + 1
     s.base = base
     append(s.files, f)
@@ -403,7 +403,7 @@ fun (s *FileSet) addFile(filename string, base int, size int) *File {
 
 fun searchFiles(files *[]*File, x int) int {
     for var i = 0; i < len(*files); i++ {
-        var f = (*files)[i]
+        let f = (*files)[i]
         if f.base <= x && x <= f.base + f.size {
             return i
         }
@@ -416,7 +416,7 @@ fun (s *FileSet) file(p Pos) *File {
     if f != nil && f.base <= p && p <= f.base + f.size {
         return f
     }
-    var i = searchFiles(&s.files, p)
+    let i = searchFiles(&s.files, p)
     if i >= 0 {
         f = s.files[i]
         if p <= f.base + f.size {
@@ -429,8 +429,8 @@ fun (s *FileSet) file(p Pos) *File {
 
 fun (fset *FileSet) print() {
     for var i = 0; i < len(fset.files); i++ {
-        var f = fset.files[i]
-        var s = C.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
+        let f = fset.files[i]
+        let s = C.sprintf("%d: %s (base=%d, size=%d)", i, f.name, f.base, f.size)
         print(s)
         delete(s)
     }

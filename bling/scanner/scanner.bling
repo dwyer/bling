@@ -76,7 +76,7 @@ fun (s *Scanner) makeStringSlice(start int, end int) string {
 }
 
 fun (s *Scanner) scanIdent() string {
-    var offs = s.offset
+    let offs = s.offset
     while isLetter(s.ch) || isDigit(s.ch) || (s.dontInsertSemis && s.ch == '$') {
         s.next()
     }
@@ -84,7 +84,7 @@ fun (s *Scanner) scanIdent() string {
 }
 
 fun (s *Scanner) scanPragma() string {
-    var offs = s.offset
+    let offs = s.offset
     while s.ch > 0 && s.ch != '\n' {
         s.next()
     }
@@ -107,7 +107,7 @@ fun isNumeric(ch int, kind NumKind) bool {
 }
 
 fun (s *Scanner) scanNumber(tokp *token.Token) string {
-    var offs = s.offset
+    let offs = s.offset
     var kind = NumKind_DECINT
     if s.ch == '0' {
         s.next()
@@ -141,7 +141,7 @@ fun (s *Scanner) scanNumber(tokp *token.Token) string {
 }
 
 fun (s *Scanner) scanRune() string {
-    var offs = s.offset
+    let offs = s.offset
     var n = 0
     var escape = false
     for {
@@ -157,7 +157,7 @@ fun (s *Scanner) scanRune() string {
 }
 
 fun (s *Scanner) scanString() string {
-    var offs = s.offset
+    let offs = s.offset
     var n = 0
     var escape = false
     for {
@@ -177,7 +177,7 @@ fun (s *Scanner) error(offs int, msg string) {
 }
 
 fun (s *Scanner) scanComment() {
-    var offs = s.offset - 1
+    let offs = s.offset - 1
     switch s.ch {
     case '/':
         s.skipLine()
@@ -185,7 +185,7 @@ fun (s *Scanner) scanComment() {
     case '*':
         s.next()
         while s.ch >= 0 {
-            var ch = s.ch
+            let ch = s.ch
             s.next()
             if ch == '*' && s.ch == '/' {
                 s.next()
@@ -239,7 +239,7 @@ scanAgain:
         *lit = s.scanString()
         tok = token.STRING
     } else {
-        var ch = s.ch
+        let ch = s.ch
         s.next()
         switch ch {
         case '\0':

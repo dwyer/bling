@@ -16,8 +16,8 @@ import "subc/cemitter"
 import "subc/cparser"
 
 fun emitRawFile(e *emitter.Emitter, filename string) {
-    var err *runtime.Error = nil
-    var src = ioutil.readFile(filename, &err)
+    let err *runtime.Error = nil
+    let src = ioutil.readFile(filename, &err)
     if err {
         panic(err.error)
     }
@@ -56,16 +56,16 @@ fun compileC(argv [?]string) {
         }
         argv++
     }
-    var e = emitter.Emitter{}
-    var fset = token.newFileSet()
+    let e = emitter.Emitter{}
+    let fset = token.newFileSet()
     while *argv {
-        var filename = *argv
-        var file = cparser.parseFile(fset, filename)
-        var allowForward = file.name && ast.isIdentNamed(file.name, "C")
+        let filename = *argv
+        let file = cparser.parseFile(fset, filename)
+        let allowForward = file.name && ast.isIdentNamed(file.name, "C")
         if !allowForward {
-            var i = 0
+            let i = 0
             for var j = 0; j < len(file.decls); j++ {
-                var d = file.decls[j]
+                let d = file.decls[j]
                 if !isForwardDecl(d) {
                     file.decls[i] = d
                     i++
@@ -77,7 +77,7 @@ fun compileC(argv [?]string) {
         argv++
     }
     var file = os.stdout
-    var err *runtime.Error = nil
+    let err *runtime.Error = nil
     if dst {
         file = os.create(dst, &err)
         if err {
@@ -97,8 +97,8 @@ fun compileC(argv [?]string) {
 }
 
 fun compileBling(argv [?]string) {
-    var err *runtime.Error = nil
-    var conf = types.Config{
+    let err *runtime.Error = nil
+    let conf = types.Config{
         strict: true,
     }
     var dst string = nil
@@ -114,11 +114,11 @@ fun compileBling(argv [?]string) {
     if !*argv {
         return
     }
-    var e = emitter.Emitter{}
+    let e = emitter.Emitter{}
     emitRawFile(&e, "bootstrap/bootstrap.h")
-    var fset = token.newFileSet()
-    var filename = *argv
-    var files = []*ast.File{}
+    let fset = token.newFileSet()
+    let filename = *argv
+    let files = []*ast.File{}
     if bytes.hasSuffix(filename, ".bling") {
         append(files, parser.parseFile(fset, filename))
     } else if bytes.hasSuffix(filename, ".c") {
@@ -126,7 +126,7 @@ fun compileBling(argv [?]string) {
     } else {
         panic(C.sprintf("unknown file type: %s", filename))
     }
-    var pkg = types.checkFiles(&conf, paths.dir(filename), fset, files, nil)
+    let pkg = types.checkFiles(&conf, paths.dir(filename), fset, files, nil)
     cemitter.emitPackage(&e, pkg)
     argv++
     assert(!*argv)
@@ -139,13 +139,13 @@ fun compileBling(argv [?]string) {
 
 fun buildPackage(argv [?]string) {
     assert(*argv)
-    var builder = build.newBuilder(token.newFileSet())
+    let builder = build.newBuilder(token.newFileSet())
     if runtime.streq(*argv, "-f") {
         builder.force = true
         argv++
     }
     assert(*argv)
-    var path = *argv
+    let path = *argv
     build.buildPackage(builder, path)
 }
 
@@ -153,7 +153,7 @@ fun main(argc int, argv [?]string) int {
     // for var i = 0; i < argc; i++ {
     //     append(os.args, argv[i])
     // }
-    var progname = *argv
+    let progname = *argv
     argv++
     if !*argv {
         panic(C.sprintf("usage: %s -o DST SRCS", progname))

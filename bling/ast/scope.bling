@@ -22,7 +22,7 @@ typ Object struct {
 }
 
 fun newObject(kind ObjKind, name string) *Object {
-    var obj = Object{
+    let obj = Object{
         kind: kind,
         name: name,
     }
@@ -37,7 +37,7 @@ typ Scope struct {
 }
 
 fun newScope(outer *Scope) *Scope {
-    var s = Scope{
+    let s = Scope{
         outer: outer,
         objects: makemap(*Object),
         keys: []string{},
@@ -52,7 +52,7 @@ fun (s *Scope) delete() {
 }
 
 fun (s *Scope) insert(obj *Object) *Object {
-    var alt = s.objects[obj.name]
+    let alt = s.objects[obj.name]
     if alt == nil {
         s.objects[obj.name] = obj
         append(s.keys, obj.name)
@@ -65,12 +65,12 @@ fun (s *Scope) lookup(name string) *Object {
 }
 
 fun (s *Scope) print() {
-    var buf = bytes.Buffer{}
+    let buf = bytes.Buffer{}
     while s {
-        var iter = runtime.NewMapIter(&s.objects)
-        var key string = nil
+        let iter = runtime.NewMapIter(&s.objects)
+        let key string = nil
         while runtime.MapIter_next(&iter, &key, nil) {
-            var s = C.sprintf("%s- %s", buf.string(), key)
+            let s = C.sprintf("%s- %s", buf.string(), key)
             print(s)
             delete(s)
         }
@@ -81,7 +81,7 @@ fun (s *Scope) print() {
 
 fun (s *Scope) deepLookup(name string) *Object {
     for ; s != nil; s = s.outer {
-        var obj = s.lookup(name)
+        let obj = s.lookup(name)
         if obj != nil {
             return obj
         }

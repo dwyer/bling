@@ -14,11 +14,11 @@ import "runtime"
 import "subc/cemitter"
 import "subc/cparser"
 
-var AR_PATH const string = "/usr/bin/ar"
-var CC_PATH const string = "/usr/bin/cc"
-var GEN_PATH const string = "gen"
-var INCL_PATH const string = "."
-var VERBOSE const bool = true
+let AR_PATH const string = "/usr/bin/ar"
+let CC_PATH const string = "/usr/bin/cc"
+let GEN_PATH const string = "gen"
+let INCL_PATH const string = "."
+let VERBOSE const bool = true
 
 fun printStrArray(s []string) {
     for var i = 0; i < len(s); i++ {
@@ -34,8 +34,8 @@ fun execute(cmd *[]string) {
     if VERBOSE {
         printStrArray(*cmd)
     }
-    var args = runtime.nilArray(typ *runtime.Slice(cmd), sizeof(string))
-    var code = os.exec(args, nil)
+    let args = runtime.nilArray(typ *runtime.Slice(cmd), sizeof(string))
+    let code = os.exec(args, nil)
     if code != 0 {
         panic(C.sprintf("- failed with code %d", code))
     }
@@ -43,7 +43,7 @@ fun execute(cmd *[]string) {
 }
 
 fun mkdirForFile(path string) {
-    var dir = paths.dir(path)
+    let dir = paths.dir(path)
     os.mkdirAll(dir, 0755, nil)
     delete(dir)
 }
@@ -72,7 +72,7 @@ typ Builder struct {
 }
 
 fun newBuilder(fset *token.FileSet) *Builder {
-    var builder Builder = {
+    let builder Builder = {
         fset: fset,
         info: types.newInfo(),
         force: false,
@@ -82,7 +82,7 @@ fun newBuilder(fset *token.FileSet) *Builder {
 }
 
 fun genObj(b *Builder, dst string, src string) {
-    var cmd = []string{}
+    let cmd = []string{}
     append(cmd, CC_PATH)
     append(cmd, typ string("-g"))
     append(cmd, typ string("-I"))
@@ -96,9 +96,9 @@ fun genObj(b *Builder, dst string, src string) {
 }
 
 fun getFileModTime(path string) os.Time {
-    var err *runtime.Error = nil
-    if var info = os.stat(path, &err); err == nil {
-        var t = info.modTime()
+    let err *runtime.Error = nil
+    if let info = os.stat(path, &err); err == nil {
+        let t = info.modTime()
         info.free()
         return t
     }
@@ -107,10 +107,10 @@ fun getFileModTime(path string) os.Time {
 
 fun getSrcModTime(path string) os.Time {
     var t os.Time = 0
-    var files = ioutil.readDir(path, nil)
+    let files = ioutil.readDir(path, nil)
     for var i = 0; i < len(files); i++ {
-        var file = files[i]
-        var modTime = file.modTime()
+        let file = files[i]
+        let modTime = file.modTime()
         if bytes.hasSuffix(file.name(), ".bling") {
             if t < modTime {
                 t = modTime
@@ -123,17 +123,17 @@ fun getSrcModTime(path string) os.Time {
 }
 
 fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
-    var src = cFile.name()
+    let src = cFile.name()
     var dst string = nil
     {
-        var i = bytes.lastIndexByte(src, '.')
-        var base = runtime.strndup(src, i)
+        let i = bytes.lastIndexByte(src, '.')
+        let base = runtime.strndup(src, i)
         dst = C.sprintf("%s/%s.o", GEN_PATH, base)
         delete(base)
     }
-    var err *runtime.Error = nil
+    let err *runtime.Error = nil
     var objFile = os.stat(dst, &err)
-    var doBuild = objFile == nil || cFile.modTime() > objFile.modTime()
+    let doBuild = objFile == nil || cFile.modTime() > objFile.modTime()
     if b.force || doBuild {
         genObj(b, dst, src)
         objFile.free()
@@ -143,18 +143,18 @@ fun buildCFile(b *Builder, cFile *os.FileInfo) *os.FileInfo {
 }
 
 fun newPackage(b *Builder, path string) Package {
-    var base = paths.base(path)
-    var files = parser.parseDir(b.fset, path, nil)
-    var typesPkg = types.check(&b.conf, path, b.fset, files, b.info)
-    var isCmd = typesPkg.name ? runtime.streq(typesPkg.name, "main") : false
-    var genPath = paths.join2(GEN_PATH, path)
+    let base = paths.base(path)
+    let files = parser.parseDir(b.fset, path, nil)
+    let typesPkg = types.check(&b.conf, path, b.fset, files, b.info)
+    let isCmd = typesPkg.name ? runtime.streq(typesPkg.name, "main") : false
+    let genPath = paths.join2(GEN_PATH, path)
     var libPath = nil
     if isCmd {
         libPath = C.sprintf("%s/%s", genPath, base)
     } else {
         libPath = C.sprintf("%s/%s.a", genPath, base)
     }
-    var pkg = Package{
+    let pkg = Package{
         path: runtime.strdup(path),
         pkg: typesPkg,
         genPath: genPath,
@@ -169,7 +169,7 @@ fun newPackage(b *Builder, path string) Package {
     }
     delete(base)
     for var i = 0; i < len(pkg.pkg.imports); i++ {
-        var dep = _buildPackage(b, pkg.pkg.imports[i].path)
+        let dep = _buildPackage(b, pkg.pkg.imports[i].path)
         append(pkg.deps, dep)
         if pkg.srcModTime < dep.srcModTime {
             pkg.srcModTime = dep.srcModTime
@@ -179,7 +179,7 @@ fun newPackage(b *Builder, path string) Package {
 }
 
 fun emitInclude(e *emitter.Emitter, path string) {
-    var s = C.sprintf("#include \"%s\"\n", path)
+    let s = C.sprintf("#include \"%s\"\n", path)
     e.emitString(s)
     delete(s)
 }
@@ -190,7 +190,7 @@ fun writeFile(path string, out string) {
 }
 
 fun genHeader(b *Builder, pkg *Package) {
-    var e = emitter.Emitter{}
+    let e = emitter.Emitter{}
     e.emitString("#pragma once")
     e.emitNewline()
     emitInclude(&e, "bootstrap/bootstrap.h")
@@ -198,28 +198,28 @@ fun genHeader(b *Builder, pkg *Package) {
         emitInclude(&e, pkg.deps[i].hPath)
     }
     cemitter.emitHeader(&e, pkg.pkg)
-    var out = e.string()
+    let out = e.string()
     writeFile(pkg.hPath, out)
     delete(out)
 }
 
 fun getCFile(b *Builder, pkg *Package) {
-    var e = emitter.Emitter{}
+    let e = emitter.Emitter{}
     emitInclude(&e, pkg.hPath)
     cemitter.emitBody(&e, pkg.pkg)
-    var out = e.string()
+    let out = e.string()
     writeFile(pkg.cPath, out)
     delete(out)
 }
 
 fun buildCPackage(b *Builder, path string) *Package {
-    var pkg = newPackage(b, path)
-    var files = ioutil.readDir(path, nil)
+    let pkg = newPackage(b, path)
+    let files = ioutil.readDir(path, nil)
     for var i = 0; i < len(files); i++ {
-        var checkTime = false
-        var file = files[i]
-        var modTime = file.modTime()
-        var name = file.name()
+        let checkTime = false
+        let file = files[i]
+        let modTime = file.modTime()
+        let name = file.name()
         if bytes.hasSuffix(name, ".bling") || bytes.hasSuffix(name, ".c") {
             if pkg.srcModTime < modTime {
                 pkg.srcModTime = modTime
@@ -228,14 +228,14 @@ fun buildCPackage(b *Builder, path string) *Package {
     }
     if b.force || pkg.srcModTime > pkg.libModTime {
         genHeader(b, &pkg)
-        var cmd = []string{}
+        let cmd = []string{}
         append(cmd, AR_PATH)
         append(cmd, typ string("rsc"))
         append(cmd, pkg.libPath)
         for var i = 0; i < len(files); i++ {
-            var file = files[i]
+            let file = files[i]
             if bytes.hasSuffix(file.name(), ".c") {
-                var obj = buildCFile(b, file)
+                let obj = buildCFile(b, file)
                 append(cmd, file.name())
             }
         }
@@ -251,27 +251,27 @@ fun buildCPackage(b *Builder, path string) *Package {
 }
 
 fun buildBlingPackage(b *Builder, path string) *Package {
-    var pkg = newPackage(b, path)
+    let pkg = newPackage(b, path)
     if b.force || pkg.srcModTime > pkg.libModTime {
         mkdirForFile(pkg.libPath)
         genHeader(b, &pkg)
         getCFile(b, &pkg)
         genObj(b, pkg.objPath, pkg.cPath)
         if pkg.isCmd {
-            var cmd = []string{}
+            let cmd = []string{}
             append(cmd, CC_PATH)
             append(cmd, typ string("-g"))
             append(cmd, typ string("-o"))
             append(cmd, pkg.libPath)
             append(cmd, pkg.objPath)
-            var pkg *Package = nil
-            var iter = runtime.NewMapIter(&b.pkgs)
+            let pkg *Package = nil
+            let iter = runtime.NewMapIter(&b.pkgs)
             while runtime.MapIter_next(&iter, nil, &pkg) {
                 append(cmd, pkg.libPath)
             }
             execute(&cmd)
         } else {
-            var cmd = []string{}
+            let cmd = []string{}
             append(cmd, AR_PATH)
             append(cmd, typ string("rsc"))
             append(cmd, pkg.libPath)
@@ -297,7 +297,7 @@ fun _buildPackage(b *Builder, path string) *Package {
 }
 
 fun buildPackage(b *Builder, path string) {
-    var clean = paths.clean(path)
+    let clean = paths.clean(path)
     _buildPackage(b, "runtime")
     _buildPackage(b, clean)
     delete(clean)

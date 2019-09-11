@@ -7,7 +7,7 @@ fun base(path string) string {
     if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
-    if var i = bytes.lastIndexByte(path, '/'); i > 0 {
+    if let i = bytes.lastIndexByte(path, '/'); i > 0 {
         path = &path[i + 1]
     }
     return runtime.strdup(path)
@@ -18,9 +18,9 @@ fun clean(path string) string {
         return runtime.strdup(".")
     }
     var r = 0
-    var n = len(path)
-    var out = bytes.Buffer{}
-    var rooted = path[0] == '/'
+    let n = len(path)
+    let out = bytes.Buffer{}
+    let rooted = path[0] == '/'
     if rooted {
         out.writeByte('/', nil)
         r++
@@ -52,7 +52,7 @@ fun dir(path string) string {
     if path == nil || path[0] == '\0' {
         return runtime.strdup(".")
     }
-    if var i = bytes.lastIndexByte(path, '/'); i > 0 {
+    if let i = bytes.lastIndexByte(path, '/'); i > 0 {
         var p = runtime.stringToBytes(path)
         p[i] = '\0'
         return runtime.bytesToString(p)
@@ -61,7 +61,7 @@ fun dir(path string) string {
 }
 
 fun ext(path string) string {
-    var n = len(path) - 1
+    let n = len(path) - 1
     while n > 0 && path[n] != '.' {
         n--
     }
@@ -77,7 +77,7 @@ fun join(elems *string, n int) string {
 }
 
 fun join2(a string, b string) string {
-    var elems = [?]string{
+    let elems = [?]string{
         a,
         b,
     }

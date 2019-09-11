@@ -38,7 +38,7 @@ fun join(a [?]string, size int, sep string) string {
     case 1:
         return runtime.strdup(a[0])
     }
-    var b Buffer = []char{}
+    let b Buffer = []char{}
     b.writeChars(a[0], len(a[0]), nil)
     for var i = 1; i < size; i++ {
         b.writeChars(sep, len(sep), nil)

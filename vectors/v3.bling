@@ -8,7 +8,7 @@ typ Vec3 struct {
 }
 
 fun (u Vec3) add(v Vec3) Vec3 {
-    var w Vec3 = {
+    let w Vec3 = {
         x: u.x + v.x,
         y: u.y + v.y,
         z: u.z + v.z,
@@ -17,7 +17,7 @@ fun (u Vec3) add(v Vec3) Vec3 {
 }
 
 fun (u Vec3) scale(s Unit) Vec3 {
-    var w Vec3 = {
+    let w Vec3 = {
         x: u.x * s,
         y: u.y * s,
         z: u.z * s,

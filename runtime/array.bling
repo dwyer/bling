@@ -20,7 +20,7 @@ fun Array_get(s *const Slice, size int, i int, dst voidptr) voidptr {
     if i >= s._len {
         panic(C.sprintf("out of range: index=%d, len=%d", i, s._len))
     }
-    var ref = &s._array[i * size]
+    let ref = &s._array[i * size]
     if dst {
         if size == 1 {
             *typ *u8(dst) = *ref
@@ -54,9 +54,9 @@ fun _setLen(s *Slice, size int, len int) {
 }
 
 fun Array_setLen(s *Slice, size int, len int) {
-    var old = s._len
+    let old = s._len
     _setLen(s, size, len)
-    if var diff = len - old; diff > 0 {
+    if let diff = len - old; diff > 0 {
         C.memset(Array_get(s, size, old, nil), 0, diff * size)
     }
 }
@@ -75,7 +75,7 @@ fun Array_append(s *Slice, size int, x *const void) {
 }
 
 fun nilArray(s *Slice, size int) voidptr {
-    var z = nil
+    let z = nil
     Array_append(s, size, &z)
     return (typ *Slice(s))._array
 }

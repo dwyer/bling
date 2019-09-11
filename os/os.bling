@@ -5,7 +5,7 @@ import "paths"
 import "runtime"
 import "sys"
 
-var args = []string{}
+let args = []string{}
 
 typ O enum {
     O_RDONLY = sys.O_RDONLY
@@ -32,28 +32,28 @@ typ FileInfo struct {
     _sys voidptr
 }
 
-var _stdin File = {
+let _stdin File = {
     fd: sys.STDIN_FILENO,
     name: "/dev/stdin",
 }
 
-var _stdout File = {
+let _stdout File = {
     fd: sys.STDOUT_FILENO,
     name: "/dev/stdout",
 }
 
-var _stderr File = {
+let _stderr File = {
     fd: sys.STDERR_FILENO,
     name: "/dev/stderr",
 }
 
-var stdin *File = &_stdin
-var stdout *File = &_stdout
-var stderr *File = &_stderr
+let stdin *File = &_stdin
+let stdout *File = &_stdout
+let stderr *File = &_stderr
 
 fun _throwPathError(path string, err *runtime.Error, e **runtime.Error) {
     if err {
-        var msg = err.error
+        let msg = err.error
         err.error = C.sprintf("PathError: %s: %s", path, msg)
         delete(msg)
         runtime.Error_move(err, e)
@@ -70,7 +70,7 @@ fun _throwFileError(file *File, err *runtime.Error, e **runtime.Error) {
 }
 
 fun newFile(fd uintptr, name string) *File {
-    var file File = {
+    let file File = {
         name: runtime.strdup(name),
         fd: fd,
     }
@@ -78,8 +78,8 @@ fun newFile(fd uintptr, name string) *File {
 }
 
 fun openFile(filename string, mode int, perm int, e **runtime.Error) *File {
-    var err *runtime.Error = nil
-    var fd = sys.open(filename, mode, perm, &err)
+    let err *runtime.Error = nil
+    let fd = sys.open(filename, mode, perm, &err)
     if err {
         _throwPathError(filename, err, e)
         return nil
@@ -96,21 +96,21 @@ fun create(filename string, e **runtime.Error) *File {
 }
 
 fun (file *File) read(b []char, e **runtime.Error) int {
-    var err *runtime.Error = nil
-    var r = sys.read(file.fd, b, &err)
+    let err *runtime.Error = nil
+    let r = sys.read(file.fd, b, &err)
     _throwFileError(file, err, e)
     return r
 }
 
 fun (file *File) write(b []char, e **runtime.Error) int {
-    var err *runtime.Error = nil
-    var n = sys.write(file.fd, b, &err)
+    let err *runtime.Error = nil
+    let n = sys.write(file.fd, b, &err)
     _throwFileError(file, err, e)
     return n
 }
 
 fun (file *File) close(e **runtime.Error) {
-    var err *runtime.Error = nil
+    let err *runtime.Error = nil
     if file._isDir {
         sys.closedir(typ voidptr(file.fd), &err)
     } else {
@@ -120,14 +120,14 @@ fun (file *File) close(e **runtime.Error) {
 }
 
 fun stat(name string, e **runtime.Error) *FileInfo {
-    var st = sys.Stat{}
-    var err *runtime.Error = nil
+    let st = sys.Stat{}
+    let err *runtime.Error = nil
     sys.stat(name, &st, &err)
     if err {
         _throwPathError(name, err, e)
         return nil
     }
-    var info = FileInfo{
+    let info = FileInfo{
         _name: runtime.strdup(name),
         _sys: &&st,
     }
@@ -141,27 +141,27 @@ fun (info *FileInfo) free() {
 }
 
 fun openDir(name string, e **runtime.Error) *File {
-    var err *runtime.Error = nil
-    var dp = sys.opendir(name, &err)
+    let err *runtime.Error = nil
+    let dp = sys.opendir(name, &err)
     if err {
         _throwPathError(name, err, e)
         return nil
     }
-    var file = newFile(typ uintptr(dp), name)
+    let file = newFile(typ uintptr(dp), name)
     file._isDir = true
     return file
 }
 
 fun readdirnames(file *File, e **runtime.Error) []string {
-    var arr = []string{}
-    var dp sys.Dir = typ sys.Dir(file.fd)
+    let arr = []string{}
+    let dp sys.Dir = typ sys.Dir(file.fd)
     for {
-        var err *runtime.Error = nil
-        var dirent = sys.readdir(dp, &err)
+        let err *runtime.Error = nil
+        let dirent = sys.readdir(dp, &err)
         if dirent == nil {
             break
         }
-        var name = dirent.name()
+        let name = dirent.name()
         if name[0] == '.' {
             continue
         }
@@ -171,17 +171,17 @@ fun readdirnames(file *File, e **runtime.Error) []string {
 }
 
 fun readdir(file *File, e **runtime.Error) []*FileInfo {
-    var err *runtime.Error = nil
-    var names = readdirnames(file, &err)
-    var arr = []*FileInfo{}
+    let err *runtime.Error = nil
+    let names = readdirnames(file, &err)
+    let arr = []*FileInfo{}
     if err != nil {
         _throwFileError(file, err, e)
         return arr
     }
     for var i = 0; i < len(names); i++ {
-        var path = paths.join2(file.name, names[i])
+        let path = paths.join2(file.name, names[i])
         delete(names[i])
-        var info *FileInfo = stat(path, &err)
+        let info *FileInfo = stat(path, &err)
         if err != nil {
             _throwFileError(file, err, e)
             _throwPathError(file.name, err, e)
@@ -198,22 +198,22 @@ fun (info *FileInfo) name() string {
 }
 
 fun (info *FileInfo) size() u64 {
-    var st = typ *sys.Stat(info.sys())
+    let st = typ *sys.Stat(info.sys())
     return st.size
 }
 
 fun (info *FileInfo) mode() FileMode {
-    var st = typ *sys.Stat(info.sys())
+    let st = typ *sys.Stat(info.sys())
     return st.mode
 }
 
 fun (info *FileInfo) modTime() Time {
-    var st = typ *sys.Stat(info.sys())
+    let st = typ *sys.Stat(info.sys())
     return st.mtime
 }
 
 fun (info *FileInfo) isDir() bool {
-    var st = typ *sys.Stat(info.sys())
+    let st = typ *sys.Stat(info.sys())
     return ((st.mode & 0170000) == 0040000)
 }
 
@@ -222,7 +222,7 @@ fun (info *FileInfo) sys() voidptr {
 }
 
 fun tempDir() string {
-    var tmpdir = sys.getenv("TMPDIR")
+    let tmpdir = sys.getenv("TMPDIR")
     if tmpdir {
         return tmpdir
     }
@@ -230,19 +230,19 @@ fun tempDir() string {
 }
 
 fun mkdir(path string, mode u32, e **runtime.Error) {
-    var err *runtime.Error = nil
+    let err *runtime.Error = nil
     sys.mkdir(path, mode, &err)
     _throwPathError(path, err, e)
 }
 
 fun mkdirAll(path string, mode u32, e **runtime.Error) {
     // TODO check if exists first
-    var dir = paths.dir(path)
+    let dir = paths.dir(path)
     if !runtime.streq(dir, ".") {
         mkdirAll(dir, mode, e)
     }
     delete(dir)
-    var err *runtime.Error = nil
+    let err *runtime.Error = nil
     mkdir(path, mode, &err)
     switch sys.errno() {
     case 0, sys.EEXIST:
@@ -254,9 +254,9 @@ fun mkdirAll(path string, mode u32, e **runtime.Error) {
 }
 
 fun exec(argv [?]const string, e **runtime.Error) int {
-    var status = -1
-    var err *runtime.Error = nil
-    var pid = sys.fork(&err)
+    let status = -1
+    let err *runtime.Error = nil
+    let pid = sys.fork(&err)
     if err == nil {
         if pid == 0 {
             sys.exec(argv[0], argv, sys.environ(), &err)

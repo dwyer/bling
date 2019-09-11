@@ -26,9 +26,9 @@ typ Info struct {
 
 fun constant_stringVal(x *ast.Expr) string {
     assert(x.kind == ast.EXPR_BASIC_LIT)
-    var lit string = x.basic.value
-    var n = len(lit) - 2
-    var b = bytes.Buffer{}
+    let lit string = x.basic.value
+    let n = len(lit) - 2
+    let b = bytes.Buffer{}
     var val *char = runtime.malloc(n + 1)
     for var i = 0; i < n; i++ {
         val[i] = lit[i + 1]
@@ -38,25 +38,25 @@ fun constant_stringVal(x *ast.Expr) string {
 }
 
 fun declString(decl *ast.Decl) string {
-    var e = emitter.Emitter{}
+    let e = emitter.Emitter{}
     emitter.emitDecl(&e, decl)
     return e.string()
 }
 
 fun exprString(expr *ast.Expr) string {
-    var e = emitter.Emitter{}
+    let e = emitter.Emitter{}
     emitter.emitExpr(&e, expr)
     return e.string()
 }
 
 fun stmtString(stmt *ast.Stmt) string {
-    var e = emitter.Emitter{}
+    let e = emitter.Emitter{}
     emitter.emitStmt(&e, stmt)
     return e.string()
 }
 
 fun typeString(expr *ast.Expr) string {
-    var e = emitter.Emitter{}
+    let e = emitter.Emitter{}
     emitter.emitType(&e, expr)
     return e.string()
 }
@@ -105,7 +105,7 @@ fun isTypeAlias(t *ast.Expr) bool {
 }
 
 fun makeIdent(name string) *ast.Expr {
-    var x = ast.Expr{
+    let x = ast.Expr{
         kind: ast.EXPR_IDENT,
         ident: {
             name: runtime.strdup(name),
@@ -115,7 +115,7 @@ fun makeIdent(name string) *ast.Expr {
 }
 
 fun makePtr(type *ast.Expr) *ast.Expr {
-    var x = ast.Expr{
+    let x = ast.Expr{
         kind: ast.EXPR_STAR,
         star: {
             x: type,
@@ -131,7 +131,7 @@ fun underlyingType(t *ast.Expr) *ast.Expr {
             if t.ident.obj == nil {
                 panic(C.sprintf("not resolved: %s", typeString(t)))
             }
-            var decl = t.ident.obj.decl
+            let decl = t.ident.obj.decl
             if decl.kind != ast.DECL_TYPE {
                 panic(C.sprintf("not a type: %s", typeString(t)))
             }
@@ -178,7 +178,7 @@ fun exprType(x *ast.Expr) *ast.Expr {
     case ast.EXPR_PAREN:
         return exprType(x.paren.x)
     case ast.EXPR_CALL:
-        if var t = baseType(exprType(x.call.func)); t.kind == ast.TYPE_FUNC {
+        if let t = baseType(exprType(x.call.func)); t.kind == ast.TYPE_FUNC {
             return t.func.result
         }
         break
@@ -195,7 +195,7 @@ fun exprType(x *ast.Expr) *ast.Expr {
         }
         break
     case ast.EXPR_INDEX:
-        var t = baseType(exprType(x.index.x))
+        let t = baseType(exprType(x.index.x))
         switch t.kind {
         case ast.TYPE_ARRAY:
             return t.array_.elt
@@ -208,7 +208,7 @@ fun exprType(x *ast.Expr) *ast.Expr {
     case ast.EXPR_SELECTOR:
         return exprType(x.selector.sel)
     case ast.EXPR_STAR:
-        var t = exprType(x.star.x)
+        let t = exprType(x.star.x)
         assert(t.kind == ast.EXPR_STAR)
         return t.star.x
     default:
@@ -301,11 +301,11 @@ fun areIdentical(a *ast.Expr, b *ast.Expr) bool {
         if !areIdentical(a.func.result, b.func.result) {
             return false
         }
-        var i = 0
+        let i = 0
         if len(a.func.params) {
             for ; i < len(a.func.params); i++ {
-                var param1 = a.func.params[i]
-                var param2 = b.func.params[i]
+                let param1 = a.func.params[i]
+                let param2 = b.func.params[i]
                 if param2 == nil {
                     return false
                 }
@@ -411,7 +411,7 @@ fun exprObject(x *ast.Expr) *ast.Object {
 }
 
 fun isLhs(expr *ast.Expr) bool {
-    if var obj = exprObject(expr); obj {
+    if let obj = exprObject(expr); obj {
         return obj.kind == ast.ObjKind_VAL
     }
     return false
@@ -440,14 +440,14 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
     assert(base.kind == ast.TYPE_STRUCT)
     assert(name.kind == ast.EXPR_IDENT)
     for var i = 0; i < len(base.struct_.fields); i++ {
-        var field = base.struct_.fields[i]
+        let field = base.struct_.fields[i]
         if field.field.name {
             if runtime.streq(name.ident.name, field.field.name.ident.name) {
                 base = field.field.type
                 return field
             }
         } else {
-            var subField = getStructFieldByName(field.field.type, name)
+            let subField = getStructFieldByName(field.field.type, name)
             if subField {
                 return subField
             }
@@ -457,7 +457,7 @@ fun getStructFieldByName(type *ast.Expr, name *ast.Expr) *ast.Decl {
 }
 
 fun getStructField(type *ast.Expr, index int) *ast.Decl {
-    var base = baseType(type)
+    let base = baseType(type)
     if base.kind != ast.TYPE_STRUCT {
         panic(C.sprintf("not a struct: %s", typeString(type)))
     }
@@ -471,7 +471,7 @@ fun getStructField(type *ast.Expr, index int) *ast.Decl {
 }
 
 fun newInfo() *Info {
-    var info Info = {
+    let info Info = {
         imports: makemap(*Package),
     }
     return &&info
@@ -479,23 +479,23 @@ fun newInfo() *Info {
 
 fun checkFiles(conf *Config, path string, fset *token.FileSet,
         files []*ast.File, info *Info) *Package {
-    var file = files[0]
+    let file = files[0]
     if info {
-        if var pkg = info.imports[path]; pkg != nil {
+        if let pkg = info.imports[path]; pkg != nil {
             return pkg
         }
     } else {
         info = newInfo()
     }
-    var scope = ast.newScope(universe())
+    let scope = ast.newScope(universe())
     scope.pkgName = file.name
-    var pkg Package = {
+    let pkg Package = {
         path: runtime.strdup(path),
         name: file.name ? runtime.strdup(file.name.ident.name) : nil,
         scope: scope,
         imports: []*Package{},
     }
-    var c Checker = {
+    let c Checker = {
         info: info,
         fset: fset,
         conf: conf,

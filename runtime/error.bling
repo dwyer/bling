@@ -7,7 +7,7 @@ typ Error struct {
 }
 
 fun NewError(msg string) *Error {
-    var err Error = {
+    let err Error = {
         error: C.strdup(msg),
     }
     return &&err
@@ -23,7 +23,7 @@ fun Error_move(src *Error, dst **Error) {
 
 fun Error_check(e **Error) {
     if C.getErrno() {
-        var err *Error = NewError(C.strerror(C.getErrno()))
+        let err *Error = NewError(C.strerror(C.getErrno()))
         Error_move(err, e)
     }
 }

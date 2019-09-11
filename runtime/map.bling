@@ -2,8 +2,8 @@ package runtime
 
 import "C"
 
-var MAP_LOAD_FACTOR const float = 0.65
-var DEFAULT_CAP const int = 8
+let MAP_LOAD_FACTOR const float = 0.65
+let DEFAULT_CAP const int = 8
 
 typ MapStats struct {
     hits int
@@ -12,7 +12,7 @@ typ MapStats struct {
     iters int
 }
 
-var stats MapStats = {}
+let stats MapStats = {}
 
 typ MapPair struct {
     key string
@@ -43,7 +43,7 @@ fun Map_init(m *Map) {
 }
 
 fun Map_make(valSize int) Map {
-    var m Map = {
+    let m Map = {
         _valSize: valSize,
     }
     Map_init(&m)
@@ -67,12 +67,12 @@ fun _mapIsInitialized(m *const Map) bool {
 }
 
 fun _mapGetPairIdx(m *const Map, key *const void) int {
-    var hash = djb2(key) % _mapCap(m)
+    let hash = djb2(key) % _mapCap(m)
     stats.lookups++
     for var i = 0; i < len(m._pairs); i++ {
         stats.iters++
-        var idx = (hash + i) % _mapCap(m)
-        if var p = &m._pairs[idx]; !p.key || streq(key, p.key) {
+        let idx = (hash + i) % _mapCap(m)
+        if let p = &m._pairs[idx]; !p.key || streq(key, p.key) {
             if !i {
                 stats.hits++
             } else {
@@ -85,7 +85,7 @@ fun _mapGetPairIdx(m *const Map, key *const void) int {
 }
 
 fun _mapGetPairRef(m *const Map, key *const void) *MapPair {
-    if var idx = _mapGetPairIdx(m, key); idx >= 0 {
+    if let idx = _mapGetPairIdx(m, key); idx >= 0 {
         return &m._pairs[idx]
     }
     return nil
@@ -95,7 +95,7 @@ fun _mapSetUnsafe(m *Map, key string, val *const void) {
     if !_mapIsInitialized(m) {
         Map_init(m)
     }
-    if var p = _mapGetPairRef(m, key); p.key == nil {
+    if let p = _mapGetPairRef(m, key); p.key == nil {
         p.key = strdup(key)
         p.val = memdup(val, m._valSize)
         m._len++
@@ -106,7 +106,7 @@ fun _mapSetUnsafe(m *Map, key string, val *const void) {
 
 fun Map_get(m *const Map, key string, val voidptr) bool {
     if _mapIsInitialized(m) {
-        if var p = _mapGetPairRef(m, key); p.val != nil {
+        if let p = _mapGetPairRef(m, key); p.val != nil {
             if val != nil {
                 memcpy(val, p.val, m._valSize)
             }
@@ -121,14 +121,14 @@ fun Map_get(m *const Map, key string, val voidptr) bool {
 
 fun Map_set(m *Map, key string, val *const void) {
     _mapSetUnsafe(m, key, val)
-    if var load_factor = typ float(Map_len(*m)) / _mapCap(m); load_factor >= MAP_LOAD_FACTOR {
-        var newCap = _mapCap(m) * 2
-        var pairs = m._pairs
+    if let load_factor = typ float(Map_len(*m)) / _mapCap(m); load_factor >= MAP_LOAD_FACTOR {
+        let newCap = _mapCap(m) * 2
+        let pairs = m._pairs
         m._pairs = []MapPair{}
         Array_setLen(typ *Slice(&m._pairs), sizeof(MapPair), newCap)
         m._len = 0
         for var i = 0; i < len(pairs); i++ {
-            if var p = &pairs[i]; p.key {
+            if let p = &pairs[i]; p.key {
                 _mapSetUnsafe(m, p.key, p.val)
             }
         }
@@ -138,7 +138,7 @@ fun Map_set(m *Map, key string, val *const void) {
 
 fun Map_remove(m *Map, key string) bool {
     if _mapIsInitialized(m) {
-        if var idx = _mapGetPairIdx(m, key); idx >= 0 {
+        if let idx = _mapGetPairIdx(m, key); idx >= 0 {
             m._pairs[idx] = MapPair{}
             return true
         }
@@ -152,7 +152,7 @@ typ MapIter struct {
 }
 
 fun NewMapIter(m *const Map) MapIter {
-    var iter MapIter = {
+    let iter MapIter = {
         _map: m,
     }
     return iter
@@ -160,7 +160,7 @@ fun NewMapIter(m *const Map) MapIter {
 
 fun MapIter_next(m *MapIter, key *string, val voidptr) int {
     while m._idx < len(m._map._pairs) {
-        var p = &m._map._pairs[m._idx]
+        let p = &m._map._pairs[m._idx]
         m._idx++
         if p.key {
             if key {
