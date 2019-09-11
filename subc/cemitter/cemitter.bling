@@ -650,7 +650,10 @@ fun emitDecl(e *emitter.Emitter, decl *ast.Decl) {
         if e.forwardDecl {
             var isPublic = true
             switch decl.value.type.kind {
-            case ast.TYPE_ARRAY, ast.TYPE_STRUCT:
+            case ast.TYPE_ARRAY:
+                isPublic = decl.value.type.array_.dynamic
+                break
+            case ast.TYPE_STRUCT:
                 isPublic = false
                 break
             default:

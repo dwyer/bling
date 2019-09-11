@@ -384,25 +384,40 @@ fun areComparable(a *ast.Expr, b *ast.Expr) bool {
     return areAssignable(a, b)
 }
 
-fun isLhs(expr *ast.Expr) bool {
-    switch expr.kind {
-    case ast.EXPR_IDENT, ast.EXPR_SELECTOR:
-        return true
-    case ast.EXPR_CAST:
-        return isLhs(expr.cast.expr)
-    case ast.EXPR_INDEX:
-        return isLhs(expr.index.x)
-    case ast.EXPR_PAREN:
-        return isLhs(expr.paren.x)
-    case ast.EXPR_STAR:
-        return isLhs(expr.star.x)
-    default:
-        return false
+fun exprObject(x *ast.Expr) *ast.Object {
+    for {
+        switch x.kind {
+        case ast.EXPR_IDENT:
+            return x.ident.obj
+        case ast.EXPR_CAST:
+            x = x.cast.expr
+            break
+        case ast.EXPR_PAREN:
+            x = x.paren.x
+            break
+        case ast.EXPR_SELECTOR:
+            x = x.selector.sel
+            break
+        case ast.EXPR_INDEX:
+            x = x.index.x
+            break
+        case ast.EXPR_STAR:
+            x = x.star.x
+            break
+        default:
+            return nil
+        }
     }
 }
 
-fun getDeclType(decl *ast.Decl) *ast.Expr {
-    assert(decl)
+fun isLhs(expr *ast.Expr) bool {
+    if var obj = exprObject(expr); obj {
+        return obj.kind == ast.ObjKind_VAL
+    }
+    return false
+}
+
+fun declType(decl *ast.Decl) *ast.Expr {
     switch decl.kind {
     case ast.DECL_FIELD:
         return decl.field.type

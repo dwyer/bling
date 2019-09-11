@@ -761,7 +761,7 @@ fun (p *Parser) parseForStmt() *ast.Stmt {
         p.exprLev = -1
         if !p.accept(token.SEMICOLON) {
             switch p.tok {
-            case token.VAR:
+            case token.LET, token.VAR:
                 init = p.parseStmt()
                 break
             default:
@@ -795,7 +795,7 @@ fun (p *Parser) parseForStmt() *ast.Stmt {
 
 fun (p *Parser) tryInitStmt() *ast.Stmt {
     switch p.tok {
-    case token.VAR:
+    case token.LET, token.VAR:
         return p.parseDeclStmt()
     default:
         return nil
@@ -964,7 +964,7 @@ fun (p *Parser) parseDeclStmt() *ast.Stmt {
 
 fun (p *Parser) parseStmt() *ast.Stmt {
     switch p.tok {
-    case token.VAR:
+    case token.LET, token.VAR:
         return p.parseDeclStmt()
     case token.FOR:
         return p.parseForStmt()
@@ -1053,6 +1053,8 @@ fun (p *Parser) parseValueDecl() *ast.Decl {
         } else {
             value = p.parseRhs()
         }
+    } else if keyword == token.CONST || keyword == token.LET {
+        p.expect(token.ASSIGN) // const and let decls must have a value
     }
     p.expect(token.SEMICOLON)
     var decl = ast.Decl{
@@ -1126,12 +1128,12 @@ fun (p *Parser) parseDecl() *ast.Decl {
     switch p.tok {
     case token.TYPE:
         return p.parseTypeDecl()
-    case token.CONST, token.VAR:
+    case token.CONST, token.LET, token.VAR:
         return p.parseValueDecl()
     case token.FUNC:
         return p.parseFuncDecl()
     default:
-        p.error(p.pos, C.sprintf("cant handle it: %s", p.tok.string()))
+        p.errorExpected(p.pos, "decl")
         return nil
     }
 }

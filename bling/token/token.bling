@@ -30,6 +30,7 @@ typ Token enum {
     GOTO
     IF
     IMPORT
+    LET
     MAP
     PACKAGE
     RETURN
@@ -166,6 +167,7 @@ var tokens [?]string = {
     GOTO: "goto",
     IF: "if",
     IMPORT: "import",
+    LET: "let",
     MAP: "map",
     PACKAGE: "package",
     RETURN: "return",

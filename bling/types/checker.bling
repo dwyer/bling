@@ -31,7 +31,7 @@ fun (c *Checker) log(fatal bool, pos token.Pos, msg string) {
 }
 
 fun (c *Checker) warning(pos token.Pos, msg string) {
-    // c.log(false, pos, msg)
+    c.log(false, pos, msg)
 }
 
 fun (c *Checker) error(pos token.Pos, msg string) {
@@ -157,7 +157,7 @@ fun (c *Checker) checkIdent(expr *ast.Expr) *ast.Expr {
     if expr.ident.obj == nil {
         c.error(expr.pos(), "unresolved identifier")
     }
-    return getDeclType(expr.ident.obj.decl)
+    return declType(expr.ident.obj.decl)
 }
 
 fun (c *Checker) checkArrayLit(x *ast.Expr) {
@@ -531,10 +531,17 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
 fun (c *Checker) checkStmt(stmt *ast.Stmt) {
     switch stmt.kind {
     case ast.STMT_ASSIGN:
-        if !isLhs(stmt.assign.x) {
-            c.error(stmt.pos(), C.sprintf("invalid lvalue `%s`", exprString(stmt.assign.x)))
-        }
         var a = c.checkExpr(stmt.assign.x)
+        if !isLhs(stmt.assign.x) {
+            c.error(stmt.pos(), "invalid lvalue")
+        }
+        if var obj = exprObject(stmt.assign.x); obj.kind == ast.ObjKind_VAL {
+            if obj.decl.value.kind == token.LET {
+                c.warning(stmt.assign.x.pos(), "cannot assign to a let value")
+            }
+        } else {
+            c.error(stmt.assign.x.pos(), "invalid lvalue")
+        }
         if a.isConst {
             c.error(stmt.pos(), "cannot assign to const var")
         }
