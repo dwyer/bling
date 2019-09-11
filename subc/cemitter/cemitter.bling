@@ -90,6 +90,11 @@ fun emitSelector(e *emitter.Emitter, expr *ast.Expr, ignoreOpt bool) {
 fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
     switch expr.kind {
     case ast.EXPR_BASIC_LIT:
+        if expr.basic.kind == token.STRING {
+            e.emitToken(token.LPAREN)
+            e.emitString("string")
+            e.emitToken(token.RPAREN)
+        }
         e.emitString(expr.basic.value)
         break
     case ast.EXPR_BINARY:
