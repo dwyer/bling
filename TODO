@@ -28,7 +28,6 @@
 * Make `void` a keyword?
 * switch: allow init expr
 * Change cast syntax from `typ T(x)` to `T(x)`
-* Remove '#' token from bling.
 * var, let, and const
     * var: typical variable
     * let: "const" variable, must be assigned exactly once, has memory address

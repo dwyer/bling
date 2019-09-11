@@ -20,6 +20,21 @@ fun isType(p *parser.Parser) bool {
     }
 }
 
+fun parsePragma(p *parser.Parser) *ast.Decl {
+    var pos = p.pos
+    var lit = p.lit
+    p.lit = nil
+    p.expect(token.HASH)
+    var decl = ast.Decl{
+        kind: ast.DECL_PRAGMA,
+        pos: pos,
+        pragma: {
+            lit: lit,
+        },
+    }
+    return &&decl
+}
+
 fun postfixExpr(p *parser.Parser, x *ast.Expr) *ast.Expr {
     if x == nil {
         x = p.parseOperand()
@@ -910,7 +925,7 @@ fun specifierQualifierList(p *parser.Parser) *ast.Expr {
 
 fun declaration(p *parser.Parser, isExternal bool) *ast.Decl {
     if p.tok == token.HASH {
-        return p.parsePragma()
+        return parsePragma(p)
     }
     var pos token.Pos = p.pos
     if p.tok == token.TYPEDEF {
@@ -991,7 +1006,7 @@ fun _parseFile(p *parser.Parser) *ast.File {
     var imports = []*ast.Decl{}
     var name *ast.Expr = nil
     while p.tok == token.HASH {
-        var lit = p.parsePragma()
+        var lit = parsePragma(p)
         append(decls, lit)
     }
     if p.accept(token.PACKAGE) {

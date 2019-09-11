@@ -251,8 +251,10 @@ scanAgain:
             s.insertSemi = false
             return token.SEMICOLON
         case '#':
-            tok = token.HASH
-            *lit = s.scanPragma()
+            if s.dontInsertSemis {
+                tok = token.HASH
+                *lit = s.scanPragma()
+            }
             break
         case '(':
             tok = token.LPAREN

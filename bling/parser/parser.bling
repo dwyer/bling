@@ -1038,21 +1038,6 @@ fun (p *Parser) parseBlockStmt() *ast.Stmt {
     return &&stmt
 }
 
-fun (p *Parser) parsePragma() *ast.Decl {
-    var pos = p.pos
-    var lit = p.lit
-    p.lit = nil
-    p.expect(token.HASH)
-    var decl = ast.Decl{
-        kind: ast.DECL_PRAGMA,
-        pos: pos,
-        pragma: {
-            lit: lit,
-        },
-    }
-    return &&decl
-}
-
 fun (p *Parser) parseValueDecl() *ast.Decl {
     var keyword = p.tok
     var pos = p.expect(keyword)
@@ -1139,8 +1124,6 @@ fun (p *Parser) parseFuncDecl() *ast.Decl {
 
 fun (p *Parser) parseDecl() *ast.Decl {
     switch p.tok {
-    case token.HASH:
-        return p.parsePragma()
     case token.TYPE:
         return p.parseTypeDecl()
     case token.CONST, token.VAR:
@@ -1182,9 +1165,6 @@ fun parseDir(fset *token.FileSet, path string, first **runtime.Error) []*ast.Fil
 fun (p *Parser) _parseFile() *ast.File {
     var imports = []*ast.Decl{}
     var decls = []*ast.Decl{}
-    while p.tok == token.HASH {
-        append(decls, p.parsePragma())
-    }
     p.expect(token.PACKAGE)
     var name = p.parseIdent()
     p.expect(token.SEMICOLON)
