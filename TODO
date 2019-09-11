@@ -16,6 +16,7 @@
 * arrays:
     * allow slices. e.g. `a[i:j]`
 * maps:
+    * Change syntax to `map<K,V>` or similar.
     * Add a `haskey` func.
     * Throw error when getting a missing key.
 * strings: Replace C strings with Bling strings
