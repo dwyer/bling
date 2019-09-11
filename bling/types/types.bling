@@ -65,9 +65,6 @@ fun isType(expr *ast.Expr) bool {
     for {
         switch expr.kind {
         case ast.EXPR_IDENT:
-            if expr.ident.obj == nil {
-                panic(C.sprintf("unresolved identifier %s", expr.ident.name))
-            }
             return expr.ident.obj.kind == ast.ObjKind_TYP
         case ast.EXPR_SELECTOR:
             expr = expr.selector.sel

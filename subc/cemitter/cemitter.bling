@@ -111,7 +111,13 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
             recv = func.selector.x
             func = func.selector.sel
         }
-        emitExpr(e, expr.call.func)
+        if types.isType(expr.call.func) {
+            e.emitToken(token.LPAREN)
+            emitType(e, expr.call.func, nil)
+            e.emitToken(token.RPAREN)
+        } else {
+            emitExpr(e, expr.call.func)
+        }
         e.emitToken(token.LPAREN)
         if recv != nil {
             emitExpr(e, recv)

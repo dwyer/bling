@@ -323,6 +323,92 @@ fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
     return nil
 }
 
+fun (c *Checker) checkCallExpr(expr *ast.Expr) *ast.Expr {
+    let func = expr.call.func
+    var type = c.checkExpr(func)
+    if type.kind == ast.TYPE_BUILTIN {
+        let n = len(expr.call.args)
+        if type.builtin.variadic {
+            assert(n >= type.builtin.nargs)
+        } else {
+            assert(n == type.builtin.nargs)
+        }
+        switch type.builtin.id {
+        case COPY:
+            return c.checkExpr(expr.call.args[0])
+        case LEN:
+            c.checkExpr(expr.call.args[0])
+            return c.lookupIdent("int")
+        case MAKEARRAY:
+            type = expr.call.args[0]
+            c.checkType(type)
+            if !isType(type) {
+                c.error(type.pos(), "expected a type")
+            }
+            let t = ast.Expr{
+                kind: ast.TYPE_ARRAY,
+                array_: {
+                    elt: type,
+                    dynamic: true,
+                },
+            }
+            type = &&t
+            return type
+        case MAKEMAP:
+            type = expr.call.args[0]
+            c.checkType(type)
+            if !isType(type) {
+                c.error(type.pos(), "expected a type")
+            }
+            let t = ast.Expr{
+                kind: ast.TYPE_MAP,
+                map_: {
+                    val: type,
+                },
+            }
+            type = &&t
+            return type
+        case SIZEOF:
+            type = expr.call.args[0]
+            c.checkType(type)
+            return c.lookupIdent("u64")
+        default:
+            assert(!type.builtin.isExpr)
+            for var i = 0; i < len(expr.call.args); i++ {
+                c.checkExpr(expr.call.args[i])
+            }
+            return nil
+        }
+    } else if type.kind == ast.TYPE_FUNC {
+        let j = 0
+        for var i = 0; i < len(expr.call.args); i++ {
+            let param = type.func.params[j]
+            if param == nil {
+                c.error(expr.pos(), "too many args")
+                break
+            }
+            let type = c.checkExpr(expr.call.args[i])
+            assert(param.kind == ast.DECL_FIELD)
+            if !areAssignable(param.field.type, type) {
+                c.error(expr.pos(), C.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
+            }
+            if param.field.type.kind != ast.TYPE_ELLIPSIS {
+                j++
+            }
+        }
+        return type.func.result
+    } else if isType(expr.call.func) {
+        assert(len(expr.call.args) == 1)
+        c.checkExpr(expr.call.args[0])
+        return expr.call.func
+    } else {
+        c.error(expr.pos(), C.sprintf("`%s` is a `%s` not a func",
+        exprString(expr.call.func),
+        typeString(type)))
+        return nil
+    }
+}
+
 fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
     assert(expr)
     switch expr.kind {
@@ -357,85 +443,7 @@ fun (c *Checker) checkExpr(expr *ast.Expr) *ast.Expr {
             return nil
         }
     case ast.EXPR_CALL:
-        let func = expr.call.func
-        var type = c.checkExpr(func)
-        if type.kind == ast.EXPR_STAR {
-            type = type.star.x
-        }
-        if type.kind == ast.TYPE_BUILTIN {
-            let n = len(expr.call.args)
-            if type.builtin.variadic {
-                assert(n >= type.builtin.nargs)
-            } else {
-                assert(n == type.builtin.nargs)
-            }
-            switch type.builtin.id {
-            case COPY:
-                return c.checkExpr(expr.call.args[0])
-            case LEN:
-                c.checkExpr(expr.call.args[0])
-                return c.lookupIdent("int")
-            case MAKEARRAY:
-                type = expr.call.args[0]
-                c.checkType(type)
-                if !isType(type) {
-                    c.error(type.pos(), "expected a type")
-                }
-                let t = ast.Expr{
-                    kind: ast.TYPE_ARRAY,
-                    array_: {
-                        elt: type,
-                        dynamic: true,
-                    },
-                }
-                type = &&t
-                return type
-            case MAKEMAP:
-                type = expr.call.args[0]
-                c.checkType(type)
-                if !isType(type) {
-                    c.error(type.pos(), "expected a type")
-                }
-                let t = ast.Expr{
-                    kind: ast.TYPE_MAP,
-                    map_: {
-                        val: type,
-                    },
-                }
-                type = &&t
-                return type
-            case SIZEOF:
-                type = expr.call.args[0]
-                c.checkType(type)
-                return c.lookupIdent("u64")
-            default:
-                assert(!type.builtin.isExpr)
-                for var i = 0; i < len(expr.call.args); i++ {
-                    c.checkExpr(expr.call.args[i])
-                }
-                return nil
-            }
-        } else if type.kind == ast.TYPE_FUNC {
-            let j = 0
-            for var i = 0; i < len(expr.call.args); i++ {
-                let param = type.func.params[j]
-                if param == nil {
-                    c.error(expr.pos(), "too many args")
-                    break
-                }
-                let type = c.checkExpr(expr.call.args[i])
-                assert(param.kind == ast.DECL_FIELD)
-                if !areAssignable(param.field.type, type) {
-                    c.error(expr.pos(), C.sprintf("not assignable: %s and %s", typeString(param.field.type), typeString(type)))
-                }
-                if param.field.type.kind != ast.TYPE_ELLIPSIS {
-                    j++
-                }
-            }
-            return type.func.result
-        } else {
-            c.error(expr.pos(), C.sprintf("`%s` is not a func", exprString(expr.call.func)))
-        }
+        return c.checkCallExpr(expr)
     case ast.EXPR_COMPOSITE_LIT:
         c.checkType(expr.composite.type)
         c.checkCompositeLit(expr)
