@@ -8,16 +8,6 @@
     * Assert that file packages in the same directory import one another.
         * Possibly allow file packages in same directory to import each other
           mutually.
-* Implement optional types, e.g.
-    * Old: expr.ident.obj && expr.ident.obj.scope && expr.ident.obj.scope.pkgName
-    * New: expr.ident.obj?.scope?.pkgName
-    * `x?.sel` => `x ? x.sel : nil`
-    * assert that both sizes resolve to pointers
-    * a?.b          a ? a.b : 0
-      a?.b?.c       a && a.b ? a.b.c : 0
-      a?.b.c        a ? a.b.c : 0
-      a.b?.c        a.b ? a.b.c : 0
-      a?.b.c?.d     a && a.b.c ? a.b.c.d : 0
 * var args
     * Implement var args.
     * Rewrite `print` to accept var args.
