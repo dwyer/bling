@@ -185,7 +185,6 @@ typ StructType struct {
     tok token.Token
     name *Expr
     fields []*Decl
-    scope *Scope
 }
 
 typ TernaryExpr struct {
@@ -373,26 +372,10 @@ typ File struct {
     name *Expr
     imports []*Decl
     decls []*Decl
-    scope *Scope
-}
-
-typ Package struct {
-    name string
-    scope *Scope
-    files []*File
 }
 
 fun isExprType(x *Expr) bool {
     return _TYPE_START < x.kind && x.kind < _TYPE_END
-}
-
-fun resolve(scope *Scope, ident *Expr) bool {
-    let obj = scope.deepLookup(ident.ident.name)
-    if obj != nil {
-        ident.ident.obj = obj
-        return true
-    }
-    return false
 }
 
 fun isIdent(x *Expr) bool {

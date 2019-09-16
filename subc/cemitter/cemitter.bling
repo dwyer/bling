@@ -167,9 +167,9 @@ fun emitExpr(e *emitter.Emitter, expr *ast.Expr) {
         if expr.ident.obj == nil {
             // C.printf("warning: not resolved: %s\n", expr.ident.name)
         }
-        if expr.ident.obj?.scope?.pkgName {
-            if !runtime.streq(expr.ident.obj.scope.pkgName.ident.name, "main") {
-                emitExpr(e, expr.ident.obj.scope.pkgName)
+        if expr.ident.obj?.pkgName {
+            if !runtime.streq(expr.ident.obj.pkgName.ident.name, "main") {
+                emitExpr(e, expr.ident.obj.pkgName)
                 e.emitToken(token.DOLLAR)
             }
         }

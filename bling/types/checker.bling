@@ -12,7 +12,7 @@ typ Checker struct {
     pkg *Package
     info *Info
     result *ast.Expr
-    file *ast.File
+    scope *ast.Scope
 }
 
 fun (c *Checker) log(fatal bool, pos token.Pos, msg string) {
@@ -63,7 +63,7 @@ fun (c *Checker) declare(decl *ast.Decl, data voidptr, scope *ast.Scope,
     let obj = ast.newObject(kind, ident.ident.name)
     obj.decl = decl
     obj.data = data
-    obj.scope = scope
+    obj.pkgName = scope.pkgName
     ident.ident.obj = obj
     let alt = scope.insert(obj)
     if alt != nil && kind != ast.ObjKind_PKG { // TODO declare pkgs in seperate scope
@@ -87,7 +87,7 @@ fun (c *Checker) checkType(t *ast.Expr) {
         break
     case ast.EXPR_SELECTOR:
         assert(ast.isIdent(t.selector.x))
-        c.resolve(c.file.scope, t.selector.x)
+        c.resolve(c.scope, t.selector.x)
         assert(t.selector.x.ident.obj.kind == ast.ObjKind_PKG)
         let oldScope = c.pkg.scope
         c.pkg.scope = t.selector.x.ident.obj.data
@@ -263,7 +263,7 @@ fun (c *Checker) lookupIdent(name string) *ast.Expr {
 }
 
 fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
-    if c.tryResolve(c.file.scope, expr.selector.x) {
+    if c.tryResolve(c.scope, expr.selector.x) {
         // x is a scope
         let x = expr.selector.x
         assert(x.ident.obj.kind == ast.ObjKind_PKG)
@@ -673,7 +673,7 @@ fun (c *Checker) checkImport(imp *ast.Decl) *Package {
         assert(c.info.imports[path])
     }
     imp.imp.name = makeIdent(pkg.scope.pkgName.ident.name)
-    c.declare(imp, pkg.scope, c.file.scope, ast.ObjKind_PKG, imp.imp.name)
+    c.declare(imp, pkg.scope, c.scope, ast.ObjKind_PKG, imp.imp.name)
     return pkg
 }
 
@@ -751,17 +751,18 @@ fun (c *Checker) checkDecl(decl *ast.Decl) {
 }
 
 fun (c *Checker) checkFiles(files []*ast.File) {
+    var scopes [len(files)]*ast.Scope
     for var j = 0; j < len(files); j++ {
-        c.file = files[j]
-        c.file.scope = ast.newScope(nil)
-        let imports = c.file.imports
+        scopes[j] = ast.newScope(nil)
+        c.scope = scopes[j]
+        let imports = files[j].imports
         for var i = 0; i < len(imports); i++ {
             let pkg = c.checkImport(imports[i])
             append(c.pkg.imports, pkg)
         }
     }
     for var j = 0; j < len(files); j++ {
-        c.file = files[j]
+        c.scope = scopes[j]
         let decls = files[j].decls
         for var i = 0; i < len(decls); i++ {
             if let decl = decls[i]; decl.kind == ast.DECL_TYPE {
@@ -770,8 +771,8 @@ fun (c *Checker) checkFiles(files []*ast.File) {
         }
     }
     for var j = 0; j < len(files); j++ {
-        c.file = files[j]
-        let decls = c.file.decls
+        c.scope = scopes[j]
+        let decls = files[j].decls
         for var i = 0; i < len(decls); i++ {
             if let decl = decls[i]; decl.kind == ast.DECL_FUNC {
                 c.checkType(decl.func.type)
@@ -800,8 +801,8 @@ fun (c *Checker) checkFiles(files []*ast.File) {
         }
     }
     for var j = 0; j < len(files); j++ {
-        c.file = files[j]
-        let decls = c.file.decls
+        c.scope = scopes[j]
+        let decls = files[j].decls
         for var i = 0; i < len(decls); i++ {
             if let decl = decls[i]; decl.kind == ast.DECL_TYPE {
                 c.checkDecl(decls[i])
@@ -809,8 +810,8 @@ fun (c *Checker) checkFiles(files []*ast.File) {
         }
     }
     for var j = 0; j < len(files); j++ {
-        c.file = files[j]
-        let decls = c.file.decls
+        c.scope = scopes[j]
+        let decls = files[j].decls
         for var i = 0; i < len(decls); i++ {
             if let decl = decls[i]; decl.kind != ast.DECL_TYPE {
                 c.checkDecl(decls[i])

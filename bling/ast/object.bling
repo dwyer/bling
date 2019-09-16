@@ -1,0 +1,26 @@
+package ast
+
+typ ObjKind enum {
+    ObjKind_BAD
+    ObjKind_CON
+    ObjKind_FUN
+    ObjKind_PKG
+    ObjKind_TYP
+    ObjKind_VAL
+}
+
+typ Object struct {
+    kind ObjKind
+    name string
+    decl *Decl
+    data voidptr
+    pkgName *Expr
+}
+
+fun newObject(kind ObjKind, name string) *Object {
+    let obj = Object{
+        kind: kind,
+        name: name,
+    }
+    return &&obj
+}
