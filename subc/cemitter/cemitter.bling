@@ -717,7 +717,7 @@ fun emitFile(e *emitter.Emitter, file *ast.File) {
     }
 }
 
-fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
+fun emitObjects(e *emitter.Emitter, scope *types.Scope, kind ast.ObjKind) {
     for var i = 0; i < len(scope.keys); i++ {
         let obj = scope.objects[scope.keys[i]]
         if obj.kind == kind {
@@ -726,14 +726,14 @@ fun emitObjects(e *emitter.Emitter, scope *ast.Scope, kind ast.ObjKind) {
             e.emitNewline()
         }
         if kind == ast.ObjKind_FUN && obj.kind == ast.ObjKind_TYP {
-            if let scope *ast.Scope = obj.data; scope {
+            if let scope *types.Scope = obj.data; scope {
                 emitObjects(e, scope, kind)
             }
         }
     }
 }
 
-fun emitScope(e *emitter.Emitter, scope *ast.Scope) {
+fun emitScope(e *emitter.Emitter, scope *types.Scope) {
     emitObjects(e, scope, ast.ObjKind_TYP)
     emitObjects(e, scope, ast.ObjKind_VAL)
     emitObjects(e, scope, ast.ObjKind_FUN)

@@ -1,20 +1,21 @@
-package ast
+package types
 
 import "C"
+import "bling/ast"
 import "bytes"
 import "runtime"
 
 typ Scope struct {
     outer *Scope
-    objects map *Object
+    objects map *ast.Object
     keys []string
-    pkgName *Expr
+    pkgName *ast.Expr
 }
 
 fun newScope(outer *Scope) *Scope {
     let s = Scope{
         outer: outer,
-        objects: makemap(*Object),
+        objects: makemap(*ast.Object),
         keys: []string{},
     }
     return &&s
@@ -26,7 +27,7 @@ fun (s *Scope) delete() {
     delete(s)
 }
 
-fun (s *Scope) insert(obj *Object) *Object {
+fun (s *Scope) insert(obj *ast.Object) *ast.Object {
     let alt = s.objects[obj.name]
     if alt == nil {
         s.objects[obj.name] = obj
@@ -35,7 +36,7 @@ fun (s *Scope) insert(obj *Object) *Object {
     return alt
 }
 
-fun (s *Scope) lookup(name string) *Object {
+fun (s *Scope) lookup(name string) *ast.Object {
     return s.objects[name]
 }
 
@@ -53,7 +54,7 @@ fun (s *Scope) print() {
     }
 }
 
-fun (s *Scope) deepLookup(name string) *Object {
+fun (s *Scope) deepLookup(name string) *ast.Object {
     for ; s != nil; s = s.outer {
         let obj = s.lookup(name)
         if obj != nil {
@@ -63,7 +64,7 @@ fun (s *Scope) deepLookup(name string) *Object {
     return nil
 }
 
-fun resolve(scope *Scope, ident *Expr) bool {
+fun resolve(scope *Scope, ident *ast.Expr) bool {
     let obj = scope.deepLookup(ident.ident.name)
     if obj != nil {
         ident.ident.obj = obj

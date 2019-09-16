@@ -12,7 +12,7 @@ typ Checker struct {
     pkg *Package
     info *Info
     result *ast.Expr
-    scope *ast.Scope
+    scope *Scope
 }
 
 fun (c *Checker) log(fatal bool, pos token.Pos, msg string) {
@@ -38,24 +38,24 @@ fun (c *Checker) error(pos token.Pos, msg string) {
     c.log(true, pos, msg)
 }
 
-fun (c *Checker) tryResolve(s *ast.Scope, x *ast.Expr) bool {
+fun (c *Checker) tryResolve(s *Scope, x *ast.Expr) bool {
     if x.kind != ast.EXPR_IDENT {
         return false
     }
     if x.ident.obj {
         c.error(x.pos(), C.sprintf("already resolved: %s", x.ident.name))
     }
-    return ast.resolve(s, x)
+    return resolve(s, x)
 }
 
-fun (c *Checker) resolve(s *ast.Scope, x *ast.Expr) {
+fun (c *Checker) resolve(s *Scope, x *ast.Expr) {
     if c.tryResolve(s, x) {
         return
     }
     c.error(x.pos(), C.sprintf("unresolved: %s", x.ident.name))
 }
 
-fun (c *Checker) declare(decl *ast.Decl, data voidptr, scope *ast.Scope,
+fun (c *Checker) declare(decl *ast.Decl, data voidptr, scope *Scope,
         kind ast.ObjKind, ident *ast.Expr) {
     if ident.ident.obj != nil {
         c.error(decl.pos, C.sprintf("already declared: %s", ident.ident.name))
@@ -72,7 +72,7 @@ fun (c *Checker) declare(decl *ast.Decl, data voidptr, scope *ast.Scope,
 }
 
 fun (c *Checker) openScope() {
-    c.pkg.scope = ast.newScope(c.pkg.scope)
+    c.pkg.scope = newScope(c.pkg.scope)
 }
 
 fun (c *Checker) closeScope() {
@@ -285,7 +285,7 @@ fun (c *Checker) checkSelector(expr *ast.Expr) *ast.Expr {
     }
     if let alias = getTypeAlias(type); alias != nil {
         // if type is an alias, check its scope for a method
-        if let scope *ast.Scope = alias.ident.obj.data; scope {
+        if let scope *Scope = alias.ident.obj.data; scope {
             if let obj = scope.lookup(expr.selector.sel.ident.name); obj {
                 c.resolve(scope, expr.selector.sel)
                 assert(obj.kind == ast.ObjKind_FUN)
@@ -751,9 +751,9 @@ fun (c *Checker) checkDecl(decl *ast.Decl) {
 }
 
 fun (c *Checker) checkFiles(files []*ast.File) {
-    var scopes [len(files)]*ast.Scope
+    var scopes [len(files)]*Scope
     for var j = 0; j < len(files); j++ {
-        scopes[j] = ast.newScope(nil)
+        scopes[j] = newScope(nil)
         c.scope = scopes[j]
         let imports = files[j].imports
         for var i = 0; i < len(imports); i++ {
@@ -789,7 +789,7 @@ fun (c *Checker) checkFiles(files []*ast.File) {
                     }
                     scope = type.ident.obj.data // declare method in type scope
                     if type.ident.obj.data == nil {
-                        scope = ast.newScope(c.pkg.scope)
+                        scope = newScope(c.pkg.scope)
                         scope.pkgName = type
                         type.ident.obj.data = scope
                     }

@@ -16,7 +16,7 @@ typ Config struct {
 typ Package struct {
     path string
     name string
-    scope *ast.Scope
+    scope *Scope
     imports []*Package
 }
 
@@ -495,7 +495,7 @@ fun checkFiles(conf *Config, path string, fset *token.FileSet,
     } else {
         info = newInfo()
     }
-    let scope = ast.newScope(universe())
+    let scope = newScope(universe())
     scope.pkgName = file.name
     let pkg Package = {
         path: runtime.strdup(path),

@@ -45,7 +45,7 @@ typ Basic struct {
     name string
 }
 
-var _universe *ast.Scope = nil
+var _universe *Scope = nil
 
 let predeclaredTypes [?]const Basic = {
     INVALID: { INVALID, 0, "invalid type", },
@@ -214,9 +214,9 @@ fun defPredeclaredConsts() {
     }
 }
 
-fun universe() *ast.Scope {
+fun universe() *Scope {
     if _universe == nil {
-        _universe = ast.newScope(nil)
+        _universe = newScope(nil)
         defPredeclaredTypes()
         defPredeclaredConsts()
         defPredeclaredFuncs()
